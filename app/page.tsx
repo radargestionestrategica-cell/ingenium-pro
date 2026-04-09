@@ -527,7 +527,7 @@ export default function IngeniumPro(){
                   {['Argentina','Colombia','México','Chile','Perú','Brasil','Venezuela','Bolivia','Ecuador','Uruguay','España','USA','Canadá','Otro'].map(x=><option key={x}>{x}</option>)}
                 </select></div>
             </div>
-            <button onClick={()=>{if(!u.name||!u.lic)return;localStorage.setItem('ip9u',JSON.stringify(u));setAcc(true);setMod('tutorial');}}
+            <button onClick={()=>{if(!u.name||!u.lic)return;localStorage.setItem('ip9u',JSON.stringify(u));window.location.href='/api/pago';}}
               disabled={!u.name||!u.lic}
               className="w-full bg-gradient-to-r from-[#E8A020] to-[#C07010] disabled:opacity-30 text-[#020609] py-4 rounded-2xl font-black text-sm uppercase tracking-widest transition-all shadow-lg">
               {T.a}
