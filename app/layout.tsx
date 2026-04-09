@@ -1,4 +1,4 @@
-import { ClerkProvider } from '@clerk/nextjs'
+import { ClerkProvider, SignInButton, SignedIn, SignedOut, UserButton } from '@clerk/nextjs'
 import './globals.css'
 
 export default function RootLayout({
@@ -10,6 +10,14 @@ export default function RootLayout({
     <ClerkProvider>
       <html lang="es">
         <body>
+          <header style={{ display: 'flex', justifyContent: 'flex-end', padding: '1rem' }}>
+            <SignedOut>
+              <SignInButton mode="modal" />
+            </SignedOut>
+            <SignedIn>
+              <UserButton afterSignOutUrl="/" />
+            </SignedIn>
+          </header>
           {children}
         </body>
       </html>
