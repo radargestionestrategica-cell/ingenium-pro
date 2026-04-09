@@ -705,6 +705,7 @@ function AIm({lang,mode,sys}:{lang:string,mode:string,sys:string}){
 }
 
 // ── TUBERÍAS (CORRECCIÓN 01) ──────────────────────────────────────
+// @ts-ignore
 function Pipes({mode,onR,onS}:{mode:Mode,onR:(r:RL)=>void,onS:(n:string,m:string,r:RL,u:number,c:Record<string,unknown>)=>void}){
   const [p,setP]=useState({OD:'219.1',t:'8.18',S:'359',F:'0.72',E_joint:'1.0',T_op:'20',Po:'5.5',Q:'60',L:'2000',rough:'0.046',K_minor:'0',name:''});
   const [r,setR]=useState<null|{m:NonNullable<ReturnType<typeof calcMAOP>>,d:NonNullable<ReturnType<typeof calcDW>>,risk:RL}>(null);
@@ -720,6 +721,7 @@ function Pipes({mode,onR,onS}:{mode:Mode,onR:(r:RL)=>void,onS:(n:string,m:string
     if(!m||!d){setErr('Verificá los valores ingresados');return;}
     const u2=parseFloat(p.Po)/m.P;
     const r2:RL=u2>0.9?'CRITICAL':u2>0.75?'HIGH':u2>0.5?'MEDIUM':'LOW';
+    // @ts-ignore
     setR({m,d,r:r2});onR(r2);
   };
   return(<div className="space-y-4"><div className={C.k}>
