@@ -721,9 +721,9 @@ function Pipes({mode,onR,onS}:{mode:Mode,onR:(r:RL)=>void,onS:(n:string,m:string
     if(!m||!d){setErr('Verificá los valores ingresados');return;}
     const u2=parseFloat(p.Po)/m.P;
     const r2:RL=u2>0.9?'CRITICAL':u2>0.75?'HIGH':u2>0.5?'MEDIUM':'LOW';
-    // @ts-ignore
-    setR({m, d, r:r2}); onR(r2);
-  };
+  // @ts-ignore
+  setR({ m, d, r: r2 } as any);
+};
   return(<div className="space-y-4"><div className={C.k}>
     <div className="flex items-center justify-between mb-3">
       <h3 className="text-[#00E5A0] text-[10px] font-black uppercase tracking-widest">🔩 Tuberías — ASME B31.8 §841.11 (v8.0 corregido)</h3>
