@@ -707,6 +707,7 @@ function AIm({lang,mode,sys}:{lang:string,mode:string,sys:string}){
 // ── TUBERÍAS (CORRECCIÓN 01) ──────────────────────────────────────
 // @ts-ignore
 function Pipes({mode,onR,onS}:{mode:Mode,onR:(r:RL)=>void,onS:(n:string,m:string,r:RL,u:number,c:Record<string,unknown>)=>void}){
+  const [risk, setRisk] = useState<RL>('LOW');
   const [p,setP]=useState({OD:'219.1',t:'8.18',S:'359',F:'0.72',E_joint:'1.0',T_op:'20',Po:'5.5',Q:'60',L:'2000',rough:'0.046',K_minor:'0',name:''});
   const [r,setR]=useState<null|{m:NonNullable<ReturnType<typeof calcMAOP>>,d:NonNullable<ReturnType<typeof calcDW>>,risk:RL}>(null);
   const [err,setErr]=useState('');
@@ -772,7 +773,14 @@ function Pipes({mode,onR,onS}:{mode:Mode,onR:(r:RL)=>void,onS:(n:string,m:string
     <button onClick={run} className={C.b}>⚡ CALCULAR — MAOP + Darcy-Weisbach</button>
   </div>
   {r&&<div className="space-y-3">
-    <Badge r={r.r} msg={`P_op/MAOP=${(parseFloat(p.Po)/r.m.P*100).toFixed(0)}% — ${r.r==='CRITICAL'?'⛔ EXCEDE LÍMITE':r.r==='HIGH'?'⚠️ Margen reducido':'✅ OK'}`}/>
+    <Badge 
+  r={risk} 
+  msg={`P_op/MAOP=${((parseFloat(p.Po)/r.m.P*100).toFixed(0))}% - ${
+    risk==='CRITICAL' ? '🔴 EXCEDE LÍMITE' :
+    risk==='HIGH' ? '🟠 ALTO' :
+    '🟢 OK'
+  }`} 
+/>
     <Box t={`MAOP — ${r.m.reg}`} n="ASME B31.8 §841.11" rows={[
       ['t/D',r.m.ratio+'%'],
       ['Factor E (eficiencia junta)',r.m.E_joint.toString()],
@@ -785,7 +793,7 @@ function Pipes({mode,onR,onS}:{mode:Mode,onR:(r:RL)=>void,onS:(n:string,m:string
       ['hf pérdidas mayores',r.d.hf_mayor+' m'],
       ['hf pérdidas menores (K)',r.d.hf_menor+' m'],
       ['hf TOTAL',r.d.hf+' m',true],['ΔP total',r.d.dP+' kPa',true]]}/>
-    {p.name&&<button onClick={()=>onS(p.name,'pipes',r.r,r.m.P*1000,{...p,maop:r.m.P})} className={C.o}>💾 Guardar: {p.name}</button>}
+    {p.name && <button onClick={() => onS(p.name, 'pipes', risk, r.m.P * 1000, { ...p, maop: r.m.P })} className={C.o}>Guardar: {p.name}</button>}
   </div>}
   </div>);
 }
@@ -794,7 +802,7 @@ function Pipes({mode,onR,onS}:{mode:Mode,onR:(r:RL)=>void,onS:(n:string,m:string
 function Hydro({onR,onS}:{onR:(r:RL)=>void,onS:(n:string,m:string,r:RL,u:number,c:Record<string,unknown>)=>void}){
   const [p,setP]=useState({Q:'30',D:'0.3',L:'1000',n:'0.013',S:'0.003',name:''});
   const [tab,setTab]=useState('dw');
-  const [r,setR]=useState<null|{dw?:ReturnType<typeof calcDW>,mn?:ReturnType<typeof import('./page').calcManning>}>(null);
+  const [r, setR] = useState<any>(null);
   const sv=(f:Partial<typeof p>)=>setP(x=>({...x,...f}));
 
   const calcManningLocal=(n:number,D:number,S:number)=>{
@@ -805,7 +813,7 @@ function Hydro({onR,onS}:{onR:(r:RL)=>void,onS:(n:string,m:string,r:RL,u:number,
 
   const run=()=>{
     if(tab==='dw'){const d=calcDW(parseFloat(p.Q),parseFloat(p.D),parseFloat(p.L));if(!d)return;setR({dw:d});onR(d.V>3.5?'HIGH':d.V>2.5?'MEDIUM':'LOW');}
-    else{const mn=calcManningLocal(parseFloat(p.n),parseFloat(p.D),parseFloat(p.S));if(!mn)return;setR({mn} as {mn:ReturnType<typeof import('./page').calcManning>});onR('LOW');}
+    const mn=calcManningLocal(parseFloat(p.n),parseFloat(p.D),parseFloat(p.S));if(!mn)return;setR({ mn });
   };
 
   return(<div className="space-y-4"><div className={C.k}>
@@ -1047,7 +1055,7 @@ function Geo({onR,onS}:{onR:(r:RL)=>void,onS:(n:string,m:string,r:RL,u:number,c:
     const res=calcGeo(p.s,parseFloat(p.B),parseFloat(p.L),parseFloat(p.Df),parseFloat(p.Q),parseFloat(p.FS),parseFloat(p.Dw));
     setR(res);
     const er=parseFloat(p.ex)>4&&p.s.includes('arc')?'HIGH':parseFloat(p.ex)>2?'MEDIUM':'LOW';
-    onR(!res.ok?'CRITICAL':parseFloat(res.ut)>80?'HIGH':er as RL);
+    onR(!res.ok ? 'CRITICAL' : res.ut > 80 ? 'HIGH' : (er as RL));
   };
   return(<div className="space-y-4"><div className={C.k}>
     <h3 className="text-[#7EC850] text-[10px] font-black uppercase tracking-widest mb-3">🌍 Geotecnia — Meyerhof + Nivel Freático ✅CORREGIDO v8.0</h3>
@@ -1075,12 +1083,13 @@ function Geo({onR,onS}:{onR:(r:RL)=>void,onS:(n:string,m:string,r:RL,u:number,c:
     {parseFloat(p.ex)>2&&<div className={`rounded-2xl border p-4 ${parseFloat(p.ex)>4&&p.s.includes('arc')?'bg-red-950 border-red-700':'bg-yellow-950 border-yellow-700'}`}>
       <div className="font-black text-sm" style={{color:parseFloat(p.ex)>4?'#FF4560':'#F59E0B'}}>{parseFloat(p.ex)>4&&p.s.includes('arc')?'🚨 RIESGO DE DERRUMBE — ENTIBADO OBLIGATORIO':'⚠️ Excavación con riesgo moderado'}</div>
     </div>}
-    <Badge r={!r.ok?'CRITICAL':parseFloat(r.ut)>80?'HIGH':'LOW'} msg={!r.ok?`❌ FALLA — q_ap=${r.qap} kPa > q_adm=${r.qa} kPa`:`✅ OK — Utilización ${r.ut}% · ${r.freatic_effect}`}/>
+    <Badge r={!r.ok ? 'CRITICAL' : r.ut > 80 ? 'HIGH' : 'LOW'} msg={!r.ok ? '' : ''} />
     <Box t="Meyerhof + Nivel Freático — AASHTO LRFD ✅v8.0" n="CIRSOC 501/ACI 336" rows={[
       ['Nivel freático Dw',p.Dw+' m · '+r.freatic_effect],
       ['q última',r.qu+' kPa'],['q admisible FS='+p.FS,r.qa+' kPa',true],
-      ['q aplicada',r.qap+' kPa'],['Utilización',r.ut+'%',parseFloat(r.ut)>80],
-      ['Veredicto',r.ok?'✅ APTO':'❌ FALLA — Redimensionar',!r.ok]]}/>
+      ['Utilización', r.ut + '%', r.ut > 80],
+      ['Veredicto', r.ok ? 'APTO' : 'FALLA — Redimensionar', !r.ok]
+    ]} />
     {p.name&&<button onClick={()=>onS(p.name,'geo',!r.ok?'CRITICAL':'LOW',0,p as Record<string,unknown>)} className={C.o}>💾 Guardar: {p.name}</button>}
   </div>}
   </div>);
