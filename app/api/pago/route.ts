@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+function getSupabase() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+}
 
 export async function GET() {
   return NextResponse.redirect('https://www.mercadopago.com.ar/subscriptions/checkout?preapproval_plan_id=2c9380849709bcc501970f2bbd880e56')
@@ -15,6 +17,7 @@ export async function POST(req: NextRequest) {
   const { type, data } = body
 
   if (type === 'subscription_preapproval') {
+    const supabase = getSupabase()
     const { error } = await supabase
       .from('suscripciones')
       .upsert({
