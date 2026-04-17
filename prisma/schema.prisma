@@ -3,27 +3,15 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url = env("DATABASE_URL")
 }
 
-model User {
+model Calculo {
   id String @id @default(cuid())
-  email String @unique
-  name String
-  organization String?
-  role String @default("user")
-  createdAt DateTime @default(now())
-  reports Report[]
-}
-
-model Report {
-  id String @id @default(cuid())
-  userId String
-  user User @relation(fields: [userId], references: [id])
-  type String
-  parameters String
-  results String
-  title String?
+  tipo String
+  parametros Json
+  resultado Json
+  usuario String @default("anonimo")
   createdAt DateTime @default(now())
 }
