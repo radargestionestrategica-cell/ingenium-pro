@@ -1,13 +1,22 @@
-import NextAuth from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { NextAuthOptions } from 'next-auth';
+import CredentialsProvider from 'next-auth/providers/credentials';
 
-const handler = NextAuth(authOptions);
-
-export { handler as GET, handler as POST };
-import jwt from 'jsonwebtoken';
-
-export function signJWT(payload: any): string {
-  return jwt.sign(payload, process.env.JWT_SECRET || 'secret', {
-    expiresIn: '7d',
-  });
-}
+export const authOptions: NextAuthOptions = {
+  providers: [
+    CredentialsProvider({
+      name: 'credentials',
+      credentials: {
+        email: { label: 'Email', type: 'email' },
+        password: { label: 'Password', type: 'password' }
+      },
+      async authorize(credentials) {
+        if (credentials?.email && credentials?.password) {
+          return { id: '1', email: credentials.email, name: 'Usuario INGENIUM' };
+        }
+        return null;
+      }
+    })
+  ],
+  session: { strategy: 'jwt' },
+  secret: process.env.NEXTAUTH_SECRET || 'ingenium-secret-2026',
+};
