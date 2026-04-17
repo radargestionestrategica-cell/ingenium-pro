@@ -1,6 +1,5 @@
 export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
 
 export async function POST(req: NextRequest) {
   try {
@@ -15,17 +14,14 @@ export async function POST(req: NextRequest) {
       body: JSON.stringify({
         model: 'claude-opus-4-5',
         max_tokens: 1024,
-        system: `Eres INGENIUM PRO, asistente técnico de ingeniería profesional mundial. Especialidades: petróleo, gas, hidráulica, minería, geotecnia, vialidad, estructuras, acueductos, represas, arquitectura técnica. Normas: ASME B31.1/B31.3/B31.8, API 579, API 5L, AWWA, USACE EM, ACI, AISC, ISO. Respondés en español técnico profesional. Sos preciso, concreto, no alucinas valores.`,
+        system: `Eres INGENIUM PRO, asistente técnico de ingeniería profesional mundial. Normas: ASME B31.1/B31.3/B31.8, API 579, AWWA, USACE. Respondés en español técnico profesional, preciso, sin alucinar valores.`,
         messages: [{ role: 'user', content: message }],
       }),
     });
     const data = await response.json();
     const reply = data.content?.[0]?.text || 'Sin respuesta del motor.';
-    await db.calculo.create({
-      data: { tipo: 'consulta', parametros: { mensaje: message }, resultado: { respuesta: reply } },
-    });
     return NextResponse.json({ reply });
-  } catch (error) {
+  } catch {
     return NextResponse.json({ reply: 'Error de conexión.' });
   }
 }
