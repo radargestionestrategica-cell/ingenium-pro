@@ -266,14 +266,14 @@ export default function IngeniumPro() {
         <div className="max-w-5xl mx-auto px-4 py-2 flex gap-2 overflow-x-auto">
           {[{i:'petroleo',l:'Petróleo'},{i:'hidraulica',l:'Hidráulica'},{i:'mineria',l:'Minería'},{i:'civil',l:'Civil'},{i:'geotecnia',l:'Geotecnia'},{i:'termica',l:'Térmica'},{i:'vialidad',l:'Vialidad'},{i:'arquitectura',l:'Arquitectura'}].map(m=>(
             <button key={m.l} onClick={()=>setModuloActivo(m.l.toLowerCase())} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-violet-500/20 border border-white/10 hover:border-violet-500/40 transition-all text-xs whitespace-nowrap">
-              <span>{m.i}</span><span className="text-slate-300">{m.l}</span>
+              <span className="text-slate-300">{m.l}</span>
             </button>
           ))}
         </div>
       </div>
 
       <div className="flex-1 overflow-y-auto">
- {moduloActivo!=="chat" && <div style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",color:"white"}}><div style={{textAlign:"center",padding:32}}><h2 style={{fontSize:28,fontWeight:"bold",marginBottom:16,textTransform:"capitalize"}}>{moduloActivo}</h2><p style={{color:"#94a3b8"}}>Usa el chat para consultas de este modulo.</p></div></div>}
+ {moduloActivo!=="chat" && moduloActivo!=="petroleo" && moduloActivo!=="perforacion" && <div style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",color:"white"}}><div style={{textAlign:"center",padding:32}}><h2 style={{fontSize:28,fontWeight:"bold",marginBottom:16,textTransform:"capitalize"}}>{moduloActivo}</h2><p style={{color:"#94a3b8"}}>Usa el chat para consultas de este modulo.</p></div></div>}
         <div className="max-w-4xl mx-auto px-4 py-6 space-y-6">
           {messages.map((msg,i)=>(
             <div key={i} className={`flex ${msg.role==='user'?'justify-end':'justify-start'}`}>
@@ -373,3 +373,5 @@ export default function IngeniumPro() {
   );
   
 }
+
+
