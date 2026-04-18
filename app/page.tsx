@@ -1,7 +1,7 @@
 'use client';
-export const dynamic = 'force-dynamic';
 import ModuloPerforacion from '@/components/ModuloPerforacion';
 import { useState, useRef, useEffect } from 'react';
+export const dynamic = 'force-dynamic';
 
 type RL = 'LOW'|'MEDIUM'|'HIGH'|'CRITICAL';
 
