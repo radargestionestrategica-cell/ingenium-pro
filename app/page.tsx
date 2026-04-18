@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 import ModuloPerforacion from '@/components/ModuloPerforacion';
 import { useState, useRef, useEffect } from 'react';
 
@@ -273,7 +273,7 @@ export default function IngeniumPro() {
       </div>
 
       <div className="flex-1 overflow-y-auto">
- {moduloActivo!=="chat" && moduloActivo!=="petroleo" && moduloActivo!=="perforacion" && <div style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",color:"white"}}><div style={{textAlign:"center",padding:32}}><h2 style={{fontSize:28,fontWeight:"bold",marginBottom:16,textTransform:"capitalize"}}>{moduloActivo}</h2><p style={{color:"#94a3b8"}}>Usa el chat para consultas de este modulo.</p></div></div>}
+ {moduloActivo!=="chat" && moduloActivo!=="petroleo" && moduloActivo!=="perforacion" && moduloActivo!=="petroleo" && moduloActivo!=="perforacion" && moduloActivo!=="petroleo" && moduloActivo!=="perforacion" && moduloActivo!=="petroleo" && moduloActivo!=="perforacion" && <div style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",color:"white"}}><div style={{textAlign:"center",padding:32}}><h2 style={{fontSize:28,fontWeight:"bold",marginBottom:16,textTransform:"capitalize"}}>{moduloActivo}</h2><p style={{color:"#94a3b8"}}>Usa el chat para consultas de este modulo.</p></div></div>}
         <div className="max-w-4xl mx-auto px-4 py-6 space-y-6">
           {messages.map((msg,i)=>(
             <div key={i} className={`flex ${msg.role==='user'?'justify-end':'justify-start'}`}>
