@@ -206,7 +206,7 @@ export default function IngeniumPro() {
     role:'assistant',
     content:'**Bienvenido a INGENIUM PRO v8.0**\n\nSoy tu asistente de ingeniería técnica de precisión. Calculá y analizá:\n\n **MAOP**  Presión máxima gasoductos/oleoductos (ASME B31.8)\n **Golpe de ariete**  Joukowsky completo\n **Pérdidas hidráulicas**  Darcy-Weisbach\n **Estabilidad de taludes**  Bishop\n **Capacidad portante**  Meyerhof\n **Dilatación térmica**  ASME B31.3\n\nEscribí tu consulta técnica con los datos del proyecto.'
   }]);
- const [moduloActivo, setModuloActivo] = useState('chat');
+ const [moduloActivo, setModuloActivo] = useState('petr�leo');
   const [input,setInput]=useState('');
   const [loading,setLoading]=useState(false);
   const endRef=useRef<HTMLDivElement>(null);
