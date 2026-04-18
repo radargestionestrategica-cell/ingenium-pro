@@ -13,7 +13,7 @@ function calcMAOP(OD:number, t:number, SMYS:number, F=0.72, E_joint=1.0, T_op=20
   const P = ratio>0.15?Pl:ratio>0.10?Pb*(1-(ratio-0.10)/0.05)+Pl*(ratio-0.10)/0.05:Pb;
   return {
     P:+P.toFixed(3), bar:+(P*10).toFixed(2), psi:+(P*145).toFixed(0),
-    reg:ratio>0.15?'PARED GRUESA â€” Lamé':ratio>0.10?'TRANSICIÁ“N':'PARED DELGADA â€” Barlow',
+    reg:ratio>0.15?'PARED GRUESA  Lamé':ratio>0.10?'TRANSICIÁN':'PARED DELGADA  Barlow',
     ratio:+(ratio*100).toFixed(1), T_factor, E_joint
   };
 }
@@ -86,7 +86,7 @@ function interpretQuery(q: string) {
     const res = calcMAOP(OD/1000, t/1000, SMYS);
     if(!res) return null;
     return {
-      type:'MAOP', title:'Presión Máxima Admisible (MAOP)', norma:'ASME B31.8 Â§841.11',
+      type:'MAOP', title:'Presión Máxima Admisible (MAOP)', norma:'ASME B31.8 841.11',
       inputs:{OD:`${OD} mm`, t:`${t} mm`, SMYS:`${SMYS} MPa`, F:'0.72'},
       results:[
         {label:'MAOP', value:`${res.P} MPa`, highlight:true},
@@ -127,7 +127,7 @@ function interpretQuery(q: string) {
         {label:'Pérdida de carga', value:`${res.hf} m`, highlight:true},
         {label:'Reynolds', value:res.Re.toString()},
         {label:'Régimen', value:res.reg},
-        {label:'Î”P', value:`${res.dP} kPa`},
+        {label:'P', value:`${res.dP} kPa`},
       ], risk:res.V>3?'HIGH':res.V>2?'MEDIUM':'LOW' as RL
     };
   }
@@ -138,7 +138,7 @@ function interpretQuery(q: string) {
     if(!res) return null;
     return {
       type:'BISHOP', title:'Estabilidad de Taludes (Bishop)', norma:'USACE EM 1110-2-1902',
-      inputs:{H:`${H} m`, beta:`${beta}Â°`, c:'20 kPa', phi:'25Â°'},
+      inputs:{H:`${H} m`, beta:`${beta}°`, c:'20 kPa', phi:'25°'},
       results:[
         {label:'Factor de seguridad', value:res.FS.toString(), highlight:true},
         {label:'Fuerza normal', value:`${res.N} kN/m`},
@@ -154,7 +154,7 @@ function interpretQuery(q: string) {
     if(!res) return null;
     return {
       type:'MEYERHOF', title:'Capacidad Portante (Meyerhof)', norma:'Meyerhof (1963)',
-      inputs:{B:`${B} m`, Df:`${Df} m`, c:'20 kPa', phi:'25Â°'},
+      inputs:{B:`${B} m`, Df:`${Df} m`, c:'20 kPa', phi:'25°'},
       results:[
         {label:'Cap. última', value:`${res.qu} kPa`, highlight:true},
         {label:'Cap. admisible', value:`${res.qa} kPa`, highlight:true},
@@ -171,11 +171,11 @@ function interpretQuery(q: string) {
     if(!res) return null;
     return {
       type:'THERMAL', title:'Dilatación Térmica (ASME B31.3)', norma:'ASME B31.3 Appendix C',
-      inputs:{L:`${L} m`, T1:`${T1}Â°C`, T2:`${T2}Â°C`},
+      inputs:{L:`${L} m`, T1:`${T1}°C`, T2:`${T2}°C`},
       results:[
         {label:'Dilatación', value:`${res.dL} mm`, highlight:true},
-        {label:'Î”T', value:`${res.dT}Â°C`},
-        {label:'Î±', value:`${res.alpha} Á—10â»â¶/Â°C`},
+        {label:'T', value:`${res.dT}°C`},
+        {label:'', value:`${res.alpha} Á—10/°C`},
       ], risk:res.risk
     };
   }
@@ -188,7 +188,7 @@ const riskColors:Record<RL,string>={
   HIGH:'text-orange-400 bg-orange-400/10 border-orange-400/30',
   CRITICAL:'text-red-400 bg-red-400/10 border-red-400/30',
 };
-const riskLabel:Record<RL,string>={LOW:'âœ“ SEGURO',MEDIUM:'âš  MODERADO',HIGH:'âš¡ ALTO',CRITICAL:'ðŸ”´ CRÁTICO'};
+const riskLabel:Record<RL,string>={LOW:' SEGURO',MEDIUM:' MODERADO',HIGH:'¡ ALTO',CRITICAL:' CRÁTICO'};
 
 interface CalcResult {
   type:string; title:string; norma:string;
@@ -204,7 +204,7 @@ interface Message {
 export default function IngeniumPro() {
   const [messages,setMessages]=useState<Message[]>([{
     role:'assistant',
-    content:'**Bienvenido a INGENIUM PRO v8.0**\n\nSoy tu asistente de ingeniería técnica de precisión. Calculá y analizá:\n\n• **MAOP** â€” Presión máxima gasoductos/oleoductos (ASME B31.8)\n• **Golpe de ariete** â€” Joukowsky completo\n• **Pérdidas hidráulicas** â€” Darcy-Weisbach\n• **Estabilidad de taludes** â€” Bishop\n• **Capacidad portante** â€” Meyerhof\n• **Dilatación térmica** â€” ASME B31.3\n\nEscribí tu consulta técnica con los datos del proyecto.'
+    content:'**Bienvenido a INGENIUM PRO v8.0**\n\nSoy tu asistente de ingeniería técnica de precisión. Calculá y analizá:\n\n **MAOP**  Presión máxima gasoductos/oleoductos (ASME B31.8)\n **Golpe de ariete**  Joukowsky completo\n **Pérdidas hidráulicas**  Darcy-Weisbach\n **Estabilidad de taludes**  Bishop\n **Capacidad portante**  Meyerhof\n **Dilatación térmica**  ASME B31.3\n\nEscribí tu consulta técnica con los datos del proyecto.'
   }]);
  const [moduloActivo, setModuloActivo] = useState('chat');
   const [input,setInput]=useState('');
@@ -242,14 +242,14 @@ export default function IngeniumPro() {
     setLoading(false);
   };
 
-  const examples=['MAOP gasoducto 12" X65 junta ERW post-1970','Golpe de ariete acueducto DN400 L=2km','Pérdidas hidráulicas Q=80 L/s D=300mm L=500m','Estabilidad talud 30Â° H=8m arcilla','Capacidad portante cimentación B=2m Df=1.5m','Dilatación térmica 100m acero Î”T=60Â°C'];
+  const examples=['MAOP gasoducto 12" X65 junta ERW post-1970','Golpe de ariete acueducto DN400 L=2km','Pérdidas hidráulicas Q=80 L/s D=300mm L=500m','Estabilidad talud 30° H=8m arcilla','Capacidad portante cimentación B=2m Df=1.5m','Dilatación térmica 100m acero T=60°C'];
 
   return(
     <div className="min-h-screen bg-[#0a0f1a] text-white flex flex-col" style={{fontFamily:'Inter,system-ui,sans-serif'}}>
       <header className="border-b border-white/10 bg-[#0d1526]/90 backdrop-blur-sm sticky top-0 z-50">
         <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-violet-500 to-cyan-500 flex items-center justify-center font-bold text-sm">Î©</div>
+            <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-violet-500 to-cyan-500 flex items-center justify-center font-bold text-sm">©</div>
             <div>
               <div className="font-bold tracking-wide">INGENIUM PRO</div>
               <div className="text-xs text-slate-400">v8.0 · Plataforma de Ingeniería Técnica</div>
@@ -264,7 +264,7 @@ export default function IngeniumPro() {
 
       <div className="border-b border-white/5 bg-[#0d1526]/50">
         <div className="max-w-5xl mx-auto px-4 py-2 flex gap-2 overflow-x-auto">
-          {[{i:'ðŸ›¢',l:'Petróleo'},{i:'ðŸ’§',l:'Hidráulica'},{i:'â›',l:'Minería'},{i:'ðŸ—',l:'Civil'},{i:'ðŸ”¬',l:'Geotecnia'},{i:'ðŸŒ¡',l:'Térmica'},{i:'âš¡',l:'Vialidad'},{i:'ðŸ›',l:'Arquitectura'}].map(m=>(
+          {[{i:'',l:'Petróleo'},{i:'',l:'Hidráulica'},{i:'',l:'Minería'},{i:'—',l:'Civil'},{i:'',l:'Geotecnia'},{i:'¡',l:'Térmica'},{i:'¡',l:'Vialidad'},{i:'',l:'Arquitectura'}].map(m=>(
             <button key={m.l} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-violet-500/20 border border-white/10 hover:border-violet-500/40 transition-all text-xs whitespace-nowrap">
               <span>{m.i}</span><span className="text-slate-300">{m.l}</span>
             </button>
@@ -276,7 +276,7 @@ export default function IngeniumPro() {
         <div className="max-w-4xl mx-auto px-4 py-6 space-y-6">
           {messages.map((msg,i)=>(
             <div key={i} className={`flex ${msg.role==='user'?'justify-end':'justify-start'}`}>
-              {msg.role==='assistant'&&<div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-cyan-500 flex items-center justify-center text-xs font-bold mr-3 mt-1 shrink-0">Î©</div>}
+              {msg.role==='assistant'&&<div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-cyan-500 flex items-center justify-center text-xs font-bold mr-3 mt-1 shrink-0">©</div>}
               <div className="max-w-2xl">
                 {msg.role==='user'?(
                   <div className="bg-violet-600/20 border border-violet-500/30 rounded-2xl rounded-tr-sm px-4 py-3 text-sm">{msg.content}</div>
@@ -287,7 +287,7 @@ export default function IngeniumPro() {
                         <div className="bg-gradient-to-r from-violet-900/40 to-cyan-900/40 border-b border-white/10 px-4 py-3 flex items-center justify-between">
                           <div>
                             <div className="font-semibold text-sm">{msg.calcResult.title}</div>
-                            <div className="text-xs text-slate-400 mt-0.5">ðŸ“‹ {msg.calcResult.norma}</div>
+                            <div className="text-xs text-slate-400 mt-0.5"> {msg.calcResult.norma}</div>
                           </div>
                           <span className={`text-xs font-bold px-2 py-1 rounded-full border ${riskColors[msg.calcResult.risk]}`}>{riskLabel[msg.calcResult.risk]}</span>
                         </div>
