@@ -206,6 +206,7 @@ export default function IngeniumPro() {
     role:'assistant',
     content:'**Bienvenido a INGENIUM PRO v8.0**\n\nSoy tu asistente de ingenierÃ­a tÃ©cnica de precisiÃ³n. CalculÃ¡ y analizÃ¡:\n\nâ€¢ **MAOP** â€” PresiÃ³n mÃ¡xima gasoductos/oleoductos (ASME B31.8)\nâ€¢ **Golpe de ariete** â€” Joukowsky completo\nâ€¢ **PÃ©rdidas hidrÃ¡ulicas** â€” Darcy-Weisbach\nâ€¢ **Estabilidad de taludes** â€” Bishop\nâ€¢ **Capacidad portante** â€” Meyerhof\nâ€¢ **DilataciÃ³n tÃ©rmica** â€” ASME B31.3\n\nEscribÃ­ tu consulta tÃ©cnica con los datos del proyecto.'
   }]);
+ const [moduloActivo, setModuloActivo] = useState('chat');
   const [input,setInput]=useState('');
   const [loading,setLoading]=useState(false);
   const endRef=useRef<HTMLDivElement>(null);
