@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 'use client';
 import ModuloPerforacion from '@/components/ModuloPerforacion';
 import { useState, useRef, useEffect } from 'react';
