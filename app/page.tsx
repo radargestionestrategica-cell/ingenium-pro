@@ -1,7 +1,6 @@
-'use client';
+﻿'use client';
 import ModuloPerforacion from '@/components/ModuloPerforacion';
 import { useState, useRef, useEffect } from 'react';
-export const dynamic = 'force-dynamic';
 
 type RL = 'LOW'|'MEDIUM'|'HIGH'|'CRITICAL';
 
@@ -14,7 +13,7 @@ function calcMAOP(OD:number, t:number, SMYS:number, F=0.72, E_joint=1.0, T_op=20
   const P = ratio>0.15?Pl:ratio>0.10?Pb*(1-(ratio-0.10)/0.05)+Pl*(ratio-0.10)/0.05:Pb;
   return {
     P:+P.toFixed(3), bar:+(P*10).toFixed(2), psi:+(P*145).toFixed(0),
-    reg:ratio>0.15?'PARED GRUESA — Lamé':ratio>0.10?'TRANSICIÓN':'PARED DELGADA — Barlow',
+    reg:ratio>0.15?'PARED GRUESA â€” LamÃ©':ratio>0.10?'TRANSICIÃ“N':'PARED DELGADA â€” Barlow',
     ratio:+(ratio*100).toFixed(1), T_factor, E_joint
   };
 }
@@ -31,7 +30,7 @@ function calcDW(Q:number, D:number, L:number, rough=0.046, K_minor=0) {
     V:+V.toFixed(3), Re:+Re.toFixed(0), f:+f.toFixed(6),
     hf:+hf.toFixed(3), hf_mayor:+hf_mayor.toFixed(3), hf_menor:+hf_menor.toFixed(3),
     dP:+(998*9.81*hf/1000).toFixed(2),
-    reg:Re<2300?'Laminar':Re<4000?'Transición':'Turbulento'
+    reg:Re<2300?'Laminar':Re<4000?'TransiciÃ³n':'Turbulento'
   };
 }
 
@@ -80,21 +79,21 @@ function interpretQuery(q: string) {
   const lower = q.toLowerCase();
   const nums = (q.match(/\d+\.?\d*/g)||[]).map(Number);
 
-  if (lower.includes('maop')||lower.includes('presión máxima')||lower.includes('gasoducto')||lower.includes('oleoducto')) {
+  if (lower.includes('maop')||lower.includes('presiÃ³n mÃ¡xima')||lower.includes('gasoducto')||lower.includes('oleoducto')) {
     const OD = nums.find(n=>n>50&&n<2000)||323.9;
     const t = nums.find(n=>n>2&&n<50)||9.5;
     const SMYS = nums.find(n=>n>200&&n<700)||359;
     const res = calcMAOP(OD/1000, t/1000, SMYS);
     if(!res) return null;
     return {
-      type:'MAOP', title:'Presión Máxima Admisible (MAOP)', norma:'ASME B31.8 §841.11',
+      type:'MAOP', title:'PresiÃ³n MÃ¡xima Admisible (MAOP)', norma:'ASME B31.8 Â§841.11',
       inputs:{OD:`${OD} mm`, t:`${t} mm`, SMYS:`${SMYS} MPa`, F:'0.72'},
       results:[
         {label:'MAOP', value:`${res.P} MPa`, highlight:true},
         {label:'MAOP', value:`${res.bar} bar`},
         {label:'MAOP', value:`${res.psi} psi`},
-        {label:'Régimen', value:res.reg},
-        {label:'Relación t/D', value:`${res.ratio}%`},
+        {label:'RÃ©gimen', value:res.reg},
+        {label:'RelaciÃ³n t/D', value:`${res.ratio}%`},
       ], risk:'LOW' as RL
     };
   }
@@ -108,27 +107,27 @@ function interpretQuery(q: string) {
       inputs:{D:`${D*1000} mm`, L:`${L} m`, dV:'2 m/s'},
       results:[
         {label:'Celeridad de onda', value:`${res.a} m/s`, highlight:true},
-        {label:'Sobrepresión', value:`${res.dP_MPa} MPa`, highlight:true},
-        {label:'Sobrepresión', value:`${res.dP_bar} bar`},
-        {label:'Tiempo crítico', value:`${res.Tc} s`},
+        {label:'SobrepresiÃ³n', value:`${res.dP_MPa} MPa`, highlight:true},
+        {label:'SobrepresiÃ³n', value:`${res.dP_bar} bar`},
+        {label:'Tiempo crÃ­tico', value:`${res.Tc} s`},
       ], risk:res.risk
     };
   }
-  if (lower.includes('darcy')||lower.includes('pérdida')||lower.includes('caudal')||lower.includes('hidráulica')||lower.includes('tubería')) {
+  if (lower.includes('darcy')||lower.includes('pÃ©rdida')||lower.includes('caudal')||lower.includes('hidrÃ¡ulica')||lower.includes('tuberÃ­a')) {
     const Q=nums.find(n=>n>0.1&&n<10000)||50;
     const D=(nums.find(n=>n>50&&n<2000)||200)/1000;
     const L=nums.find(n=>n>10&&n<100000)||1000;
     const res=calcDW(Q,D,L);
     if(!res) return null;
     return {
-      type:'DARCY', title:'Pérdidas Hidráulicas (Darcy-Weisbach)', norma:'Darcy-Weisbach / Colebrook-White',
+      type:'DARCY', title:'PÃ©rdidas HidrÃ¡ulicas (Darcy-Weisbach)', norma:'Darcy-Weisbach / Colebrook-White',
       inputs:{Q:`${Q} L/s`, D:`${D*1000} mm`, L:`${L} m`},
       results:[
         {label:'Velocidad', value:`${res.V} m/s`, highlight:true},
-        {label:'Pérdida de carga', value:`${res.hf} m`, highlight:true},
+        {label:'PÃ©rdida de carga', value:`${res.hf} m`, highlight:true},
         {label:'Reynolds', value:res.Re.toString()},
-        {label:'Régimen', value:res.reg},
-        {label:'ΔP', value:`${res.dP} kPa`},
+        {label:'RÃ©gimen', value:res.reg},
+        {label:'Î”P', value:`${res.dP} kPa`},
       ], risk:res.V>3?'HIGH':res.V>2?'MEDIUM':'LOW' as RL
     };
   }
@@ -139,7 +138,7 @@ function interpretQuery(q: string) {
     if(!res) return null;
     return {
       type:'BISHOP', title:'Estabilidad de Taludes (Bishop)', norma:'USACE EM 1110-2-1902',
-      inputs:{H:`${H} m`, beta:`${beta}°`, c:'20 kPa', phi:'25°'},
+      inputs:{H:`${H} m`, beta:`${beta}Â°`, c:'20 kPa', phi:'25Â°'},
       results:[
         {label:'Factor de seguridad', value:res.FS.toString(), highlight:true},
         {label:'Fuerza normal', value:`${res.N} kN/m`},
@@ -148,35 +147,35 @@ function interpretQuery(q: string) {
       ], risk:res.risk
     };
   }
-  if (lower.includes('cimentación')||lower.includes('portante')||lower.includes('meyerhof')||lower.includes('suelo')||lower.includes('fundación')) {
+  if (lower.includes('cimentaciÃ³n')||lower.includes('portante')||lower.includes('meyerhof')||lower.includes('suelo')||lower.includes('fundaciÃ³n')) {
     const B=nums.find(n=>n>0.5&&n<20)||2;
     const Df=nums.find(n=>n>0.3&&n<10)||1.5;
     const res=calcMeyerhof(20,25,18,B,Df);
     if(!res) return null;
     return {
       type:'MEYERHOF', title:'Capacidad Portante (Meyerhof)', norma:'Meyerhof (1963)',
-      inputs:{B:`${B} m`, Df:`${Df} m`, c:'20 kPa', phi:'25°'},
+      inputs:{B:`${B} m`, Df:`${Df} m`, c:'20 kPa', phi:'25Â°'},
       results:[
-        {label:'Cap. última', value:`${res.qu} kPa`, highlight:true},
+        {label:'Cap. Ãºltima', value:`${res.qu} kPa`, highlight:true},
         {label:'Cap. admisible', value:`${res.qa} kPa`, highlight:true},
         {label:'Nc', value:res.Nc.toString()},
         {label:'Nq', value:res.Nq.toString()},
       ], risk:res.risk
     };
   }
-  if (lower.includes('dilatación')||lower.includes('térmica')||lower.includes('expansión')||lower.includes('temperatura')) {
+  if (lower.includes('dilataciÃ³n')||lower.includes('tÃ©rmica')||lower.includes('expansiÃ³n')||lower.includes('temperatura')) {
     const L=nums.find(n=>n>1&&n<10000)||100;
     const T1=nums.find(n=>n>-50&&n<100)||20;
     const T2=nums.find(n=>n>50&&n<500)||80;
     const res=calcThermal(L,T1,T2);
     if(!res) return null;
     return {
-      type:'THERMAL', title:'Dilatación Térmica (ASME B31.3)', norma:'ASME B31.3 Appendix C',
-      inputs:{L:`${L} m`, T1:`${T1}°C`, T2:`${T2}°C`},
+      type:'THERMAL', title:'DilataciÃ³n TÃ©rmica (ASME B31.3)', norma:'ASME B31.3 Appendix C',
+      inputs:{L:`${L} m`, T1:`${T1}Â°C`, T2:`${T2}Â°C`},
       results:[
-        {label:'Dilatación', value:`${res.dL} mm`, highlight:true},
-        {label:'ΔT', value:`${res.dT}°C`},
-        {label:'α', value:`${res.alpha} ×10⁻⁶/°C`},
+        {label:'DilataciÃ³n', value:`${res.dL} mm`, highlight:true},
+        {label:'Î”T', value:`${res.dT}Â°C`},
+        {label:'Î±', value:`${res.alpha} Ã—10â»â¶/Â°C`},
       ], risk:res.risk
     };
   }
@@ -189,7 +188,7 @@ const riskColors:Record<RL,string>={
   HIGH:'text-orange-400 bg-orange-400/10 border-orange-400/30',
   CRITICAL:'text-red-400 bg-red-400/10 border-red-400/30',
 };
-const riskLabel:Record<RL,string>={LOW:'✓ SEGURO',MEDIUM:'⚠ MODERADO',HIGH:'⚡ ALTO',CRITICAL:'🔴 CRÍTICO'};
+const riskLabel:Record<RL,string>={LOW:'âœ“ SEGURO',MEDIUM:'âš  MODERADO',HIGH:'âš¡ ALTO',CRITICAL:'ðŸ”´ CRÃTICO'};
 
 interface CalcResult {
   type:string; title:string; norma:string;
@@ -205,7 +204,7 @@ interface Message {
 export default function IngeniumPro() {
   const [messages,setMessages]=useState<Message[]>([{
     role:'assistant',
-    content:'**Bienvenido a INGENIUM PRO v8.0**\n\nSoy tu asistente de ingeniería técnica de precisión. Calculá y analizá:\n\n• **MAOP** — Presión máxima gasoductos/oleoductos (ASME B31.8)\n• **Golpe de ariete** — Joukowsky completo\n• **Pérdidas hidráulicas** — Darcy-Weisbach\n• **Estabilidad de taludes** — Bishop\n• **Capacidad portante** — Meyerhof\n• **Dilatación térmica** — ASME B31.3\n\nEscribí tu consulta técnica con los datos del proyecto.'
+    content:'**Bienvenido a INGENIUM PRO v8.0**\n\nSoy tu asistente de ingenierÃ­a tÃ©cnica de precisiÃ³n. CalculÃ¡ y analizÃ¡:\n\nâ€¢ **MAOP** â€” PresiÃ³n mÃ¡xima gasoductos/oleoductos (ASME B31.8)\nâ€¢ **Golpe de ariete** â€” Joukowsky completo\nâ€¢ **PÃ©rdidas hidrÃ¡ulicas** â€” Darcy-Weisbach\nâ€¢ **Estabilidad de taludes** â€” Bishop\nâ€¢ **Capacidad portante** â€” Meyerhof\nâ€¢ **DilataciÃ³n tÃ©rmica** â€” ASME B31.3\n\nEscribÃ­ tu consulta tÃ©cnica con los datos del proyecto.'
   }]);
   const [input,setInput]=useState('');
   const [loading,setLoading]=useState(false);
@@ -224,11 +223,11 @@ export default function IngeniumPro() {
       setMessages(prev=>[...prev,{role:'assistant',content:'',calcResult:calc,loading:true}]);
       try{
         const res=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},
-          body:JSON.stringify({message:`Eres INGENIUM PRO. El usuario consultó: "${userMsg}". Resultados de ${calc.title}: ${JSON.stringify(calc.results)}. Norma: ${calc.norma}. Analizá en 3 oraciones técnicas profesionales en español: interpretá los resultados, si son seguros y qué recomendar.`})});
+          body:JSON.stringify({message:`Eres INGENIUM PRO. El usuario consultÃ³: "${userMsg}". Resultados de ${calc.title}: ${JSON.stringify(calc.results)}. Norma: ${calc.norma}. AnalizÃ¡ en 3 oraciones tÃ©cnicas profesionales en espaÃ±ol: interpretÃ¡ los resultados, si son seguros y quÃ© recomendar.`})});
         const data=await res.json();
-        setMessages(prev=>prev.map(m=>m.loading?{...m,content:data.reply||'Análisis completado.',loading:false}:m));
+        setMessages(prev=>prev.map(m=>m.loading?{...m,content:data.reply||'AnÃ¡lisis completado.',loading:false}:m));
       }catch{
-        setMessages(prev=>prev.map(m=>m.loading?{...m,content:'Cálculo completado según normativa vigente.',loading:false}:m));
+        setMessages(prev=>prev.map(m=>m.loading?{...m,content:'CÃ¡lculo completado segÃºn normativa vigente.',loading:false}:m));
       }
     }else{
       try{
@@ -236,23 +235,23 @@ export default function IngeniumPro() {
         const data=await res.json();
         setMessages(prev=>[...prev,{role:'assistant',content:data.reply||'No pude procesar la consulta.'}]);
       }catch{
-        setMessages(prev=>[...prev,{role:'assistant',content:'Error de conexión.'}]);
+        setMessages(prev=>[...prev,{role:'assistant',content:'Error de conexiÃ³n.'}]);
       }
     }
     setLoading(false);
   };
 
-  const examples=['MAOP gasoducto 12" X65 junta ERW post-1970','Golpe de ariete acueducto DN400 L=2km','Pérdidas hidráulicas Q=80 L/s D=300mm L=500m','Estabilidad talud 30° H=8m arcilla','Capacidad portante cimentación B=2m Df=1.5m','Dilatación térmica 100m acero ΔT=60°C'];
+  const examples=['MAOP gasoducto 12" X65 junta ERW post-1970','Golpe de ariete acueducto DN400 L=2km','PÃ©rdidas hidrÃ¡ulicas Q=80 L/s D=300mm L=500m','Estabilidad talud 30Â° H=8m arcilla','Capacidad portante cimentaciÃ³n B=2m Df=1.5m','DilataciÃ³n tÃ©rmica 100m acero Î”T=60Â°C'];
 
   return(
     <div className="min-h-screen bg-[#0a0f1a] text-white flex flex-col" style={{fontFamily:'Inter,system-ui,sans-serif'}}>
       <header className="border-b border-white/10 bg-[#0d1526]/90 backdrop-blur-sm sticky top-0 z-50">
         <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-violet-500 to-cyan-500 flex items-center justify-center font-bold text-sm">Ω</div>
+            <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-violet-500 to-cyan-500 flex items-center justify-center font-bold text-sm">Î©</div>
             <div>
               <div className="font-bold tracking-wide">INGENIUM PRO</div>
-              <div className="text-xs text-slate-400">v8.0 · Plataforma de Ingeniería Técnica</div>
+              <div className="text-xs text-slate-400">v8.0 Â· Plataforma de IngenierÃ­a TÃ©cnica</div>
             </div>
           </div>
           <div className="flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/30 px-3 py-1 rounded-full">
@@ -264,7 +263,7 @@ export default function IngeniumPro() {
 
       <div className="border-b border-white/5 bg-[#0d1526]/50">
         <div className="max-w-5xl mx-auto px-4 py-2 flex gap-2 overflow-x-auto">
-          {[{i:'🛢',l:'Petróleo'},{i:'💧',l:'Hidráulica'},{i:'⛏',l:'Minería'},{i:'🏗',l:'Civil'},{i:'🔬',l:'Geotecnia'},{i:'🌡',l:'Térmica'},{i:'⚡',l:'Vialidad'},{i:'🏛',l:'Arquitectura'}].map(m=>(
+          {[{i:'ðŸ›¢',l:'PetrÃ³leo'},{i:'ðŸ’§',l:'HidrÃ¡ulica'},{i:'â›',l:'MinerÃ­a'},{i:'ðŸ—',l:'Civil'},{i:'ðŸ”¬',l:'Geotecnia'},{i:'ðŸŒ¡',l:'TÃ©rmica'},{i:'âš¡',l:'Vialidad'},{i:'ðŸ›',l:'Arquitectura'}].map(m=>(
             <button key={m.l} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-violet-500/20 border border-white/10 hover:border-violet-500/40 transition-all text-xs whitespace-nowrap">
               <span>{m.i}</span><span className="text-slate-300">{m.l}</span>
             </button>
@@ -276,7 +275,7 @@ export default function IngeniumPro() {
         <div className="max-w-4xl mx-auto px-4 py-6 space-y-6">
           {messages.map((msg,i)=>(
             <div key={i} className={`flex ${msg.role==='user'?'justify-end':'justify-start'}`}>
-              {msg.role==='assistant'&&<div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-cyan-500 flex items-center justify-center text-xs font-bold mr-3 mt-1 shrink-0">Ω</div>}
+              {msg.role==='assistant'&&<div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-cyan-500 flex items-center justify-center text-xs font-bold mr-3 mt-1 shrink-0">Î©</div>}
               <div className="max-w-2xl">
                 {msg.role==='user'?(
                   <div className="bg-violet-600/20 border border-violet-500/30 rounded-2xl rounded-tr-sm px-4 py-3 text-sm">{msg.content}</div>
@@ -287,12 +286,12 @@ export default function IngeniumPro() {
                         <div className="bg-gradient-to-r from-violet-900/40 to-cyan-900/40 border-b border-white/10 px-4 py-3 flex items-center justify-between">
                           <div>
                             <div className="font-semibold text-sm">{msg.calcResult.title}</div>
-                            <div className="text-xs text-slate-400 mt-0.5">📋 {msg.calcResult.norma}</div>
+                            <div className="text-xs text-slate-400 mt-0.5">ðŸ“‹ {msg.calcResult.norma}</div>
                           </div>
                           <span className={`text-xs font-bold px-2 py-1 rounded-full border ${riskColors[msg.calcResult.risk]}`}>{riskLabel[msg.calcResult.risk]}</span>
                         </div>
                         <div className="px-4 py-3 border-b border-white/5">
-                          <div className="text-xs text-slate-500 mb-2 uppercase tracking-wider">Parámetros</div>
+                          <div className="text-xs text-slate-500 mb-2 uppercase tracking-wider">ParÃ¡metros</div>
                           <div className="flex flex-wrap gap-2">
                             {Object.entries(msg.calcResult.inputs).map(([k,v])=>(
                               <span key={k} className="text-xs bg-white/5 border border-white/10 px-2 py-1 rounded text-slate-300"><span className="text-slate-500">{k}:</span> {v}</span>
@@ -348,7 +347,7 @@ export default function IngeniumPro() {
           <div className="flex gap-3 items-end">
             <div className="flex-1 bg-white/5 border border-white/10 focus-within:border-violet-500/50 rounded-xl transition-all">
               <textarea value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send()}}}
-                placeholder="Consultá tu cálculo técnico de ingeniería... (Enter para enviar)"
+                placeholder="ConsultÃ¡ tu cÃ¡lculo tÃ©cnico de ingenierÃ­a... (Enter para enviar)"
                 rows={1} disabled={loading}
                 className="w-full bg-transparent px-4 py-3 text-sm placeholder-slate-500 resize-none outline-none"
                 style={{maxHeight:'100px'}}
@@ -362,7 +361,7 @@ export default function IngeniumPro() {
             </button>
           </div>
           <div className="text-center mt-2">
-            <span className="text-xs text-slate-600">INGENIUM PRO v8.0 · ASME · API · AWWA · USACE · © Silvana Belén Colombo 2026</span>
+            <span className="text-xs text-slate-600">INGENIUM PRO v8.0 Â· ASME Â· API Â· AWWA Â· USACE Â· Â© Silvana BelÃ©n Colombo 2026</span>
           </div>
         </div>
       </div>
