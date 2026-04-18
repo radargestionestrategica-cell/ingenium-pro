@@ -1,8 +1,1 @@
-const fs=require('fs');
-let c=fs.readFileSync('app/page.tsx','utf8');
-c=c.replace(
-  "const [moduloActivo, setModuloActivo] = useState('chat');",
-  "const [moduloActivo, setModuloActivo] = useState('petróleo');"
-);
-fs.writeFileSync('app/page.tsx',c,'utf8');
-console.log('OK');
+ï»¿const fs=require("fs");let lines=fs.readFileSync("app/page.tsx","utf8").split("\n");const ins=" {moduloActivo!==\"chat\" && <div style={{flex:1,display:\"flex\",alignItems:\"center\",justifyContent:\"center\",color:\"white\"}}><div style={{textAlign:\"center\",padding:32}}><h2 style={{fontSize:28,fontWeight:\"bold\",marginBottom:16,textTransform:\"capitalize\"}}>{moduloActivo}</h2><p style={{color:\"#94a3b8\"}}>Usa el chat para consultas de este modulo.</p></div></div>}";lines.splice(275,0,ins);fs.writeFileSync("app/page.tsx",lines.join("\n"),"utf8");console.log("OK");
