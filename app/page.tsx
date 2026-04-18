@@ -1,4 +1,5 @@
 'use client';
+import ModuloPerforacion from '@/components/ModuloPerforacion';
 import { useState, useRef, useEffect } from 'react';
 
 type RL = 'LOW'|'MEDIUM'|'HIGH'|'CRITICAL';
@@ -364,6 +365,8 @@ export default function IngeniumPro() {
           </div>
         </div>
       </div>
+      {moduloActivo === 'perforacion' && <ModuloPerforacion />}
     </div>
   );
+  
 }
