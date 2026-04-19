@@ -24,6 +24,35 @@ const EJEMPLOS = [
   'Dilatacion termica 100m acero T=60C',
 ];
 
+function renderMarkdown(text: string) {
+  return text.split('\n').map((line, i) => {
+    if (line.startsWith('## '))
+      return <div key={i} style={{color:'#a78bfa',fontWeight:800,fontSize:14,marginTop:10,marginBottom:4}}>{line.slice(3)}</div>;
+    if (line.startsWith('### '))
+      return <div key={i} style={{color:'#00e5a0',fontWeight:700,fontSize:13,marginTop:8,marginBottom:2}}>{line.slice(4)}</div>;
+    if (line.startsWith('# '))
+      return <div key={i} style={{color:'#f8fafc',fontWeight:900,fontSize:15,marginTop:10,marginBottom:4}}>{line.slice(2)}</div>;
+    if (line.startsWith('| '))
+      return <div key={i} style={{fontFamily:'monospace',fontSize:11,color:'#94a3b8',padding:'2px 0',borderBottom:'1px solid #1e293b'}}>{line}</div>;
+    if (line.trim()==='---' || line.trim()==='***')
+      return <hr key={i} style={{border:'none',borderTop:'1px solid #334155',margin:'8px 0'}}/>;
+    if (line.startsWith('- ') || line.startsWith('* '))
+      return <div key={i} style={{color:'#cbd5e1',paddingLeft:12,marginBottom:2}}>{'• '}{line.slice(2).replace(/\*\*([^*]+)\*\*/g,'$1')}</div>;
+    if (line.trim()==='')
+      return <div key={i} style={{height:6}}/>;
+    const parts = line.split(/(\*\*[^*]+\*\*)/g);
+    return (
+      <div key={i} style={{color:'#e2e8f0',marginBottom:2,lineHeight:1.6}}>
+        {parts.map((part, j) =>
+          part.startsWith('**') && part.endsWith('**')
+            ? <strong key={j} style={{color:'#f8fafc',fontWeight:700}}>{part.slice(2,-2)}</strong>
+            : part
+        )}
+      </div>
+    );
+  });
+}
+
 export default function IngeniumPro() {
   const [moduloActivo, setModuloActivo] = useState('chat');
   const [messages, setMessages] = useState([
@@ -57,10 +86,10 @@ export default function IngeniumPro() {
         }),
       });
       const data = await res.json();
-      const reply = data.content?.[0]?.text || data.reply || 'Calculo completado segun normativa vigente.';
+      const reply = data.content?.[0]?.text || data.reply || 'Sin respuesta.';
       setMessages([...newMessages, { role: 'assistant', content: reply }]);
     } catch {
-      setMessages([...newMessages, { role: 'assistant', content: 'Error de conexion. Verificar configuracion.' }]);
+      setMessages([...newMessages, { role: 'assistant', content: 'Error de conexion.' }]);
     }
     setLoading(false);
   };
@@ -100,8 +129,8 @@ export default function IngeniumPro() {
                   {msg.role === 'assistant' && (
                     <div style={{ width: 36, height: 36, borderRadius: 8, background: 'linear-gradient(135deg,#a78bfa,#7c3aed)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 900, fontSize: 12, flexShrink: 0 }}>IP</div>
                   )}
-                  <div style={{ maxWidth: '80%', background: msg.role === 'user' ? '#1e3a5f' : '#1e293b', border: msg.role === 'user' ? '1px solid #2563eb' : '1px solid #334155', borderRadius: 12, padding: '12px 16px', color: '#e2e8f0', fontSize: 13, lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>
-                    {msg.content}
+                  <div style={{ maxWidth: '82%', background: msg.role === 'user' ? '#1e3a5f' : '#1e293b', border: msg.role === 'user' ? '1px solid #2563eb' : '1px solid #334155', borderRadius: 12, padding: '12px 16px', fontSize: 13, lineHeight: 1.6 }}>
+                    {msg.role === 'assistant' ? renderMarkdown(msg.content) : <span style={{color:'#e2e8f0'}}>{msg.content}</span>}
                   </div>
                 </div>
               ))}
