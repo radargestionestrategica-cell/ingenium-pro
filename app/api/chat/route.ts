@@ -20,9 +20,16 @@ export async function POST(req: Request) {
     });
 
     const data = await response.json();
-    return NextResponse.json(data);
+    const texto = data?.content?.[0]?.text;
+
+    if (!texto) {
+      console.error('API error:', JSON.stringify(data));
+      return NextResponse.json({ reply: 'Error en API: ' + JSON.stringify(data) });
+    }
+
+    return NextResponse.json({ content: [{ text: texto }] });
 
   } catch (error) {
-    return NextResponse.json({ error: 'Error en el servidor' }, { status: 500 });
+    return NextResponse.json({ reply: 'Error servidor: ' + String(error) }, { status: 500 });
   }
 }
