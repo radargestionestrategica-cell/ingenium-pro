@@ -12,7 +12,7 @@ export async function POST(req: Request) {
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
-        model: 'claude-3-5-sonnet-20241022',
+        model: 'claude-3-sonnet-20240229',
         max_tokens: 1024,
         system: system || 'Eres INGENIUM PRO v8.0, asistente de ingenieria tecnica.',
         messages: messages || [],
@@ -21,15 +21,10 @@ export async function POST(req: Request) {
 
     const data = await response.json();
     const texto = data?.content?.[0]?.text;
-
-    if (!texto) {
-      console.error('API error:', JSON.stringify(data));
-      return NextResponse.json({ reply: 'Error en API: ' + JSON.stringify(data) });
-    }
-
+    if (!texto) return NextResponse.json({ reply: 'Sin respuesta de la IA.' });
     return NextResponse.json({ content: [{ text: texto }] });
 
   } catch (error) {
-    return NextResponse.json({ reply: 'Error servidor: ' + String(error) }, { status: 500 });
+    return NextResponse.json({ reply: 'Error servidor.' }, { status: 500 });
   }
 }
