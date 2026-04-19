@@ -12,16 +12,16 @@ export async function POST(req: Request) {
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
-        model: 'claude-3-sonnet-20240229',
+        model: 'claude-sonnet-4-6',
         max_tokens: 1024,
-        system: system || 'Eres INGENIUM PRO v8.0, asistente de ingenieria tecnica.',
+        system: system || 'Eres INGENIUM PRO v8.0, asistente de ingenieria tecnica de precision.',
         messages: messages || [],
       }),
     });
 
     const data = await response.json();
     const texto = data?.content?.[0]?.text;
-    if (!texto) return NextResponse.json({ reply: 'Sin respuesta de la IA.' });
+    if (!texto) return NextResponse.json({ reply: 'Sin respuesta.' });
     return NextResponse.json({ content: [{ text: texto }] });
 
   } catch (error) {
