@@ -1,9 +1,9 @@
-export const dynamic = 'force-dynamic';
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 
-export async function POST(req: NextRequest) {
+export async function POST(req: Request) {
   try {
-    const { message } = await req.json();
+    const { messages, system } = await req.json();
+
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -12,16 +12,17 @@ export async function POST(req: NextRequest) {
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
-        model: 'claude-opus-4-5',
+        model: 'claude-3-5-sonnet-20241022',
         max_tokens: 1024,
-        system: `Eres INGENIUM PRO, asistente técnico de ingeniería profesional mundial. Normas: ASME B31.1/B31.3/B31.8, API 579, AWWA, USACE. Respondés en español técnico profesional, preciso, sin alucinar valores.`,
-        messages: [{ role: 'user', content: message }],
+        system: system || 'Eres INGENIUM PRO v8.0, asistente de ingenieria tecnica.',
+        messages: messages || [],
       }),
     });
+
     const data = await response.json();
-    const reply = data.content?.[0]?.text || 'Sin respuesta del motor.';
-    return NextResponse.json({ reply });
-  } catch {
-    return NextResponse.json({ reply: 'Error de conexión.' });
+    return NextResponse.json(data);
+
+  } catch (error) {
+    return NextResponse.json({ error: 'Error en el servidor' }, { status: 500 });
   }
 }
