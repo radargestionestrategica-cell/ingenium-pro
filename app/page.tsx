@@ -1,9 +1,17 @@
 ﻿'use client';
-import ModuloPetroleo from '@/components/ModuloPetroleo';
+import ModuloArquitectura from '@/components/ModuloArquitectura';
+import ModuloCivil from '@/components/ModuloCivil';
+import ModuloGeotecnia from '@/components/ModuloGeotecnia';
+import ModuloHidraulica from '@/components/ModuloHidraulica';
+import ModuloMineria from '@/components/ModuloMineria';
 import ModuloPerforacion from '@/components/ModuloPerforacion';
+import ModuloPetroleo from '@/components/ModuloPetroleo';
+import ModuloTermica from '@/components/ModuloTermica';
+import ModuloVialidad from '@/components/ModuloVialidad';
 import { useState, useRef, useEffect } from 'react';
 
 const TABS = [
+  { id: 'chat', label: 'Chat IA' },
   { id: 'petroleo', label: 'Petroleo' },
   { id: 'hidraulica', label: 'Hidraulica' },
   { id: 'mineria', label: 'Mineria' },
@@ -24,28 +32,33 @@ const EJEMPLOS = [
   'Dilatacion termica 100m acero T=60C',
 ];
 
+const MODULOS_CON_FORMULARIO = [
+  'petroleo', 'hidraulica', 'mineria', 'civil',
+  'geotecnia', 'termica', 'vialidad', 'arquitectura', 'perforacion'
+];
+
 function renderMarkdown(text: string) {
   return text.split('\n').map((line, i) => {
     if (line.startsWith('## '))
-      return <div key={i} style={{color:'#a78bfa',fontWeight:800,fontSize:14,marginTop:10,marginBottom:4}}>{line.slice(3)}</div>;
+      return <div key={i} style={{ color: '#a78bfa', fontWeight: 800, fontSize: 14, marginTop: 10, marginBottom: 4 }}>{line.slice(3)}</div>;
     if (line.startsWith('### '))
-      return <div key={i} style={{color:'#00e5a0',fontWeight:700,fontSize:13,marginTop:8,marginBottom:2}}>{line.slice(4)}</div>;
+      return <div key={i} style={{ color: '#00e5a0', fontWeight: 700, fontSize: 13, marginTop: 8, marginBottom: 2 }}>{line.slice(4)}</div>;
     if (line.startsWith('# '))
-      return <div key={i} style={{color:'#f8fafc',fontWeight:900,fontSize:15,marginTop:10,marginBottom:4}}>{line.slice(2)}</div>;
+      return <div key={i} style={{ color: '#f8fafc', fontWeight: 900, fontSize: 15, marginTop: 10, marginBottom: 4 }}>{line.slice(2)}</div>;
     if (line.startsWith('| '))
-      return <div key={i} style={{fontFamily:'monospace',fontSize:11,color:'#94a3b8',padding:'2px 0',borderBottom:'1px solid #1e293b'}}>{line}</div>;
-    if (line.trim()==='---' || line.trim()==='***')
-      return <hr key={i} style={{border:'none',borderTop:'1px solid #334155',margin:'8px 0'}}/>;
+      return <div key={i} style={{ fontFamily: 'monospace', fontSize: 11, color: '#94a3b8', padding: '2px 0', borderBottom: '1px solid #1e293b' }}>{line}</div>;
+    if (line.trim() === '---')
+      return <hr key={i} style={{ border: 'none', borderTop: '1px solid #334155', margin: '8px 0' }} />;
     if (line.startsWith('- ') || line.startsWith('* '))
-      return <div key={i} style={{color:'#cbd5e1',paddingLeft:12,marginBottom:2}}>{'• '}{line.slice(2).replace(/\*\*([^*]+)\*\*/g,'$1')}</div>;
-    if (line.trim()==='')
-      return <div key={i} style={{height:6}}/>;
+      return <div key={i} style={{ color: '#cbd5e1', paddingLeft: 12, marginBottom: 2 }}>{'- '}{line.slice(2).replace(/\*\*([^*]+)\*\*/g, '$1')}</div>;
+    if (line.trim() === '')
+      return <div key={i} style={{ height: 6 }} />;
     const parts = line.split(/(\*\*[^*]+\*\*)/g);
     return (
-      <div key={i} style={{color:'#e2e8f0',marginBottom:2,lineHeight:1.6}}>
+      <div key={i} style={{ color: '#e2e8f0', marginBottom: 2, lineHeight: 1.6 }}>
         {parts.map((part, j) =>
           part.startsWith('**') && part.endsWith('**')
-            ? <strong key={j} style={{color:'#f8fafc',fontWeight:700}}>{part.slice(2,-2)}</strong>
+            ? <strong key={j} style={{ color: '#f8fafc', fontWeight: 700 }}>{part.slice(2, -2)}</strong>
             : part
         )}
       </div>
@@ -78,7 +91,7 @@ export default function IngeniumPro() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          system: 'Eres INGENIUM PRO v8.0, asistente de ingenieria tecnica de precision. Usas normativas reales: ASME B31.8, API 5L, AWWA, USACE, AASHTO. Respondes en espanol con calculos exactos y citas de normativa. No inventas datos.',
+          system: 'Eres INGENIUM PRO v8.0, asistente de ingenieria tecnica de precision. Usas normativas reales: ASME B31.8, API 5L, AWWA, USACE, AASHTO, AISC, ACI 318, IRAM, NIOSH. Respondes en espanol con calculos exactos y citas de normativa. No inventas datos.',
           messages: newMessages.map(m => ({
             role: m.role === 'assistant' ? 'assistant' : 'user',
             content: m.content
@@ -94,10 +107,12 @@ export default function IngeniumPro() {
     setLoading(false);
   };
 
+  const tieneFormulario = MODULOS_CON_FORMULARIO.includes(moduloActivo);
+
   return (
     <div style={{ minHeight: '100vh', background: '#0f172a', fontFamily: 'system-ui, sans-serif', display: 'flex', flexDirection: 'column' }}>
 
-      <div style={{ background: '#1e293b', borderBottom: '1px solid #334155', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
+      <div style={{ background: '#1e293b', borderBottom: '1px solid #334155', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
         <div style={{ width: 36, height: 36, borderRadius: 8, background: 'linear-gradient(135deg,#a78bfa,#7c3aed)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 900, fontSize: 14 }}>IP</div>
         <div>
           <div style={{ color: '#f8fafc', fontWeight: 800, fontSize: 16 }}>INGENIUM PRO</div>
@@ -106,7 +121,7 @@ export default function IngeniumPro() {
         <div style={{ marginLeft: 'auto', background: '#00e5a0', color: '#000', borderRadius: 20, padding: '4px 12px', fontSize: 11, fontWeight: 800 }}>ACTIVO</div>
       </div>
 
-      <div style={{ borderBottom: '1px solid #1e293b', background: '#0d1526', padding: '0 8px', display: 'flex', overflowX: 'auto' }}>
+      <div style={{ borderBottom: '1px solid #1e293b', background: '#0d1526', padding: '0 8px', display: 'flex', overflowX: 'auto', flexShrink: 0 }}>
         {TABS.map(tab => (
           <button key={tab.id} onClick={() => setModuloActivo(tab.id)}
             style={{ padding: '10px 14px', background: 'transparent', border: 'none', borderBottom: moduloActivo === tab.id ? '2px solid #a78bfa' : '2px solid transparent', color: moduloActivo === tab.id ? '#a78bfa' : '#64748b', fontWeight: moduloActivo === tab.id ? 700 : 400, fontSize: 13, cursor: 'pointer', whiteSpace: 'nowrap' }}>
@@ -118,11 +133,17 @@ export default function IngeniumPro() {
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
 
         {moduloActivo === 'petroleo' && <ModuloPetroleo />}
+        {moduloActivo === 'hidraulica' && <ModuloHidraulica />}
+        {moduloActivo === 'mineria' && <ModuloMineria />}
+        {moduloActivo === 'civil' && <ModuloCivil />}
+        {moduloActivo === 'geotecnia' && <ModuloGeotecnia />}
+        {moduloActivo === 'termica' && <ModuloTermica />}
+        {moduloActivo === 'vialidad' && <ModuloVialidad />}
+        {moduloActivo === 'arquitectura' && <ModuloArquitectura />}
         {moduloActivo === 'perforacion' && <ModuloPerforacion />}
 
-        {moduloActivo !== 'petroleo' && moduloActivo !== 'perforacion' && (
+        {!tieneFormulario && (
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-
             <div style={{ flex: 1, overflowY: 'auto', padding: 16, display: 'flex', flexDirection: 'column', gap: 16 }}>
               {messages.map((msg, i) => (
                 <div key={i} style={{ display: 'flex', gap: 12, flexDirection: msg.role === 'user' ? 'row-reverse' : 'row' }}>
@@ -130,7 +151,7 @@ export default function IngeniumPro() {
                     <div style={{ width: 36, height: 36, borderRadius: 8, background: 'linear-gradient(135deg,#a78bfa,#7c3aed)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 900, fontSize: 12, flexShrink: 0 }}>IP</div>
                   )}
                   <div style={{ maxWidth: '82%', background: msg.role === 'user' ? '#1e3a5f' : '#1e293b', border: msg.role === 'user' ? '1px solid #2563eb' : '1px solid #334155', borderRadius: 12, padding: '12px 16px', fontSize: 13, lineHeight: 1.6 }}>
-                    {msg.role === 'assistant' ? renderMarkdown(msg.content) : <span style={{color:'#e2e8f0'}}>{msg.content}</span>}
+                    {msg.role === 'assistant' ? renderMarkdown(msg.content) : <span style={{ color: '#e2e8f0' }}>{msg.content}</span>}
                   </div>
                 </div>
               ))}
@@ -142,9 +163,8 @@ export default function IngeniumPro() {
               )}
               <div ref={messagesEndRef} />
             </div>
-
             {messages.length <= 1 && (
-              <div style={{ padding: '8px 16px', display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <div style={{ padding: '8px 16px', display: 'flex', gap: 8, flexWrap: 'wrap', flexShrink: 0 }}>
                 <div style={{ width: '100%', color: '#475569', fontSize: 11, marginBottom: 4 }}>Consultas de ejemplo</div>
                 {EJEMPLOS.map((ej, i) => (
                   <button key={i} onClick={() => sendMessage(ej)}
@@ -154,8 +174,7 @@ export default function IngeniumPro() {
                 ))}
               </div>
             )}
-
-            <div style={{ padding: '12px 16px', borderTop: '1px solid #1e293b', display: 'flex', gap: 8 }}>
+            <div style={{ padding: '12px 16px', borderTop: '1px solid #1e293b', display: 'flex', gap: 8, flexShrink: 0 }}>
               <input value={inputValue} onChange={e => setInputValue(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter') sendMessage(); }}
                 placeholder="Consulta tu calculo tecnico... (Enter para enviar)"
@@ -167,11 +186,13 @@ export default function IngeniumPro() {
             </div>
           </div>
         )}
+
       </div>
 
-      <div style={{ borderTop: '1px solid #1e293b', padding: '8px 16px', textAlign: 'center', color: '#334155', fontSize: 11 }}>
-        INGENIUM PRO v8.0 - ASME - API - AWWA - USACE - Silvana Belen Colombo 2026
+      <div style={{ borderTop: '1px solid #1e293b', padding: '8px 16px', textAlign: 'center', color: '#334155', fontSize: 11, flexShrink: 0 }}>
+        INGENIUM PRO v8.0 - ASME - API - AWWA - USACE - AISC - ACI - IRAM - Silvana Belen Colombo 2026
       </div>
+
     </div>
   );
 }
