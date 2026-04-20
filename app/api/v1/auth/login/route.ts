@@ -1,8 +1,5 @@
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
 import * as crypto from 'crypto';
-
-const prisma = new PrismaClient();
 
 function hashPassword(password: string): string {
   return crypto.createHash('sha256').update(password + 'ingenium_salt_2026').digest('hex');
@@ -15,6 +12,8 @@ function generarToken(usuario: { id: string; email: string }): string {
 }
 
 export async function POST(req: Request) {
+  const { PrismaClient } = await import('@prisma/client');
+  const prisma = new PrismaClient();
   try {
     const { email, password } = await req.json();
     if (!email || !password) {
@@ -32,11 +31,12 @@ export async function POST(req: Request) {
     }
     const token = generarToken({ id: usuario.id, email: usuario.email });
     return NextResponse.json({
-      success: true,
-      token,
+      success: true, token,
       usuario: { id: usuario.id, nombre: usuario.nombre, empresa: usuario.empresa, plan: usuario.plan }
     });
   } catch (err) {
     return NextResponse.json({ error: 'Error de autenticacion' }, { status: 500 });
+  } finally {
+    await prisma.$disconnect();
   }
 }

@@ -1,15 +1,29 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { signJWT } from '@/lib/jwt';
+import { NextResponse } from 'next/server';
+import * as crypto from 'crypto';
 
-export async function POST(req: NextRequest) {
+function hashPassword(password: string): string {
+  return crypto.createHash('sha256').update(password + 'ingenium_salt_2026').digest('hex');
+}
+
+export async function POST(req: Request) {
+  const { PrismaClient } = await import('@prisma/client');
+  const prisma = new PrismaClient();
   try {
-    const { email, password, name } = await req.json();
-    if (!email || !password || !name) {
-      return NextResponse.json({ error: 'Datos requeridos: email, password, name' }, { status: 400 });
+    const { email, password, nombre, empresa, pais } = await req.json();
+    if (!email || !password || !nombre || !empresa) {
+      return NextResponse.json({ error: 'Todos los campos son requeridos' }, { status: 400 });
     }
-    const token = signJWT({ email, id: '1', name });
-    return NextResponse.json({ success: true, token });
-  } catch {
-    return NextResponse.json({ error: 'Error al crear cuenta' }, { status: 500 });
+    const existe = await prisma.usuario.findUnique({ where: { email } });
+    if (existe) {
+      return NextResponse.json({ error: 'El email ya esta registrado' }, { status: 409 });
+    }
+    const usuario = await prisma.usuario.create({
+      data: { email, password: hashPassword(password), nombre, empresa, pais: pais || 'Argentina' }
+    });
+    return NextResponse.json({ success: true, id: usuario.id, nombre: usuario.nombre });
+  } catch (err) {
+    return NextResponse.json({ error: 'Error al registrar usuario' }, { status: 500 });
+  } finally {
+    await prisma.$disconnect();
   }
 }
