@@ -7,6 +7,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [exito, setExito] = useState('');
+  const [verPass, setVerPass] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -14,9 +15,7 @@ export default function LoginPage() {
   };
 
   const handleSubmit = async () => {
-    setLoading(true);
-    setError('');
-    setExito('');
+    setLoading(true); setError(''); setExito('');
     try {
       const url = modo === 'login' ? '/api/v1/auth/login' : '/api/v1/auth/signup';
       const body = modo === 'login'
@@ -34,12 +33,12 @@ export default function LoginPage() {
         localStorage.setItem('ip_user', JSON.stringify(data.usuario));
         window.location.href = '/';
       } else {
-        setExito('Cuenta creada exitosamente. Ahora iniciá sesión.');
+        setExito('✅ Cuenta creada. Ahora iniciá sesión.');
         setModo('login');
         setForm({ email: form.email, password: '', nombre: '', empresa: '', pais: '' });
       }
     } catch {
-      setError('Error de conexión. Intentá nuevamente.');
+      setError('Error de conexión. Verificá tu internet e intentá nuevamente.');
     } finally {
       setLoading(false);
     }
@@ -59,12 +58,10 @@ export default function LoginPage() {
         borderRadius: 16, padding: 40,
         boxShadow: '0 25px 50px rgba(0,0,0,0.5)',
       }}>
-        {/* LOGO */}
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
-          <div style={{
-            fontSize: 11, letterSpacing: 4, color: '#6366f1',
-            fontWeight: 700, marginBottom: 8,
-          }}>INGENIUM PRO</div>
+          <div style={{ fontSize: 11, letterSpacing: 4, color: '#6366f1', fontWeight: 700, marginBottom: 8 }}>
+            INGENIUM PRO
+          </div>
           <div style={{ fontSize: 26, fontWeight: 800, color: '#f1f5f9' }}>
             {modo === 'login' ? 'Iniciar Sesión' : 'Crear Cuenta'}
           </div>
@@ -73,16 +70,12 @@ export default function LoginPage() {
           </div>
         </div>
 
-        {/* TABS */}
-        <div style={{
-          display: 'flex', background: '#0f172a',
-          borderRadius: 10, padding: 4, marginBottom: 28,
-        }}>
+        <div style={{ display: 'flex', background: '#0f172a', borderRadius: 10, padding: 4, marginBottom: 28 }}>
           {(['login', 'signup'] as const).map(m => (
             <button key={m} onClick={() => { setModo(m); setError(''); setExito(''); }}
               style={{
                 flex: 1, padding: '8px 0', border: 'none', borderRadius: 8,
-                cursor: 'pointer', fontSize: 13, fontWeight: 600, transition: 'all 0.2s',
+                cursor: 'pointer', fontSize: 13, fontWeight: 600,
                 background: modo === m ? '#6366f1' : 'transparent',
                 color: modo === m ? '#fff' : '#64748b',
               }}>
@@ -91,7 +84,6 @@ export default function LoginPage() {
           ))}
         </div>
 
-        {/* CAMPOS */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           {modo === 'signup' && (
             <>
@@ -103,14 +95,33 @@ export default function LoginPage() {
                 onChange={handleChange} style={inputStyle} />
             </>
           )}
-          <input name="email" type="email" placeholder="Email profesional" value={form.email}
-            onChange={handleChange} style={inputStyle} />
-          <input name="password" type="password" placeholder="Contraseña" value={form.password}
-            onChange={handleChange} style={inputStyle}
-            onKeyDown={e => e.key === 'Enter' && handleSubmit()} />
+          <input name="email" type="email" placeholder="Email profesional"
+            value={form.email} onChange={handleChange} style={inputStyle} />
+
+          {/* CAMPO CONTRASEÑA CON OJO */}
+          <div style={{ position: 'relative' }}>
+            <input
+              name="password"
+              type={verPass ? 'text' : 'password'}
+              placeholder="Contraseña"
+              value={form.password}
+              onChange={handleChange}
+              onKeyDown={e => e.key === 'Enter' && handleSubmit()}
+              style={{ ...inputStyle, paddingRight: 44 }}
+            />
+            <button
+              onClick={() => setVerPass(!verPass)}
+              style={{
+                position: 'absolute', right: 12, top: '50%',
+                transform: 'translateY(-50%)',
+                background: 'none', border: 'none',
+                cursor: 'pointer', color: '#64748b', fontSize: 18, padding: 0,
+              }}>
+              {verPass ? '🙈' : '👁️'}
+            </button>
+          </div>
         </div>
 
-        {/* MENSAJES */}
         {error && (
           <div style={{
             marginTop: 14, padding: '10px 14px', borderRadius: 8,
@@ -126,13 +137,11 @@ export default function LoginPage() {
           }}>{exito}</div>
         )}
 
-        {/* BOTÓN */}
         <button onClick={handleSubmit} disabled={loading} style={{
           width: '100%', marginTop: 22, padding: '13px 0',
           background: loading ? '#374151' : 'linear-gradient(135deg, #6366f1, #8b5cf6)',
           border: 'none', borderRadius: 10, color: '#fff',
           fontSize: 15, fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer',
-          transition: 'all 0.2s',
           boxShadow: loading ? 'none' : '0 4px 20px rgba(99,102,241,0.4)',
         }}>
           {loading ? 'Procesando...' : modo === 'login' ? 'Ingresar a INGENIUM PRO' : 'Crear Cuenta'}
@@ -150,10 +159,7 @@ const inputStyle: React.CSSProperties = {
   padding: '12px 16px',
   background: '#0f172a',
   border: '1px solid rgba(99,102,241,0.2)',
-  borderRadius: 8,
-  color: '#f1f5f9',
-  fontSize: 14,
-  outline: 'none',
-  width: '100%',
-  boxSizing: 'border-box',
+  borderRadius: 8, color: '#f1f5f9',
+  fontSize: 14, outline: 'none',
+  width: '100%', boxSizing: 'border-box',
 };
