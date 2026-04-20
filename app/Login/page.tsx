@@ -64,7 +64,7 @@ export default function LoginPage() {
       if (modo === 'login') {
         localStorage.setItem('ip_token', data.token);
         localStorage.setItem('ip_user', JSON.stringify(data.usuario));
-        window.location.href = '/';
+        window.location.href = '/dashboard';
       } else {
         setExito('✅ Cuenta creada exitosamente. Ahora iniciá sesión.');
         setModo('login');
@@ -91,8 +91,6 @@ export default function LoginPage() {
         borderRadius: 20, padding: '44px 40px',
         boxShadow: '0 32px 64px rgba(0,0,0,0.6)',
       }}>
-
-        {/* LOGO */}
         <div style={{ textAlign: 'center', marginBottom: 36 }}>
           <div style={{ fontSize: 10, letterSpacing: 5, color: '#6366f1', fontWeight: 800, marginBottom: 10 }}>
             ◈ INGENIUM PRO
@@ -105,7 +103,6 @@ export default function LoginPage() {
           </div>
         </div>
 
-        {/* TABS */}
         <div style={{
           display: 'flex', background: '#0a0f1e', borderRadius: 12,
           padding: 5, marginBottom: 32,
@@ -126,7 +123,6 @@ export default function LoginPage() {
           ))}
         </div>
 
-        {/* CAMPOS */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           {modo === 'signup' && (
             <>
@@ -144,10 +140,8 @@ export default function LoginPage() {
                 <label style={labelStyle}>País</label>
                 <select name="pais" value={form.pais} onChange={handleChange}
                   style={{
-                    ...inputStyle,
-                    cursor: 'pointer',
-                    WebkitAppearance: 'none',
-                    MozAppearance: 'none',
+                    ...inputStyle, cursor: 'pointer',
+                    WebkitAppearance: 'none', MozAppearance: 'none',
                     appearance: 'none' as const,
                     backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236366f1' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E")`,
                     backgroundRepeat: 'no-repeat',
@@ -183,22 +177,19 @@ export default function LoginPage() {
                 onKeyDown={e => e.key === 'Enter' && handleSubmit()}
                 style={{ ...inputStyle, paddingRight: 48 }}
               />
-              <button
-                onClick={() => setVerPass(!verPass)}
-                style={{
-                  position: 'absolute', right: 14, top: '50%',
-                  transform: 'translateY(-50%)',
-                  background: 'none', border: 'none',
-                  cursor: 'pointer', padding: 0,
-                  display: 'flex', alignItems: 'center',
-                }}>
+              <button onClick={() => setVerPass(!verPass)} style={{
+                position: 'absolute', right: 14, top: '50%',
+                transform: 'translateY(-50%)',
+                background: 'none', border: 'none',
+                cursor: 'pointer', padding: 0,
+                display: 'flex', alignItems: 'center',
+              }}>
                 <OjoIcono visible={verPass} />
               </button>
             </div>
           </div>
         </div>
 
-        {/* MENSAJES */}
         {error && (
           <div style={{
             marginTop: 16, padding: '11px 16px', borderRadius: 10,
@@ -216,7 +207,6 @@ export default function LoginPage() {
           }}>{exito}</div>
         )}
 
-        {/* BOTÓN */}
         <button onClick={handleSubmit} disabled={loading} style={{
           width: '100%', marginTop: 24, padding: '14px 0',
           background: loading ? '#1e293b' : 'linear-gradient(135deg,#6366f1,#8b5cf6)',
@@ -237,7 +227,6 @@ export default function LoginPage() {
             © 2026 INGENIUM PRO — Todos los derechos reservados
           </div>
         </div>
-
       </div>
     </div>
   );
