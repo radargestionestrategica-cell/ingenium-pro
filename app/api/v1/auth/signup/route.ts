@@ -1,13 +1,12 @@
 import { NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
 import * as crypto from 'crypto';
 
-function hashPassword(password: string): string {
-  return crypto.createHash('sha256').update(password + 'ingenium_salt_2026').digest('hex');
+function hashPassword(p: string): string {
+  return crypto.createHash('sha256').update(p + 'ingenium_salt_2026').digest('hex');
 }
 
 export async function POST(req: Request) {
-  const { PrismaClient } = await import('@prisma/client');
-  const prisma = new PrismaClient();
   try {
     const { email, password, nombre, empresa, pais } = await req.json();
     if (!email || !password || !nombre || !empresa) {
@@ -15,15 +14,14 @@ export async function POST(req: Request) {
     }
     const existe = await prisma.usuario.findUnique({ where: { email } });
     if (existe) {
-      return NextResponse.json({ error: 'El email ya esta registrado' }, { status: 409 });
+      return NextResponse.json({ error: 'El email ya está registrado' }, { status: 409 });
     }
     const usuario = await prisma.usuario.create({
-      data: { email, password: hashPassword(password), nombre, empresa, pais: pais || 'Argentina' }
+      data: { email, password: hashPassword(password), nombre, empresa, pais: pais || 'Argentina' },
     });
     return NextResponse.json({ success: true, id: usuario.id, nombre: usuario.nombre });
   } catch (err) {
+    console.error('Signup error:', err);
     return NextResponse.json({ error: 'Error al registrar usuario' }, { status: 500 });
-  } finally {
-    await prisma.$disconnect();
   }
 }

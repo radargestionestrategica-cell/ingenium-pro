@@ -1,42 +1,37 @@
 import { NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
 import * as crypto from 'crypto';
 
-function hashPassword(password: string): string {
-  return crypto.createHash('sha256').update(password + 'ingenium_salt_2026').digest('hex');
+function hashPassword(p: string): string {
+  return crypto.createHash('sha256').update(p + 'ingenium_salt_2026').digest('hex');
 }
 
-function generarToken(usuario: { id: string; email: string }): string {
-  const payload = JSON.stringify({ id: usuario.id, email: usuario.email, ts: Date.now() });
-  const firma = crypto.createHash('sha256').update(payload + 'ingenium_jwt_2026').digest('hex');
-  return Buffer.from(payload).toString('base64') + '.' + firma;
+function generarToken(payload: object): string {
+  const data = Buffer.from(JSON.stringify(payload)).toString('base64');
+  const sig = crypto.createHash('sha256').update(data + 'ingenium_jwt_2026').digest('hex');
+  return `${data}.${sig}`;
 }
 
 export async function POST(req: Request) {
-  const { PrismaClient } = await import('@prisma/client');
-  const prisma = new PrismaClient();
   try {
     const { email, password } = await req.json();
     if (!email || !password) {
-      return NextResponse.json({ error: 'Email y password requeridos' }, { status: 400 });
+      return NextResponse.json({ error: 'Email y contraseña requeridos' }, { status: 400 });
     }
     const usuario = await prisma.usuario.findUnique({ where: { email } });
-    if (!usuario) {
+    if (!usuario || usuario.password !== hashPassword(password)) {
       return NextResponse.json({ error: 'Credenciales incorrectas' }, { status: 401 });
     }
     if (!usuario.activo) {
       return NextResponse.json({ error: 'Cuenta desactivada' }, { status: 403 });
     }
-    if (usuario.password !== hashPassword(password)) {
-      return NextResponse.json({ error: 'Credenciales incorrectas' }, { status: 401 });
-    }
     const token = generarToken({ id: usuario.id, email: usuario.email });
     return NextResponse.json({
       success: true, token,
-      usuario: { id: usuario.id, nombre: usuario.nombre, empresa: usuario.empresa, plan: usuario.plan }
+      usuario: { id: usuario.id, nombre: usuario.nombre, empresa: usuario.empresa, plan: usuario.plan },
     });
   } catch (err) {
+    console.error('Login error:', err);
     return NextResponse.json({ error: 'Error de autenticacion' }, { status: 500 });
-  } finally {
-    await prisma.$disconnect();
   }
 }
