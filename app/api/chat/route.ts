@@ -1,28 +1,30 @@
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-import * as crypto from 'crypto';
-
-const prisma = new PrismaClient();
-
-function hashPassword(password: string): string {
-  return crypto.createHash('sha256').update(password + 'ingenium_salt_2026').digest('hex');
-}
 
 export async function POST(req: Request) {
   try {
-    const { email, password, nombre, empresa, pais } = await req.json();
-    if (!email || !password || !nombre || !empresa) {
-      return NextResponse.json({ error: 'Todos los campos son requeridos' }, { status: 400 });
-    }
-    const existe = await prisma.usuario.findUnique({ where: { email } });
-    if (existe) {
-      return NextResponse.json({ error: 'El email ya esta registrado' }, { status: 409 });
-    }
-    const usuario = await prisma.usuario.create({
-      data: { email, password: hashPassword(password), nombre, empresa, pais: pais || 'Argentina' }
+    const { messages, system } = await req.json();
+
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': process.env.ANTHROPIC_API_KEY!,
+        'anthropic-version': '2023-06-01',
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 1024,
+        system: system || 'Eres INGENIUM PRO v8.0, asistente de ingenieria tecnica.',
+        messages: messages || [],
+      }),
     });
-    return NextResponse.json({ success: true, id: usuario.id, nombre: usuario.nombre });
+
+    const data = await response.json();
+    const texto = data?.content?.[0]?.text;
+    if (!texto) return NextResponse.json({ reply: 'Sin respuesta.' });
+    return NextResponse.json({ content: [{ text: texto }] });
+
   } catch (err) {
-    return NextResponse.json({ error: 'Error al registrar usuario' }, { status: 500 });
+    return NextResponse.json({ reply: 'Error servidor.' }, { status: 500 });
   }
 }
