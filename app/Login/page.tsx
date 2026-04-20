@@ -2,124 +2,158 @@
 import { useState } from 'react';
 
 export default function LoginPage() {
-  const [tab, setTab] = useState<'login' | 'registro'>('login');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [nombre, setNombre] = useState('');
-  const [empresa, setEmpresa] = useState('');
-  const [pais, setPais] = useState('Argentina');
+  const [modo, setModo] = useState<'login' | 'signup'>('login');
+  const [form, setForm] = useState({ email: '', password: '', nombre: '', empresa: '', pais: '' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [ok, setOk] = useState('');
+  const [exito, setExito] = useState('');
 
-  const PAISES = ['Argentina','Colombia','Mexico','Chile','Peru','Brasil','Venezuela','Bolivia','Ecuador','Uruguay','Espana','USA','Canada','Otro'];
-
-  const handleLogin = async () => {
-    setError(''); setOk('');
-    if (!email || !password) { setError('Completa todos los campos.'); return; }
-    setLoading(true);
-    try {
-      const res = await fetch('/api/v1/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
-      });
-      const data = await res.json();
-      if (!res.ok) { setError(data.error || 'Error al iniciar sesion.'); setLoading(false); return; }
-      localStorage.setItem('ip_token', data.token);
-      localStorage.setItem('ip_usuario', JSON.stringify(data.usuario));
-      window.location.href = '/';
-    } catch { setError('Error de conexion.'); }
-    setLoading(false);
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+    setError('');
   };
 
-  const handleRegistro = async () => {
-    setError(''); setOk('');
-    if (!email || !password || !nombre || !empresa) { setError('Completa todos los campos.'); return; }
-    if (password.length < 8) { setError('La contrasena debe tener al menos 8 caracteres.'); return; }
+  const handleSubmit = async () => {
     setLoading(true);
+    setError('');
+    setExito('');
     try {
-      const res = await fetch('/api/v1/auth/signup', {
+      const url = modo === 'login' ? '/api/v1/auth/login' : '/api/v1/auth/signup';
+      const body = modo === 'login'
+        ? { email: form.email, password: form.password }
+        : { email: form.email, password: form.password, nombre: form.nombre, empresa: form.empresa, pais: form.pais };
+      const res = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, nombre, empresa, pais })
+        body: JSON.stringify(body),
       });
       const data = await res.json();
-      if (!res.ok) { setError(data.error || 'Error al registrar.'); setLoading(false); return; }
-      setOk('Cuenta creada. Ahora podes iniciar sesion.');
-      setTab('login');
-    } catch { setError('Error de conexion.'); }
-    setLoading(false);
+      if (!res.ok) { setError(data.error || 'Error desconocido'); return; }
+      if (modo === 'login') {
+        localStorage.setItem('ip_token', data.token);
+        localStorage.setItem('ip_user', JSON.stringify(data.usuario));
+        window.location.href = '/';
+      } else {
+        setExito('Cuenta creada exitosamente. Ahora iniciá sesión.');
+        setModo('login');
+        setForm({ email: form.email, password: '', nombre: '', empresa: '', pais: '' });
+      }
+    } catch {
+      setError('Error de conexión. Intentá nuevamente.');
+    } finally {
+      setLoading(false);
+    }
   };
-
-  const inp = { width: '100%', background: '#0f172a', border: '1px solid #475569', borderRadius: 8, padding: '12px 16px', color: '#f8fafc', fontSize: 14, boxSizing: 'border-box' as const, outline: 'none' };
 
   return (
-    <div style={{ minHeight: '100vh', background: '#0f172a', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16, fontFamily: 'system-ui' }}>
-      <div style={{ width: '100%', maxWidth: 440 }}>
-
+    <div style={{
+      minHeight: '100vh',
+      background: 'linear-gradient(135deg, #0a0a1a 0%, #0d1b2a 50%, #0a0a1a 100%)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      fontFamily: "'Inter', sans-serif", padding: 20,
+    }}>
+      <div style={{
+        width: '100%', maxWidth: 440,
+        background: 'rgba(15,23,42,0.95)',
+        border: '1px solid rgba(99,102,241,0.3)',
+        borderRadius: 16, padding: 40,
+        boxShadow: '0 25px 50px rgba(0,0,0,0.5)',
+      }}>
+        {/* LOGO */}
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
-          <div style={{ width: 56, height: 56, borderRadius: 16, background: 'linear-gradient(135deg,#a78bfa,#7c3aed)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', fontSize: 24, fontWeight: 900, color: 'white' }}>IP</div>
-          <div style={{ color: '#f8fafc', fontWeight: 900, fontSize: 24 }}>INGENIUM PRO</div>
-          <div style={{ color: '#64748b', fontSize: 13, marginTop: 4 }}>v8.0 - Plataforma de Ingenieria Tecnica</div>
+          <div style={{
+            fontSize: 11, letterSpacing: 4, color: '#6366f1',
+            fontWeight: 700, marginBottom: 8,
+          }}>INGENIUM PRO</div>
+          <div style={{ fontSize: 26, fontWeight: 800, color: '#f1f5f9' }}>
+            {modo === 'login' ? 'Iniciar Sesión' : 'Crear Cuenta'}
+          </div>
+          <div style={{ fontSize: 13, color: '#64748b', marginTop: 6 }}>
+            Plataforma de Ingeniería Técnica de Precisión
+          </div>
         </div>
 
-        <div style={{ background: '#1e293b', border: '1px solid #334155', borderRadius: 16, padding: 32 }}>
-
-          <div style={{ display: 'flex', gap: 8, marginBottom: 24 }}>
-            {[{ id: 'login', label: 'Iniciar Sesion' }, { id: 'registro', label: 'Registrarse' }].map(t => (
-              <button key={t.id} onClick={() => { setTab(t.id as 'login' | 'registro'); setError(''); setOk(''); }}
-                style={{ flex: 1, padding: '10px', background: tab === t.id ? '#7c3aed' : '#0f172a', border: '1px solid #334155', borderRadius: 8, color: 'white', fontWeight: tab === t.id ? 700 : 400, cursor: 'pointer', fontSize: 13 }}>
-                {t.label}
-              </button>
-            ))}
-          </div>
-
-          {error && <div style={{ background: '#450a0a', border: '1px solid #dc2626', borderRadius: 8, padding: '10px 14px', color: '#fca5a5', fontSize: 13, marginBottom: 16 }}>{error}</div>}
-          {ok && <div style={{ background: '#0a2a1a', border: '1px solid #00e5a0', borderRadius: 8, padding: '10px 14px', color: '#00e5a0', fontSize: 13, marginBottom: 16 }}>{ok}</div>}
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-
-            {tab === 'registro' && (
-              <>
-                <div>
-                  <label style={{ color: '#94a3b8', fontSize: 12, display: 'block', marginBottom: 6 }}>Nombre completo</label>
-                  <input value={nombre} onChange={e => setNombre(e.target.value)} style={inp} placeholder="Ing. Juan Perez" />
-                </div>
-                <div>
-                  <label style={{ color: '#94a3b8', fontSize: 12, display: 'block', marginBottom: 6 }}>Empresa</label>
-                  <input value={empresa} onChange={e => setEmpresa(e.target.value)} style={inp} placeholder="YPF / TotalEnergies / etc." />
-                </div>
-                <div>
-                  <label style={{ color: '#94a3b8', fontSize: 12, display: 'block', marginBottom: 6 }}>Pais</label>
-                  <select value={pais} onChange={e => setPais(e.target.value)} style={{ ...inp, fontSize: 13 }}>
-                    {PAISES.map(p => <option key={p} value={p}>{p}</option>)}
-                  </select>
-                </div>
-              </>
-            )}
-
-            <div>
-              <label style={{ color: '#94a3b8', fontSize: 12, display: 'block', marginBottom: 6 }}>Email</label>
-              <input type="email" value={email} onChange={e => setEmail(e.target.value)} style={inp} placeholder="ingeniero@empresa.com" />
-            </div>
-            <div>
-              <label style={{ color: '#94a3b8', fontSize: 12, display: 'block', marginBottom: 6 }}>Contrasena</label>
-              <input type="password" value={password} onChange={e => setPassword(e.target.value)} style={inp} placeholder="Minimo 8 caracteres" onKeyDown={e => { if (e.key === 'Enter') tab === 'login' ? handleLogin() : handleRegistro(); }} />
-            </div>
-
-            <button onClick={tab === 'login' ? handleLogin : handleRegistro} disabled={loading}
-              style={{ width: '100%', background: 'linear-gradient(135deg,#a78bfa,#7c3aed)', border: 'none', borderRadius: 10, padding: '14px', color: 'white', fontWeight: 800, fontSize: 15, cursor: 'pointer', opacity: loading ? 0.6 : 1, marginTop: 8 }}>
-              {loading ? 'Procesando...' : tab === 'login' ? 'INGRESAR' : 'CREAR CUENTA'}
+        {/* TABS */}
+        <div style={{
+          display: 'flex', background: '#0f172a',
+          borderRadius: 10, padding: 4, marginBottom: 28,
+        }}>
+          {(['login', 'signup'] as const).map(m => (
+            <button key={m} onClick={() => { setModo(m); setError(''); setExito(''); }}
+              style={{
+                flex: 1, padding: '8px 0', border: 'none', borderRadius: 8,
+                cursor: 'pointer', fontSize: 13, fontWeight: 600, transition: 'all 0.2s',
+                background: modo === m ? '#6366f1' : 'transparent',
+                color: modo === m ? '#fff' : '#64748b',
+              }}>
+              {m === 'login' ? 'Ingresar' : 'Registrarse'}
             </button>
-
-          </div>
+          ))}
         </div>
 
-        <div style={{ textAlign: 'center', color: '#334155', fontSize: 11, marginTop: 24 }}>
-          INGENIUM PRO v8.0 - ASME - API - AWWA - Silvana Belen Colombo 2026
+        {/* CAMPOS */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          {modo === 'signup' && (
+            <>
+              <input name="nombre" placeholder="Nombre completo" value={form.nombre}
+                onChange={handleChange} style={inputStyle} />
+              <input name="empresa" placeholder="Empresa / Organización" value={form.empresa}
+                onChange={handleChange} style={inputStyle} />
+              <input name="pais" placeholder="País" value={form.pais}
+                onChange={handleChange} style={inputStyle} />
+            </>
+          )}
+          <input name="email" type="email" placeholder="Email profesional" value={form.email}
+            onChange={handleChange} style={inputStyle} />
+          <input name="password" type="password" placeholder="Contraseña" value={form.password}
+            onChange={handleChange} style={inputStyle}
+            onKeyDown={e => e.key === 'Enter' && handleSubmit()} />
+        </div>
+
+        {/* MENSAJES */}
+        {error && (
+          <div style={{
+            marginTop: 14, padding: '10px 14px', borderRadius: 8,
+            background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)',
+            color: '#f87171', fontSize: 13,
+          }}>{error}</div>
+        )}
+        {exito && (
+          <div style={{
+            marginTop: 14, padding: '10px 14px', borderRadius: 8,
+            background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)',
+            color: '#4ade80', fontSize: 13,
+          }}>{exito}</div>
+        )}
+
+        {/* BOTÓN */}
+        <button onClick={handleSubmit} disabled={loading} style={{
+          width: '100%', marginTop: 22, padding: '13px 0',
+          background: loading ? '#374151' : 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+          border: 'none', borderRadius: 10, color: '#fff',
+          fontSize: 15, fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer',
+          transition: 'all 0.2s',
+          boxShadow: loading ? 'none' : '0 4px 20px rgba(99,102,241,0.4)',
+        }}>
+          {loading ? 'Procesando...' : modo === 'login' ? 'Ingresar a INGENIUM PRO' : 'Crear Cuenta'}
+        </button>
+
+        <div style={{ marginTop: 20, textAlign: 'center', fontSize: 12, color: '#475569' }}>
+          Plataforma certificada bajo normativas ASME · API · ISO · AWWA
         </div>
       </div>
     </div>
   );
 }
+
+const inputStyle: React.CSSProperties = {
+  padding: '12px 16px',
+  background: '#0f172a',
+  border: '1px solid rgba(99,102,241,0.2)',
+  borderRadius: 8,
+  color: '#f1f5f9',
+  fontSize: 14,
+  outline: 'none',
+  width: '100%',
+  boxSizing: 'border-box',
+};
