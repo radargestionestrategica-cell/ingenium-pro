@@ -7,11 +7,26 @@ datasource db {
   url = env("DATABASE_URL")
 }
 
+model Usuario {
+  id String @id @default(cuid())
+  email String @unique
+  password String
+  nombre String
+  empresa String
+  pais String @default("Argentina")
+  plan String @default("trial")
+  activo Boolean @default(true)
+  createdAt DateTime @default(now())
+  calculos Calculo[]
+}
+
 model Calculo {
   id String @id @default(cuid())
   tipo String
   parametros Json
   resultado Json
   usuario String @default("anonimo")
+  usuarioId String?
+  user Usuario? @relation(fields: [usuarioId], references: [id])
   createdAt DateTime @default(now())
 }
