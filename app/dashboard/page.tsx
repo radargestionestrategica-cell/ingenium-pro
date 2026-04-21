@@ -1,169 +1,150 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
-const MODULOS = [
-  { id: 'petroleo', label: 'Petróleo & Gas', icon: '⛽', desc: 'MAOP, presión, tuberías', norma: 'ASME B31.8 · API 5L', color: '#f59e0b' },
-  { id: 'hidraulica', label: 'Hidráulica', icon: '💧', desc: 'Acueductos, golpe de ariete, pérdidas', norma: 'AWWA · Darcy-Weisbach', color: '#3b82f6' },
-  { id: 'perforacion', label: 'Perforación', icon: '🔩', desc: 'Fluidos, presiones, BHA', norma: 'API RP 13D · API RP 7G', color: '#8b5cf6' },
-  { id: 'mineria', label: 'Minería', icon: '⛏️', desc: 'Ventilación, estabilidad, voladuras', norma: 'MSHA · ISO 12715', color: '#ef4444' },
-  { id: 'civil', label: 'Ingeniería Civil', icon: '🏗️', desc: 'Estructuras, cimentaciones, cargas', norma: 'ACI 318 · AISC 360', color: '#10b981' },
-  { id: 'geotecnia', label: 'Geotecnia', icon: '🪨', desc: 'Taludes, portante, consolidación', norma: 'Bishop · Meyerhof', color: '#6366f1' },
-  { id: 'vialidad', label: 'Vialidad', icon: '🛣️', desc: 'Pavimentos, curvas, drenaje', norma: 'AASHTO · INVIAS', color: '#f97316' },
-  { id: 'represas', label: 'Represas', icon: '🌊', desc: 'Presas, vertederos, filtraciones', norma: 'USACE · ICOLD', color: '#06b6d4' },
-  { id: 'termica', label: 'Térmica', icon: '🔥', desc: 'Dilatación, intercambiadores, vapor', norma: 'ASME B31.3 · TEMA', color: '#ec4899' },
-  { id: 'arquitectura', label: 'Arquitectura Técnica', icon: '📐', desc: 'Cargas, iluminación, acústica', norma: 'CIRSOC · ACI 318', color: '#84cc16' },
-];
+// ═══════════════════════════════════════════════════════════════
+// INGENIUM PRO v8.0 — Dashboard principal
+// Silvana Belén Colombo © 2026
+// ═══════════════════════════════════════════════════════════════
 
 interface Usuario {
   nombre: string;
   empresa: string;
   plan: string;
+  pais: string;
 }
 
+const MODULOS = [
+  { id: 'petroleo', titulo: 'Petróleo & Gas', desc: 'MAOP, Barlow, factor E·T, análisis riesgo', icono: '🛢️', color: '#f59e0b', norma: 'ASME B31.8 · API 5L · API 1104' },
+  { id: 'hidraulica', titulo: 'Hidráulica', desc: 'Darcy-Weisbach, Joukowsky, golpe de ariete', icono: '💧', color: '#06b6d4', norma: 'AWWA M11 · ASME B31.3' },
+  { id: 'perforacion', titulo: 'Perforación', desc: 'Lodo, ECD, gradiente fractura, Eaton', icono: '⛏️', color: '#8b5cf6', norma: 'API RP 13D · API RP 7G · DNV' },
+  { id: 'mineria', titulo: 'Minería', desc: 'RMR Bieniawski, UCS, voladura, ventilación', icono: '🪨', color: '#ef4444', norma: 'Bieniawski (1989) · MSHA · ISO' },
+  { id: 'civil', titulo: 'Ingeniería Civil', desc: 'Perfiles W, vigas, columnas, cargas', icono: '🏗️', color: '#3b82f6', norma: 'AISC 360 · ACI 318 · CIRSOC 301' },
+  { id: 'geotecnia', titulo: 'Geotecnia', desc: 'Portante Meyerhof, Bishop, nivel freático', icono: '🌍', color: '#a16207', norma: 'Meyerhof (1963) · CIRSOC 101' },
+  { id: 'termica', titulo: 'Térmica', desc: 'LMTD, intercambiadores, dilatación', icono: '🌡️', color: '#dc2626', norma: 'TEMA · ASME Sec.VIII · Kern (1950)' },
+  { id: 'vialidad', titulo: 'Vialidad', desc: 'AASHTO 93, pavimento flexible/rígido', icono: '🛣️', color: '#16a34a', norma: 'AASHTO Guide 1993 · Manual DG-2018' },
+  { id: 'arquitectura', titulo: 'Arquitectura Técnica', desc: 'Cargas de viento, sismo, ASCE 7-22', icono: '🏛️', color: '#0891b2', norma: 'ASCE 7-22 · CIRSOC 103 · NSR-10' },
+  { id: 'represas', titulo: 'Represas & Presas', desc: 'Francis, Darcy filtraciones, Terzaghi', icono: '🏞️', color: '#0284c7', norma: 'USACE EM 1110-2 · ICOLD' },
+  { id: 'soldadura', titulo: 'Soldadura', desc: 'Electrodos, Heat Input, filete, CE precal.', icono: '⚡', color: '#d97706', norma: 'AWS D1.1:2020 · ASME Sec.IX · API 1104' },
+  { id: 'mmo', titulo: 'Maestro Mayor de Obra', desc: 'Hormigón, hierro, mampostería, losas, zapata',icono: '🧱', color: '#10b981', norma: 'CIRSOC 201 · ACI 318 · NCh 170 · NSR-10' },
+  { id: 'electricidad', titulo: 'Electricidad Industrial',desc: 'Cable, CC, FP, motor, área peligrosa, lux', icono: '🔋', color: '#22c55e', norma: 'NEC 2023 · IEC 60909 · API RP 500 · IEC 60079' },
+];
+
+const PLAN_COLOR: Record<string, string> = {
+  trial: '#f59e0b', pro: '#6366f1', enterprise: '#10b981',
+};
+const PLAN_LABEL: Record<string, string> = {
+  trial: 'TRIAL', pro: 'PRO', enterprise: 'ENTERPRISE',
+};
+
 export default function Dashboard() {
-  const router = useRouter();
   const [usuario, setUsuario] = useState<Usuario | null>(null);
-  const [horaActual, setHoraActual] = useState('');
+  const [cargado, setCargado] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
-    const stored = localStorage.getItem('ip_user');
+    const stored = localStorage.getItem('ingenium_usuario');
     if (!stored) { router.push('/Login'); return; }
-    setUsuario(JSON.parse(stored));
-    const ahora = new Date();
-    const hora = ahora.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
-    const fecha = ahora.toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-    setHoraActual(`${fecha} · ${hora}`);
+    try {
+      setUsuario(JSON.parse(stored));
+    } catch {
+      router.push('/Login');
+    } finally {
+      setCargado(true);
+    }
   }, [router]);
 
   const cerrarSesion = () => {
-    localStorage.removeItem('ip_token');
-    localStorage.removeItem('ip_user');
+    localStorage.removeItem('ingenium_usuario');
     router.push('/Login');
   };
 
-  if (!usuario) return (
-    <div style={{ minHeight: '100vh', background: '#0a0a1a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ color: '#6366f1', fontSize: 14 }}>Cargando INGENIUM PRO...</div>
-    </div>
-  );
+  if (!cargado) {
+    return (
+      <div style={{ minHeight: '100vh', background: '#070d1a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ color: '#6366f1', fontSize: 14 }}>Cargando INGENIUM PRO...</div>
+      </div>
+    );
+  }
+
+  if (!usuario) return null;
+
+  const plan = usuario.plan?.toLowerCase() || 'trial';
 
   return (
-    <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg,#0a0a1a 0%,#0d1b2a 100%)', fontFamily: 'Inter,sans-serif' }}>
+    <div style={{ minHeight: '100vh', background: '#070d1a', fontFamily: 'Inter,-apple-system,sans-serif', color: '#f1f5f9' }}>
 
       {/* HEADER */}
-      <div style={{
-        background: 'rgba(15,23,42,0.98)', borderBottom: '1px solid rgba(99,102,241,0.2)',
-        padding: '0 40px', height: 64, display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        position: 'sticky', top: 0, zIndex: 100,
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          <div style={{ fontSize: 9, letterSpacing: 5, color: '#6366f1', fontWeight: 800 }}>◈ INGENIUM PRO</div>
-          <div style={{ width: 1, height: 20, background: 'rgba(99,102,241,0.3)' }} />
-          <div style={{ fontSize: 11, color: '#475569' }}>v8.0 · Plataforma de Ingeniería Técnica de Precisión</div>
+      <header style={{ background: 'rgba(7,13,26,0.98)', borderBottom: '1px solid rgba(99,102,241,0.25)', padding: '12px 24px', display: 'flex', alignItems: 'center', gap: 12, position: 'sticky', top: 0, zIndex: 100 }}>
+        <div style={{ width: 40, height: 40, borderRadius: 11, background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: 14, color: '#fff', flexShrink: 0 }}>IP</div>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 16, fontWeight: 800 }}>INGENIUM PRO</div>
+          <div style={{ fontSize: 10, color: '#475569' }}>Plataforma de Ingeniería Técnica de Precisión · v8.0</div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <div style={{ textAlign: 'right' }}>
-            <div style={{ fontSize: 13, color: '#f1f5f9', fontWeight: 600 }}>{usuario.nombre}</div>
-            <div style={{ fontSize: 11, color: '#475569' }}>{usuario.empresa}</div>
+            <div style={{ fontSize: 13, fontWeight: 700 }}>{usuario.nombre}</div>
+            <div style={{ fontSize: 10, color: '#475569' }}>{usuario.empresa} · {usuario.pais}</div>
           </div>
-          <div style={{
-            padding: '4px 12px', borderRadius: 20,
-            background: usuario.plan === 'trial' ? 'rgba(245,158,11,0.15)' : 'rgba(99,102,241,0.15)',
-            border: `1px solid ${usuario.plan === 'trial' ? 'rgba(245,158,11,0.4)' : 'rgba(99,102,241,0.4)'}`,
-            fontSize: 10, fontWeight: 700, letterSpacing: 1,
-            color: usuario.plan === 'trial' ? '#f59e0b' : '#6366f1',
-            textTransform: 'uppercase' as const,
-          }}>
-            {usuario.plan}
+          <div style={{ padding: '4px 10px', borderRadius: 20, background: `${PLAN_COLOR[plan]}20`, border: `1px solid ${PLAN_COLOR[plan]}50`, color: PLAN_COLOR[plan], fontSize: 10, fontWeight: 800 }}>
+            {PLAN_LABEL[plan] || 'TRIAL'}
           </div>
-          <button onClick={cerrarSesion} style={{
-            padding: '7px 16px', background: 'transparent',
-            border: '1px solid rgba(239,68,68,0.3)', borderRadius: 8,
-            color: '#ef4444', fontSize: 12, cursor: 'pointer', fontWeight: 600,
-          }}>
+          <button onClick={cerrarSesion} style={{ padding: '6px 14px', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 8, color: '#f87171', fontSize: 11, cursor: 'pointer', fontWeight: 600 }}>
             Salir
           </button>
         </div>
-      </div>
+      </header>
 
       {/* CONTENIDO */}
-      <div style={{ padding: '48px 40px', maxWidth: 1400, margin: '0 auto' }}>
+      <div style={{ maxWidth: 1100, margin: '0 auto', padding: '32px 24px' }}>
 
-        {/* BIENVENIDA */}
-        <div style={{ marginBottom: 48 }}>
-          <div style={{ fontSize: 11, color: '#475569', letterSpacing: 1, marginBottom: 8, textTransform: 'uppercase' as const }}>
-            {horaActual}
-          </div>
-          <div style={{ fontSize: 32, fontWeight: 800, color: '#f1f5f9', marginBottom: 8 }}>
-            Bienvenido, {usuario.nombre.split(' ')[0]} 👋
-          </div>
-          <div style={{ fontSize: 15, color: '#475569' }}>
-            Seleccioná un módulo de ingeniería para comenzar tu análisis técnico.
-          </div>
+        {/* Bienvenida */}
+        <div style={{ marginBottom: 32 }}>
+          <h1 style={{ fontSize: 24, fontWeight: 900, margin: '0 0 6px' }}>Bienvenido, {usuario.nombre.split(' ')[0]} 👋</h1>
+          <p style={{ fontSize: 14, color: '#475569', margin: 0 }}>Seleccioná un módulo para comenzar tu cálculo técnico con normativas reales verificadas.</p>
         </div>
 
-        {/* ACCESO RÁPIDO AL CHAT */}
-        <div onClick={() => router.push('/')} style={{
-          background: 'linear-gradient(135deg,rgba(99,102,241,0.15),rgba(139,92,246,0.1))',
-          border: '1px solid rgba(99,102,241,0.3)', borderRadius: 16,
-          padding: '24px 32px', marginBottom: 48, cursor: 'pointer',
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        }}>
-          <div>
-            <div style={{ fontSize: 16, fontWeight: 700, color: '#f1f5f9', marginBottom: 4 }}>
-              🤖 Asistente IA de Ingeniería
-            </div>
-            <div style={{ fontSize: 13, color: '#64748b' }}>
-              Consultá cualquier cálculo técnico en lenguaje natural — ASME · API · ISO · AWWA
-            </div>
+        {/* Botón Chat IA */}
+        <div
+          onClick={() => router.push('/?modulo=chat')}
+          style={{ background: 'linear-gradient(135deg,rgba(99,102,241,0.2),rgba(139,92,246,0.1))', border: '1px solid rgba(99,102,241,0.4)', borderRadius: 16, padding: '20px 24px', marginBottom: 28, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 16, transition: 'all 0.2s' }}>
+          <div style={{ width: 48, height: 48, borderRadius: 13, background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0 }}>🤖</div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 15, fontWeight: 800, color: '#a78bfa' }}>Asistente IA — INGENIUM PRO</div>
+            <div style={{ fontSize: 12, color: '#64748b' }}>Consultá cualquier cálculo en lenguaje natural · 14 módulos · ASME · API · AASHTO · ASCE · IEC · NEC</div>
           </div>
-          <div style={{ fontSize: 24, color: '#6366f1' }}>→</div>
+          <div style={{ fontSize: 20, color: '#6366f1' }}>→</div>
         </div>
 
-        {/* MÓDULOS */}
-        <div style={{ marginBottom: 24 }}>
-          <div style={{ fontSize: 11, color: '#475569', letterSpacing: 2, fontWeight: 700, marginBottom: 24, textTransform: 'uppercase' as const }}>
-            Módulos Técnicos
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 20 }}>
-            {MODULOS.map(mod => (
-              <div key={mod.id}
-                onClick={() => router.push(`/?modulo=${mod.id}`)}
-                style={{
-                  background: 'rgba(15,23,42,0.8)',
-                  border: '1px solid rgba(99,102,241,0.15)',
-                  borderRadius: 16, padding: 24, cursor: 'pointer',
-                  position: 'relative' as const, overflow: 'hidden' as const,
-                }}>
-                <div style={{
-                  position: 'absolute' as const, top: 0, left: 0, right: 0, height: 3,
-                  background: mod.color, borderRadius: '16px 16px 0 0',
-                }} />
-                <div style={{ fontSize: 28, marginBottom: 12 }}>{mod.icon}</div>
-                <div style={{ fontSize: 15, fontWeight: 700, color: '#f1f5f9', marginBottom: 6 }}>{mod.label}</div>
-                <div style={{ fontSize: 12, color: '#64748b', marginBottom: 12 }}>{mod.desc}</div>
-                <div style={{
-                  display: 'inline-block', padding: '3px 10px',
-                  background: 'rgba(99,102,241,0.1)',
-                  border: '1px solid rgba(99,102,241,0.2)',
-                  borderRadius: 20, fontSize: 10, color: '#6366f1', fontWeight: 600,
-                }}>
-                  {mod.norma}
+        {/* Grid módulos */}
+        <div style={{ fontSize: 11, color: '#334155', fontWeight: 700, letterSpacing: 1, marginBottom: 16, textTransform: 'uppercase' }}>
+          13 MÓDULOS TÉCNICOS CON NORMATIVAS REALES
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 16 }}>
+          {MODULOS.map(m => (
+            <div
+              key={m.id}
+              onClick={() => router.push(`/?modulo=${m.id}`)}
+              style={{ background: 'rgba(15,23,42,0.8)', border: `1px solid ${m.color}20`, borderRadius: 16, padding: '20px', cursor: 'pointer', transition: 'all 0.2s', position: 'relative', overflow: 'hidden' }}>
+              {/* Barra superior de color */}
+              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: m.color, borderRadius: '16px 16px 0 0' }} />
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
+                <div style={{ width: 44, height: 44, borderRadius: 12, background: `${m.color}15`, border: `1px solid ${m.color}30`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, flexShrink: 0 }}>{m.icono}</div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 13, fontWeight: 800, color: '#f1f5f9', marginBottom: 4 }}>{m.titulo}</div>
+                  <div style={{ fontSize: 11, color: '#64748b', marginBottom: 10, lineHeight: 1.5 }}>{m.desc}</div>
+                  <div style={{ padding: '3px 8px', background: `${m.color}10`, border: `1px solid ${m.color}30`, borderRadius: 8, display: 'inline-block', fontSize: 9, color: m.color, fontWeight: 700 }}>
+                    {m.norma}
+                  </div>
                 </div>
               </div>
-            ))}
-          </div>
+            </div>
+          ))}
         </div>
 
-        {/* PIE */}
-        <div style={{ marginTop: 64, textAlign: 'center', borderTop: '1px solid rgba(99,102,241,0.1)', paddingTop: 32 }}>
-          <div style={{ fontSize: 10, color: '#1e293b', letterSpacing: 1 }}>
-            INGENIUM PRO v8.0 · ASME · API · ISO · AWWA · AASHTO · USACE · ICOLD · ACI · AISC
-          </div>
-          <div style={{ fontSize: 10, color: '#1e293b', marginTop: 4 }}>
-            © 2026 INGENIUM PRO — Todos los derechos reservados
-          </div>
+        {/* Footer del dashboard */}
+        <div style={{ marginTop: 48, textAlign: 'center', color: '#1e293b', fontSize: 10 }}>
+          INGENIUM PRO v8.0 · Única plataforma de ingeniería con normativas reales verificadas · © 2026 Silvana Belén Colombo · RADAR Gestión Estratégica
         </div>
       </div>
     </div>
