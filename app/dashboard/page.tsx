@@ -109,7 +109,6 @@ export default function Dashboard() {
           border: '1px solid rgba(99,102,241,0.3)', borderRadius: 16,
           padding: '24px 32px', marginBottom: 48, cursor: 'pointer',
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          transition: 'all 0.2s',
         }}>
           <div>
             <div style={{ fontSize: 16, fontWeight: 700, color: '#f1f5f9', marginBottom: 4 }}>
@@ -127,11 +126,7 @@ export default function Dashboard() {
           <div style={{ fontSize: 11, color: '#475569', letterSpacing: 2, fontWeight: 700, marginBottom: 24, textTransform: 'uppercase' as const }}>
             Módulos Técnicos
           </div>
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-            gap: 20,
-          }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 20 }}>
             {MODULOS.map(mod => (
               <div key={mod.id}
                 onClick={() => router.push(`/?modulo=${mod.id}`)}
@@ -139,7 +134,6 @@ export default function Dashboard() {
                   background: 'rgba(15,23,42,0.8)',
                   border: '1px solid rgba(99,102,241,0.15)',
                   borderRadius: 16, padding: 24, cursor: 'pointer',
-                  transition: 'all 0.2s',
                   position: 'relative' as const, overflow: 'hidden' as const,
                 }}>
                 <div style={{
@@ -147,12 +141,8 @@ export default function Dashboard() {
                   background: mod.color, borderRadius: '16px 16px 0 0',
                 }} />
                 <div style={{ fontSize: 28, marginBottom: 12 }}>{mod.icon}</div>
-                <div style={{ fontSize: 15, fontWeight: 700, color: '#f1f5f9', marginBottom: 6 }}>
-                  {mod.label}
-                </div>
-                <div style={{ fontSize: 12, color: '#64748b', marginBottom: 12 }}>
-                  {mod.desc}
-                </div>
+                <div style={{ fontSize: 15, fontWeight: 700, color: '#f1f5f9', marginBottom: 6 }}>{mod.label}</div>
+                <div style={{ fontSize: 12, color: '#64748b', marginBottom: 12 }}>{mod.desc}</div>
                 <div style={{
                   display: 'inline-block', padding: '3px 10px',
                   background: 'rgba(99,102,241,0.1)',
@@ -172,10 +162,9 @@ export default function Dashboard() {
             INGENIUM PRO v8.0 · ASME · API · ISO · AWWA · AASHTO · USACE · ICOLD · ACI · AISC
           </div>
           <div style={{ fontSize: 10, color: '#1e293b', marginTop: 4 }}>
-            © 2026 INGENIUM PRO — Plataforma de Ingeniería Técnica de Precisión — Todos los derechos reservados
+            © 2026 INGENIUM PRO — Todos los derechos reservados
           </div>
         </div>
-
       </div>
     </div>
   );
