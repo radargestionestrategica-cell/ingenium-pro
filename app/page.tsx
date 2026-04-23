@@ -2,13 +2,9 @@
 import { useState, useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkMath from 'remark-math';
+import remarkGfm from 'remark-gfm'; // <-- MOTOR DE TABLAS EJECUTIVAS
 import rehypeKatex from 'rehype-katex';
 import 'katex/dist/katex.min.css';
-
-// ═══════════════════════════════════════════════════════════════
-// INGENIUM PRO v8.1 — UNIFICACIÓN TOPE DE GAMA
-// Estructura Original Protegida · Motor de Auditoría Senior
-// ═══════════════════════════════════════════════════════════════
 
 import ModuloPetroleo from '@/components/ModuloPetroleo';
 import ModuloHidraulica from '@/components/ModuloHidraulica';
@@ -59,7 +55,7 @@ export default function IngeniumPro() {
 
   const [msgs, setMsgs] = useState([{
     role: 'assistant',
-    content: '# INGENIUM PRO v8.1\n\nMotor de Auditoría Técnica activado. Resultados directos bajo normativa ASME, API y AISC.'
+    content: '# INGENIUM PRO v8.1\n\nMotor de Auditoría Senior activado. Los resultados se mostrarán en tablas ejecutivas. Cero desarrollo aritmético.'
   }]);
 
   useEffect(() => {
@@ -88,11 +84,17 @@ export default function IngeniumPro() {
     setMsgs(nuevos);
     setLoading(true);
 
-    const SYS_PROMPT = `Sos INGENIUM PRO v8.1 — Software de Auditoría Técnica. 
-    TU ROL: Provee resultados directos y veredictos (CUMPLE/NO CUMPLE).
-    MATEMÁTICAS: Usá LaTeX ($$fórmula$$) para la ecuación base y el resultado final. Omití el desarrollo aritmético.
-    FORMATO: Siempre presentá una TABLA DE RESULTADOS primero.
-    SISTEMA: Respondé en ${sistemaMedidas}. Citá normativas reales ASME/API/AISC.`;
+    // CEREBRO AUDITOR: REGLA DE CERO ARITMÉTICA
+    const SYS_PROMPT = `Sos INGENIUM PRO v8.1 — Software de Auditoría Técnica de Alta Gama.
+    ORDEN ESTRICTA: El usuario es un Ingeniero Senior. PROHIBIDO mostrar pasos aritméticos, multiplicaciones o sustitución de valores (Ej: "Mn = 250 x 600 = 150"). Sos un software ejecutivo, NO una calculadora escolar.
+
+    ESTRUCTURA DE RESPUESTA OBLIGATORIA:
+    1. TABLA EJECUTIVA: Parámetro | Resultado Final | Límite Norma | Estado (✅/❌).
+    2. VEREDICTO: Dictamen directo (CUMPLE/NO CUMPLE) citando la norma (ASME, API, AISC).
+    3. ACCIÓN: Si no cumple, da la solución técnica inmediata.
+    4. RESPALDO TEÓRICO: Solo la fórmula base de gobierno en LaTeX (Ej: $$M_n = F_y \cdot Z_x$$). NUNCA EL PASO A PASO.
+
+    SISTEMA DE UNIDADES: ${sistemaMedidas}.`;
 
     try {
       const res = await fetch('/api/chat', {
@@ -111,23 +113,23 @@ export default function IngeniumPro() {
     }
   };
 
+  const tabActivo = TABS.find(t => t.id === tab);
+
   return (
-    <div style={{ minHeight: '100vh', background: '#070d1a', display: 'flex', flexDirection: 'column', fontFamily: 'Inter, sans-serif', color: '#f1f5f9' }}>
+    <div style={{ minHeight: '100vh', background: '#070d1a', display: 'flex', flexDirection: 'column', fontFamily: 'Inter,-apple-system,sans-serif', color: '#f1f5f9' }}>
 
       {/* HEADER */}
       <header style={{ background: 'rgba(7,13,26,0.98)', borderBottom: '1px solid rgba(99,102,241,0.25)', padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 12, position: 'sticky', top: 0, zIndex: 100, backdropFilter: 'blur(12px)' }}>
-        <div style={{ width: 38, height: 38, borderRadius: 10, background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, color: '#fff', flexShrink: 0 }}>IP</div>
+        <div style={{ width: 38, height: 38, borderRadius: 10, background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: 13, color: '#fff', flexShrink: 0 }}>IP</div>
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 15, fontWeight: 800 }}>INGENIUM PRO v8.1</div>
-          <div style={{ fontSize: 10, color: '#475569' }}>v8.1 · Auditoría Senior · © 2026 Silvana Belén Colombo</div>
+          <div style={{ fontSize: 10, color: '#475569' }}>Auditoría Senior · © 2026 Silvana Belén Colombo</div>
         </div>
-
         <select value={sistemaMedidas} onChange={(e) => setSistemaMedidas(e.target.value)}
           style={{ background: '#0f172a', border: '1px solid #334155', color: '#fff', fontSize: 11, padding: '5px 10px', borderRadius: 8, cursor: 'pointer' }}>
           <option value="SI (m, kg, °C)">S. Internacional</option>
           <option value="Imperial (ft, lb, °F)">S. Imperial</option>
         </select>
-
         <button onClick={() => leyendo ? window.speechSynthesis.cancel() : hablar(msgs[msgs.length-1].content)}
           style={{ background: '#1e293b', border: '1px solid #334155', borderRadius: 8, color: '#fff', padding: '8px', cursor: 'pointer' }}>
           {leyendo ? '🔇' : '🔊'}
@@ -135,13 +137,14 @@ export default function IngeniumPro() {
       </header>
 
       {/* TABS */}
-      <nav style={{ background: 'rgba(7,13,26,0.95)', borderBottom: '1px solid rgba(99,102,241,0.12)', padding: '0 8px', overflowX: 'auto', display: 'flex', scrollbarWidth: 'none' }}>
+      <nav style={{ background: 'rgba(7,13,26,0.95)', borderBottom: '1px solid rgba(99,102,241,0.12)', padding: '0 8px', overflowX: 'auto', display: 'flex', gap: 1, scrollbarWidth: 'none', flexShrink: 0 }}>
         {TABS.map(t => (
           <button key={t.id} onClick={() => setTab(t.id)} style={{
             padding: '10px 11px', border: 'none', background: 'transparent',
             color: tab === t.id ? t.color : '#475569',
             borderBottom: tab === t.id ? `2px solid ${t.color}` : '2px solid transparent',
-            fontWeight: 700, fontSize: 11, cursor: 'pointer', whiteSpace: 'nowrap'
+            fontWeight: tab === t.id ? 700 : 400,
+            fontSize: 11, cursor: 'pointer', whiteSpace: 'nowrap'
           }}>
             <span style={{ marginRight: 4 }}>{t.icono}</span>{t.label}
           </button>
@@ -171,19 +174,20 @@ export default function IngeniumPro() {
               {msgs.map((m, i) => (
                 <div key={i} style={{ display: 'flex', justifyContent: m.role === 'user' ? 'flex-end' : 'flex-start' }}>
                   <div style={{
-                    maxWidth: '85%', padding: '12px 16px', borderRadius: 16,
+                    maxWidth: '90%', padding: '16px 20px', borderRadius: 16,
                     background: m.role === 'user' ? 'linear-gradient(135deg,#6366f1,#8b5cf6)' : '#0f172a',
                     border: '1px solid rgba(99,102,241,0.2)', color: '#e2e8f0', fontSize: 13
                   }}>
                     <ReactMarkdown 
-                      remarkPlugins={[remarkMath]} 
+                      remarkPlugins={[remarkMath, remarkGfm]} 
                       rehypePlugins={[rehypeKatex]}
                       components={{
-                        table: ({...p}) => <table style={{borderCollapse: 'collapse', width: '100%', margin: '10px 0', border: '1px solid #334155'}} {...p}/>,
-                        th: ({...p}) => <th style={{border: '1px solid #334155', padding: '8px', background: '#1e293b', textAlign: 'left'}} {...p}/>,
-                        td: ({...p}) => <td style={{border: '1px solid #334155', padding: '8px'}} {...p}/>,
-                        h1: ({...p}) => <h1 style={{fontSize: 16, fontWeight: 900, color: '#fff', borderBottom: '1px solid #1e293b', paddingBottom: 4}} {...p}/>,
-                        h2: ({...p}) => <h2 style={{fontSize: 14, fontWeight: 800, color: '#a78bfa', marginTop: 10}} {...p}/>
+                        table: ({...p}) => <div style={{overflowX: 'auto'}}><table style={{borderCollapse: 'collapse', width: '100%', margin: '15px 0', fontSize: '13px', border: '1px solid #1e293b', borderRadius: '8px'}} {...p}/></div>,
+                        th: ({...p}) => <th style={{borderBottom: '2px solid #334155', padding: '12px', background: '#0a0f1e', textAlign: 'left', color: '#a78bfa', fontWeight: 800}} {...p}/>,
+                        td: ({...p}) => <td style={{borderBottom: '1px solid #1e293b', padding: '12px'}} {...p}/>,
+                        h1: ({...p}) => <h1 style={{fontSize: 18, fontWeight: 900, color: '#fff', borderBottom: '1px solid #1e293b', paddingBottom: 6, marginBottom: 12}} {...p}/>,
+                        h2: ({...p}) => <h2 style={{fontSize: 15, fontWeight: 800, color: '#6366f1', marginTop: 18, marginBottom: 10}} {...p}/>,
+                        strong: ({...p}) => <strong style={{color: '#f8fafc', fontWeight: 700}} {...p}/>
                       }}
                     >
                       {m.content}
@@ -196,15 +200,15 @@ export default function IngeniumPro() {
 
             <div style={{ padding: '6px 12px 8px', borderTop: '1px solid rgba(99,102,241,0.1)', display: 'flex', gap: 5, overflowX: 'auto' }}>
               {EJEMPLOS.map((ej, i) => (
-                <button key={i} onClick={() => send(ej)} style={{ padding: '4px 10px', background: 'rgba(99,102,241,0.07)', border: '1px solid rgba(99,102,241,0.18)', borderRadius: 14, color: '#94a3b8', fontSize: 10, cursor: 'pointer', whiteSpace: 'nowrap' }}>{ej}</button>
+                <button key={i} onClick={() => send(ej)} style={{ padding: '6px 12px', background: 'rgba(99,102,241,0.07)', border: '1px solid rgba(99,102,241,0.18)', borderRadius: 14, color: '#94a3b8', fontSize: 11, cursor: 'pointer', whiteSpace: 'nowrap' }}>{ej}</button>
               ))}
             </div>
 
-            <div style={{ padding: '10px 12px', borderTop: '1px solid rgba(99,102,241,0.15)', display: 'flex', gap: 8 }}>
+            <div style={{ padding: '12px 16px', borderTop: '1px solid rgba(99,102,241,0.15)', display: 'flex', gap: 10 }}>
               <input value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && send()}
-                style={{ flex: 1, padding: '11px 14px', background: '#0a0f1e', border: '1px solid #334155', borderRadius: 12, color: '#fff', fontSize: 13, outline: 'none' }}
-                placeholder="Consulta técnica ASME / API..." />
-              <button onClick={() => send()} style={{ padding: '11px 18px', background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', border: 'none', borderRadius: 12, color: '#fff', fontWeight: 700 }}>→</button>
+                style={{ flex: 1, padding: '14px 16px', background: '#0a0f1e', border: '1px solid #334155', borderRadius: 12, color: '#fff', fontSize: 14, outline: 'none' }}
+                placeholder="Consulta técnica ejecutiva (Ej: Viga W310x39 A36...)" />
+              <button onClick={() => send()} style={{ padding: '0 24px', background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', border: 'none', borderRadius: 12, color: '#fff', fontWeight: 800, cursor: 'pointer' }}>→</button>
             </div>
           </div>
         )}
