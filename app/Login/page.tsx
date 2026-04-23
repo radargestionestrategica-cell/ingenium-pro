@@ -63,7 +63,12 @@ export default function LoginPage() {
       if (!res.ok) { setError(data.error || 'Error desconocido'); return; }
       if (modo === 'login') {
         localStorage.setItem('ip_token', data.token);
-        localStorage.setItem('ip_user', JSON.stringify(data.usuario));
+        
+        // ═══════════════════════════════════════════════════════════════
+        // SOLUCIÓN APLICADA: Ahora coincide con lo que pide el Dashboard
+        localStorage.setItem('ingenium_usuario', JSON.stringify(data.usuario));
+        // ═══════════════════════════════════════════════════════════════
+        
         window.location.href = '/dashboard';
       } else {
         setExito('✅ Cuenta creada exitosamente. Ahora iniciá sesión.');
