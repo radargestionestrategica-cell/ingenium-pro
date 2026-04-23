@@ -6,35 +6,35 @@ import remarkGfm from 'remark-gfm';
 import rehypeKatex from 'rehype-katex';
 import 'katex/dist/katex.min.css';
 
-import ModuloPetroleo     from '@/components/ModuloPetroleo';
-import ModuloHidraulica   from '@/components/ModuloHidraulica';
-import ModuloPerforacion  from '@/components/ModuloPerforacion';
-import ModuloMineria      from '@/components/ModuloMineria';
-import ModuloCivil        from '@/components/ModuloCivil';
-import ModuloGeotecnia    from '@/components/ModuloGeotecnia';
-import ModuloTermica      from '@/components/ModuloTermica';
-import ModuloVialidad     from '@/components/ModuloVialidad';
+import ModuloPetroleo from '@/components/ModuloPetroleo';
+import ModuloHidraulica from '@/components/ModuloHidraulica';
+import ModuloPerforacion from '@/components/ModuloPerforacion';
+import ModuloMineria from '@/components/ModuloMineria';
+import ModuloCivil from '@/components/ModuloCivil';
+import ModuloGeotecnia from '@/components/ModuloGeotecnia';
+import ModuloTermica from '@/components/ModuloTermica';
+import ModuloVialidad from '@/components/ModuloVialidad';
 import ModuloArquitectura from '@/components/ModuloArquitectura';
-import ModuloRepresas     from '@/components/ModuloRepresas';
-import ModuloSoldadura    from '@/components/ModuloSoldadura';
-import ModuloMMO          from '@/components/ModuloMMO';
+import ModuloRepresas from '@/components/ModuloRepresas';
+import ModuloSoldadura from '@/components/ModuloSoldadura';
+import ModuloMMO from '@/components/ModuloMMO';
 import ModuloElectricidad from '@/components/ModuloElectricidad';
 
 const TABS = [
-  { id: 'chat',          label: 'Chat IA',       icono: '🤖', color: '#6366f1' },
-  { id: 'petroleo',      label: 'Petróleo',       icono: '🛢️',  color: '#f59e0b' },
-  { id: 'hidraulica',    label: 'Hidráulica',     icono: '💧',  color: '#06b6d4' },
-  { id: 'perforacion',   label: 'Perforación',    icono: '⛏️',  color: '#8b5cf6' },
-  { id: 'mineria',       label: 'Minería',        icono: '🪨',  color: '#ef4444' },
-  { id: 'civil',         label: 'Civil',          icono: '🏗️',  color: '#3b82f6' },
-  { id: 'geotecnia',     label: 'Geotecnia',      icono: '🌍',  color: '#a16207' },
-  { id: 'termica',       label: 'Térmica',        icono: '🌡️',  color: '#dc2626' },
-  { id: 'vialidad',      label: 'Vialidad',       icono: '🛣️',  color: '#16a34a' },
-  { id: 'arquitectura',  label: 'Arquitectura',   icono: '🏛️',  color: '#0891b2' },
-  { id: 'represas',      label: 'Represas',       icono: '🏞️',  color: '#0284c7' },
-  { id: 'soldadura',     label: 'Soldadura',      icono: '⚡',  color: '#d97706' },
-  { id: 'mmo',           label: 'MMO',            icono: '🧱',  color: '#10b981' },
-  { id: 'electricidad',  label: 'Electricidad',   icono: '🔋',  color: '#22c55e' },
+  { id: 'chat', label: 'Chat IA', icono: '🤖', color: '#6366f1' },
+  { id: 'petroleo', label: 'Petróleo', icono: '🛢️', color: '#f59e0b' },
+  { id: 'hidraulica', label: 'Hidráulica', icono: '💧', color: '#06b6d4' },
+  { id: 'perforacion', label: 'Perforación', icono: '⛏️', color: '#8b5cf6' },
+  { id: 'mineria', label: 'Minería', icono: '🪨', color: '#ef4444' },
+  { id: 'civil', label: 'Civil', icono: '🏗️', color: '#3b82f6' },
+  { id: 'geotecnia', label: 'Geotecnia', icono: '🌍', color: '#a16207' },
+  { id: 'termica', label: 'Térmica', icono: '🌡️', color: '#dc2626' },
+  { id: 'vialidad', label: 'Vialidad', icono: '🛣️', color: '#16a34a' },
+  { id: 'arquitectura', label: 'Arquitectura', icono: '🏛️', color: '#0891b2' },
+  { id: 'represas', label: 'Represas', icono: '🏞️', color: '#0284c7' },
+  { id: 'soldadura', label: 'Soldadura', icono: '⚡', color: '#d97706' },
+  { id: 'mmo', label: 'MMO', icono: '🧱', color: '#10b981' },
+  { id: 'electricidad', label: 'Electricidad', icono: '🔋', color: '#22c55e' },
 ];
 
 const EJEMPLOS = [
@@ -64,7 +64,12 @@ export default function IngeniumPro() {
     if (m && TABS.find(t => t.id === m)) setTab(m);
   }, []);
 
-  useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [msgs, loading]); // Agregué "loading" para que haga auto-scroll al "Analizando..."
+  // EL SECRETO PARA QUE EL "ANALIZANDO" SE VEA SIEMPRE:
+  useEffect(() => { 
+    setTimeout(() => {
+      endRef.current?.scrollIntoView({ behavior: 'smooth' }); 
+    }, 100);
+  }, [msgs, loading]);
 
   const hablar = (texto: string) => {
     if (!('speechSynthesis' in window)) return;
@@ -116,12 +121,6 @@ export default function IngeniumPro() {
 
   return (
     <div style={{ minHeight: '100vh', background: '#070d1a', display: 'flex', flexDirection: 'column', fontFamily: 'Inter,-apple-system,sans-serif', color: '#f1f5f9' }}>
-
-      {/* ANIMACIÓN CSS INYECTADA PARA EL LOADER */}
-      <style dangerouslySetInnerHTML={{__html: `
-        @keyframes spin { 100% { transform: rotate(360deg); } }
-        @keyframes pulse-border { 0% { border-color: rgba(99,102,241,0.3); } 50% { border-color: rgba(99,102,241,0.8); } 100% { border-color: rgba(99,102,241,0.3); } }
-      `}} />
 
       {/* HEADER */}
       <header style={{ background: 'rgba(7,13,26,0.98)', borderBottom: '1px solid rgba(99,102,241,0.25)', padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 12, position: 'sticky', top: 0, zIndex: 100, backdropFilter: 'blur(12px)' }}>
@@ -181,7 +180,8 @@ export default function IngeniumPro() {
                   <div style={{
                     maxWidth: '90%', padding: '16px 20px', borderRadius: 16,
                     background: m.role === 'user' ? 'linear-gradient(135deg,#6366f1,#8b5cf6)' : '#0f172a',
-                    border: '1px solid rgba(99,102,241,0.2)', color: '#e2e8f0', fontSize: 13
+                    border: '1px solid rgba(99,102,241,0.2)', color: '#e2e8f0', fontSize: 13,
+                    boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
                   }}>
                     <ReactMarkdown 
                       remarkPlugins={[remarkMath, remarkGfm]} 
@@ -201,37 +201,40 @@ export default function IngeniumPro() {
                 </div>
               ))}
               
-              {/* === NUEVO: INDICADOR ANIMADO DE "ANALIZANDO" === */}
+              {/* === INDICADOR "ANALIZANDO" MEJORADO Y BLINDADO === */}
               {loading && (
-                <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
+                <div style={{ display: 'flex', justifyContent: 'flex-start', marginTop: '10px', marginBottom: '20px' }}>
                   <div style={{
-                    maxWidth: '80%', padding: '12px 20px', borderRadius: 16,
-                    background: 'rgba(99, 102, 241, 0.05)',
+                    padding: '12px 20px', borderRadius: '4px 16px 16px 16px',
+                    background: 'rgba(99, 102, 241, 0.15)',
                     border: '1px solid rgba(99, 102, 241, 0.4)',
-                    color: '#a78bfa', fontSize: 13, fontWeight: 600,
-                    display: 'flex', alignItems: 'center', gap: 10,
-                    animation: 'pulse-border 2s infinite'
+                    color: '#c7d2fe', fontSize: 13, fontWeight: 600,
+                    display: 'flex', alignItems: 'center', gap: 12,
+                    boxShadow: '0 0 10px rgba(99,102,241,0.2)'
                   }}>
-                    <div style={{ animation: 'spin 1.5s linear infinite', fontSize: 16, display: 'flex', alignItems: 'center' }}>⚙️</div>
-                    Analizando parámetros y cruzando normativas...
+                    <span style={{ fontSize: '16px' }}>⚙️</span> 
+                    <span>Analizando parámetros y cruzando normativas...</span>
                   </div>
                 </div>
               )}
 
-              <div ref={endRef} />
+              {/* Este div es el ancla para que la pantalla baje sola */}
+              <div ref={endRef} style={{ height: '10px' }} />
             </div>
 
             <div style={{ padding: '6px 12px 8px', borderTop: '1px solid rgba(99,102,241,0.1)', display: 'flex', gap: 5, overflowX: 'auto' }}>
               {EJEMPLOS.map((ej, i) => (
-                <button key={i} onClick={() => send(ej)} style={{ padding: '6px 12px', background: 'rgba(99,102,241,0.07)', border: '1px solid rgba(99,102,241,0.18)', borderRadius: 14, color: '#94a3b8', fontSize: 11, cursor: 'pointer', whiteSpace: 'nowrap' }}>{ej}</button>
+                <button key={i} onClick={() => send(ej)} disabled={loading} style={{ padding: '6px 12px', background: 'rgba(99,102,241,0.07)', border: '1px solid rgba(99,102,241,0.18)', borderRadius: 14, color: '#94a3b8', fontSize: 11, cursor: loading ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap', opacity: loading ? 0.5 : 1 }}>{ej}</button>
               ))}
             </div>
 
             <div style={{ padding: '12px 16px', borderTop: '1px solid rgba(99,102,241,0.15)', display: 'flex', gap: 10 }}>
-              <input value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && send()}
-                style={{ flex: 1, padding: '14px 16px', background: '#0a0f1e', border: '1px solid #334155', borderRadius: 12, color: '#fff', fontSize: 14, outline: 'none' }}
+              <input value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && send()} disabled={loading}
+                style={{ flex: 1, padding: '14px 16px', background: '#0a0f1e', border: '1px solid #334155', borderRadius: 12, color: '#fff', fontSize: 14, outline: 'none', opacity: loading ? 0.5 : 1 }}
                 placeholder="Consulta técnica ejecutiva (Ej: Viga W310x39 A36...)" />
-              <button onClick={() => send()} style={{ padding: '0 24px', background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', border: 'none', borderRadius: 12, color: '#fff', fontWeight: 800, cursor: 'pointer' }}>→</button>
+              <button onClick={() => send()} disabled={loading || !input.trim()} style={{ padding: '0 24px', background: loading ? '#334155' : 'linear-gradient(135deg,#6366f1,#8b5cf6)', border: 'none', borderRadius: 12, color: '#fff', fontWeight: 800, cursor: loading ? 'not-allowed' : 'pointer' }}>
+                {loading ? '⏳' : '→'}
+              </button>
             </div>
           </div>
         )}
