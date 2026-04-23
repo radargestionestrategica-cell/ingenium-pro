@@ -2,39 +2,39 @@
 import { useState, useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkMath from 'remark-math';
-import remarkGfm from 'remark-gfm'; // <-- MOTOR DE TABLAS EJECUTIVAS
+import remarkGfm from 'remark-gfm';
 import rehypeKatex from 'rehype-katex';
 import 'katex/dist/katex.min.css';
 
-import ModuloPetroleo from '@/components/ModuloPetroleo';
-import ModuloHidraulica from '@/components/ModuloHidraulica';
-import ModuloPerforacion from '@/components/ModuloPerforacion';
-import ModuloMineria from '@/components/ModuloMineria';
-import ModuloCivil from '@/components/ModuloCivil';
-import ModuloGeotecnia from '@/components/ModuloGeotecnia';
-import ModuloTermica from '@/components/ModuloTermica';
-import ModuloVialidad from '@/components/ModuloVialidad';
+import ModuloPetroleo     from '@/components/ModuloPetroleo';
+import ModuloHidraulica   from '@/components/ModuloHidraulica';
+import ModuloPerforacion  from '@/components/ModuloPerforacion';
+import ModuloMineria      from '@/components/ModuloMineria';
+import ModuloCivil        from '@/components/ModuloCivil';
+import ModuloGeotecnia    from '@/components/ModuloGeotecnia';
+import ModuloTermica      from '@/components/ModuloTermica';
+import ModuloVialidad     from '@/components/ModuloVialidad';
 import ModuloArquitectura from '@/components/ModuloArquitectura';
-import ModuloRepresas from '@/components/ModuloRepresas';
-import ModuloSoldadura from '@/components/ModuloSoldadura';
-import ModuloMMO from '@/components/ModuloMMO';
+import ModuloRepresas     from '@/components/ModuloRepresas';
+import ModuloSoldadura    from '@/components/ModuloSoldadura';
+import ModuloMMO          from '@/components/ModuloMMO';
 import ModuloElectricidad from '@/components/ModuloElectricidad';
 
 const TABS = [
-  { id: 'chat', label: 'Chat IA', icono: '🤖', color: '#6366f1' },
-  { id: 'petroleo', label: 'Petróleo', icono: '🛢️', color: '#f59e0b' },
-  { id: 'hidraulica', label: 'Hidráulica', icono: '💧', color: '#06b6d4' },
-  { id: 'perforacion', label: 'Perforación', icono: '⛏️', color: '#8b5cf6' },
-  { id: 'mineria', label: 'Minería', icono: '🪨', color: '#ef4444' },
-  { id: 'civil', label: 'Civil', icono: '🏗️', color: '#3b82f6' },
-  { id: 'geotecnia', label: 'Geotecnia', icono: '🌍', color: '#a16207' },
-  { id: 'termica', label: 'Térmica', icono: '🌡️', color: '#dc2626' },
-  { id: 'vialidad', label: 'Vialidad', icono: '🛣️', color: '#16a34a' },
-  { id: 'arquitectura', label: 'Arquitectura', icono: '🏛️', color: '#0891b2' },
-  { id: 'represas', label: 'Represas', icono: '🏞️', color: '#0284c7' },
-  { id: 'soldadura', label: 'Soldadura', icono: '⚡', color: '#d97706' },
-  { id: 'mmo', label: 'MMO', icono: '🧱', color: '#10b981' },
-  { id: 'electricidad', label: 'Electricidad', icono: '🔋', color: '#22c55e' },
+  { id: 'chat',          label: 'Chat IA',       icono: '🤖', color: '#6366f1' },
+  { id: 'petroleo',      label: 'Petróleo',       icono: '🛢️',  color: '#f59e0b' },
+  { id: 'hidraulica',    label: 'Hidráulica',     icono: '💧',  color: '#06b6d4' },
+  { id: 'perforacion',   label: 'Perforación',    icono: '⛏️',  color: '#8b5cf6' },
+  { id: 'mineria',       label: 'Minería',        icono: '🪨',  color: '#ef4444' },
+  { id: 'civil',         label: 'Civil',          icono: '🏗️',  color: '#3b82f6' },
+  { id: 'geotecnia',     label: 'Geotecnia',      icono: '🌍',  color: '#a16207' },
+  { id: 'termica',       label: 'Térmica',        icono: '🌡️',  color: '#dc2626' },
+  { id: 'vialidad',      label: 'Vialidad',       icono: '🛣️',  color: '#16a34a' },
+  { id: 'arquitectura',  label: 'Arquitectura',   icono: '🏛️',  color: '#0891b2' },
+  { id: 'represas',      label: 'Represas',       icono: '🏞️',  color: '#0284c7' },
+  { id: 'soldadura',     label: 'Soldadura',      icono: '⚡',  color: '#d97706' },
+  { id: 'mmo',           label: 'MMO',            icono: '🧱',  color: '#10b981' },
+  { id: 'electricidad',  label: 'Electricidad',   icono: '🔋',  color: '#22c55e' },
 ];
 
 const EJEMPLOS = [
@@ -64,7 +64,7 @@ export default function IngeniumPro() {
     if (m && TABS.find(t => t.id === m)) setTab(m);
   }, []);
 
-  useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [msgs]);
+  useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [msgs, loading]); // Agregué "loading" para que haga auto-scroll al "Analizando..."
 
   const hablar = (texto: string) => {
     if (!('speechSynthesis' in window)) return;
@@ -84,15 +84,14 @@ export default function IngeniumPro() {
     setMsgs(nuevos);
     setLoading(true);
 
-    // CEREBRO AUDITOR: REGLA DE CERO ARITMÉTICA
     const SYS_PROMPT = `Sos INGENIUM PRO v8.1 — Software de Auditoría Técnica de Alta Gama.
-    ORDEN ESTRICTA: El usuario es un Ingeniero Senior. PROHIBIDO mostrar pasos aritméticos, multiplicaciones o sustitución de valores (Ej: "Mn = 250 x 600 = 150"). Sos un software ejecutivo, NO una calculadora escolar.
+    ORDEN ESTRICTA: El usuario es un Ingeniero Senior. PROHIBIDO mostrar pasos aritméticos, multiplicaciones o sustitución de valores. Sos un software ejecutivo, NO una calculadora escolar.
 
     ESTRUCTURA DE RESPUESTA OBLIGATORIA:
-    1. TABLA EJECUTIVA: Parámetro | Resultado Final | Límite Norma | Estado (✅/❌).
+    1. TABLA EJECUTIVA: Parámetro | Resultado Final | Límite Norma | Estado (✅/❌/⚠️).
     2. VEREDICTO: Dictamen directo (CUMPLE/NO CUMPLE) citando la norma (ASME, API, AISC).
     3. ACCIÓN: Si no cumple, da la solución técnica inmediata.
-    4. RESPALDO TEÓRICO: Solo la fórmula base de gobierno en LaTeX (Ej: $$M_n = F_y \cdot Z_x$$). NUNCA EL PASO A PASO.
+    4. RESPALDO TEÓRICO: Solo la fórmula base de gobierno en LaTeX (Ej: $$M_n = F_y \\cdot Z_x$$). NUNCA EL PASO A PASO.
 
     SISTEMA DE UNIDADES: ${sistemaMedidas}.`;
 
@@ -117,6 +116,12 @@ export default function IngeniumPro() {
 
   return (
     <div style={{ minHeight: '100vh', background: '#070d1a', display: 'flex', flexDirection: 'column', fontFamily: 'Inter,-apple-system,sans-serif', color: '#f1f5f9' }}>
+
+      {/* ANIMACIÓN CSS INYECTADA PARA EL LOADER */}
+      <style dangerouslySetInnerHTML={{__html: `
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        @keyframes pulse-border { 0% { border-color: rgba(99,102,241,0.3); } 50% { border-color: rgba(99,102,241,0.8); } 100% { border-color: rgba(99,102,241,0.3); } }
+      `}} />
 
       {/* HEADER */}
       <header style={{ background: 'rgba(7,13,26,0.98)', borderBottom: '1px solid rgba(99,102,241,0.25)', padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 12, position: 'sticky', top: 0, zIndex: 100, backdropFilter: 'blur(12px)' }}>
@@ -195,6 +200,24 @@ export default function IngeniumPro() {
                   </div>
                 </div>
               ))}
+              
+              {/* === NUEVO: INDICADOR ANIMADO DE "ANALIZANDO" === */}
+              {loading && (
+                <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
+                  <div style={{
+                    maxWidth: '80%', padding: '12px 20px', borderRadius: 16,
+                    background: 'rgba(99, 102, 241, 0.05)',
+                    border: '1px solid rgba(99, 102, 241, 0.4)',
+                    color: '#a78bfa', fontSize: 13, fontWeight: 600,
+                    display: 'flex', alignItems: 'center', gap: 10,
+                    animation: 'pulse-border 2s infinite'
+                  }}>
+                    <div style={{ animation: 'spin 1.5s linear infinite', fontSize: 16, display: 'flex', alignItems: 'center' }}>⚙️</div>
+                    Analizando parámetros y cruzando normativas...
+                  </div>
+                </div>
+              )}
+
               <div ref={endRef} />
             </div>
 
