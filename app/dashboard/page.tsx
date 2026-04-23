@@ -1,152 +1,176 @@
 'use client';
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useRef, useEffect } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
+import 'katex/dist/katex.min.css';
+
+// Importación de tus 14 módulos (Protegiendo estructura existente)
+import ModuloPetroleo from '@/components/ModuloPetroleo';
+import ModuloHidraulica from '@/components/ModuloHidraulica';
+import ModuloPerforacion from '@/components/ModuloPerforacion';
+import ModuloMineria from '@/components/ModuloMineria';
+import ModuloCivil from '@/components/ModuloCivil';
+import ModuloGeotecnia from '@/components/ModuloGeotecnia';
+import ModuloTermica from '@/components/ModuloTermica';
+import ModuloVialidad from '@/components/ModuloVialidad';
+import ModuloArquitectura from '@/components/ModuloArquitectura';
+import ModuloRepresas from '@/components/ModuloRepresas';
+import ModuloSoldadura from '@/components/ModuloSoldadura';
+import ModuloMMO from '@/components/ModuloMMO';
+import ModuloElectricidad from '@/components/ModuloElectricidad';
 
 // ═══════════════════════════════════════════════════════════════
-// INGENIUM PRO v8.0 — Dashboard principal
-// Silvana Belén Colombo © 2026
+// INGENIUM PRO v8.1 — CONFIGURACIÓN QUIRÚRGICA
 // ═══════════════════════════════════════════════════════════════
 
-interface Usuario {
-  nombre: string;
-  empresa: string;
-  plan: string;
-  pais: string;
-}
-
-const MODULOS = [
-  { id: 'petroleo', titulo: 'Petróleo & Gas', desc: 'MAOP, Barlow, factor E·T, análisis riesgo', icono: '🛢️', color: '#f59e0b', norma: 'ASME B31.8 · API 5L · API 1104' },
-  { id: 'hidraulica', titulo: 'Hidráulica', desc: 'Darcy-Weisbach, Joukowsky, golpe de ariete', icono: '💧', color: '#06b6d4', norma: 'AWWA M11 · ASME B31.3' },
-  { id: 'perforacion', titulo: 'Perforación', desc: 'Lodo, ECD, gradiente fractura, Eaton', icono: '⛏️', color: '#8b5cf6', norma: 'API RP 13D · API RP 7G · DNV' },
-  { id: 'mineria', titulo: 'Minería', desc: 'RMR Bieniawski, UCS, voladura, ventilación', icono: '🪨', color: '#ef4444', norma: 'Bieniawski (1989) · MSHA · ISO' },
-  { id: 'civil', titulo: 'Ingeniería Civil', desc: 'Perfiles W, vigas, columnas, cargas', icono: '🏗️', color: '#3b82f6', norma: 'AISC 360 · ACI 318 · CIRSOC 301' },
-  { id: 'geotecnia', titulo: 'Geotecnia', desc: 'Portante Meyerhof, Bishop, nivel freático', icono: '🌍', color: '#a16207', norma: 'Meyerhof (1963) · CIRSOC 101' },
-  { id: 'termica', titulo: 'Térmica', desc: 'LMTD, intercambiadores, dilatación', icono: '🌡️', color: '#dc2626', norma: 'TEMA · ASME Sec.VIII · Kern (1950)' },
-  { id: 'vialidad', titulo: 'Vialidad', desc: 'AASHTO 93, pavimento flexible/rígido', icono: '🛣️', color: '#16a34a', norma: 'AASHTO Guide 1993 · Manual DG-2018' },
-  { id: 'arquitectura', titulo: 'Arquitectura Técnica', desc: 'Cargas de viento, sismo, ASCE 7-22', icono: '🏛️', color: '#0891b2', norma: 'ASCE 7-22 · CIRSOC 103 · NSR-10' },
-  { id: 'represas', titulo: 'Represas & Presas', desc: 'Francis, Darcy filtraciones, Terzaghi', icono: '🏞️', color: '#0284c7', norma: 'USACE EM 1110-2 · ICOLD' },
-  { id: 'soldadura', titulo: 'Soldadura', desc: 'Electrodos, Heat Input, filete, CE precal.', icono: '⚡', color: '#d97706', norma: 'AWS D1.1:2020 · ASME Sec.IX · API 1104' },
-  { id: 'mmo', titulo: 'Maestro Mayor de Obra', desc: 'Hormigón, hierro, mampostería, losas, zapata',icono: '🧱', color: '#10b981', norma: 'CIRSOC 201 · ACI 318 · NCh 170 · NSR-10' },
-  { id: 'electricidad', titulo: 'Electricidad Industrial',desc: 'Cable, CC, FP, motor, área peligrosa, lux', icono: '🔋', color: '#22c55e', norma: 'NEC 2023 · IEC 60909 · API RP 500 · IEC 60079' },
+const TABS = [
+  { id: 'chat', label: 'Chat IA', icono: '🤖', color: '#6366f1' },
+  { id: 'petroleo', label: 'Petróleo', icono: '🛢️', color: '#f59e0b' },
+  { id: 'hidraulica', label: 'Hidráulica', icono: '💧', color: '#06b6d4' },
+  { id: 'perforacion', label: 'Perforación', icono: '⛏️', color: '#8b5cf6' },
+  { id: 'mineria', label: 'Minería', icono: '🪨', color: '#ef4444' },
+  { id: 'civil', label: 'Civil', icono: '🏗️', color: '#3b82f6' },
+  { id: 'geotecnia', label: 'Geotecnia', icono: '🌍', color: '#a16207' },
+  { id: 'termica', label: 'Térmica', icono: '🌡️', color: '#dc2626' },
+  { id: 'vialidad', label: 'Vialidad', icono: '🛣️', color: '#16a34a' },
+  { id: 'arquitectura', label: 'Arquitectura', icono: '🏛️', color: '#0891b2' },
+  { id: 'represas', label: 'Represas', icono: '🏞️', color: '#0284c7' },
+  { id: 'soldadura', label: 'Soldadura', icono: '⚡', color: '#d97706' },
+  { id: 'mmo', label: 'MMO', icono: '🧱', color: '#10b981' },
+  { id: 'electricidad', label: 'Electricidad', icono: '🔋', color: '#22c55e' },
 ];
 
-const PLAN_COLOR: Record<string, string> = {
-  trial: '#f59e0b', pro: '#6366f1', enterprise: '#10b981',
-};
-const PLAN_LABEL: Record<string, string> = {
-  trial: 'TRIAL', pro: 'PRO', enterprise: 'ENTERPRISE',
-};
+export default function DashboardPage() {
+  const [tab, setTab] = useState('chat');
+  const [sistemaMedidas, setSistemaMedidas] = useState('Sistema Internacional (m, kg, °C, km)');
+  const [leyendo, setLeyendo] = useState(false);
+  
+  const bienvenidaTexto = `# INGENIUM PRO v8.1\n\nBienvenido a la plataforma de ingeniería de precisión más avanzada mundialmente.\n\n## Introducción:\nCada módulo integra normativas internacionales verificadas para garantizar datos reales. Esta versión v8.1 incluye motor matemático de alta gama y accesibilidad por voz.\n\nEscribí tu requerimiento técnico para comenzar.`;
 
-export default function Dashboard() {
-  const [usuario, setUsuario] = useState<Usuario | null>(null);
-  const [cargado, setCargado] = useState(false);
-  const router = useRouter();
+  const [msgs, setMsgs] = useState([{ role: 'assistant', content: bienvenidaTexto }]);
+  const [input, setInput] = useState('');
+  const [loading, setLoading] = useState(false);
+  const endRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const stored = localStorage.getItem('ingenium_usuario');
-    if (!stored) { router.push('/Login'); return; }
-    try {
-      setUsuario(JSON.parse(stored));
-    } catch {
-      router.push('/Login');
-    } finally {
-      setCargado(true);
-    }
-  }, [router]);
+    endRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [msgs]);
 
-  const cerrarSesion = () => {
-    localStorage.removeItem('ingenium_usuario');
-    router.push('/Login');
+  const hablar = (texto: string) => {
+    if (!('speechSynthesis' in window)) return;
+    window.speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(texto.replace(/[$#*_|]/g, ''));
+    u.lang = 'es-ES';
+    u.onstart = () => setLeyendo(true);
+    u.onend = () => setLeyendo(false);
+    window.speechSynthesis.speak(u);
   };
 
-  if (!cargado) {
-    return (
-      <div style={{ minHeight: '100vh', background: '#070d1a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ color: '#6366f1', fontSize: 14 }}>Cargando INGENIUM PRO...</div>
-      </div>
-    );
-  }
+  const enviar = async () => {
+    const val = input.trim();
+    if (!val || loading) return;
+    setInput('');
+    const nuevos = [...msgs, { role: 'user', content: val }];
+    setMsgs(nuevos);
+    setLoading(true);
+    
+    const SYS_PROMPT = `Sos INGENIUM PRO v8.1, plataforma TOPE DE GAMA. 
+    1. PRECISIÓN: Datos 100% reales.
+    2. MATEMÁTICAS: Usá LaTeX ($$fórmula$$) para renderizado profesional.
+    3. MEDIDAS: Usá obligatoriamente ${sistemaMedidas}.
+    4. EXPERTO: Citá normativas (ASME, API, AISC).`;
 
-  if (!usuario) return null;
-
-  const plan = usuario.plan?.toLowerCase() || 'trial';
+    try {
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ system: SYS_PROMPT, messages: nuevos }),
+      });
+      const d = await res.json();
+      const txt = d.content?.[0]?.text || d.reply || 'Error de procesamiento.';
+      setMsgs([...nuevos, { role: 'assistant', content: txt }]);
+      if (leyendo) hablar(txt);
+    } catch {
+      setMsgs([...nuevos, { role: 'assistant', content: 'Falla de conexión.' }]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <div style={{ minHeight: '100vh', background: '#070d1a', fontFamily: 'Inter,-apple-system,sans-serif', color: '#f1f5f9' }}>
+    <div style={{ minHeight: '100vh', background: '#070d1a', display: 'flex', flexDirection: 'column', color: '#f1f5f9' }}>
+      
+      {/* HEADER TOPE DE GAMA */}
+      <header style={{ background: '#0a0f1e', borderBottom: '1px solid #1e293b', padding: '12px 20px', display: 'flex', alignItems: 'center', gap: 15, position: 'sticky', top: 0, zIndex: 100 }}>
+        <div style={{ padding: '8px 12px', background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', borderRadius: 8, fontWeight: 900 }}>IP</div>
+        <div style={{ flex: 1, fontSize: 16, fontWeight: 800 }}>INGENIUM PRO v8.1</div>
+        
+        <select 
+          value={sistemaMedidas} 
+          onChange={(e) => setSistemaMedidas(e.target.value)}
+          style={{ background: '#0f172a', border: '1px solid #334155', color: '#fff', fontSize: 12, padding: '5px', borderRadius: 6 }}
+        >
+          <option value="Metros, mm, Kg, °C">Sistema Internacional</option>
+          <option value="Pies, in, Lb, °F">Sistema Imperial</option>
+        </select>
 
-      {/* HEADER */}
-      <header style={{ background: 'rgba(7,13,26,0.98)', borderBottom: '1px solid rgba(99,102,241,0.25)', padding: '12px 24px', display: 'flex', alignItems: 'center', gap: 12, position: 'sticky', top: 0, zIndex: 100 }}>
-        <div style={{ width: 40, height: 40, borderRadius: 11, background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: 14, color: '#fff', flexShrink: 0 }}>IP</div>
-        <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 16, fontWeight: 800 }}>INGENIUM PRO</div>
-          <div style={{ fontSize: 10, color: '#475569' }}>Plataforma de Ingeniería Técnica de Precisión · v8.0</div>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div style={{ textAlign: 'right' }}>
-            <div style={{ fontSize: 13, fontWeight: 700 }}>{usuario.nombre}</div>
-            <div style={{ fontSize: 10, color: '#475569' }}>{usuario.empresa} · {usuario.pais}</div>
-          </div>
-          <div style={{ padding: '4px 10px', borderRadius: 20, background: `${PLAN_COLOR[plan]}20`, border: `1px solid ${PLAN_COLOR[plan]}50`, color: PLAN_COLOR[plan], fontSize: 10, fontWeight: 800 }}>
-            {PLAN_LABEL[plan] || 'TRIAL'}
-          </div>
-          <button onClick={cerrarSesion} style={{ padding: '6px 14px', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 8, color: '#f87171', fontSize: 11, cursor: 'pointer', fontWeight: 600 }}>
-            Salir
-          </button>
-        </div>
+        <button onClick={() => leyendo ? window.speechSynthesis.cancel() : hablar(msgs[msgs.length-1].content)} style={{ background: '#1e293b', border: 'none', cursor: 'pointer', fontSize: 18, color: '#fff' }}>
+          {leyendo ? '🔇 Stop' : '🔊 Voz'}
+        </button>
       </header>
 
-      {/* CONTENIDO */}
-      <div style={{ maxWidth: 1100, margin: '0 auto', padding: '32px 24px' }}>
+      {/* NAVEGACIÓN DE MÓDULOS */}
+      <nav style={{ display: 'flex', overflowX: 'auto', background: '#070d1a', borderBottom: '1px solid #1e293b' }}>
+        {TABS.map(t => (
+          <button key={t.id} onClick={() => setTab(t.id)} style={{ padding: '12px 15px', background: 'none', border: 'none', color: tab === t.id ? t.color : '#475569', borderBottom: tab === t.id ? `2px solid ${t.color}` : 'none', cursor: 'pointer', whiteSpace: 'nowrap', fontSize: 12, fontWeight: 600 }}>
+            {t.icono} {t.label}
+          </button>
+        ))}
+      </nav>
 
-        {/* Bienvenida */}
-        <div style={{ marginBottom: 32 }}>
-          <h1 style={{ fontSize: 24, fontWeight: 900, margin: '0 0 6px' }}>Bienvenido, {usuario.nombre.split(' ')[0]} 👋</h1>
-          <p style={{ fontSize: 14, color: '#475569', margin: 0 }}>Seleccioná un módulo para comenzar tu cálculo técnico con normativas reales verificadas.</p>
-        </div>
-
-        {/* Botón Chat IA */}
-        <div
-          onClick={() => router.push('/?modulo=chat')}
-          style={{ background: 'linear-gradient(135deg,rgba(99,102,241,0.2),rgba(139,92,246,0.1))', border: '1px solid rgba(99,102,241,0.4)', borderRadius: 16, padding: '20px 24px', marginBottom: 28, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 16, transition: 'all 0.2s' }}>
-          <div style={{ width: 48, height: 48, borderRadius: 13, background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0 }}>🤖</div>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 15, fontWeight: 800, color: '#a78bfa' }}>Asistente IA — INGENIUM PRO</div>
-            <div style={{ fontSize: 12, color: '#64748b' }}>Consultá cualquier cálculo en lenguaje natural · 14 módulos · ASME · API · AASHTO · ASCE · IEC · NEC</div>
-          </div>
-          <div style={{ fontSize: 20, color: '#6366f1' }}>→</div>
-        </div>
-
-        {/* Grid módulos */}
-        <div style={{ fontSize: 11, color: '#334155', fontWeight: 700, letterSpacing: 1, marginBottom: 16, textTransform: 'uppercase' }}>
-          13 MÓDULOS TÉCNICOS CON NORMATIVAS REALES
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 16 }}>
-          {MODULOS.map(m => (
-            <div
-              key={m.id}
-              onClick={() => router.push(`/?modulo=${m.id}`)}
-              style={{ background: 'rgba(15,23,42,0.8)', border: `1px solid ${m.color}20`, borderRadius: 16, padding: '20px', cursor: 'pointer', transition: 'all 0.2s', position: 'relative', overflow: 'hidden' }}>
-              {/* Barra superior de color */}
-              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: m.color, borderRadius: '16px 16px 0 0' }} />
-              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
-                <div style={{ width: 44, height: 44, borderRadius: 12, background: `${m.color}15`, border: `1px solid ${m.color}30`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, flexShrink: 0 }}>{m.icono}</div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 13, fontWeight: 800, color: '#f1f5f9', marginBottom: 4 }}>{m.titulo}</div>
-                  <div style={{ fontSize: 11, color: '#64748b', marginBottom: 10, lineHeight: 1.5 }}>{m.desc}</div>
-                  <div style={{ padding: '3px 8px', background: `${m.color}10`, border: `1px solid ${m.color}30`, borderRadius: 8, display: 'inline-block', fontSize: 9, color: m.color, fontWeight: 700 }}>
-                    {m.norma}
+      <main style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        {tab === 'chat' ? (
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            <div style={{ flex: 1, overflowY: 'auto', padding: '20px', display: 'flex', flexDirection: 'column', gap: 15 }}>
+              {msgs.map((m, i) => (
+                <div key={i} style={{ alignSelf: m.role === 'user' ? 'flex-end' : 'flex-start', maxWidth: '85%' }}>
+                  <div style={{ padding: '15px', borderRadius: 15, background: m.role === 'user' ? '#6366f1' : '#0f172a', border: '1px solid #1e293b' }}>
+                    <ReactMarkdown 
+                      remarkPlugins={[remarkMath]} 
+                      rehypePlugins={[rehypeKatex]}
+                    >
+                      {m.content}
+                    </ReactMarkdown>
                   </div>
                 </div>
-              </div>
+              ))}
+              <div ref={endRef} />
             </div>
-          ))}
-        </div>
-
-        {/* Footer del dashboard */}
-        <div style={{ marginTop: 48, textAlign: 'center', color: '#1e293b', fontSize: 10 }}>
-          INGENIUM PRO v8.0 · Única plataforma de ingeniería con normativas reales verificadas · © 2026 Silvana Belén Colombo · RADAR Gestión Estratégica
-        </div>
-      </div>
+            <div style={{ padding: '15px', borderTop: '1px solid #1e293b', display: 'flex', gap: 10 }}>
+              <input value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && enviar()} style={{ flex: 1, background: '#0a0f1e', border: '1px solid #334155', borderRadius: 10, padding: '12px', color: '#fff' }} placeholder="Consulta técnica..." />
+              <button onClick={enviar} style={{ background: '#6366f1', border: 'none', padding: '10px 20px', borderRadius: 10, color: '#fff', fontWeight: 700 }}>Enviar</button>
+            </div>
+          </div>
+        ) : (
+          <div style={{ flex: 1, overflowY: 'auto' }}>
+            {/* Renderizado dinámico de módulos existentes */}
+            {tab === 'petroleo' && <ModuloPetroleo />}
+            {tab === 'hidraulica' && <ModuloHidraulica />}
+            {tab === 'perforacion' && <ModuloPerforacion />}
+            {tab === 'mineria' && <ModuloMineria />}
+            {tab === 'civil' && <ModuloCivil />}
+            {tab === 'geotecnia' && <ModuloGeotecnia />}
+            {tab === 'termica' && <ModuloTermica />}
+            {tab === 'vialidad' && <ModuloVialidad />}
+            {tab === 'arquitectura' && <ModuloArquitectura />}
+            {tab === 'represas' && <ModuloRepresas />}
+            {tab === 'soldadura' && <ModuloSoldadura />}
+            {tab === 'mmo' && <ModuloMMO />}
+            {tab === 'electricidad' && <ModuloElectricidad />}
+          </div>
+        )}
+      </main>
     </div>
   );
 }
