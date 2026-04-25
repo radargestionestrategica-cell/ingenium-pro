@@ -4,29 +4,68 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url = env("DATABASE_URL")
+  url      = env("DATABASE_URL")
 }
 
+// ─── USUARIO ─────────────────────────────────────────────────
+// Sin cambios — igual al original
 model Usuario {
-  id String @id @default(cuid())
-  email String @unique
-  password String
-  nombre String
-  empresa String
-  pais String @default("Argentina")
-  plan String @default("trial")
-  activo Boolean @default(true)
-  createdAt DateTime @default(now())
-  calculos Calculo[]
+  id        String     @id @default(cuid())
+  email     String     @unique
+  password  String
+  nombre    String
+  empresa   String
+  pais      String     @default("Argentina")
+  plan      String     @default("trial")
+  activo    Boolean    @default(true)
+  createdAt DateTime   @default(now())
+  calculos  Calculo[]
+  proyectos Proyecto[]
 }
 
-model Calculo {
-  id String @id @default(cuid())
-  tipo String
-  parametros Json
-  resultado Json
-  usuario String @default("anonimo")
-  usuarioId String?
-  user Usuario? @relation(fields: [usuarioId], references: [id])
-  createdAt DateTime @default(now())
+// ─── PROYECTO ─────────────────────────────────────────────────
+// Agrupa cálculos del mismo activo físico en el tiempo.
+// Base del Asset Integrity Management de INGENIUM PRO.
+model Proyecto {
+  id         String    @id @default(cuid())
+  nombre     String
+  industria  String    @default("Petróleo / Gas")
+  fluido     String?
+  presion_bar Float?
+  temp_c     Float?
+  nps        String?
+  material   String?
+  norma      String    @default("ASME B31.8")
+  H2S_ppm    Float?    @default(0)
+  zona_elec  String?
+  pais       String    @default("Argentina")
+  activo     Boolean   @default(true)
+  usuarioId  String
+  usuario    Usuario   @relation(fields: [usuarioId], references: [id])
+  calculos   Calculo[]
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
 }
+
+// ─── CALCULO ──────────────────────────────────────────────────
+// Cada cálculo individual con historial y QR verificable.
+// Todos los campos nuevos son opcionales — no rompe datos existentes.
+model Calculo {
+  id           String    @id @default(cuid())
+  tipo         String
+  moduloId     String?
+  submodulo    String?
+  activoNombre String?
+  parametros   Json
+  resultado    Json
+  normativa    String?
+  hash         String?   @unique
+  alerta       Boolean   @default(false)
+  alertaMsg    String?
+  usuario      String    @default("anonimo")
+  usuarioId    String?
+  proyectoId   String?
+  user         Usuario?  @relation(fields: [usuarioId], references: [id])
+  proyecto     Proyecto? @relation(fields: [proyectoId], references: [id])
+  createdAt    DateTime  @default(now())
+} 
