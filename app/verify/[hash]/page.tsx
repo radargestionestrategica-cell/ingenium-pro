@@ -1,180 +1,188 @@
 // app/verify/[hash]/page.tsx
-// ═══════════════════════════════════════════════════════════════
-//  INGENIUM PRO v8.1 — Verificación pública de cálculo
-//  El regulador escanea el QR y ve esta página.
-//  Sin login. Pública. Inmutable.
-// ═══════════════════════════════════════════════════════════════
+// INGENIUM PRO v8.1 — Verificación pública de cálculos
+// Server Component — sin login requerido
 
 import { prisma } from '@/lib/prisma';
-import { notFound } from 'next/navigation';
+import { hashCalculation } from '@/lib/cripto';
 
 interface Props {
   params: { hash: string };
 }
 
-// Nombres legibles por módulo — verificados contra los módulos reales
-const MODULO_NOMBRES: Record<string, string> = {
-  petroleo:     'Petróleo & Gas — ASME B31.8 / B31.4',
-  hidraulica:   'Hidráulica — Darcy-Weisbach / Joukowsky',
-  perforacion:  'Perforación — API RP 13D / Eaton 1969',
-  mineria:      'Minería — RMR Bieniawski 1989',
-  civil:        'Ingeniería Civil — AISC 360',
-  geotecnia:    'Geotecnia — Meyerhof 1963',
-  termica:      'Térmica — TEMA / ASME Sec.VIII',
-  vialidad:     'Vialidad — AASHTO 93',
-  arquitectura: 'Arquitectura Técnica — ASCE 7-22',
-  represas:     'Represas & Presas — USACE EM 1110-2',
-  soldadura:    'Soldadura — AWS D1.1:2020 / ASME Sec.IX',
-  mmo:          'Maestro Mayor de Obra — CIRSOC 201 / ACI 318',
-  electricidad: 'Electricidad Industrial — NEC 2023 / IEC 60909',
-  canerias:     'Cañerías e Integridad — ASME B31.8 / API 579',
-  valvulas:     'Válvulas Industriales — ASME B16.34 / B16.5',
-};
-
-export default async function VerificarCalculo({ params }: Props) {
+export default async function VerifyPage({ params }: Props) {
   const { hash } = params;
 
-  // Hash debe tener 64 caracteres (SHA-256 hex)
-  if (!hash || hash.length !== 64) return notFound();
+  const BG    = '#020609';
+  const PANEL = '#0a0f1e';
+  const GOLD  = '#E8A020';
+  const GREEN = '#22c55e';
+  const RED   = '#ef4444';
+  const GRAY  = '#64748b';
 
-  const calculo = await prisma.calculo.findUnique({
-    where: { hash },
-    include: {
-      proyecto: { select: { nombre: true, industria: true } },
-      user:     { select: { nombre: true, empresa: true, pais: true } },
-    },
-  });
+  let calculo: {
+    id: string;
+    tipo: string;
+    moduloId: string | null;
+    normativa: string | null;
+    activoNombre: string | null;
+    alerta: boolean;
+    alertaMsg: string | null;
+    usuario: string;
+    parametros: unknown;
+    resultado: unknown;
+    createdAt: Date;
+    user: { nombre: string; empresa: string; pais: string } | null;
+  } | null = null;
 
-  if (!calculo) return notFound();
+  let valido = false;
+  let error  = '';
 
-  const fecha = new Date(calculo.createdAt);
-  const fechaStr = fecha.toLocaleDateString('es-AR', {
-    day: '2-digit', month: 'long', year: 'numeric',
-    hour: '2-digit', minute: '2-digit', timeZone: 'America/Argentina/Buenos_Aires',
-  });
+  try {
+    calculo = await prisma.calculo.findUnique({
+      where: { hash },
+      include: {
+        user: {
+          select: {
+            nombre:  true,
+            empresa: true,
+            pais:    true,
+          },
+        },
+      },
+    });
 
-  const moduloNombre = MODULO_NOMBRES[calculo.moduloId || calculo.tipo] || calculo.tipo;
-  const parametros = calculo.parametros as Record<string, unknown>;
-  const resultado  = calculo.resultado  as Record<string, unknown>;
+    if (!calculo) {
+      error = 'Hash no encontrado. Este documento no fue emitido por INGENIUM PRO o fue eliminado.';
+    } else {
+      // Verificación: recalcular hash de parametros+resultado y comparar
+      const hashRecalculado = hashCalculation({
+        tipo:       calculo.tipo,
+        parametros: calculo.parametros,
+        resultado:  calculo.resultado,
+        createdAt:  calculo.createdAt.toISOString(),
+      });
+      valido = hashRecalculado === hash;
+      if (!valido) {
+        error = 'El hash no coincide con los datos almacenados. Este documento puede haber sido alterado.';
+      }
+    }
+  } catch {
+    error = 'Error al consultar la base de datos. Intentá más tarde.';
+  }
+
+  const fecha = calculo
+    ? new Date(calculo.createdAt).toLocaleString('es-AR', {
+        timeZone: 'America/Argentina/Buenos_Aires',
+        day: '2-digit', month: 'long', year: 'numeric',
+        hour: '2-digit', minute: '2-digit',
+      })
+    : '';
 
   return (
-    <html lang="es">
-      <head>
-        <meta charSet="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <title>Verificación de Cálculo — INGENIUM PRO</title>
-        <meta name="robots" content="noindex" />
-      </head>
-      <body style={{ margin: 0, background: '#070d1a', fontFamily: 'Inter, system-ui, sans-serif', color: '#f1f5f9', minHeight: '100vh' }}>
+    <div style={{ minHeight: '100vh', background: BG, color: '#f1f5f9', fontFamily: 'Inter,sans-serif', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
 
-        <div style={{ maxWidth: 720, margin: '0 auto', padding: '32px 20px' }}>
-
-          {/* HEADER */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 32 }}>
-            <div style={{ width: 52, height: 52, borderRadius: 14, background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: 18, color: '#fff', flexShrink: 0 }}>
-              IP
-            </div>
-            <div>
-              <div style={{ fontSize: 20, fontWeight: 900 }}>INGENIUM PRO v8.1</div>
-              <div style={{ fontSize: 12, color: '#475569' }}>Verificación de Cálculo de Ingeniería · ingeniumpro.store</div>
-            </div>
+      {/* HEADER */}
+      <div style={{ marginBottom: 32, textAlign: 'center' }}>
+        <a href="/" style={{ textDecoration: 'none' }}>
+          <div style={{ color: GOLD, fontWeight: 900, fontSize: 22, letterSpacing: 3 }}>
+            INGENIUM PRO <span style={{ fontWeight: 300 }}>Ω</span>
           </div>
+        </a>
+        <div style={{ color: GRAY, fontSize: 12, marginTop: 4 }}>
+          Sistema de Verificación Criptográfica SHA-256
+        </div>
+      </div>
 
-          {/* ESTADO VERIFICADO */}
-          <div style={{ background: 'rgba(34,197,94,0.1)', border: '2px solid rgba(34,197,94,0.4)', borderRadius: 16, padding: '20px 24px', marginBottom: 24, display: 'flex', alignItems: 'center', gap: 16 }}>
-            <div style={{ fontSize: 40, flexShrink: 0 }}>✅</div>
-            <div>
-              <div style={{ fontSize: 18, fontWeight: 900, color: '#4ade80' }}>CÁLCULO VERIFICADO Y AUTÉNTICO</div>
-              <div style={{ fontSize: 13, color: '#86efac', marginTop: 4 }}>
-                Este cálculo está registrado en la base de datos de INGENIUM PRO con integridad criptográfica SHA-256. No fue modificado desde su generación.
-              </div>
-            </div>
+      {/* CARD */}
+      <div style={{ width: '100%', maxWidth: 600, background: PANEL, border: `1px solid ${valido ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.3)'}`, borderRadius: 20, padding: 32, boxShadow: `0 0 40px ${valido ? 'rgba(34,197,94,0.08)' : 'rgba(239,68,68,0.08)'}` }}>
+
+        {/* ESTADO */}
+        <div style={{ textAlign: 'center', marginBottom: 28 }}>
+          <div style={{ fontSize: 52, marginBottom: 8 }}>{valido ? '✅' : '❌'}</div>
+          <div style={{ fontSize: 22, fontWeight: 900, color: valido ? GREEN : RED }}>
+            {valido ? 'CÁLCULO VERIFICADO' : 'NO VERIFICADO'}
           </div>
-
-          {/* DATOS DEL CÁLCULO */}
-          <div style={{ background: '#0f172a', border: '1px solid rgba(99,102,241,0.2)', borderRadius: 16, padding: 24, marginBottom: 20 }}>
-            <div style={{ fontSize: 11, color: '#6366f1', fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', marginBottom: 16 }}>Datos del cálculo</div>
-
-            <div style={{ display: 'grid', gap: 12 }}>
-              {[
-                { l: 'Módulo',        v: moduloNombre },
-                { l: 'Sub-cálculo',   v: calculo.submodulo || '—' },
-                { l: 'Activo',        v: calculo.activoNombre || '—' },
-                { l: 'Normativa',     v: calculo.normativa || '—' },
-                { l: 'Proyecto',      v: calculo.proyecto?.nombre || '—' },
-                { l: 'Industria',     v: calculo.proyecto?.industria || '—' },
-                { l: 'Fecha y hora',  v: fechaStr },
-                { l: 'Ejecutado por', v: calculo.user?.nombre || calculo.usuario || '—' },
-                { l: 'Empresa',       v: calculo.user?.empresa || '—' },
-                { l: 'País',          v: calculo.user?.pais || '—' },
-              ].map((r, i) => (
-                <div key={i} style={{ display: 'flex', gap: 12, borderBottom: '1px solid rgba(99,102,241,0.08)', paddingBottom: 10 }}>
-                  <div style={{ fontSize: 12, color: '#475569', width: 120, flexShrink: 0 }}>{r.l}</div>
-                  <div style={{ fontSize: 13, color: '#f1f5f9', fontWeight: 600, flex: 1 }}>{r.v}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* PARÁMETROS DE ENTRADA */}
-          <div style={{ background: '#0f172a', border: '1px solid rgba(99,102,241,0.2)', borderRadius: 16, padding: 24, marginBottom: 20 }}>
-            <div style={{ fontSize: 11, color: '#6366f1', fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', marginBottom: 16 }}>Parámetros de entrada</div>
-            <div style={{ display: 'grid', gap: 8 }}>
-              {Object.entries(parametros).slice(0, 20).map(([k, v], i) => (
-                <div key={i} style={{ display: 'flex', gap: 12, borderBottom: '1px solid rgba(99,102,241,0.06)', paddingBottom: 8 }}>
-                  <div style={{ fontSize: 11, color: '#475569', width: 140, flexShrink: 0, fontFamily: 'monospace' }}>{k}</div>
-                  <div style={{ fontSize: 12, color: '#94a3b8', fontFamily: 'monospace' }}>{String(v)}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* RESULTADOS */}
-          <div style={{ background: '#0f172a', border: '1px solid rgba(99,102,241,0.2)', borderRadius: 16, padding: 24, marginBottom: 20 }}>
-            <div style={{ fontSize: 11, color: '#6366f1', fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', marginBottom: 16 }}>Resultados calculados</div>
-            <div style={{ display: 'grid', gap: 8 }}>
-              {Object.entries(resultado).slice(0, 20).map(([k, v], i) => (
-                <div key={i} style={{ display: 'flex', gap: 12, borderBottom: '1px solid rgba(99,102,241,0.06)', paddingBottom: 8 }}>
-                  <div style={{ fontSize: 11, color: '#475569', width: 140, flexShrink: 0, fontFamily: 'monospace' }}>{k}</div>
-                  <div style={{ fontSize: 12, color: '#4ade80', fontFamily: 'monospace', fontWeight: 600 }}>{String(v)}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* ALERTA SI EXISTE */}
-          {calculo.alerta && calculo.alertaMsg && (
-            <div style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.4)', borderRadius: 12, padding: 16, marginBottom: 20 }}>
-              <div style={{ fontSize: 12, color: '#f87171', fontWeight: 700, marginBottom: 6 }}>⚠️ ALERTA REGISTRADA EN ESTE CÁLCULO</div>
-              <div style={{ fontSize: 13, color: '#fca5a5' }}>{calculo.alertaMsg}</div>
-            </div>
-          )}
-
-          {/* HASH VERIFICABLE */}
-          <div style={{ background: '#0a0f1e', border: '1px solid rgba(99,102,241,0.15)', borderRadius: 12, padding: 16, marginBottom: 24 }}>
-            <div style={{ fontSize: 10, color: '#475569', marginBottom: 6, textTransform: 'uppercase', letterSpacing: 0.5 }}>Hash SHA-256 de integridad</div>
-            <div style={{ fontSize: 11, color: '#6366f1', fontFamily: 'monospace', wordBreak: 'break-all' as const }}>{hash}</div>
-            <div style={{ fontSize: 10, color: '#334155', marginTop: 6 }}>
-              Este hash es único e irrepetible. Cualquier modificación al cálculo original generaría un hash completamente diferente.
-            </div>
-          </div>
-
-          {/* FOOTER */}
-          <div style={{ textAlign: 'center', color: '#334155', fontSize: 11 }}>
-            Verificado por INGENIUM PRO v8.1 · ingeniumpro.store<br />
-            © 2026 Silvana Belén Colombo — RADAR Gestión Estratégica<br />
-            Este documento tiene validez técnica. Para consultas: contacto@ingeniumpro.store
+          <div style={{ fontSize: 13, color: GRAY, marginTop: 6 }}>
+            {valido
+              ? 'Este cálculo es auténtico y no fue modificado desde su emisión.'
+              : error}
           </div>
         </div>
-      </body>
-    </html>
+
+        {/* DATOS — solo si es válido */}
+        {calculo && valido && (
+          <>
+            <div style={{ height: 1, background: 'rgba(255,255,255,0.06)', margin: '20px 0' }} />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <Fila label="Módulo"    valor={calculo.tipo}                       color={GREEN} />
+              <Fila label="Normativa" valor={calculo.normativa || '—'}           />
+              <Fila label="Activo"    valor={calculo.activoNombre || '—'}        />
+              <Fila label="Ingeniero" valor={calculo.user?.nombre  || calculo.usuario} />
+              <Fila label="Empresa"   valor={calculo.user?.empresa || '—'}       />
+              <Fila label="País"      valor={calculo.user?.pais    || '—'}       />
+              <Fila label="Fecha"     valor={fecha}                              />
+
+              {calculo.alerta && calculo.alertaMsg && (
+                <div style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 10, padding: '10px 14px' }}>
+                  <div style={{ fontSize: 11, color: RED, fontWeight: 700 }}>⚠ ALERTA NORMATIVA</div>
+                  <div style={{ fontSize: 11, color: '#fca5a5', marginTop: 4 }}>{calculo.alertaMsg}</div>
+                </div>
+              )}
+
+              {/* Hash */}
+              <div>
+                <div style={{ fontSize: 10, color: GRAY, fontWeight: 600, letterSpacing: 1, marginBottom: 4, textTransform: 'uppercase' }}>
+                  Hash SHA-256
+                </div>
+                <div style={{ fontSize: 10, fontFamily: 'monospace', color: GOLD, background: '#070d1a', padding: '8px 12px', borderRadius: 8, wordBreak: 'break-all' }}>
+                  {hash}
+                </div>
+              </div>
+
+              {/* Sello */}
+              <div style={{ background: 'rgba(34,197,94,0.06)', border: '1px solid rgba(34,197,94,0.2)', borderRadius: 10, padding: '10px 14px' }}>
+                <div style={{ fontSize: 10, color: GREEN, fontWeight: 700 }}>
+                  ✓ Verificación SHA-256 válida — INGENIUM PRO v8.1
+                </div>
+                <div style={{ fontSize: 10, color: GRAY, marginTop: 4 }}>
+                  Registro inmutable · El hash coincide con los datos almacenados en base de datos
+                </div>
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* AVISO LEGAL */}
+        <div style={{ marginTop: 24, padding: '10px 14px', background: 'rgba(232,160,32,0.05)', border: '1px solid rgba(232,160,32,0.1)', borderRadius: 8 }}>
+          <div style={{ fontSize: 9, color: GRAY, lineHeight: 1.6 }}>
+            Este sistema certifica la integridad del documento al momento de su emisión.
+            No valida la idoneidad técnica de los datos ingresados por el usuario.
+            Ver{' '}
+            <a href="/terminos" style={{ color: GOLD, textDecoration: 'none' }}>
+              Protocolo de Exención de Responsabilidad
+            </a>.
+          </div>
+        </div>
+
+        <div style={{ marginTop: 16, textAlign: 'center' }}>
+          <div style={{ fontSize: 9, color: '#1e3a5f' }}>
+            ingeniumpro.store · © 2026 RADAR Gestión Estratégica · Silvana Belén Colombo
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 
-// Metadata para SEO
-export async function generateMetadata({ params }: Props) {
-  return {
-    title: `Verificación de Cálculo — INGENIUM PRO`,
-    description: `Verificación criptográfica de cálculo de ingeniería. Hash: ${params.hash.slice(0, 16)}...`,
-  };
+function Fila({ label, valor, color }: { label: string; valor: string; color?: string }) {
+  return (
+    <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+      <div style={{ fontSize: 10, color: '#64748b', fontWeight: 600, letterSpacing: 1, textTransform: 'uppercase', width: 90, flexShrink: 0, paddingTop: 2 }}>
+        {label}
+      </div>
+      <div style={{ fontSize: 13, fontWeight: 600, color: color || '#f1f5f9' }}>
+        {valor}
+      </div>
+    </div>
+  );
 } 

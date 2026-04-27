@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 import { useState } from 'react';
 import AuthGuard from '@/components/AuthGuard';
 import SelectorIdioma from '@/components/SelectorIdioma';

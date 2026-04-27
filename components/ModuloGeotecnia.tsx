@@ -10,12 +10,12 @@ function calcCapacidadPortante(
   if (B <= 0 || L <= 0 || Df <= 0) return null;
 
   const DB: Record<string, { Nq: number; Nc: number; Ng: number; c: number; phi: number; gamma: number; gamma_sat: number }> = {
-    arena_suelta: { Nq: 14.7, Nc: 25.8, Ng: 12.4, c: 0, phi: 30, gamma: 1600, gamma_sat: 1900 },
-    arena_compacta: { Nq: 33.3, Nc: 46.1, Ng: 37.2, c: 0, phi: 35, gamma: 1850, gamma_sat: 2050 },
-    arcilla_blanda: { Nq: 1.0, Nc: 5.14, Ng: 0, c: 25, phi: 0, gamma: 1500, gamma_sat: 1750 },
-    arcilla_media: { Nq: 1.0, Nc: 5.14, Ng: 0, c: 50, phi: 0, gamma: 1700, gamma_sat: 1900 },
-    arcilla_firme: { Nq: 1.0, Nc: 5.14, Ng: 0, c: 100, phi: 0, gamma: 1800, gamma_sat: 1980 },
-    grava: { Nq: 64.2, Nc: 75.3, Ng: 93.7, c: 0, phi: 40, gamma: 2000, gamma_sat: 2200 },
+    arena_suelta:   { Nq: 14.7, Nc: 25.8, Ng: 12.4, c: 0,   phi: 30, gamma: 1600, gamma_sat: 1900 },
+    arena_compacta: { Nq: 33.3, Nc: 46.1, Ng: 37.2, c: 0,   phi: 35, gamma: 1850, gamma_sat: 2050 },
+    arcilla_blanda: { Nq: 1.0,  Nc: 5.14, Ng: 0,    c: 25,  phi: 0,  gamma: 1500, gamma_sat: 1750 },
+    arcilla_media:  { Nq: 1.0,  Nc: 5.14, Ng: 0,    c: 50,  phi: 0,  gamma: 1700, gamma_sat: 1900 },
+    arcilla_firme:  { Nq: 1.0,  Nc: 5.14, Ng: 0,    c: 100, phi: 0,  gamma: 1800, gamma_sat: 1980 },
+    grava:          { Nq: 64.2, Nc: 75.3, Ng: 93.7, c: 0,   phi: 40, gamma: 2000, gamma_sat: 2200 },
   };
 
   const d = DB[suelo] || DB.arcilla_media;
@@ -26,7 +26,7 @@ function calcCapacidadPortante(
     ? (d.gamma_sat - 1000) * gamma_w / 1000
     : d.gamma / 1000 * gamma_w;
 
-  const gamma_base = d.gamma / 1000 * gamma_w;
+  const gamma_base   = d.gamma / 1000 * gamma_w;
   const q_sobrecarga = gamma_base * Df;
 
   // Factores de forma (Meyerhof)
@@ -37,11 +37,11 @@ function calcCapacidadPortante(
   // Capacidad portante ultima
   const qu = d.c * d.Nc * sc + q_sobrecarga * d.Nq * sq + 0.5 * gamma_ef * B * d.Ng * sg;
   const qa = qu / FS;
-  const q_aplicada = Q_kN / (B * L);
+  const q_aplicada  = Q_kN / (B * L);
   const utilizacion = (q_aplicada / qa) * 100;
 
   const freatic = Dw <= Df ? 'NIVEL FREATICO REDUCE PORTANTE' : 'Sin efecto freatico';
-  const riesgo = q_aplicada > qa ? 'CRITICAL' : utilizacion > 80 ? 'HIGH' : utilizacion > 60 ? 'MEDIUM' : 'LOW';
+  const riesgo  = q_aplicada > qa ? 'CRITICAL' : utilizacion > 80 ? 'HIGH' : utilizacion > 60 ? 'MEDIUM' : 'LOW';
 
   return {
     qu: +qu.toFixed(1), qa: +qa.toFixed(1), q_aplicada: +q_aplicada.toFixed(1),
@@ -59,46 +59,50 @@ function calcEstabilidadTalud(
 ) {
   if (H <= 0 || beta_deg <= 0 || beta_deg >= 90) return null;
 
-  const phi = phi_deg * Math.PI / 180;
+  const phi  = phi_deg  * Math.PI / 180;
   const beta = beta_deg * Math.PI / 180;
 
   // Radio del circulo critico aproximado
-  const R = H / Math.sin(beta) * 0.8;
+  const R    = H / Math.sin(beta) * 0.8;
   const n_dov = 8;
   let sum_num = 0;
   let sum_den = 0;
 
   for (let i = 0; i < n_dov; i++) {
-    const x = (i + 0.5) * H * Math.cos(beta) / n_dov;
-    const alpha = Math.asin(Math.min(x / R, 0.99));
-    const h_dov = H - x * Math.tan(beta);
-    const b_dov = H * Math.cos(beta) / n_dov;
-    const W = (gamma / 1000) * h_dov * b_dov;
+    const x     = (i + 0.5) * H * Math.cos(beta) / n_dov;
+    const alpha  = Math.asin(Math.min(x / R, 0.99));
+    const h_dov  = H - x * Math.tan(beta);
+    const b_dov  = H * Math.cos(beta) / n_dov;
+    const W      = (gamma / 1000) * h_dov * b_dov;
 
     // Presion de poro (simplificada)
     const u = Dw < h_dov ? 9.81 * (h_dov - Dw) * 0.3 : 0;
 
     const m_alpha = Math.cos(alpha) + Math.sin(alpha) * Math.tan(phi) / 1.3;
-    const safe_m = Math.max(m_alpha, 0.1);
+    const safe_m  = Math.max(m_alpha, 0.1);
 
     sum_num += (c * b_dov + (W - u * b_dov) * Math.tan(phi)) / safe_m;
     sum_den += W * Math.sin(alpha);
   }
 
-  const FS = sum_den > 0 ? sum_num / sum_den : 999;
+  const FS     = sum_den > 0 ? sum_num / sum_den : 999;
   const riesgo = FS < 1.0 ? 'CRITICAL' : FS < 1.3 ? 'HIGH' : FS < 1.5 ? 'MEDIUM' : 'LOW';
-  const estado = FS >= 1.5 ? 'ESTABLE' : FS >= 1.3 ? 'MARGINALMENTE ESTABLE' : 'INESTABLE — RIESGO DE DESLIZAMIENTO';
+  const estado = FS >= 1.5
+    ? 'ESTABLE'
+    : FS >= 1.3
+      ? 'MARGINALMENTE ESTABLE'
+      : 'INESTABLE — RIESGO DE DESLIZAMIENTO';
 
   return { FS: +FS.toFixed(2), riesgo, estado };
 }
 
 const SUELOS = [
-  { id: 'arena_suelta', label: 'Arena suelta (phi=30)' },
-  { id: 'arena_compacta', label: 'Arena compacta (phi=35)' },
-  { id: 'arcilla_blanda', label: 'Arcilla blanda (c=25 kPa)' },
-  { id: 'arcilla_media', label: 'Arcilla media (c=50 kPa)' },
-  { id: 'arcilla_firme', label: 'Arcilla firme (c=100 kPa)' },
-  { id: 'grava', label: 'Grava (phi=40)' },
+  { id: 'arena_suelta',   label: 'Arena suelta (phi=30)'       },
+  { id: 'arena_compacta', label: 'Arena compacta (phi=35)'     },
+  { id: 'arcilla_blanda', label: 'Arcilla blanda (c=25 kPa)'  },
+  { id: 'arcilla_media',  label: 'Arcilla media (c=50 kPa)'   },
+  { id: 'arcilla_firme',  label: 'Arcilla firme (c=100 kPa)'  },
+  { id: 'grava',          label: 'Grava (phi=40)'              },
 ];
 
 const riskColor: Record<string, string> = {
@@ -113,21 +117,21 @@ export default function ModuloGeotecnia() {
 
   // Capacidad portante
   const [suelo, setSuelo] = useState('arcilla_media');
-  const [B, setB] = useState('1.5');
-  const [L2, setL2] = useState('2.0');
-  const [Df, setDf] = useState('1.2');
-  const [Q, setQ] = useState('500');
-  const [FS, setFS] = useState('3.0');
-  const [Dw, setDw] = useState('10');
+  const [B,     setB]     = useState('1.5');
+  const [L2,    setL2]    = useState('2.0');
+  const [Df,    setDf]    = useState('1.2');
+  const [Q,     setQ]     = useState('500');
+  const [FS,    setFS]    = useState('3.0');
+  const [Dw,    setDw]    = useState('10');
   const [resCP, setResCP] = useState<ReturnType<typeof calcCapacidadPortante>>(null);
 
   // Estabilidad talud
-  const [H, setH] = useState('8');
-  const [beta, setBeta] = useState('35');
-  const [c, setC] = useState('40');
-  const [phi, setPhi] = useState('28');
+  const [H,     setH]     = useState('8');
+  const [beta,  setBeta]  = useState('35');
+  const [c,     setC]     = useState('40');
+  const [phi,   setPhi]   = useState('28');
   const [gamma, setGamma] = useState('1800');
-  const [DwT, setDwT] = useState('5');
+  const [DwT,   setDwT]   = useState('5');
   const [resET, setResET] = useState<ReturnType<typeof calcEstabilidadTalud>>(null);
   const [error, setError] = useState('');
 
@@ -159,7 +163,7 @@ export default function ModuloGeotecnia() {
     padding: '10px 12px',
     color: '#f8fafc',
     fontSize: 15,
-    boxSizing: 'border-box' as const
+    boxSizing: 'border-box' as const,
   };
 
   return (
@@ -195,7 +199,7 @@ export default function ModuloGeotecnia() {
                 border: '1px solid #334155', borderRadius: 8,
                 color: tab === t2.id ? '#000' : 'white',
                 fontWeight: tab === t2.id ? 800 : 400,
-                cursor: 'pointer', fontSize: 13
+                cursor: 'pointer', fontSize: 13,
               }}>
               {t2.label}
             </button>
@@ -210,19 +214,18 @@ export default function ModuloGeotecnia() {
             </div>
             <div style={{ marginBottom: 16 }}>
               <label style={{ color: '#94a3b8', fontSize: 12, display: 'block', marginBottom: 6 }}>Tipo de suelo</label>
-              <select value={suelo} onChange={e => setSuelo(e.target.value)}
-                style={{ ...inputStyle, fontSize: 14 }}>
+              <select value={suelo} onChange={e => setSuelo(e.target.value)} style={{ ...inputStyle, fontSize: 14 }}>
                 {SUELOS.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
               </select>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
               {[
-                { label: 'Ancho B (m)', val: B, set: setB },
-                { label: 'Largo L (m)', val: L2, set: setL2 },
-                { label: 'Profundidad Df (m)', val: Df, set: setDf },
-                { label: 'Carga Q (kN)', val: Q, set: setQ },
-                { label: 'Factor seguridad FS', val: FS, set: setFS },
-                { label: 'Nivel freatico Dw (m)', val: Dw, set: setDw },
+                { label: 'Ancho B (m)',               val: B,  set: setB  },
+                { label: 'Largo L (m)',               val: L2, set: setL2 },
+                { label: 'Profundidad Df (m)',         val: Df, set: setDf },
+                { label: 'Carga Q (kN)',               val: Q,  set: setQ  },
+                { label: 'Factor seguridad FS',        val: FS, set: setFS },
+                { label: 'Nivel freatico Dw (m)',      val: Dw, set: setDw },
               ].map((f, i) => (
                 <div key={i}>
                   <label style={{ color: '#94a3b8', fontSize: 12, display: 'block', marginBottom: 6 }}>{f.label}</label>
@@ -230,7 +233,11 @@ export default function ModuloGeotecnia() {
                 </div>
               ))}
             </div>
-            {error && <div style={{ background: '#450a0a', border: '1px solid #dc2626', borderRadius: 8, padding: 10, color: '#fca5a5', fontSize: 13, marginBottom: 16 }}>{error}</div>}
+            {error && (
+              <div style={{ background: '#450a0a', border: '1px solid #dc2626', borderRadius: 8, padding: 10, color: '#fca5a5', fontSize: 13, marginBottom: 16 }}>
+                {error}
+              </div>
+            )}
             <button onClick={calcCP}
               style={{ width: '100%', background: 'linear-gradient(135deg,#84cc16,#4d7c0f)', border: 'none', borderRadius: 10, padding: 14, color: '#000', fontWeight: 800, fontSize: 16, cursor: 'pointer' }}>
               CALCULAR CAPACIDAD PORTANTE
@@ -246,12 +253,12 @@ export default function ModuloGeotecnia() {
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
               {[
-                { label: 'Altura H (m)', val: H, set: setH },
-                { label: 'Angulo beta (grados)', val: beta, set: setBeta },
-                { label: 'Cohesion c (kPa)', val: c, set: setC },
-                { label: 'Angulo friccion phi (grados)', val: phi, set: setPhi },
-                { label: 'Peso especifico gamma (kg/m3)', val: gamma, set: setGamma },
-                { label: 'Nivel freatico Dw (m)', val: DwT, set: setDwT },
+                { label: 'Altura H (m)',                    val: H,     set: setH     },
+                { label: 'Angulo beta (grados)',            val: beta,  set: setBeta  },
+                { label: 'Cohesion c (kPa)',                val: c,     set: setC     },
+                { label: 'Angulo friccion phi (grados)',    val: phi,   set: setPhi   },
+                { label: 'Peso especifico gamma (kg/m3)',   val: gamma, set: setGamma },
+                { label: 'Nivel freatico Dw (m)',          val: DwT,   set: setDwT   },
               ].map((f, i) => (
                 <div key={i}>
                   <label style={{ color: '#94a3b8', fontSize: 12, display: 'block', marginBottom: 6 }}>{f.label}</label>
@@ -259,7 +266,11 @@ export default function ModuloGeotecnia() {
                 </div>
               ))}
             </div>
-            {error && <div style={{ background: '#450a0a', border: '1px solid #dc2626', borderRadius: 8, padding: 10, color: '#fca5a5', fontSize: 13, marginBottom: 16 }}>{error}</div>}
+            {error && (
+              <div style={{ background: '#450a0a', border: '1px solid #dc2626', borderRadius: 8, padding: 10, color: '#fca5a5', fontSize: 13, marginBottom: 16 }}>
+                {error}
+              </div>
+            )}
             <button onClick={calcET}
               style={{ width: '100%', background: 'linear-gradient(135deg,#84cc16,#4d7c0f)', border: 'none', borderRadius: 10, padding: 14, color: '#000', fontWeight: 800, fontSize: 16, cursor: 'pointer' }}>
               CALCULAR ESTABILIDAD DE TALUD
@@ -278,12 +289,12 @@ export default function ModuloGeotecnia() {
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 16 }}>
               {[
-                { label: 'qu ultima', value: resCP.qu + ' kPa' },
-                { label: 'qa admisible', value: resCP.qa + ' kPa' },
-                { label: 'q aplicada', value: resCP.q_aplicada + ' kPa' },
-                { label: 'Utilizacion', value: resCP.utilizacion + '%' },
-                { label: 'Nq', value: resCP.Nq.toString() },
-                { label: 'Nc', value: resCP.Nc.toString() },
+                { label: 'qu ultima',   value: resCP.qu + ' kPa'          },
+                { label: 'qa admisible',value: resCP.qa + ' kPa'          },
+                { label: 'q aplicada',  value: resCP.q_aplicada + ' kPa'  },
+                { label: 'Utilizacion', value: resCP.utilizacion + '%'    },
+                { label: 'Nq',          value: resCP.Nq.toString()        },
+                { label: 'Nc',          value: resCP.Nc.toString()        },
               ].map((r, i) => (
                 <div key={i} style={{ background: '#0f172a', borderRadius: 8, padding: 12, textAlign: 'center' as const }}>
                   <div style={{ color: '#64748b', fontSize: 11, marginBottom: 4 }}>{r.label}</div>
@@ -293,7 +304,9 @@ export default function ModuloGeotecnia() {
             </div>
             <div style={{ background: resCP.ok ? '#0a2a1a' : '#2a0a0a', border: `1px solid ${resCP.ok ? '#00e5a0' : '#dc2626'}`, borderRadius: 8, padding: 14, marginBottom: 12 }}>
               <div style={{ color: resCP.ok ? '#00e5a0' : '#dc2626', fontWeight: 800, fontSize: 14 }}>
-                {resCP.ok ? 'CIMENTACION APTA — q aplicada < qa admisible' : 'CIMENTACION NO APTA — Aumentar B, L o Df'}
+                {resCP.ok
+                  ? 'CIMENTACION APTA — q aplicada < qa admisible'
+                  : 'CIMENTACION NO APTA — Aumentar B, L o Df'}
               </div>
             </div>
             <div style={{ background: '#0f172a', borderRadius: 8, padding: 14, fontSize: 12, color: '#94a3b8', fontFamily: 'monospace' }}>
@@ -324,7 +337,11 @@ export default function ModuloGeotecnia() {
                 <div style={{ textAlign: 'center' as const }}>
                   <div style={{ color: riskColor[resET.riesgo], fontWeight: 800, fontSize: 14 }}>{resET.estado}</div>
                   <div style={{ color: '#475569', fontSize: 11, marginTop: 8 }}>
-                    {resET.FS >= 1.5 ? 'Cumple norma CIRSOC 102' : resET.FS >= 1.3 ? 'Revisar y monitorear' : 'Requiere mejoramiento inmediato'}
+                    {resET.FS >= 1.5
+                      ? 'Cumple norma CIRSOC 102'
+                      : resET.FS >= 1.3
+                        ? 'Revisar y monitorear'
+                        : 'Requiere mejoramiento inmediato'}
                   </div>
                 </div>
               </div>
@@ -340,4 +357,4 @@ export default function ModuloGeotecnia() {
       </div>
     </div>
   );
-}
+} 
