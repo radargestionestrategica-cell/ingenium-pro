@@ -1,8 +1,8 @@
 'use client';
 // components/ResultadoContexto.tsx
-// INGENIUM PRO v8.1 — Contexto global de resultado calculado
-// Los módulos publican su resultado aquí via evento del navegador
-// page.tsx escucha y muestra BotonesExportar automáticamente
+// INGENIUM PRO v8.1 - Contexto global de resultado calculado
+// Los modulos publican su resultado via evento del navegador
+// page.tsx escucha y muestra BotonesExportar automaticamente
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { DatosExportar } from '@/components/BotonesExportar';
@@ -35,7 +35,7 @@ export function ResultadoProvider({ children }: { children: ReactNode }) {
 
 export const useResultado = () => useContext(Ctx);
 
-// ── Función que cualquier módulo llama al calcular ──────────────
+// Funcion que cualquier modulo llama al calcular
 // Uso: publicarResultado({ tipo: 'MAOP', parametros: {...}, resultado: res })
 export function publicarResultado(datos: DatosExportar) {
   window.dispatchEvent(new CustomEvent('ingenium:resultado', { detail: datos }));
