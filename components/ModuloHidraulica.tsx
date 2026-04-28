@@ -1,4 +1,5 @@
-'use client';
+﻿'use client';
+import { publicarResultado } from '@/components/ResultadoContexto';
 import { useState } from 'react';
 
 function calcDarcyWeisbach(Q: number, D: number, L: number, rugosidad: number, K_menor: number) {

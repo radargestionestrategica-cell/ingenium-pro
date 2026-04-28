@@ -1,4 +1,5 @@
-'use client';
+﻿'use client';
+import { publicarResultado } from '@/components/ResultadoContexto';
 import { useState } from 'react';
 
 // DATOS 100% REALES VERIFICADOS

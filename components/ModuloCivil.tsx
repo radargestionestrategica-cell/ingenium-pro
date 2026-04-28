@@ -1,4 +1,5 @@
-'use client';
+﻿'use client';
+import { publicarResultado } from '@/components/ResultadoContexto';
 import { useState } from 'react';
 
 // Diseno de vigas de acero - AISC LRFD 360-16

@@ -1,4 +1,5 @@
-'use client';
+﻿'use client';
+import { publicarResultado } from '@/components/ResultadoContexto';
 import { useState } from 'react';
 
 function calcMAOP(OD: number, t: number, SMYS: number, F = 0.72, E = 1.0, T_op = 20) {
@@ -63,7 +64,7 @@ export default function ModuloPetroleo() {
     if (isNaN(od) || isNaN(ti) || isNaN(top)) { setError('Completá todos los campos correctamente.'); return; }
     const r = calcMAOP(od, ti, MATERIALES[smysIdx].smys, CLASES[claseIdx].F, JUNTAS[juntaIdx].E, top);
     if (!r) { setError('Datos fuera de rango. Verificá diámetro y espesor.'); return; }
-    setRes(r);
+    setRes(r); publicarResultado({ tipo: 'MAOP', parametros: {} as Record<string,unknown>, resultado: r as Record<string,unknown> });
   };
 
   return (

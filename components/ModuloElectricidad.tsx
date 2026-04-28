@@ -1,4 +1,5 @@
 ﻿'use client';
+import { publicarResultado } from '@/components/ResultadoContexto';
 import { useState } from 'react';
 
 // MÃ“DULO ELECTRICIDAD INDUSTRIAL â€” INGENIUM PRO v8.0
