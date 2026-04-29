@@ -1,6 +1,6 @@
 ﻿'use client';
-import { useState } from 'react';
 import { publicarResultado } from '@/components/ResultadoContexto';
+import { useState } from 'react';
 
 // ═══════════════════════════════════════════════════════════════
 //  MÓDULO VÁLVULAS INDUSTRIALES — INGENIUM PRO v8.0
@@ -483,22 +483,7 @@ export default function ModuloValvulas() {
     else if (Prating < P * 1.1) advertencia = `⚠️ Margen ajustado (${Math.round((Prating / P - 1) * 100)}%). Considerar Class ${claseNext || 'mayor'} para mayor seguridad.`;
     else advertencia = `✅ Margen de presión: ${Math.round((Prating / P - 1) * 100)}% sobre la presión de operación.`;
 
-       const resultadoClase = { claseReq, Prating, claseNext, advertencia, maxTempMat };
-
-    setResCl(resultadoClase);
-
-    publicarResultado({
-      tipo: 'VALVULAS_CLASE_B16_34',
-      parametros: {
-        presionOperacionBar: P,
-        temperaturaOperacionC: T,
-        material: clMat,
-      },
-      resultado: resultadoClase as Record<string, unknown>,
-      normativa: 'ASME B16.34-2017',
-      moduloId: 'VALVULAS',
-      submodulo: 'Clase B16.34',
-    });
+    setResCl({ claseReq, Prating, claseNext, advertencia, maxTempMat });
   };
 
   // ── CÁLCULO 2: SELECCIÓN DE MATERIAL ─────────────────────────
