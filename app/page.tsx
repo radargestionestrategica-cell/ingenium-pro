@@ -78,7 +78,7 @@ const planes = [
   { nombre:'Demo',       precio:'Gratis',  periodo:'3 días', color: GRAY,  bajada:'Conocer la plataforma sin compromiso.',  features:['Acceso de prueba completo','Módulos principales','PDF y Excel de muestra','Sin tarjeta de crédito'], href:'/Login',  cta:'Comenzar demo gratuito', destacado:false },
   { nombre:'Senior',     precio:'USD 189', periodo:'mes',    color: GOLD,  bajada:'Para el profesional que necesita velocidad y trazabilidad.',   features:['1 usuario profesional','Todos los módulos técnicos','Historial de proyectos','PDF · Excel · DXF · QR','Auditoría IA'], href:'/planes', cta:'Activar Senior',        destacado:true  },
   { nombre:'Team',       precio:'USD 549', periodo:'mes',    color: GREEN, bajada:'Para equipos técnicos, consultoras e ingeniería interna.',      features:['3 usuarios activos','Proyectos compartidos','Dashboard de equipo','Gestión de activos','Soporte prioritario'],           href:'/planes', cta:'Activar Team',          destacado:false },
-  { nombre:'Enterprise', precio:'A medida',periodo:'empresa',color: CYAN,  bajada:'Configuración por sector, usuarios ilimitados y soporte dedicado.', features:['Usuarios ilimitados','Módulos configurables','API de integración','Soporte dedicado 24/7','Capacitación inicial'],  href:'mailto:silvana@radargestion.com?subject=Enterprise%20INGENIUM%20Pro', cta:'Solicitar cotización', destacado:false },
+  { nombre:'Enterprise', precio:'A medida',periodo:'empresa',color: CYAN,  bajada:'Configuración por sector, usuarios ilimitados y soporte dedicado.', features:['Usuarios ilimitados','Módulos configurables','API de integración','Soporte dedicado 24/7','Capacitación inicial'],  href:'mailto:radargestionestrategica@gmail.com?subject=Enterprise%20INGENIUM%20Pro', cta:'Solicitar cotización', destacado:false },
 ];
 
 const faqs = [
@@ -792,7 +792,7 @@ export default function LandingPage() {
           </p>
           <div className="actions" style={{ marginBottom:0 }}>
             <a href="/Login" className="btn-primary">Crear cuenta demo gratuita →</a>
-            <a href="mailto:silvana@radargestion.com?subject=Consulta%20INGENIUM%20Pro" className="btn-secondary">Contactar ventas</a>
+            <a href="mailto:radargestionestrategica@gmail.com?subject=Consulta%20INGENIUM%20Pro" className="btn-secondary">Contactar ventas</a>
           </div>
         </div>
       </section>
@@ -819,7 +819,7 @@ export default function LandingPage() {
             <a href="#normas">Normativas</a>
             <a href="/terminos">Términos de uso</a>
             <a href="/verify/demo">Verificación QR</a>
-            <a href="mailto:silvana@radargestion.com" className="gold">silvana@radargestion.com</a>
+            <a href="mailto:radargestionestrategica@gmail.com" className="gold">radargestionestrategica@gmail.com</a>
           </div>
         </div>
       </footer>

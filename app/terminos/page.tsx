@@ -147,7 +147,7 @@ export default function TerminosPage() {
         {/* FOOTER */}
         <div style={{ marginTop: 48, paddingTop: 24, borderTop: `1px solid rgba(255,255,255,0.06)`, textAlign: 'center', color: GRAY, fontSize: 11 }}>
           <div>INGENIUM PRO v8.1 · RADAR Gestión Estratégica · Silvana Belén Colombo</div>
-          <div style={{ marginTop: 4 }}>ingeniumpro.store · silvana@radargestion.com · © 2026</div>
+          <div style={{ marginTop: 4 }}>ingeniumpro.store · radargestionestrategica@gmail.com · © 2026</div>
           <div style={{ marginTop: 8 }}>
             <a href="/" style={{ color: GOLD, textDecoration: 'none', marginRight: 16 }}>Inicio</a>
             <a href="/planes" style={{ color: GOLD, textDecoration: 'none', marginRight: 16 }}>Planes</a>
