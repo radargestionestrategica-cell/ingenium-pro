@@ -1,5 +1,6 @@
 ﻿'use client';
 import { publicarResultado } from '@/components/ResultadoContexto';
+import BotonesExportar, { DatosExportar } from '@/components/BotonesExportar';
 import { useState } from 'react';
 
 // Diseno pavimento flexible - AASHTO 93
@@ -150,6 +151,7 @@ export default function ModuloVialidad() {
   const [m2, setM2] = useState('1.0');
   const [m3, setM3] = useState('1.0');
   const [resPav, setResPav] = useState<ReturnType<typeof calcPavimento>>(null);
+  const [datosPav, setDatosPav] = useState<DatosExportar | null>(null);
 
   // Drenaje
   const [A_ha, setA_ha] = useState('5');
@@ -161,6 +163,7 @@ export default function ModuloVialidad() {
   const [n_val, setN_val] = useState('0.016');
   const [S_val, setS_val] = useState('0.01');
   const [resDren, setResDren] = useState<ReturnType<typeof calcDrenajeVial>>(null);
+  const [datosDren, setDatosDren] = useState<DatosExportar | null>(null);
   const [error, setError] = useState('');
 
   const calcPav = () => {
@@ -173,6 +176,34 @@ export default function ModuloVialidad() {
     );
     if (!r) { setError('Verificar datos — PSI inicial debe ser mayor que PSI final.'); return; }
     setResPav(r);
+    const confLabel = CONFIABILIDAD.find(c => c.val === parseInt(R))?.label ?? `R=${R}%`;
+    const payload: DatosExportar = {
+      tipo: 'PAVIMENTO_AASHTO93',
+      normativa: 'AASHTO 93 | AASHTO Drainage Manual',
+      parametros: {
+        'ESAL W18 (ejes equiv. 18 kips)': W18,
+        'Confiabilidad R': confLabel,
+        'Desviacion estandar So': So,
+        'Serviciabilidad inicial PSI_i': PSI_i,
+        'Serviciabilidad final PSI_f': PSI_f,
+        'Modulo resiliente MR (psi)': MR,
+        'Coef. capa 1 asfalto a1': a1,
+        'Coef. capa 2 base a2': a2,
+        'Coef. capa 3 subbase a3': a3,
+        'Coef. drenaje m2': m2,
+        'Coef. drenaje m3': m3,
+      },
+      resultado: {
+        'Numero Estructural SN': r.SN,
+        'Carpeta asfaltica D1 (cm)': r.D1_cm,
+        'Base granular D2 (cm)': r.D2_cm,
+        'Subbase D3 (cm)': r.D3_cm,
+        'Factor Zr': r.Zr,
+        'Estado': r.riesgo,
+      },
+    };
+    setDatosPav(payload);
+    publicarResultado(payload);
   };
 
   const calcDren = () => {
@@ -184,6 +215,31 @@ export default function ModuloVialidad() {
     );
     if (!r) { setError('Verificar datos de entrada.'); return; }
     setResDren(r);
+    const payload: DatosExportar = {
+      tipo: 'DRENAJE_VIAL_HEC22',
+      normativa: 'HEC-22 FHWA | Metodo Racional | Manning',
+      parametros: {
+        'Area cuenca A (ha)': A_ha,
+        'Coef. escorrentia C': C_val,
+        'Intensidad lluvia I (mm/h)': I_val,
+        'Longitud cuneta L (m)': L_cun,
+        'Talud Z1 (H:V)': Z1_val,
+        'Talud Z2 (H:V)': Z2_val,
+        'Manning n': n_val,
+        'Pendiente S (m/m)': S_val,
+      },
+      resultado: {
+        'Caudal diseno Q (m3/s)': r.Q_m3s,
+        'Caudal Q (L/s)': r.Q_lps,
+        'Tirante y (m)': r.y_m,
+        'Velocidad cuneta (m/s)': r.V_cuneta,
+        'Ancho superficie T (m)': r.T_superficie,
+        'Velocidad dentro de limite': r.ok_velocidad ? 'SI' : 'NO',
+        'Estado': r.riesgo,
+      },
+    };
+    setDatosDren(payload);
+    publicarResultado(payload);
   };
 
   const inputStyle = {
@@ -319,6 +375,7 @@ export default function ModuloVialidad() {
             </div>
           </div>
         )}
+        {tab === 'pav' && datosPav && <BotonesExportar visible={true} datos={datosPav} />}
 
         {/* RESULTADOS DRENAJE */}
         {tab === 'dren' && resDren && (
@@ -349,6 +406,7 @@ export default function ModuloVialidad() {
             </div>
           </div>
         )}
+        {tab === 'dren' && datosDren && <BotonesExportar visible={true} datos={datosDren} />}
 
       </div>
     </div>

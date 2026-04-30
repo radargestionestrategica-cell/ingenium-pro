@@ -1,5 +1,6 @@
 ﻿'use client';
 import { publicarResultado } from '@/components/ResultadoContexto';
+import BotonesExportar, { DatosExportar } from '@/components/BotonesExportar';
 import { useState } from 'react';
 
 // RMR - Rock Mass Rating (Bieniawski 1989)
@@ -163,6 +164,7 @@ export default function ModuloMineria() {
   const [agua, setAgua] = useState('humedo');
   const [orientacion, setOrientacion] = useState('regular');
   const [resRMR, setResRMR] = useState<ReturnType<typeof calcRMR> | null>(null);
+  const [datosRMR, setDatosRMR] = useState<DatosExportar | null>(null);
 
   // Ventilacion
   const [trabajadores, setTrabajadores] = useState('10');
@@ -171,6 +173,7 @@ export default function ModuloMineria() {
   const [seccion, setSeccion] = useState('12');
   const [co_ppm, setCoPpm] = useState('15');
   const [resVent, setResVent] = useState<ReturnType<typeof calcVentilacion>>(null);
+  const [datosVent, setDatosVent] = useState<DatosExportar | null>(null);
   const [error, setError] = useState('');
 
   const calcularRMR = () => {
@@ -180,6 +183,30 @@ export default function ModuloMineria() {
       condicion, agua, orientacion
     );
     setResRMR(r);
+    const condLabel = CONDICIONES.find(c => c.id === condicion)?.label ?? condicion;
+    const aguaLabel = AGUA.find(a => a.id === agua)?.label ?? agua;
+    const orientLabel = ORIENTACION.find(o => o.id === orientacion)?.label ?? orientacion;
+    const payload: DatosExportar = {
+      tipo: 'RMR_BIENIAWSKI',
+      normativa: 'Bieniawski 1989 | NIOSH 2010',
+      parametros: {
+        'UCS resistencia uniaxial (MPa)': ucs,
+        'RQD (%)': rqd,
+        'Espaciado discontinuidades (mm)': espaciado,
+        'Condicion discontinuidades': condLabel,
+        'Agua subterranea': aguaLabel,
+        'Orientacion discontinuidades': orientLabel,
+      },
+      resultado: {
+        'Valor RMR': r.rmr,
+        'Clase de roca': r.clase,
+        'Descripcion': r.descripcion,
+        'Soporte recomendado': r.soporte,
+        'Estado': r.riesgo,
+      },
+    };
+    setDatosRMR(payload);
+    publicarResultado(payload);
   };
 
   const calcularVent = () => {
@@ -190,6 +217,29 @@ export default function ModuloMineria() {
     );
     if (!r) { setError('Verificar datos de entrada.'); return; }
     setResVent(r);
+    const payload: DatosExportar = {
+      tipo: 'VENTILACION_SUBTERRANEA',
+      normativa: 'NIOSH 2010 | MSHA 30 CFR Part 57',
+      parametros: {
+        'Trabajadores en frente': trabajadores,
+        'Potencia equipos diesel (kW)': diesel_kW,
+        'Longitud galeria (m)': longitud,
+        'Seccion transversal (m2)': seccion,
+        'CO medido (ppm)': co_ppm,
+      },
+      resultado: {
+        'Caudal requerido total (m3/s)': r.Q_requerido,
+        'Q por trabajadores (m3/s)': r.Q_personas,
+        'Q por diesel (m3/s)': r.Q_diesel,
+        'Velocidad en galeria (m/s)': r.V_galeria,
+        'Tiempo renovacion aire (min)': r.t_renovacion,
+        'CO dentro de limite': r.co_ok ? 'SI' : 'NO',
+        'Estado CO': r.riesgo_co,
+        'Estado': r.riesgo,
+      },
+    };
+    setDatosVent(payload);
+    publicarResultado(payload);
   };
 
   const inputStyle = {
@@ -359,6 +409,7 @@ export default function ModuloMineria() {
             </div>
           </div>
         )}
+        {tab === 'rmr' && datosRMR && <BotonesExportar visible={true} datos={datosRMR} />}
 
         {/* RESULTADOS VENTILACION */}
         {tab === 'vent' && resVent && (
@@ -392,6 +443,7 @@ export default function ModuloMineria() {
             </div>
           </div>
         )}
+        {tab === 'vent' && datosVent && <BotonesExportar visible={true} datos={datosVent} />}
 
       </div>
     </div>

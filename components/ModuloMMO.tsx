@@ -1,5 +1,6 @@
 ﻿'use client';
 import { publicarResultado } from '@/components/ResultadoContexto';
+import BotonesExportar, { DatosExportar } from '@/components/BotonesExportar';
 import { useState } from 'react';
 
 // DATOS 100% REALES VERIFICADOS POR PAÍS
@@ -171,6 +172,18 @@ excavacion_manual: { desc: 'Excavación manual suelo normal', unidad: 'm³', ren
     carpeta_cemento: { desc: 'Carpeta de cemento e=2 cm', unidad: 'm²', rendHH: 0.10 },
   };
 
+  const [datosH,     setDatosH]     = useState<DatosExportar | null>(null);
+  const [datosHierro,setDatosHierro]= useState<DatosExportar | null>(null);
+  const [datosMamp,  setDatosMamp]  = useState<DatosExportar | null>(null);
+  const [datosLosa,  setDatosLosa]  = useState<DatosExportar | null>(null);
+  const [datosRev,   setDatosRev]   = useState<DatosExportar | null>(null);
+  const [datosCer,   setDatosCer]   = useState<DatosExportar | null>(null);
+  const [datosCp,    setDatosCp]    = useState<DatosExportar | null>(null);
+  const [datosZap,   setDatosZap]   = useState<DatosExportar | null>(null);
+  const [datosExc,   setDatosExc]   = useState<DatosExportar | null>(null);
+  const [datosMort,  setDatosMort]  = useState<DatosExportar | null>(null);
+  const [datosRend,  setDatosRend]  = useState<DatosExportar | null>(null);
+
   const reset = () => { setResH(null); setResHierro(null); setResMamp(null); setResLosa(null); setResRev(null); setResCer(null); setResCp(null); setResZap(null); setResExc(null); setResMort(null); setResRend(null); setError(''); };
 
   const calcHormigon = () => {
@@ -179,15 +192,30 @@ excavacion_manual: { desc: 'Excavación manual suelo normal', unidad: 'm³', ren
     if (isNaN(vol) || vol <= 0) { setError('Ingresá un volumen válido en m³'); return; }
     const h = HORMIGONES[tipoH];
     const cementoKg = h.cementoKgM3 * vol;
-    setResH({
+    const r = {
       bolsas: Math.ceil(cementoKg / cfg.cementoBolsaKg),
-     cementoKg: Math.round(cementoKg),
+      cementoKg: Math.round(cementoKg),
       arenaKg: Math.round(h.arenaKgM3 * vol),
-     arenaM3: Math.round(h.arenaKgM3 * vol / 1600 * 100) / 100,
-     piedraKg: Math.round(h.piedraKgM3 * vol),
-     piedraM3: Math.round(h.piedraKgM3 * vol / 1500 * 100) / 100,
-     aguaL: Math.round(h.aguaLM3 * vol),
-   });
+      arenaM3: Math.round(h.arenaKgM3 * vol / 1600 * 100) / 100,
+      piedraKg: Math.round(h.piedraKgM3 * vol),
+      piedraM3: Math.round(h.piedraKgM3 * vol / 1500 * 100) / 100,
+      aguaL: Math.round(h.aguaLM3 * vol),
+    };
+    setResH(r);
+    const payload: DatosExportar = {
+      tipo: 'HORMIGON_MMO',
+      normativa: cfg.normativa,
+      parametros: { 'Pais': cfg.nombre, 'Tipo hormigon': h.label, 'Volumen (m3)': vol },
+      resultado: {
+        [`Bolsas cemento (${cfg.cementoBolsaKg} kg)`]: r.bolsas,
+        'Cemento total (kg)': r.cementoKg,
+        'Arena (m3)': r.arenaM3,
+        'Piedra/Grava (m3)': r.piedraM3,
+        'Agua (L)': r.aguaL,
+      },
+    };
+    setDatosH(payload);
+    publicarResultado(payload);
   };
 
 const calcHierro = () => {
@@ -197,7 +225,20 @@ const calcHierro = () => {
     const cant = parseInt(cantBarras);
    if (!pesoM || isNaN(lon) || lon <= 0 || isNaN(cant) || cant <= 0) { setError('Datos inválidos'); return; }
     const kgBarra = Math.round(pesoM * lon * 1000) / 1000;
-    setResHierro({ kgBarra, kgTotal: Math.round(kgBarra * cant * 100) / 100, metrosTotales: lon * cant });
+    const rHierro = { kgBarra, kgTotal: Math.round(kgBarra * cant * 100) / 100, metrosTotales: lon * cant };
+    setResHierro(rHierro);
+    const payload: DatosExportar = {
+      tipo: 'HIERRO_MMO',
+      normativa: cfg.normativa,
+      parametros: { 'Pais': cfg.nombre, 'Diametro (mm)': diam, 'Longitud barra (m)': longBarras, 'Cantidad barras': cantBarras },
+      resultado: {
+        'Peso por barra (kg)': rHierro.kgBarra,
+        'Peso total (kg)': rHierro.kgTotal,
+        'Metros lineales totales (m)': rHierro.metrosTotales,
+      },
+    };
+    setDatosHierro(payload);
+    publicarResultado(payload);
 };
 
   const calcMamposteria = () => {
@@ -207,8 +248,22 @@ const calcHierro = () => {
   const base = tipoMamp === 'soga' ? cfg.ladrillosM2Soga : tipoMamp === 'tizon' ? cfg.ladrillosM2Tizon : cfg.bloquesM2;
     const unidades = Math.round(base * m2);
     const morteroM3 = Math.round(m2 * 0.025 * 100) / 100;
-    // Mortero 1:4 por m³: 6 bolsas cemento + 1.05 m³ arena (dato verificado)
-  setResMamp({ unidades, conDesperdicio: Math.ceil(unidades * 1.10), morteroM3, cementoBolsas: Math.ceil(morteroM3 * 6), arenaM3: Math.round(morteroM3 * 1.05 * 100) / 100 });
+    const rMamp = { unidades, conDesperdicio: Math.ceil(unidades * 1.10), morteroM3, cementoBolsas: Math.ceil(morteroM3 * 6), arenaM3: Math.round(morteroM3 * 1.05 * 100) / 100 };
+    setResMamp(rMamp);
+    const payload: DatosExportar = {
+      tipo: 'MAMPOSTERIA_MMO',
+      normativa: cfg.normativa,
+      parametros: { 'Pais': cfg.nombre, 'Tipo aparejo': tipoMamp, 'Superficie (m2)': m2Mamp },
+      resultado: {
+        'Unidades netas': rMamp.unidades,
+        'Unidades con 10% desperdicio': rMamp.conDesperdicio,
+        'Mortero 1:4 (m3)': rMamp.morteroM3,
+        [`Cemento mortero (bolsas ${cfg.cementoBolsaKg}kg)`]: rMamp.cementoBolsas,
+        'Arena mortero (m3)': rMamp.arenaM3,
+      },
+    };
+    setDatosMamp(payload);
+    publicarResultado(payload);
   };
 
   const calcLosa = () => {
@@ -217,8 +272,22 @@ const calcHierro = () => {
   if (isNaN(luz) || luz <= 0 || isNaN(m2) || m2 <= 0) { setError('Valores inválidos'); return; }
     const div = losaTipo === 'simple' ? 20 : losaTipo === 'continua' ? 24 : 28;
    const espesor = Math.max(Math.round(luz / div * 100) / 100, 0.10);
-    const hierroKgM2 = losaTipo === 'simple' ? 18 : 15; // dato CYPE Argentina verificado
-  setResLosa({ espesor, hierroKgM2, hormigonTotal: Math.round(espesor * m2 * 100) / 100, hierroTotal: Math.round(hierroKgM2 * m2) });
+    const hierroKgM2 = losaTipo === 'simple' ? 18 : 15;
+    const rLosa = { espesor, hierroKgM2, hormigonTotal: Math.round(espesor * m2 * 100) / 100, hierroTotal: Math.round(hierroKgM2 * m2) };
+    setResLosa(rLosa);
+    const payload: DatosExportar = {
+      tipo: 'LOSA_MMO',
+      normativa: cfg.normativa,
+      parametros: { 'Pais': cfg.nombre, 'Luz libre (m)': losaLuz, 'Tipo losa': losaTipo, 'Superficie (m2)': losaM2 },
+      resultado: {
+        'Espesor minimo (m)': rLosa.espesor,
+        'Hierro estimado (kg/m2)': rLosa.hierroKgM2,
+        'Hormigon H25 total (m3)': rLosa.hormigonTotal,
+        'Hierro total estimado (kg)': rLosa.hierroTotal,
+      },
+    };
+    setDatosLosa(payload);
+    publicarResultado(payload);
   };
 
   const calcRevoque = () => {
@@ -232,13 +301,39 @@ const calcHierro = () => {
       const bolsas = Math.ceil(cementoKg / cfg.cementoBolsaKg);
      // Cal: 1 bolsa 5kg por cada bolsa cemento (mezcla 1:1:4 = cemento:cal:arena)
       const calBolsas = bolsas;
-      setResRev({ cementoKg, bolsas, arenaM3, calBolsas });
+      const rRev = { cementoKg, bolsas, arenaM3, calBolsas };
+      setResRev(rRev);
+      const payload: DatosExportar = {
+        tipo: 'REVOQUE_MMO',
+        normativa: cfg.normativa,
+        parametros: { 'Pais': cfg.nombre, 'Tipo revoque': revTipo, 'Superficie (m2)': revM2 },
+        resultado: {
+          [`Cemento (bolsas ${cfg.cementoBolsaKg}kg)`]: rRev.bolsas,
+          'Cemento total (kg)': rRev.cementoKg,
+          'Arena (m3)': rRev.arenaM3,
+          'Cal hidraulica (bolsas 5kg)': calBolsas,
+        },
+      };
+      setDatosRev(payload);
+      publicarResultado(payload);
     } else {
-    // Revoque fino e=0.5cm: 1.5 kg cemento/m² + arena fina 0.003 m³/m²
-     const cementoKg = Math.round(1.5 * m2);
-    const arenaM3 = Math.round(0.003 * m2 * 100) / 100;
+      const cementoKg = Math.round(1.5 * m2);
+      const arenaM3 = Math.round(0.003 * m2 * 100) / 100;
       const bolsas = Math.ceil(cementoKg / cfg.cementoBolsaKg);
-    setResRev({ cementoKg, bolsas, arenaM3 });
+      const rRev = { cementoKg, bolsas, arenaM3 };
+      setResRev(rRev);
+      const payload: DatosExportar = {
+        tipo: 'REVOQUE_MMO',
+        normativa: cfg.normativa,
+        parametros: { 'Pais': cfg.nombre, 'Tipo revoque': revTipo, 'Superficie (m2)': revM2 },
+        resultado: {
+          [`Cemento (bolsas ${cfg.cementoBolsaKg}kg)`]: rRev.bolsas,
+          'Cemento total (kg)': rRev.cementoKg,
+          'Arena fina (m3)': rRev.arenaM3,
+        },
+      };
+      setDatosRev(payload);
+      publicarResultado(payload);
     }
   };
 
@@ -252,8 +347,21 @@ const calcHierro = () => {
     const rendPegM2 = cerTam === 'pequeno' ? 7 : cerTam === 'mediano' ? 5 : 3;
     const pegBolsas = Math.ceil(m2 / rendPegM2);
     // Pastina: 0.3 kg/m² estándar (dato Weber Argentina)
-   const pastKg = Math.round(m2 * 0.3 * 10) / 10;
-    setResCer({ cerConDesp: m2ConDesp, pegBolsas, pastKg, desperdicio: desperdicio * 100 });
+    const pastKg = Math.round(m2 * 0.3 * 10) / 10;
+    const rCer = { cerConDesp: m2ConDesp, pegBolsas, pastKg, desperdicio: desperdicio * 100 };
+    setResCer(rCer);
+    const payload: DatosExportar = {
+      tipo: 'CERAMICO_MMO',
+      normativa: cfg.normativa,
+      parametros: { 'Pais': cfg.nombre, 'Superficie (m2)': cerM2, 'Tamano pieza': cerTam, 'Colocacion': cerAngulo },
+      resultado: {
+        [`Ceramico a comprar con ${rCer.desperdicio}% desp. (m2)`]: rCer.cerConDesp,
+        [`Pegamento (bolsas ${cfg.pegamentoBolsaKg}kg)`]: rCer.pegBolsas,
+        'Pastina (kg)': rCer.pastKg,
+      },
+    };
+    setDatosCer(payload);
+    publicarResultado(payload);
 };
 
 const calcContrapiso = () => {
@@ -265,9 +373,23 @@ const calcContrapiso = () => {
   // Dato verificado: Hidralit rinde 2.6 m²/bolsa para contrapiso interior 10cm
     // Normalizado para 8cm: ~1.5 bolsas/m²
     const cementoBolsas = Math.ceil(m2 * 1.5 * (parseFloat(cpEspesor) / 10));
-  const arenaM3 = Math.round(volM3 * 0.2 * 100) / 100;
-const cascoteM3 = Math.round(volM3 * 0.8 * 100) / 100;
-  setResCp({ volM3, cementoBolsas, arenaM3, cascoteM3 });
+    const arenaM3 = Math.round(volM3 * 0.2 * 100) / 100;
+    const cascoteM3 = Math.round(volM3 * 0.8 * 100) / 100;
+    const rCp = { volM3, cementoBolsas, arenaM3, cascoteM3 };
+    setResCp(rCp);
+    const payload: DatosExportar = {
+      tipo: 'CONTRAPISO_MMO',
+      normativa: cfg.normativa,
+      parametros: { 'Pais': cfg.nombre, 'Superficie (m2)': cpM2, 'Espesor (cm)': cpEspesor },
+      resultado: {
+        'Volumen total (m3)': rCp.volM3,
+        [`Cemento (bolsas ${cfg.cementoBolsaKg}kg)`]: rCp.cementoBolsas,
+        'Arena (m3)': rCp.arenaM3,
+        'Cascote (m3)': rCp.cascoteM3,
+      },
+    };
+    setDatosCp(payload);
+    publicarResultado(payload);
 };
 
 const calcZapata = () => {
@@ -281,7 +403,21 @@ const calcZapata = () => {
     const lado = Math.round(Math.sqrt(area) * 100) / 100; // m (zapata cuadrada)
     const espesorAprox = Math.round(lado / 3 * 100) / 100; // espesor ≈ L/3 (referencia simple)
     const hormigonM3 = Math.round(lado * lado * espesorAprox * 100) / 100;
-   setResZap({ area, lado, espesorAprox, hormigonM3 });
+    const rZap = { area, lado, espesorAprox, hormigonM3 };
+    setResZap(rZap);
+    const payload: DatosExportar = {
+      tipo: 'ZAPATA_MMO',
+      normativa: cfg.normativa,
+      parametros: { 'Pais': cfg.nombre, 'Carga total (t)': zapCarga, 'qadm (kg/cm2)': zapQadm },
+      resultado: {
+        'Area minima (m2)': rZap.area,
+        'Lado zapata cuadrada (m)': rZap.lado,
+        'Espesor referencial L/3 (m)': rZap.espesorAprox,
+        'Hormigon H25 estimado (m3)': rZap.hormigonM3,
+      },
+    };
+    setDatosZap(payload);
+    publicarResultado(payload);
   };
 
   const calcExcavacion = () => {
@@ -290,8 +426,21 @@ const calcZapata = () => {
     if (isNaN(l) || isNaN(a) || isNaN(p) || l <= 0 || a <= 0 || p <= 0) { setError('Valores inválidos'); return; }
     const esponj = tipoSuelo === 'arcilla' ? 25 : tipoSuelo === 'arena' ? 12 : 35;
     const volNatural = Math.round(l * a * p * 100) / 100;
-  const volEsponjado = Math.round(volNatural * (1 + esponj / 100) * 100) / 100;
-    setResExc({ volNatural, volEsponjado, camiones: Math.ceil(volEsponjado / 6), esponj });
+    const volEsponjado = Math.round(volNatural * (1 + esponj / 100) * 100) / 100;
+    const rExc = { volNatural, volEsponjado, camiones: Math.ceil(volEsponjado / 6), esponj };
+    setResExc(rExc);
+    const payload: DatosExportar = {
+      tipo: 'EXCAVACION_MMO',
+      normativa: cfg.normativa,
+      parametros: { 'Pais': cfg.nombre, 'Largo (m)': excLargo, 'Ancho (m)': excAncho, 'Profundidad (m)': excProf, 'Tipo suelo': tipoSuelo },
+      resultado: {
+        'Volumen en banco (m3)': rExc.volNatural,
+        [`Volumen esponjado ${rExc.esponj}% (m3)`]: rExc.volEsponjado,
+        'Camiones volcadores 6m3': rExc.camiones,
+      },
+    };
+    setDatosExc(payload);
+    publicarResultado(payload);
   };
 
 const calcMortero = () => {
@@ -303,7 +452,20 @@ const calcMortero = () => {
      '1:5': { c: 5.5, a: 1.06 }, '1:6': { c: 4.5, a: 1.07 },
     };
     const p = props[mortProp];
-    setResMort({ cementoKg: Math.round(p.c * cfg.cementoBolsaKg * vol), cementoBolsas: Math.ceil(p.c * vol), arenaM3: Math.round(p.a * vol * 100) / 100 });
+    const rMort = { cementoKg: Math.round(p.c * cfg.cementoBolsaKg * vol), cementoBolsas: Math.ceil(p.c * vol), arenaM3: Math.round(p.a * vol * 100) / 100 };
+    setResMort(rMort);
+    const payload: DatosExportar = {
+      tipo: 'MORTERO_MMO',
+      normativa: cfg.normativa,
+      parametros: { 'Pais': cfg.nombre, 'Proporcion cemento:arena': mortProp, 'Volumen (m3)': mortVol },
+      resultado: {
+        [`Cemento (bolsas ${cfg.cementoBolsaKg}kg)`]: rMort.cementoBolsas,
+        'Cemento total (kg)': rMort.cementoKg,
+        'Arena (m3)': rMort.arenaM3,
+      },
+    };
+    setDatosMort(payload);
+    publicarResultado(payload);
   };
 
   const calcRendimiento = () => {
@@ -313,7 +475,19 @@ const calcMortero = () => {
     const r = RENDIMIENTOS[rendTarea];
     const hhTotal = cant / r.rendHH;
     const horas = Math.round(hhTotal / cuad * 10) / 10;
-    setResRend({ horas, dias: Math.round(horas / 8 * 10) / 10, desc: r.desc, unidad: r.unidad });
+    const rRend = { horas, dias: Math.round(horas / 8 * 10) / 10, desc: r.desc, unidad: r.unidad };
+    setResRend(rRend);
+    const payload: DatosExportar = {
+      tipo: 'RENDIMIENTO_MMO',
+      normativa: cfg.normativa,
+      parametros: { 'Pais': cfg.nombre, 'Tarea': r.desc, [`Cantidad (${r.unidad})`]: rendCant, 'Cuadrilla (personas)': rendCuad },
+      resultado: {
+        'Horas de trabajo': rRend.horas,
+        'Dias (8 hs/dia)': rRend.dias,
+      },
+    };
+    setDatosRend(payload);
+    publicarResultado(payload);
   };
 
   return (
@@ -383,6 +557,7 @@ const calcMortero = () => {
             </div>
             <InfoBox text={`${cfg.normativa} · Cemento recomendado: ${cfg.marcasCemento}`} />
           </ResBox>}
+          {datosH && <BotonesExportar visible={true} datos={datosH} />}
         </div>
       )}
 
@@ -413,6 +588,7 @@ const calcMortero = () => {
               <Card label="Metro lineal total" val={`${resHierro.metrosTotales} m`} />
             </div>
           </ResBox>}
+          {datosHierro && <BotonesExportar visible={true} datos={datosHierro} />}
         </div>
       )}
 
@@ -444,6 +620,7 @@ const calcMortero = () => {
               <Card label="Arena para mortero" val={`${resMamp.arenaM3} m³`} />
             </div>
           </ResBox>}
+          {datosMamp && <BotonesExportar visible={true} datos={datosMamp} />}
         </div>
       )}
 
@@ -477,6 +654,7 @@ const calcMortero = () => {
             </div>
             <WarnBox text="⚠️ Predimensionado de referencia. El cálculo estructural definitivo requiere Ingeniero Civil matriculado." />
           </ResBox>}
+          {datosLosa && <BotonesExportar visible={true} datos={datosLosa} />}
         </div>
       )}
 
@@ -506,6 +684,7 @@ const calcMortero = () => {
             </div>
             <InfoBox text="Incluir 10% de desperdicio al comprar materiales. El tiempo de secado del revoque grueso es 10-15 días antes de aplicar fino." />
           </ResBox>}
+          {datosRev && <BotonesExportar visible={true} datos={datosRev} />}
         </div>
       )}
 
@@ -542,6 +721,7 @@ const calcMortero = () => {
             </div>
             <InfoBox text="Aplicar pastina 24-48 hs después del pegamento. Dejar juntas de dilatación cada 20-25 m²." />
           </ResBox>}
+          {datosCer && <BotonesExportar visible={true} datos={datosCer} />}
         </div>
       )}
 
@@ -574,6 +754,7 @@ const calcMortero = () => {
             </div>
             <InfoBox text="Curar manteniendo húmedo 3-7 días. Nivelar con regla de aluminio dejando pendiente 1-2% hacia desagüe en exteriores." />
           </ResBox>}
+          {datosCp && <BotonesExportar visible={true} datos={datosCp} />}
         </div>
       )}
 
@@ -606,6 +787,7 @@ const calcMortero = () => {
             </div>
             <WarnBox text="⚠️ Este es un predimensionado de referencia únicamente. El diseño definitivo de la zapata (armado, verificación por punzonamiento y corte) debe realizarlo un Ingeniero Civil matriculado con estudio de suelos." />
           </ResBox>}
+          {datosZap && <BotonesExportar visible={true} datos={datosZap} />}
         </div>
       )}
 
@@ -640,6 +822,7 @@ const calcMortero = () => {
               <Card label="Camiones volcadores (6 m³)" val={`${resExc.camiones} viajes`} />
             </div>
           </ResBox>}
+          {datosExc && <BotonesExportar visible={true} datos={datosExc} />}
         </div>
       )}
 
@@ -669,6 +852,7 @@ const calcMortero = () => {
               <Card label="Arena" val={`${resMort.arenaM3} m³`} />
             </div>
           </ResBox>}
+          {datosMort && <BotonesExportar visible={true} datos={datosMort} />}
         </div>
       )}
 
@@ -700,6 +884,7 @@ const calcMortero = () => {
             </div>
             <InfoBox text="Los rendimientos son valores estándar de industria. Pueden variar ±20% según condiciones de obra, experiencia del personal y condiciones climáticas." />
           </ResBox>}
+          {datosRend && <BotonesExportar visible={true} datos={datosRend} />}
         </div>
       )}
     </div>

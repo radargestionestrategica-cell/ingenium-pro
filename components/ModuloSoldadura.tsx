@@ -1,5 +1,6 @@
 ﻿'use client';
 import { publicarResultado } from '@/components/ResultadoContexto';
+import BotonesExportar, { DatosExportar } from '@/components/BotonesExportar';
 import { useState } from 'react';
 
 // DATOS 100% REALES VERIFICADOS
@@ -237,6 +238,12 @@ export default function ModuloSoldadura() {
   const [prEsp, setPrEsp] = useState('20');
   const [resPre, setResPre] = useState<null | { CE: number; Tp: number; cat: string; rec: string }>(null);
 
+  const [datosSel,  setDatosSel]  = useState<DatosExportar | null>(null);
+  const [datosHI,   setDatosHI]   = useState<DatosExportar | null>(null);
+  const [datosFil,  setDatosFil]  = useState<DatosExportar | null>(null);
+  const [datosCons, setDatosCons] = useState<DatosExportar | null>(null);
+  const [datosPre,  setDatosPre]  = useState<DatosExportar | null>(null);
+
   const reset = () => { setErr(''); setSRes([]); setResHI(null); setResFil(null); setResCons(null); setResPre(null); };
 
   const calcSelector = () => {
@@ -253,7 +260,24 @@ export default function ModuloSoldadura() {
       if (sPos === 'plana' && el.proceso === 'GMAW/MIG') p += 2;
       if (p >= 3) res.push(k);
     });
-    setSRes(res.length > 0 ? res : ['E7018']);
+    const final = res.length > 0 ? res : ['E7018'];
+    setSRes(final);
+    const payload: DatosExportar = {
+      tipo: 'SELECTOR_SOLDADURA',
+      normativa: 'AWS A5.1 | API 1104 | AWS D1.1:2020',
+      parametros: {
+        'Industria': sInd,
+        'Material base': sMat,
+        'Posicion': sPos,
+        'Condicion metal base': sCond,
+      },
+      resultado: {
+        'Electrodos recomendados': final.join(', '),
+        'Cantidad': final.length,
+      },
+    };
+    setDatosSel(payload);
+    publicarResultado(payload);
   };
 
   const calcHeatInput = () => {
@@ -269,7 +293,25 @@ export default function ModuloSoldadura() {
     else if (hi < 2.5) clase = '✅ Medio — rango óptimo mayoría de aceros';
     else if (hi < 4.0) clase = '⚠️ Alto — verificar propiedades ZAT';
     else clase = '❌ Muy alto — riesgo degradación microestructural';
-    setResHI({ hi, clase, ef: ef * 100 });
+    const r = { hi, clase: clase.replace(/[^\x20-\x7EÀ-ɏ]/g, '').trim(), ef: ef * 100 };
+    setResHI(r);
+    const payload: DatosExportar = {
+      tipo: 'HEAT_INPUT',
+      normativa: 'ASME Sec. IX | AWS D1.1 §6.8.5',
+      parametros: {
+        'Voltaje V (V)': hiV,
+        'Corriente I (A)': hiI,
+        'Velocidad avance (mm/min)': hiVel,
+        'Proceso': hiProc,
+        'Eficiencia proceso (%)': ef * 100,
+      },
+      resultado: {
+        'Heat Input (kJ/mm)': hi,
+        'Clasificacion': r.clase,
+      },
+    };
+    setDatosHI(payload);
+    publicarResultado(payload);
   };
 
   const calcFilete = () => {
@@ -281,7 +323,28 @@ export default function ModuloSoldadura() {
     const Fu = ELECTRODOS[fEl].rupturaKgcm2;
     // AWS D1.1: Rn = 0.707 × a × L × 0.6 × Fu (en cm²)
     const res = Math.round((garg / 10) * (lon / 10) * 0.6 * Fu);
-    setResFil({ garg, res, reskN: Math.round(res * 9.81 / 100) / 10, min, ok: tam >= min });
+    const r = { garg, res, reskN: Math.round(res * 9.81 / 100) / 10, min, ok: tam >= min };
+    setResFil(r);
+    const payload: DatosExportar = {
+      tipo: 'FILETE_SOLDADURA',
+      normativa: 'AWS D1.1:2020 | AISC-360',
+      parametros: {
+        'Espesor material mas grueso (mm)': fEsp,
+        'Tamano de filete (mm)': fTam,
+        'Longitud de soldadura (mm)': fLon,
+        'Electrodo': fEl,
+        'Fu electrodo (kgf/cm2)': ELECTRODOS[fEl].rupturaKgcm2,
+      },
+      resultado: {
+        'Garganta efectiva (mm)': r.garg,
+        'Filete minimo AWS D1.1 (mm)': r.min,
+        'Resistencia nominal (kgf)': r.res,
+        'Resistencia nominal (kN)': r.reskN,
+        'Tamaño aceptable': r.ok ? 'SI' : 'NO',
+      },
+    };
+    setDatosFil(payload);
+    publicarResultado(payload);
   };
 
   const calcConsumo = () => {
@@ -300,7 +363,27 @@ export default function ModuloSoldadura() {
     const cantVarillas = pesoVarilla > 0 ? Math.ceil(kgElectrodo / pesoVarilla) : 0;
     // Pasadas estimadas — regla práctica: 1 pasada por cada 3mm de espesor + raíz
     const pasadas = Math.max(1, Math.ceil(esp / 3));
-    setResCons({ kgDeposito, kgElectrodo, cantVarillas, pasadas });
+    const r = { kgDeposito, kgElectrodo, cantVarillas, pasadas };
+    setResCons(r);
+    const payload: DatosExportar = {
+      tipo: 'CONSUMO_ELECTRODOS',
+      normativa: 'AWS A5.1 | Lincoln Electric',
+      parametros: {
+        'Electrodo': cEl,
+        'Diametro electrodo (mm)': cDiam,
+        'Longitud cordon (mm)': cLongCordon,
+        'Espesor placa/pared (mm)': cEspPlaca,
+        'Eficiencia deposito (%)': ELECTRODOS[cEl].depositoEficiencia,
+      },
+      resultado: {
+        'Metal depositado (kg)': r.kgDeposito,
+        'Electrodo a consumir (kg)': r.kgElectrodo,
+        'Varillas estimadas': r.cantVarillas,
+        'Pasadas estimadas': r.pasadas,
+      },
+    };
+    setDatosCons(payload);
+    publicarResultado(payload);
   };
 
   const calcPrecalentamiento = () => {
@@ -318,7 +401,29 @@ export default function ModuloSoldadura() {
     else if (CE <= 0.55) { Tp = 150; cat = 'Grupo IV — CE muy alto (0.45-0.55)'; rec = 'Precalentar 150-200°C. OBLIGATORIO E7018/E7016. Tratamiento post-soldadura recomendado. ASME Sec. IX.'; }
     else { Tp = 200; cat = 'Grupo V — Alta aleación (>0.55)'; rec = 'Precalentar 200-315°C. WPS específico obligatorio. Calificación de procedimiento ASME Sec. IX.'; }
     if (t > 38 && Tp < 65) Tp = 65;
-    setResPre({ CE, Tp, cat, rec });
+    const r = { CE, Tp, cat, rec };
+    setResPre(r);
+    const payload: DatosExportar = {
+      tipo: 'PRECALENTAMIENTO',
+      normativa: 'CE IIW | AWS D1.1 | ASME Sec. IX',
+      parametros: {
+        '% Carbono C': prC,
+        '% Manganeso Mn': prMn,
+        '% Silicio Si': prSi,
+        '% Cromo Cr': prCr,
+        '% Niquel Ni': prNi,
+        '% Molibdeno Mo': prMo,
+        'Espesor material (mm)': prEsp,
+      },
+      resultado: {
+        'Carbono Equivalente CE (IIW)': CE,
+        'Temperatura minima Tp (C)': Tp === 0 ? 'No requerido' : Tp,
+        'Categoria AWS D1.1': cat,
+        'Recomendacion': rec,
+      },
+    };
+    setDatosPre(payload);
+    publicarResultado(payload);
   };
 
   return (
@@ -406,6 +511,7 @@ export default function ModuloSoldadura() {
               })}
             </div>
           )}
+          {datosSel && <BotonesExportar visible={true} datos={datosSel} />}
         </div>
       )}
 
@@ -517,6 +623,7 @@ export default function ModuloSoldadura() {
             </div>
             <Info text="Referencia: Tubería API 1104: 1.0-2.5 kJ/mm · Estructural AWS D1.1: 0.5-3.0 kJ/mm · ASME B31.3: según WPS calificado" />
           </ResBox>}
+          {datosHI && <BotonesExportar visible={true} datos={datosHI} />}
         </div>
       )}
 
@@ -553,6 +660,7 @@ export default function ModuloSoldadura() {
             </div>
             <Info text={`${fEl}: Fu = ${ELECTRODOS[fEl].rupturaKgcm2} kgf/cm² · Norma: AWS D1.1:2020 / AISC-360`} />
           </ResBox>}
+          {datosFil && <BotonesExportar visible={true} datos={datosFil} />}
         </div>
       )}
 
@@ -590,6 +698,7 @@ export default function ModuloSoldadura() {
             </div>
             <Warn text="⚠️ Estimación de referencia. El consumo real varía según diseño de junta, técnica del soldador y condiciones de obra. Agregar 15-20% de desperdicio al pedir materiales." />
           </ResBox>}
+          {datosCons && <BotonesExportar visible={true} datos={datosCons} />}
         </div>
       )}
 
@@ -630,6 +739,7 @@ export default function ModuloSoldadura() {
             </div>
             <Warn text="⚠️ Para proyectos API 1104 / ASME B31 el precalentamiento debe definirse en WPS calificado según ASME Sec. IX." />
           </ResBox>}
+          {datosPre && <BotonesExportar visible={true} datos={datosPre} />}
         </div>
       )}
     </div>

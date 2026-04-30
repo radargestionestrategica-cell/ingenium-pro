@@ -1,5 +1,6 @@
 ﻿'use client';
 import { publicarResultado } from '@/components/ResultadoContexto';
+import BotonesExportar, { DatosExportar } from '@/components/BotonesExportar';
 import { useState } from 'react';
 
 function calcDarcyWeisbach(Q: number, D: number, L: number, rugosidad: number, K_menor: number) {
@@ -86,6 +87,8 @@ export default function ModuloHidraulica() {
   const [dV, setDV] = useState('1.5');
   const [resDW, setResDW] = useState<ReturnType<typeof calcDarcyWeisbach>>(null);
   const [resWH, setResWH] = useState<ReturnType<typeof calcGolpeAriete>>(null);
+  const [datosDW, setDatosDW] = useState<DatosExportar | null>(null);
+  const [datosWH, setDatosWH] = useState<DatosExportar | null>(null);
   const [error, setError] = useState('');
 
   const calcularDW = () => {
@@ -96,6 +99,32 @@ export default function ModuloHidraulica() {
     );
     if (!r) { setError('Verificar datos de entrada.'); return; }
     setResDW(r);
+    const payload: DatosExportar = {
+      tipo: 'DARCY_WEISBACH',
+      normativa: 'AWWA M11 | Darcy-Weisbach | Colebrook-White',
+      parametros: {
+        'Caudal Q (L/s)': Q,
+        'Diametro interno D (mm)': D,
+        'Longitud L (m)': L,
+        'Material': MATERIALES[matIdx].label,
+        'Rugosidad (mm)': MATERIALES[matIdx].rugosidad,
+        'Coef. perdidas menores K': K,
+      },
+      resultado: {
+        'Velocidad V (m/s)': r.V,
+        'Numero de Reynolds Re': r.Re,
+        'Regimen de flujo': r.regimen,
+        'Factor de friccion f': r.f,
+        'hf Mayor (m)': r.hf_mayor,
+        'hf Menor (m)': r.hf_menor,
+        'hf Total (m)': r.hf_total,
+        'Presion (bar)': r.dP_bar,
+        'Presion (Pa)': r.dP_Pa,
+        'Estado': r.riesgo,
+      },
+    };
+    setDatosDW(payload);
+    publicarResultado(payload);
   };
 
   const calcularWH = () => {
@@ -106,6 +135,28 @@ export default function ModuloHidraulica() {
     );
     if (!r) { setError('Verificar datos de entrada.'); return; }
     setResWH(r);
+    const payload: DatosExportar = {
+      tipo: 'GOLPE_ARIETE',
+      normativa: 'Joukowsky 1898 | AWWA M11 | ASME B31.3',
+      parametros: {
+        'Caudal Q (L/s)': Q,
+        'Diametro D (mm)': D,
+        'Longitud L (m)': L,
+        'Espesor pared t (mm)': t,
+        'Material tuberia': E_MATERIALES[eIdx].label,
+        'Modulo elasticidad E (GPa)': E_MATERIALES[eIdx].E,
+        'Cambio velocidad dV (m/s)': dV,
+      },
+      resultado: {
+        'Celeridad onda a (m/s)': r.a,
+        'Sobrepresion (MPa)': r.dP_MPa,
+        'Sobrepresion (bar)': r.dP_bar,
+        'Tiempo critico Tc (s)': r.Tc,
+        'Estado': r.riesgo,
+      },
+    };
+    setDatosWH(payload);
+    publicarResultado(payload);
   };
 
   const inputStyle = {
@@ -297,6 +348,7 @@ export default function ModuloHidraulica() {
             </div>
           </div>
         )}
+        {tab === 'dw' && datosDW && <BotonesExportar visible={true} datos={datosDW} />}
 
         {/* RESULTADOS WH */}
         {tab === 'wh' && resWH && (
@@ -327,6 +379,7 @@ export default function ModuloHidraulica() {
             </div>
           </div>
         )}
+        {tab === 'wh' && datosWH && <BotonesExportar visible={true} datos={datosWH} />}
 
       </div>
     </div>

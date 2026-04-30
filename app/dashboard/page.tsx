@@ -7,6 +7,7 @@ import SelectorIdioma from '@/components/SelectorIdioma';
 import BienvenidaModal from '@/components/BienvenidaModal';
 import ConversorUnidades from '@/components/ConversorUnidades';
 import ModuloIntro from '@/components/ModuloIntro';
+import DashboardHome from '@/components/DashboardHome';
 import ModuloArquitectura from '@/components/ModuloArquitectura';
 import ModuloCanerias from '@/components/ModuloCanerias';
 import ModuloCivil from '@/components/ModuloCivil';
@@ -113,7 +114,15 @@ function Dashboard() {
 
         {/* CONTENIDO */}
         <main style={{ flex: 1, overflowY: 'auto' }}>
-          {ModuloActual ? <ModuloActual /> : <ModuloIntro moduloId="inicio" />}
+          {ModuloActual
+            ? (
+              <>
+                <ModuloIntro moduloId={moduloActivo!} />
+                <ModuloActual />
+              </>
+            )
+            : <DashboardHome onSelectModulo={cambiarModulo} />
+          }
 
           {/* BARRA DE EXPORTAR — aparece automáticamente al calcular */}
           {datos && moduloActivo && (

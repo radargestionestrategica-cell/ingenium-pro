@@ -1,6 +1,7 @@
 ﻿'use client';
 import { useState } from 'react';
 import { publicarResultado } from '@/components/ResultadoContexto';
+import BotonesExportar, { DatosExportar } from '@/components/BotonesExportar';
 
 // ═══════════════════════════════════════════════════════════════
 //  MÓDULO VÁLVULAS INDUSTRIALES — INGENIUM PRO v8.0
@@ -452,6 +453,12 @@ export default function ModuloValvulas() {
   const [tipFluid, setTipFluid] = useState('gas_dulce');
   const [tipDP, setTipDP] = useState('bajo');
 
+  // ── Estado: export ────────────────────────────────────────────
+  const [datosClase, setDatosClase] = useState<DatosExportar | null>(null);
+  const [datosMaterial, setDatosMaterial] = useState<DatosExportar | null>(null);
+  const [datosBrida, setDatosBrida] = useState<DatosExportar | null>(null);
+  const [datosCv, setDatosCv] = useState<DatosExportar | null>(null);
+
   // ── CÁLCULO 1: CLASE REQUERIDA (B16.34) ──────────────────────
   const calcClase = () => {
     R(); setResCl(null);
@@ -487,18 +494,23 @@ export default function ModuloValvulas() {
 
     setResCl(resultadoClase);
 
-    publicarResultado({
+    const payloadClase: DatosExportar = {
       tipo: 'VALVULAS_CLASE_B16_34',
-      parametros: {
-        presionOperacionBar: P,
-        temperaturaOperacionC: T,
-        material: clMat,
-      },
-      resultado: resultadoClase as Record<string, unknown>,
       normativa: 'ASME B16.34-2017',
-      moduloId: 'VALVULAS',
-      submodulo: 'Clase B16.34',
-    });
+      parametros: {
+        'Presion operacion (bar)': clP,
+        'Temperatura operacion (C)': clT,
+        'Material cuerpo': clMat,
+      },
+      resultado: {
+        'Clase minima requerida': resultadoClase.claseReq,
+        'Presion rating (bar)': resultadoClase.Prating,
+        'Temp max material (C)': resultadoClase.maxTempMat,
+        'Advertencia': resultadoClase.advertencia,
+      },
+    };
+    setDatosClase(payloadClase);
+    publicarResultado(payloadClase);
   };
 
   // ── CÁLCULO 2: SELECCIÓN DE MATERIAL ─────────────────────────
@@ -558,6 +570,26 @@ export default function ModuloValvulas() {
     }
 
     setResMat({ material, astm, norma, nace, obs, maxTemp });
+    const payloadMat: DatosExportar = {
+      tipo: 'VALVULAS_MATERIAL_NACE',
+      normativa: 'NACE MR0175/ISO 15156 | ASME B16.34',
+      parametros: {
+        'Tipo fluido': mFluido,
+        'Temperatura (C)': mTemp,
+        'H2S (ppm)': mH2S,
+        'Cloruros (ppm)': mCl,
+      },
+      resultado: {
+        'Material recomendado': material,
+        'Especificacion ASTM': astm,
+        'Normativa aplicable': norma,
+        'Servicio NACE MR0175': nace ? 'SI' : 'NO',
+        'Temperatura maxima (C)': maxTemp,
+        'Observaciones': obs,
+      },
+    };
+    setDatosMaterial(payloadMat);
+    publicarResultado(payloadMat);
   };
 
   // ── CÁLCULO 3: DIMENSIONES BRIDA B16.5 ───────────────────────
@@ -566,6 +598,27 @@ export default function ModuloValvulas() {
     const fd = B165[brClase]?.[brNPS];
     if (!fd) { setErr(`Combinación NPS ${brNPS}" Class ${brClase} no disponible en B16.5`); return; }
     setResBr({ fd, nps: brNPS, clase: brClase });
+    const payloadBr: DatosExportar = {
+      tipo: 'VALVULAS_BRIDA_B16_5',
+      normativa: 'ASME B16.5-2017',
+      parametros: {
+        'NPS (pulg)': brNPS,
+        'Clase de presion': brClase,
+        'Proyecto': brProyecto || 'Sin nombre',
+      },
+      resultado: {
+        'OD exterior (pulg)': fd.OD,
+        'BC circulo pernos (pulg)': fd.BC,
+        'Bore interior (pulg)': fd.bore,
+        'Numero de pernos': fd.n,
+        'Diametro perno (pulg)': fd.db,
+        'OD (mm)': Math.round(fd.OD * 25.4 * 10) / 10,
+        'BC (mm)': Math.round(fd.BC * 25.4 * 10) / 10,
+        'Bore (mm)': Math.round(fd.bore * 25.4 * 10) / 10,
+      },
+    };
+    setDatosBrida(payloadBr);
+    publicarResultado(payloadBr);
   };
 
   const exportarDXF = () => {
@@ -604,6 +657,22 @@ export default function ModuloValvulas() {
     else desc = 'Cv muy alto — revisar si conviene segmentar en válvulas paralelas.';
 
     setResCv({ Cv, Kv, desc });
+    const payloadCv: DatosExportar = {
+      tipo: 'VALVULAS_COEFICIENTE_CV',
+      normativa: 'ISA 75.01.01',
+      parametros: {
+        'Caudal': `${cvQ} ${cvUnidQ}`,
+        'Delta P valvula': `${cvDP} ${cvUnidDP}`,
+        'Gravedad especifica SG': cvSG,
+      },
+      resultado: {
+        'Cv requerido (US)': Cv,
+        'Kv requerido (metrico)': Kv,
+        'Orientacion seleccion': desc,
+      },
+    };
+    setDatosCv(payloadCv);
+    publicarResultado(payloadCv);
   };
 
   // ── TIPOS DE VÁLVULA — selección por aplicación ───────────────
@@ -701,6 +770,7 @@ export default function ModuloValvulas() {
               <Warn t="⚠️ Selección de clase definitiva requiere análisis completo de condiciones de proceso, transitorios de presión y temperatura, tipo de servicio (cíclico/continuo) y código de instalación aplicable." />
             </ResBox>
           )}
+          {datosClase && <BotonesExportar visible={true} datos={datosClase} />}
         </div>
       )}
 
@@ -753,6 +823,7 @@ export default function ModuloValvulas() {
               <Warn t="⚠️ La selección definitiva de material requiere ingeniero de materiales o corrosión matriculado. Este módulo es orientativo." />
             </ResBox>
           )}
+          {datosMaterial && <BotonesExportar visible={true} datos={datosMaterial} />}
         </div>
       )}
 
@@ -838,13 +909,11 @@ export default function ModuloValvulas() {
                   })()}
                 </div>
 
-                <button onClick={exportarDXF} style={{ width: '100%', padding: '12px 0', background: 'linear-gradient(135deg,#1d4ed8,#1e40af)', border: 'none', borderRadius: 12, color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer', marginTop: 4, boxShadow: '0 4px 16px rgba(29,78,216,0.4)' }}>
-                  ⬇️ Exportar DXF — Abrir en AutoCAD / FreeCAD
-                </button>
                 <Info t="El DXF contiene: círculo exterior (OD), círculo de pernos (BC), agujeros de perno individuales, diámetro interior (bore) y datos del proyecto. Abrí en AutoCAD, FreeCAD o cualquier CAD compatible." />
               </ResBox>
             );
           })()}
+          {datosBrida && <BotonesExportar visible={true} datos={datosBrida} onDXF={exportarDXF} />}
         </div>
       )}
 
@@ -895,6 +964,7 @@ export default function ModuloValvulas() {
               <Warn t="⚠️ Este Cv es para flujo turbulento no crítico en líquidos. Para gas, vapor, flujo bifásico, cavitación o servicio crítico consultar ISA 75.01.01 completo con ingeniero de control." />
             </ResBox>
           )}
+          {datosCv && <BotonesExportar visible={true} datos={datosCv} />}
         </div>
       )}
 

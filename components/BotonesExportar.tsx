@@ -15,6 +15,15 @@ export interface DatosExportar {
   moduloId?:     string;
   submodulo?:    string;
   activoNombre?: string;
+  matrizRiesgo?: {
+    tecnico:   'LOW' | 'MEDIUM' | 'HIGH';
+    normativo: 'LOW' | 'MEDIUM' | 'HIGH';
+    operativo: 'LOW' | 'MEDIUM' | 'HIGH';
+    economico: 'LOW' | 'MEDIUM' | 'HIGH';
+    seguridad: 'LOW' | 'MEDIUM' | 'HIGH';
+  };
+  nivelPrecision?: 1 | 2 | 3;
+  advertencias?:   string[];
 }
 
 interface Props {

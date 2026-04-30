@@ -1,5 +1,6 @@
 ﻿'use client';
 import { publicarResultado } from '@/components/ResultadoContexto';
+import BotonesExportar, { DatosExportar } from '@/components/BotonesExportar';
 import { useState } from 'react';
 
 // Intercambiador de calor - Metodo LMTD
@@ -144,6 +145,7 @@ export default function ModuloTermica() {
   const [U_val, setU_val] = useState('500');
   const [tipo, setTipo] = useState('contracorriente');
   const [resInt, setResInt] = useState<ReturnType<typeof calcIntercambiador>>(null);
+  const [datosInt, setDatosInt] = useState<DatosExportar | null>(null);
 
   // Dilatacion
   const [L, setL] = useState('100');
@@ -154,6 +156,7 @@ export default function ModuloTermica() {
   const [OD, setOD] = useState('219.1');
   const [t_esp, setT_esp] = useState('8.18');
   const [resDil, setResDil] = useState<ReturnType<typeof calcDilatacion>>(null);
+  const [datosDil, setDatosDil] = useState<DatosExportar | null>(null);
   const [error, setError] = useState('');
 
   const calcInt = () => {
@@ -164,6 +167,29 @@ export default function ModuloTermica() {
     );
     if (!r) { setError('Verificar temperaturas — fluido caliente debe ser mayor que frio en todo el recorrido.'); return; }
     setResInt(r);
+    const payload: DatosExportar = {
+      tipo: 'INTERCAMBIADOR_LMTD',
+      normativa: 'ASME VIII Div.1 | TEMA Standards | Kern 1950',
+      parametros: {
+        'Calor transferido Q (kW)': Q_kW,
+        'T entrada caliente (C)': T_hi,
+        'T salida caliente (C)': T_ho,
+        'T entrada frio (C)': T_ci,
+        'T salida frio (C)': T_co,
+        'Coef. global U (W/m2.K)': U_val,
+        'Tipo de flujo': tipo,
+      },
+      resultado: {
+        'LMTD (K)': r.LMTD,
+        'Area requerida A (m2)': r.A_m2,
+        'dT extremo 1 (C)': r.dT1,
+        'dT extremo 2 (C)': r.dT2,
+        'Efectividad (%)': r.efectividad,
+        'Estado': r.riesgo,
+      },
+    };
+    setDatosInt(payload);
+    publicarResultado(payload);
   };
 
   const calcDil = () => {
@@ -174,6 +200,31 @@ export default function ModuloTermica() {
     );
     if (!r) { setError('Verificar datos.'); return; }
     setResDil(r);
+    const matLabel = MATERIALES_TERM.find(m => m.id === mat)?.label ?? mat;
+    const payload: DatosExportar = {
+      tipo: 'DILATACION_TERMICA',
+      normativa: 'ASME B31.3-2022 Appendix C',
+      parametros: {
+        'Longitud tuberia L (m)': L,
+        'Temperatura instalacion T1 (C)': T1,
+        'Temperatura operacion T2 (C)': T2,
+        'Material': matLabel,
+        'Diametro exterior OD (mm)': OD,
+        'Espesor pared t (mm)': t_esp,
+        'Extremos restringidos': restringido ? 'SI' : 'NO',
+      },
+      resultado: {
+        'Dilatacion libre dL (mm)': r.dL_mm,
+        'Delta T (C)': r.dT,
+        'Alpha (x10-6/C)': r.alpha,
+        'Tension termica (MPa)': r.sigma_MPa,
+        'Longitud lira U (m)': r.L_lira_m,
+        'Estado': r.ok ? 'APTO' : 'REQUIERE LIRA',
+        'Riesgo': r.riesgo,
+      },
+    };
+    setDatosDil(payload);
+    publicarResultado(payload);
   };
 
   const inputStyle = {
@@ -316,6 +367,7 @@ export default function ModuloTermica() {
             </div>
           </div>
         )}
+        {tab === 'dil' && datosDil && <BotonesExportar visible={true} datos={datosDil} />}
 
         {/* RESULTADOS INTERCAMBIADOR */}
         {tab === 'int' && resInt && (
@@ -346,6 +398,7 @@ export default function ModuloTermica() {
             </div>
           </div>
         )}
+        {tab === 'int' && datosInt && <BotonesExportar visible={true} datos={datosInt} />}
 
       </div>
     </div>

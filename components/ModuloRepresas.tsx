@@ -1,5 +1,6 @@
 ﻿'use client';
 import { publicarResultado } from '@/components/ResultadoContexto';
+import BotonesExportar, { DatosExportar } from '@/components/BotonesExportar';
 import { useState } from 'react';
 
 interface ResultadoVertedero {
@@ -55,6 +56,7 @@ export default function ModuloRepresas() {
   const [H, setH] = useState('2');
   const [Cd, setCd] = useState('1.84');
   const [resV, setResV] = useState<ResultadoVertedero | null>(null);
+  const [datosV, setDatosV] = useState<DatosExportar | null>(null);
 
   // Filtración
   const [Hf, setHf] = useState('5');
@@ -62,6 +64,7 @@ export default function ModuloRepresas() {
   const [Lf, setLf] = useState('20');
   const [d, setD] = useState('1');
   const [resF, setResF] = useState<ResultadoFiltracion | null>(null);
+  const [datosF, setDatosF] = useState<DatosExportar | null>(null);
 
   const [error, setError] = useState('');
 
@@ -75,7 +78,25 @@ export default function ModuloRepresas() {
         if (isNaN(lv) || isNaN(hv) || isNaN(cd) || lv <= 0 || hv <= 0 || cd <= 0) {
           setError('Todos los valores deben ser positivos'); return;
         }
-        setResV(calcularVertedero(lv, hv, cd));
+        const rv = calcularVertedero(lv, hv, cd);
+        setResV(rv);
+        const payloadV: DatosExportar = {
+          tipo: 'VERTEDERO_FRANCIS',
+          normativa: 'USACE EM 1110-2-1603 | ICOLD Bulletin 58',
+          parametros: {
+            'Longitud vertedero L (m)': lv,
+            'Carga hidraulica H (m)': hv,
+            'Coef. descarga Cd': cd,
+          },
+          resultado: {
+            'Caudal Q (m3/s)': rv.Q,
+            'Velocidad v (m/s)': rv.v,
+            'Numero de Froude Fr': rv.Fr,
+            'Regimen': rv.tipo,
+          },
+        };
+        setDatosV(payloadV);
+        publicarResultado(payloadV);
       } else {
         const hf = parseFloat(Hf);
         const kv = parseFloat(k);
@@ -84,7 +105,25 @@ export default function ModuloRepresas() {
         if (isNaN(hf) || isNaN(kv) || isNaN(lf) || isNaN(dv) || hf <= 0 || kv <= 0 || lf <= 0 || dv <= 0) {
           setError('Todos los valores deben ser positivos'); return;
         }
-        setResF(calcularFiltracion(hf, kv, lf, dv));
+        const rf = calcularFiltracion(hf, kv, lf, dv);
+        setResF(rf);
+        const payloadF: DatosExportar = {
+          tipo: 'FILTRACION_DARCY',
+          normativa: 'USACE EM 1110-2-1901 | Ley de Darcy | Terzaghi',
+          parametros: {
+            'Carga hidraulica H (m)': hf,
+            'Conductividad hidraulica k (m/s)': kv,
+            'Longitud de filtracion L (m)': lf,
+            'Espesor estrato d (m)': dv,
+          },
+          resultado: {
+            'Caudal filtracion q (m2/s)': rf.q,
+            'Gradiente hidraulico i': rf.gradiente,
+            'Seguro (i < 0.5 Terzaghi)': rf.seguro ? 'SI' : 'NO',
+          },
+        };
+        setDatosF(payloadF);
+        publicarResultado(payloadF);
       }
     } catch {
       setError('Error en el cálculo. Verificá los datos.');
@@ -234,6 +273,7 @@ export default function ModuloRepresas() {
           </div>
         </div>
       )}
+      {datosV && calculo === 'vertedero' && <BotonesExportar visible={true} datos={datosV} />}
 
       {/* RESULTADO FILTRACIÓN */}
       {resF && (
@@ -263,6 +303,7 @@ export default function ModuloRepresas() {
           </div>
         </div>
       )}
+      {datosF && calculo === 'filtracion' && <BotonesExportar visible={true} datos={datosF} />}
     </div>
   );
 }

@@ -1,9 +1,10 @@
-﻿'use client';
+'use client';
 import { publicarResultado } from '@/components/ResultadoContexto';
+import BotonesExportar, { DatosExportar } from '@/components/BotonesExportar';
 import { useState } from 'react';
 
 // ═══════════════════════════════════════════════════════════════
-//  MÓDULO CAÑERÍAS E INTEGRIDAD DE DUCTOS — INGENIUM PRO v8.0
+//  MÓDULO CAÑERÍAS E INTEGRIDAD DE DUCTOS — INGENIUM PRO v8.1
 //  NORMATIVAS VERIFICADAS 100% REALES:
 //  ASME B31.8-2020 §841.1.1 · ASME B31.4-2019 §403.2.1
 //  API 579-1/ASME FFS-1 · Joukowsky (1898)
@@ -68,11 +69,11 @@ const E_ACERO = 207e9; // Pa — módulo de Young acero carbono
 type Sub = 'espesor' | 'hoop' | 'ariete' | 'cierre' | 'remanente';
 
 const SUBS: { id: Sub; label: string; icon: string }[] = [
-  { id: 'espesor',   label: 'Espesor pared',    icon: '📐' },
-  { id: 'hoop',      label: 'Hoop Stress',       icon: '⚙️' },
-  { id: 'ariete',    label: 'Golpe de ariete',   icon: '💥' },
-  { id: 'cierre',    label: 'Cierre válvula',    icon: '🚨' },
-  { id: 'remanente', label: 'Vida remanente',    icon: '📊' },
+  { id: 'espesor',   label: 'Espesor pared',  icon: '📐' },
+  { id: 'hoop',      label: 'Hoop Stress',    icon: '⚙️' },
+  { id: 'ariete',    label: 'Golpe de ariete',icon: '💥' },
+  { id: 'cierre',    label: 'Cierre válvula', icon: '🚨' },
+  { id: 'remanente', label: 'Vida remanente', icon: '📊' },
 ];
 
 // ── Estilos base ──────────────────────────────────────────────
@@ -131,62 +132,68 @@ export default function ModuloCanerias() {
   const R = () => setErr('');
 
   // ── Estado espesor ────────────────────────────────────────
-  const [eCod, setEcod] = useState<'B318'|'B314'>('B318');
-  const [eDmm, setEdmm] = useState('273.1');
-  const [ePbar, setEpbar] = useState('80');
+  const [eCod,   setEcod]   = useState<'B318'|'B314'>('B318');
+  const [eDmm,   setEdmm]   = useState('273.1');
+  const [ePbar,  setEpbar]  = useState('80');
   const [eGrado, setEgrado] = useState('X65');
   const [eClase, setEclase] = useState('C1D2');
   const [eJunta, setEjunta] = useState('ERW1');
   const [eTempC, setEtempC] = useState('60');
-  const [eCA, setEca] = useState('1.6');
-  const [resEsp, setResEsp] = useState<null|{
+  const [eCA,    setEca]    = useState('1.6');
+  const [resEsp,   setResEsp]   = useState<null|{
     t_min_mm:number; t_dis_mm:number; sigma_h_mpa:number;
     F:number; E:number; T:number; S_mpa:number; norma:string;
   }>(null);
+  const [datosEsp, setDatosEsp] = useState<DatosExportar | null>(null);
 
   // ── Estado hoop ───────────────────────────────────────────
-  const [hDmm, setHdmm] = useState('273.1');
-  const [hTmm, setHtmm] = useState('9.3');
-  const [hPbar, setHpbar] = useState('80');
+  const [hDmm,   setHdmm]   = useState('273.1');
+  const [hTmm,   setHtmm]   = useState('9.3');
+  const [hPbar,  setHpbar]  = useState('80');
   const [hGrado, setHgrado] = useState('X65');
   const [hClase, setHclase] = useState('C1D2');
   const [hJunta, setHjunta] = useState('ERW1');
-  const [resHoop, setResHoop] = useState<null|{
-    sigma_h_mpa:number; allow_mpa:number; uso_pct:number; ok:boolean;
+  const [hTempC, setHtempC] = useState('60');   // B31.8 §841.1.1 — T afecta admisible
+  const [resHoop,   setResHoop]   = useState<null|{
+    sigma_h_mpa:number; allow_mpa:number; uso_pct:number; ok:boolean; T_factor:number;
   }>(null);
+  const [datosHoop, setDatosHoop] = useState<DatosExportar | null>(null);
 
   // ── Estado ariete ─────────────────────────────────────────
-  const [aDmm, setAdmm] = useState('273.1');
-  const [aTmm, setAtmm] = useState('9.3');
-  const [aLm, setAlm] = useState('2000');
-  const [aVms, setAvms] = useState('1.5');
+  const [aDmm,    setAdmm]    = useState('273.1');
+  const [aTmm,    setAtmm]    = useState('9.3');
+  const [aLm,     setAlm]     = useState('2000');
+  const [aVms,    setAvms]    = useState('1.5');
   const [aFluido, setAfluido] = useState('agua');
-  const [resAr, setResAr] = useState<null|{
+  const [resAr,   setResAr]   = useState<null|{
     a_ms:number; dP_bar:number; dP_psi:number; t_ret_s:number;
   }>(null);
+  const [datosAr, setDatosAr] = useState<DatosExportar | null>(null);
 
   // ── Estado cierre ─────────────────────────────────────────
-  const [cDmm, setCdmm] = useState('273.1');
-  const [cTmm, setCtmm] = useState('9.3');
-  const [cLm, setClm] = useState('2000');
-  const [cVms, setCvms] = useState('1.5');
-  const [cPbar, setCpbar] = useState('80');
-  const [cFluido, setCfluido] = useState('agua');
-  const [cGrado, setCgrado] = useState('X65');
-  const [cTcierreS, setCtcierreS] = useState('5');
-  const [resCi, setResCi] = useState<null|{
+  const [cDmm,       setCdmm]       = useState('273.1');
+  const [cTmm,       setCtmm]       = useState('9.3');
+  const [cLm,        setClm]        = useState('2000');
+  const [cVms,       setCvms]       = useState('1.5');
+  const [cPbar,      setCpbar]      = useState('80');
+  const [cFluido,    setCfluido]    = useState('agua');
+  const [cGrado,     setCgrado]     = useState('X65');
+  const [cTcierreS,  setCtcierreS]  = useState('5');
+  const [resCi,   setResCi]   = useState<null|{
     a_ms:number; t_seg_s:number; t_ing_s:number;
     ok:boolean; dP_bar:number; P_total_bar:number; riesgo:string;
   }>(null);
+  const [datosCi, setDatosCi] = useState<DatosExportar | null>(null);
 
   // ── Estado remanente ──────────────────────────────────────
-  const [rTnom, setRtnom] = useState('9.3');
-  const [rTmed, setRtmed] = useState('7.8');
-  const [rTmin, setRtmin] = useState('5.5');
-  const [rCorr, setRcorr] = useState('0.2');
-  const [resRem, setResRem] = useState<null|{
+  const [rTnom,  setRtnom]  = useState('9.3');
+  const [rTmed,  setRtmed]  = useState('7.8');
+  const [rTmin,  setRtmin]  = useState('5.5');
+  const [rCorr,  setRcorr]  = useState('0.2');
+  const [resRem,   setResRem]   = useState<null|{
     vida_anios:number; estado:string; rec:string; riesgo:string;
   }>(null);
+  const [datosRem, setDatosRem] = useState<DatosExportar | null>(null);
 
   // ── CÁLCULO 1 — ESPESOR ───────────────────────────────────
   // B31.8 §841.1.1: t = P·D / (2·S·F·E·T)
@@ -214,16 +221,46 @@ export default function ModuloCanerias() {
     const sigma_h_psi = (P_psi * D_in) / (2 * t_min_in);
     const sigma_h_mpa = Math.round(sigma_h_psi * 0.006895 * 10) / 10;
 
-    setResEsp({ t_min_mm, t_dis_mm, sigma_h_mpa, F, E, T, S_mpa: g.smys_mpa, norma });
+    const r = { t_min_mm, t_dis_mm, sigma_h_mpa, F, E, T, S_mpa: g.smys_mpa, norma };
+    setResEsp(r);
+
+    const payload: DatosExportar = {
+      tipo:      'CANERIAS_ESPESOR',
+      normativa: norma,
+      parametros: {
+        'Código de diseño':             eCod === 'B318' ? 'ASME B31.8 — Gas' : 'ASME B31.4 — Líquidos',
+        'Material':                     g.label,
+        'SMYS (MPa)':                   g.smys_mpa,
+        'Diámetro exterior OD (mm)':    eDmm,
+        'Presión de diseño (bar)':      ePbar,
+        'Clase de ubicación':           eCod === 'B318' ? FACT_F[eClase].desc : 'F = 0.72 fijo (B31.4)',
+        'Factor F':                     F,
+        'Junta longitudinal':           FACT_E[eJunta].desc,
+        'Factor E':                     E,
+        'Temperatura diseño (°C)':      eCod === 'B318' ? eTempC : 'N/A (B31.4)',
+        'Factor T':                     T,
+        'Tolerancia corrosión CA (mm)': eCA,
+      },
+      resultado: {
+        'Espesor mínimo por presión (mm)':  r.t_min_mm,
+        'Espesor de diseño con CA (mm)':    r.t_dis_mm,
+        'Hoop Stress Barlow (MPa)':         r.sigma_h_mpa,
+        'SMYS (MPa)':                       r.S_mpa,
+        'Normativa aplicada':               r.norma,
+      },
+    };
+    setDatosEsp(payload);
+    publicarResultado(payload);
   };
 
   // ── CÁLCULO 2 — HOOP STRESS (Barlow) ─────────────────────
   // σ_h = (P × D_ext) / (2 × t)
-  // Límite: S × F × E × T — B31.8 §841.1.1
+  // Admisible: S × F × E × T — B31.8 §841.1.1 (T corregido)
   const calcHoop = () => {
     R(); setResHoop(null);
     const D = parseFloat(hDmm), t = parseFloat(hTmm), P_bar = parseFloat(hPbar);
-    if ([D, t, P_bar].some(n => isNaN(n) || n <= 0)) { setErr('Valores inválidos'); return; }
+    const TempC = parseFloat(hTempC);
+    if ([D, t, P_bar, TempC].some(n => isNaN(n) || n <= 0)) { setErr('Valores inválidos'); return; }
     if (t >= D / 2) { setErr('Espesor ≥ radio exterior — verificar datos'); return; }
 
     const D_in  = D / 25.4;
@@ -232,14 +269,43 @@ export default function ModuloCanerias() {
     const g     = GRADOS[hGrado];
     const F     = FACT_F[hClase].F;
     const E     = FACT_E[hJunta].E;
+    const T     = factorT(TempC);   // B31.8 §841.1.1 — factor temperatura
 
-    const sigma_h_psi  = (P_psi * D_in) / (2 * t_in);
-    const sigma_h_mpa  = Math.round(sigma_h_psi * 0.006895 * 10) / 10;
-    const allow_psi    = g.smys_psi * F * E;
-    const allow_mpa    = Math.round(allow_psi * 0.006895 * 10) / 10;
-    const uso_pct      = Math.round((sigma_h_psi / allow_psi) * 1000) / 10;
+    const sigma_h_psi = (P_psi * D_in) / (2 * t_in);
+    const sigma_h_mpa = Math.round(sigma_h_psi * 0.006895 * 10) / 10;
+    const allow_psi   = g.smys_psi * F * E * T;   // T incluido
+    const allow_mpa   = Math.round(allow_psi * 0.006895 * 10) / 10;
+    const uso_pct     = Math.round((sigma_h_psi / allow_psi) * 1000) / 10;
 
-    setResHoop({ sigma_h_mpa, allow_mpa, uso_pct, ok: sigma_h_psi <= allow_psi });
+    const r = { sigma_h_mpa, allow_mpa, uso_pct, ok: sigma_h_psi <= allow_psi, T_factor: T };
+    setResHoop(r);
+
+    const payload: DatosExportar = {
+      tipo:      'CANERIAS_HOOP',
+      normativa: 'ASME B31.8-2020 §841.1.1 / Barlow',
+      parametros: {
+        'Diámetro exterior OD (mm)':   hDmm,
+        'Espesor real de pared (mm)':  hTmm,
+        'Presión de operación (bar)':  hPbar,
+        'Material':                    g.label,
+        'SMYS (MPa)':                  g.smys_mpa,
+        'Clase de ubicación':          FACT_F[hClase].desc,
+        'Factor F':                    F,
+        'Junta longitudinal':          FACT_E[hJunta].desc,
+        'Factor E':                    E,
+        'Temperatura diseño (°C)':     hTempC,
+        'Factor T':                    T,
+      },
+      resultado: {
+        'Hoop Stress σ_h (MPa)':          r.sigma_h_mpa,
+        'Límite admisible S·F·E·T (MPa)': r.allow_mpa,
+        'Factor de uso (%)':               r.uso_pct,
+        'Factor T aplicado':               r.T_factor,
+        'Estado':                          r.ok ? 'APTA — Dentro del límite B31.8' : 'NO APTA — Supera límite B31.8',
+      },
+    };
+    setDatosHoop(payload);
+    publicarResultado(payload);
   };
 
   // ── CÁLCULO 3 — GOLPE DE ARIETE (Joukowsky) ──────────────
@@ -262,7 +328,30 @@ export default function ModuloCanerias() {
     const dP_psi = Math.round(dP_pa / 6894.76);
     const t_ret  = Math.round((2 * L / a) * 100) / 100;
 
-    setResAr({ a_ms: Math.round(a * 10) / 10, dP_bar, dP_psi, t_ret_s: t_ret });
+    const r = { a_ms: Math.round(a * 10) / 10, dP_bar, dP_psi, t_ret_s: t_ret };
+    setResAr(r);
+
+    const payload: DatosExportar = {
+      tipo:      'CANERIAS_ARIETE',
+      normativa: 'Joukowsky (1898) / ASME B31.8',
+      parametros: {
+        'Fluido':                    fl.nombre,
+        'Densidad fluido (kg/m³)':   fl.rho,
+        'Módulo bulk K (Pa)':        fl.K,
+        'Diámetro exterior OD (mm)': aDmm,
+        'Espesor de pared (mm)':     aTmm,
+        'Longitud del tramo (m)':    aLm,
+        'Velocidad de flujo (m/s)':  aVms,
+      },
+      resultado: {
+        'Celeridad de onda a (m/s)':        r.a_ms,
+        'Sobrepresión ΔP (bar)':            r.dP_bar,
+        'Sobrepresión ΔP (psi)':            r.dP_psi,
+        'Tiempo retorno de onda 2L/a (s)':  r.t_ret_s,
+      },
+    };
+    setDatosAr(payload);
+    publicarResultado(payload);
   };
 
   // ── CÁLCULO 4 — TIEMPO CIERRE SEGURO ─────────────────────
@@ -299,7 +388,34 @@ export default function ModuloCanerias() {
     else
       riesgo = '✅ SEGURO — Tiempo de cierre dentro del límite de Joukowsky. Presión controlada.';
 
-    setResCi({ a_ms: Math.round(a * 10) / 10, t_seg_s, t_ing_s: tc, ok, dP_bar, P_total_bar: P_total, riesgo });
+    const r = { a_ms: Math.round(a * 10) / 10, t_seg_s, t_ing_s: tc, ok, dP_bar, P_total_bar: P_total, riesgo };
+    setResCi(r);
+
+    const payload: DatosExportar = {
+      tipo:      'CANERIAS_CIERRE',
+      normativa: 'Joukowsky (1898) / ASME B31.8',
+      parametros: {
+        'Fluido':                           fl.nombre,
+        'Material cañería':                 g.label,
+        'Diámetro exterior OD (mm)':        cDmm,
+        'Espesor de pared (mm)':            cTmm,
+        'Longitud del tramo (m)':           cLm,
+        'Velocidad de flujo (m/s)':         cVms,
+        'Presión de operación (bar)':       cPbar,
+        'Tiempo de cierre válvula (s)':     cTcierreS,
+      },
+      resultado: {
+        'Celeridad de onda (m/s)':          r.a_ms,
+        'Tiempo mínimo seguro 2L/a (s)':    r.t_seg_s,
+        'Tiempo de cierre ingresado (s)':   r.t_ing_s,
+        'Sobrepresión estimada (bar)':      r.dP_bar,
+        'Presión total resultante (bar)':   r.P_total_bar,
+        'Estado':                           r.ok ? 'CIERRE SEGURO' : 'CIERRE PELIGROSO',
+        'Diagnóstico':                      r.riesgo.replace(/[^\x20-\x7EÀ-ɏ]/g, '').trim(),
+      },
+    };
+    setDatosCi(payload);
+    publicarResultado(payload);
   };
 
   // ── CÁLCULO 5 — VIDA REMANENTE (API 579 / ASME FFS-1) ────
@@ -331,7 +447,27 @@ export default function ModuloCanerias() {
       rec = `Vida remanente: ${vida} años. Continuar inspecciones periódicas API 570. Próxima en ${Math.min(5, Math.round(vida / 2))} años.`;
     }
 
-    setResRem({ vida_anios: vida, estado, rec, riesgo });
+    const r = { vida_anios: vida, estado, rec, riesgo };
+    setResRem(r);
+
+    const payload: DatosExportar = {
+      tipo:      'CANERIAS_REMANENTE',
+      normativa: 'API 579-1/ASME FFS-1 / API 570',
+      parametros: {
+        'Espesor nominal original (mm)':  rTnom,
+        'Espesor medido hoy (mm)':        rTmed,
+        'Espesor mínimo requerido (mm)':  rTmin,
+        'Tasa de corrosión (mm/año)':     rCorr,
+      },
+      resultado: {
+        'Vida remanente estimada (años)': r.vida_anios > 0 ? r.vida_anios : 'Agotada',
+        'Estado de integridad':           r.estado,
+        'Nivel de riesgo':                r.riesgo.replace(/[^\x20-\x7EÀ-ɏ]/g, '').trim(),
+        'Recomendación API 579':          r.rec,
+      },
+    };
+    setDatosRem(payload);
+    publicarResultado(payload);
   };
 
   // ── RENDER ────────────────────────────────────────────────
@@ -420,6 +556,7 @@ export default function ModuloCanerias() {
               <Warn t="⚠️ Este cálculo es de referencia. El diseño definitivo requiere ingeniero matriculado, análisis de cargas externas, pandeo y verificación ante códigos locales." />
             </ResBox>
           )}
+          {datosEsp && <BotonesExportar visible datos={datosEsp} />}
         </div>
       )}
 
@@ -427,7 +564,7 @@ export default function ModuloCanerias() {
       {sub === 'hoop' && (
         <div>
           <Tit t="Estrés Circunferencial (Hoop Stress) — Barlow / ASME B31.8 §841.1.1" />
-          <Info t="Verificación: la cañería existente con su espesor real soporta la presión de operación. σ_h = (P × D_ext) / (2 × t)" />
+          <Info t="Verificación: la cañería existente con su espesor real soporta la presión de operación. σ_h = (P × D_ext) / (2 × t) | Admisible: S × F × E × T" />
 
           <div style={g3}>
             <div><label style={lbl}>Diámetro exterior OD (mm)</label>
@@ -455,6 +592,10 @@ export default function ModuloCanerias() {
                 {Object.entries(FACT_E).map(([k, v]) => <option key={k} value={k} style={{ background: '#0a0f1e' }}>E={v.E} — {v.desc}</option>)}
               </select>
             </div>
+            <div><label style={lbl}>Temperatura de diseño (°C)</label>
+              <input value={hTempC} onChange={e => setHtempC(e.target.value)} style={inp} type="number" step="1" />
+              <div style={{ fontSize: 10, color: '#334155', marginTop: 3 }}>B31.8: T aplica a &gt;120°C (250°F) — afecta admisible</div>
+            </div>
           </div>
 
           <Btn onClick={calcHoop} text="Verificar hoop stress" />
@@ -462,14 +603,16 @@ export default function ModuloCanerias() {
           {resHoop && (
             <ResBox ok={resHoop.ok}>
               <RLbl t={resHoop.ok ? '✅ CAÑERÍA APTA — Estrés dentro del límite B31.8' : '❌ ESTRÉS SUPERA LÍMITE — Reducir presión o aumentar espesor'} ok={resHoop.ok} />
-              <div style={g3}>
+              <div style={g4}>
                 <Card label="Hoop Stress real σ_h" val={`${resHoop.sigma_h_mpa} MPa`} color={resHoop.ok ? '#4ade80' : '#ef4444'} />
-                <Card label="Límite admisible S·F·E" val={`${resHoop.allow_mpa} MPa`} />
+                <Card label="Límite admisible S·F·E·T" val={`${resHoop.allow_mpa} MPa`} />
                 <Card label="Factor de uso" val={`${resHoop.uso_pct}%`} color={resHoop.uso_pct > 100 ? '#ef4444' : resHoop.uso_pct > 85 ? '#f59e0b' : '#4ade80'} sub="Máximo admisible: 100%" />
+                <Card label="Factor T temperatura" val={resHoop.T_factor.toString()} sub="B31.8 Tabla 841.1.8-1" />
               </div>
               {!resHoop.ok && <Warn t="Reducir presión de operación o reemplazar tramo por cañería de mayor espesor. Inspección de integridad obligatoria." rojo />}
             </ResBox>
           )}
+          {datosHoop && <BotonesExportar visible datos={datosHoop} />}
         </div>
       )}
 
@@ -513,6 +656,7 @@ export default function ModuloCanerias() {
               <Warn t={`⚠️ Esta es la sobrepresión para cierre INSTANTÁNEO. Si el tiempo de cierre de la válvula es mayor a ${resAr.t_ret_s} s, la sobrepresión real es menor. Usá el sub-módulo "Cierre válvula" para calcularlo con tu tiempo real.`} />
             </ResBox>
           )}
+          {datosAr && <BotonesExportar visible datos={datosAr} />}
         </div>
       )}
 
@@ -570,6 +714,7 @@ export default function ModuloCanerias() {
               </div>
             </ResBox>
           )}
+          {datosCi && <BotonesExportar visible datos={datosCi} />}
         </div>
       )}
 
@@ -618,8 +763,10 @@ export default function ModuloCanerias() {
               <Warn t="⚠️ La evaluación de vida remanente requiere inspección física API 570 por inspector certificado. Este cálculo es orientativo basado en los datos ingresados." />
             </ResBox>
           )}
+          {datosRem && <BotonesExportar visible datos={datosRem} />}
         </div>
       )}
+
     </div>
   );
-} 
+}

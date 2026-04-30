@@ -1,5 +1,6 @@
 ﻿'use client';
 import { publicarResultado } from '@/components/ResultadoContexto';
+import BotonesExportar, { DatosExportar } from '@/components/BotonesExportar';
 import { useState } from 'react';
 
 type RiskLevel = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
@@ -41,6 +42,7 @@ export default function ModuloPerforacion() {
     frac: ReturnType<typeof calcFractureGradient>;
     mud: ReturnType<typeof calcMudWeight>;
   }>(null);
+  const [datos, setDatos] = useState<DatosExportar | null>(null);
 
   const calcular = () => {
     const tvd = parseFloat(TVD);
@@ -48,11 +50,34 @@ export default function ModuloPerforacion() {
     const ob = parseFloat(overburden);
     const pg = parseFloat(poreGrad);
     if (isNaN(tvd) || isNaN(mw) || isNaN(ob) || isNaN(pg)) return;
-    setRes({
+    const r = {
       bhp: calcBHP(tvd, mw),
       frac: calcFractureGradient(tvd, ob),
       mud: calcMudWeight(pg),
-    });
+    };
+    setRes(r);
+    const payload: DatosExportar = {
+      tipo: 'PERFORACION',
+      normativa: 'API RP 13D | API RP 7G',
+      parametros: {
+        'Profundidad TVD (ft)': TVD,
+        'Peso de lodo (ppg)': mudWeight,
+        'Gradiente sobrecarga (psi/ft)': overburden,
+        'Gradiente poros (psi/ft)': poreGrad,
+      },
+      resultado: {
+        'BHP (psi)': r.bhp.bhp,
+        'Presion hidrostatica (psi)': r.bhp.hydrostaticPsi,
+        'Gradiente de fractura (psi/ft)': r.frac.fracGrad,
+        'Presion de fractura (psi)': r.frac.fracPressure,
+        'Peso lodo recomendado (ppg)': r.mud.mudWeight,
+        'ECD (ppg)': r.mud.ecd,
+        'Estado BHP': r.bhp.risk,
+        'Estado lodo': r.mud.risk,
+      },
+    };
+    setDatos(payload);
+    publicarResultado(payload);
   };
 
   return (
@@ -138,6 +163,7 @@ export default function ModuloPerforacion() {
             </div>
           </div>
         )}
+        {datos && <BotonesExportar visible={true} datos={datos} />}
       </div>
     </div>
   );

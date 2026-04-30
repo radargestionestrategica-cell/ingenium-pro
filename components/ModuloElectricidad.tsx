@@ -1,6 +1,7 @@
 ﻿'use client';
 
 import { publicarResultado } from '@/components/ResultadoContexto';
+import BotonesExportar, { DatosExportar } from '@/components/BotonesExportar';
 import { useState, type CSSProperties, type ReactNode } from 'react';
 
 // MÓDULO ELECTRICIDAD INDUSTRIAL — INGENIUM PRO v8.1
@@ -244,6 +245,16 @@ export default function ModuloElectricidad() {
   const [trVs, setTrvs] = useState('400');
   const [resTr, setResTr] = useState<null|{S:number;Ip:number;Is:number;Iarr:number}>(null);
 
+  // EXPORT STATE
+  const [datosCable, setDatosCable] = useState<DatosExportar | null>(null);
+  const [datosCaida, setDatosCaida] = useState<DatosExportar | null>(null);
+  const [datosCC, setDatosCC] = useState<DatosExportar | null>(null);
+  const [datosFP, setDatosFP] = useState<DatosExportar | null>(null);
+  const [datosMotor, setDatosMotor] = useState<DatosExportar | null>(null);
+  const [datosPeligrosa, setDatosPeligrosa] = useState<DatosExportar | null>(null);
+  const [datosLuz, setDatosLuz] = useState<DatosExportar | null>(null);
+  const [datosTrafo, setDatosTrafo] = useState<DatosExportar | null>(null);
+
   const R = () => setErr('');
 
   const calcCable = () => {
@@ -270,19 +281,22 @@ export default function ModuloElectricidad() {
     };
 
     setResCable(resultadoCable);
-
-    publicarResultado({
+    const payloadCable: DatosExportar = {
       tipo: 'ELECTRICIDAD_CABLE',
-      parametros: {
-        tipoCircuito: cTipo,
-        corrienteDisenoA: I,
-        materialConductor: cMat === 'cu' ? 'Cobre' : 'Aluminio',
-      },
-      resultado: resultadoCable as Record<string, unknown>,
       normativa: 'NEC 2023 §310.15(B)(16) / IEC 60364-5-52 / IEC 60228',
-      moduloId: 'ELECTRICIDAD',
-      submodulo: 'Calibre Cable',
-    });
+      parametros: {
+        'Tipo circuito': cTipo === 'trif' ? 'Trifasico' : 'Monofasico',
+        'Corriente diseno (A)': cI,
+        'Material conductor': cMat === 'cu' ? 'Cobre' : 'Aluminio',
+      },
+      resultado: {
+        'Calibre minimo': resultadoCable.calibre,
+        'Capacidad Iz (A)': resultadoCable.Iz,
+        'Corriente diseno (A)': resultadoCable.I,
+      },
+    };
+    setDatosCable(payloadCable);
+    publicarResultado(payloadCable);
   };
 
   const calcCaida = () => {
@@ -323,22 +337,25 @@ export default function ModuloElectricidad() {
     };
 
     setResCd(resultadoCaida);
-
-    publicarResultado({
+    const payloadCaida: DatosExportar = {
       tipo: 'ELECTRICIDAD_CAIDA_TENSION',
-      parametros: {
-        cableSeleccionado: cdCable,
-        longitudM: L,
-        corrienteA: I,
-        tensionNominalV: V,
-        tipoCircuito: cdTipo,
-        factorPotencia: FP,
-      },
-      resultado: resultadoCaida as Record<string, unknown>,
       normativa: 'IEC 60364-5-52 / NEC 210.19 / CIRSOC 900',
-      moduloId: 'ELECTRICIDAD',
-      submodulo: 'Caída de Tensión',
-    });
+      parametros: {
+        'Cable seleccionado': cdCable,
+        'Longitud (m)': cdL,
+        'Corriente (A)': cdI,
+        'Tension nominal (V)': cdV,
+        'Tipo circuito': cdTipo === 'trif' ? 'Trifasico' : 'Monofasico',
+        'Factor potencia': cdFP,
+      },
+      resultado: {
+        'Caida de tension (V)': resultadoCaida.dV,
+        'Caida (%)': resultadoCaida.pct,
+        'Cumple limite 4%': resultadoCaida.ok ? 'SI' : 'NO',
+      },
+    };
+    setDatosCaida(payloadCaida);
+    publicarResultado(payloadCaida);
   };
 
   const calcCC = () => {
@@ -378,21 +395,24 @@ export default function ModuloElectricidad() {
     };
 
     setResCc(resultadoCC);
-
-    publicarResultado({
+    const payloadCC: DatosExportar = {
       tipo: 'ELECTRICIDAD_CORTOCIRCUITO',
-      parametros: {
-        potenciaTransformadorKVA: S,
-        impedanciaCortocircuitoPct: uk,
-        tensionSecundariaV: V,
-        longitudCableM: L,
-        cableAlTablero: ccCable,
-      },
-      resultado: resultadoCC as Record<string, unknown>,
       normativa: 'IEC 60909 / IRAM 2299',
-      moduloId: 'ELECTRICIDAD',
-      submodulo: 'Cortocircuito',
-    });
+      parametros: {
+        'Potencia transformador (kVA)': ccS,
+        'Impedancia cc uk (%)': ccUk,
+        'Tension secundaria (V)': ccV,
+        'Longitud cable (m)': ccL,
+        'Cable al tablero': ccCable,
+      },
+      resultado: {
+        'Icc maximo c=1.1 (A)': resultadoCC.Imax,
+        'Icc minimo c=0.95 (A)': resultadoCC.Imin,
+        'Potencia cortocircuito (kVA)': resultadoCC.Pcc,
+      },
+    };
+    setDatosCC(payloadCC);
+    publicarResultado(payloadCC);
   };
 
   const calcFP = () => {
@@ -426,21 +446,25 @@ export default function ModuloElectricidad() {
     };
 
     setResFP(resultadoFP);
-
-    publicarResultado({
+    const payloadFP: DatosExportar = {
       tipo: 'ELECTRICIDAD_FACTOR_POTENCIA',
+      normativa: 'IEC 60364 / Banco de capacitores',
       parametros: {
-        potenciaActivaKW: P,
-        factorPotenciaActual: FP1,
-        factorPotenciaDeseado: FP2,
-        tensionRedV: V,
-        frecuenciaHz: f,
+        'Potencia activa (kW)': fpP,
+        'FP actual cos phi1': fpFP1,
+        'FP deseado cos phi2': fpFP2,
+        'Tension red (V)': fpV,
+        'Frecuencia (Hz)': fpF,
       },
-      resultado: resultadoFP as Record<string, unknown>,
-      normativa: 'Corrección de factor de potencia / Banco de capacitores',
-      moduloId: 'ELECTRICIDAD',
-      submodulo: 'Factor de Potencia',
-    });
+      resultado: {
+        'Potencia reactiva Qc (kVAR)': resultadoFP.Qc,
+        'Capacidad por fase (uF)': resultadoFP.C,
+        'Corriente antes (A)': resultadoFP.I1,
+        'Corriente despues (A)': resultadoFP.I2,
+      },
+    };
+    setDatosFP(payloadFP);
+    publicarResultado(payloadFP);
   };
 
   const calcMotor = () => {
@@ -472,21 +496,25 @@ export default function ModuloElectricidad() {
     };
 
     setResMot(resultadoMotor);
-
-    publicarResultado({
+    const payloadMotor: DatosExportar = {
       tipo: 'ELECTRICIDAD_MOTOR',
-      parametros: {
-        potenciaMecanicaKW: P,
-        tensionAlimentacionV: V,
-        factorPotencia: FP,
-        rendimiento: eta,
-        corrienteDisenoCableA: Math.round(Idis * 10) / 10,
-      },
-      resultado: resultadoMotor as Record<string, unknown>,
       normativa: 'NEC Art. 430 / IEC 60947 / NEMA MG1',
-      moduloId: 'ELECTRICIDAD',
-      submodulo: 'Motor Trifásico',
-    });
+      parametros: {
+        'Potencia mecanica (kW)': mP,
+        'Tension alimentacion (V)': mV,
+        'Factor potencia': mFP,
+        'Rendimiento eta': mEta,
+        'Corriente diseno cable (A)': Math.round(Idis * 10) / 10,
+      },
+      resultado: {
+        'Corriente nominal (A)': resultadoMotor.Inom,
+        'Corriente arranque DOL (A)': resultadoMotor.Iarr,
+        'Potencia electrica (kW)': resultadoMotor.Pelec,
+        'Calibre cable minimo': resultadoMotor.calibre,
+      },
+    };
+    setDatosMotor(payloadMotor);
+    publicarResultado(payloadMotor);
   };
 
   const calcLuz = () => {
@@ -515,24 +543,27 @@ export default function ModuloElectricidad() {
     };
 
     setResLuz(resultadoLuz);
-
-    publicarResultado({
+    const payloadLuz: DatosExportar = {
       tipo: 'ELECTRICIDAD_ILUMINACION',
-      parametros: {
-        aplicacion: lApp,
-        sector: app.sector,
-        luxRequeridos: app.lux,
-        areaM2: A,
-        flujoLuminosoPorLuminariaLm: Phi,
-        eficienciaLuminaria: eta,
-        factorMantenimiento: MF,
-        coeficienteUtilizacion: CU,
-      },
-      resultado: resultadoLuz as Record<string, unknown>,
       normativa: app.norma,
-      moduloId: 'ELECTRICIDAD',
-      submodulo: 'Iluminación',
-    });
+      parametros: {
+        'Aplicacion': lApp,
+        'Sector': app.sector,
+        'Lux requeridos': app.lux,
+        'Area (m2)': lArea,
+        'Flujo por luminaria (lm)': lLm,
+        'Eficiencia luminaria': lEta,
+        'Factor mantenimiento': lMF,
+        'Coeficiente utilizacion': CU,
+      },
+      resultado: {
+        'Luminarias necesarias': resultadoLuz.N,
+        'Iluminancia real (lux)': resultadoLuz.luxReal,
+        'Cumple normativa': resultadoLuz.ok ? 'SI' : 'NO',
+      },
+    };
+    setDatosLuz(payloadLuz);
+    publicarResultado(payloadLuz);
   };
 
   const calcTrafo = () => {
@@ -562,21 +593,25 @@ export default function ModuloElectricidad() {
     };
 
     setResTr(resultadoTrafo);
-
-    publicarResultado({
+    const payloadTrafo: DatosExportar = {
       tipo: 'ELECTRICIDAD_TRANSFORMADOR',
-      parametros: {
-        potenciaCargaKW: P,
-        factorPotencia: FP,
-        eficienciaTransformador: eta,
-        tensionPrimariaV: Vp,
-        tensionSecundariaV: Vs,
-      },
-      resultado: resultadoTrafo as Record<string, unknown>,
       normativa: 'IEC 60076 / IEEE C57 / CIRSOC',
-      moduloId: 'ELECTRICIDAD',
-      submodulo: 'Transformador',
-    });
+      parametros: {
+        'Potencia carga (kW)': trP,
+        'Factor potencia': trFP,
+        'Eficiencia trafo': trEta,
+        'Tension primaria (V)': trVp,
+        'Tension secundaria (V)': trVs,
+      },
+      resultado: {
+        'Potencia aparente S (kVA)': resultadoTrafo.S,
+        'Corriente primaria (A)': resultadoTrafo.Ip,
+        'Corriente secundaria (A)': resultadoTrafo.Is,
+        'Corriente inrush (A)': resultadoTrafo.Iarr,
+      },
+    };
+    setDatosTrafo(payloadTrafo);
+    publicarResultado(payloadTrafo);
   };
 
   const publicarAreaPeligrosa = () => {
@@ -593,18 +628,23 @@ export default function ModuloElectricidad() {
       equipoExRequerido: zona.equipo,
     };
 
-    publicarResultado({
+    const payloadPeligrosa: DatosExportar = {
       tipo: 'ELECTRICIDAD_AREA_PELIGROSA',
-      parametros: {
-        industriaAplicacion: apInd,
-        gasPolvoVapor: apGas,
-        zonaSeleccionada: apZona,
-      },
-      resultado: resultadoArea as Record<string, unknown>,
       normativa: 'IEC 60079-10-1 / API RP 500:2012 / NEC Art. 500-505',
-      moduloId: 'ELECTRICIDAD',
-      submodulo: 'Área Peligrosa',
-    });
+      parametros: {
+        'Industria aplicacion': apInd,
+        'Gas polvo vapor': apGas,
+        'Zona seleccionada': apZona,
+      },
+      resultado: {
+        'Zona IEC': resultadoArea.zonaIEC,
+        'Division API': resultadoArea.divisionAPI,
+        'Descripcion': resultadoArea.descripcion,
+        'Equipo Ex requerido': resultadoArea.equipoExRequerido,
+      },
+    };
+    setDatosPeligrosa(payloadPeligrosa);
+    publicarResultado(payloadPeligrosa);
   };
 
   const zd = ZONAS[apZona];
@@ -708,6 +748,7 @@ export default function ModuloElectricidad() {
               </div>
             </ResBox>
           )}
+          {datosCable && <BotonesExportar visible={true} datos={datosCable} />}
         </div>
       )}
 
@@ -776,6 +817,7 @@ export default function ModuloElectricidad() {
               </div>
             </ResBox>
           )}
+          {datosCaida && <BotonesExportar visible={true} datos={datosCaida} />}
         </div>
       )}
 
@@ -837,6 +879,7 @@ export default function ModuloElectricidad() {
               <Warn t="⚠️ Poder de corte del interruptor automático debe ser ≥ Icc máximo. Coordinar protecciones con ingeniería eléctrica matriculada." />
             </ResBox>
           )}
+          {datosCC && <BotonesExportar visible={true} datos={datosCC} />}
         </div>
       )}
 
@@ -897,6 +940,7 @@ export default function ModuloElectricidad() {
               <Info t={`Reducción de corriente: ${Math.round((1 - resFP.I2 / resFP.I1) * 100)}% — Ahorro significativo en pérdidas y facturación eléctrica`} />
             </ResBox>
           )}
+          {datosFP && <BotonesExportar visible={true} datos={datosFP} />}
         </div>
       )}
 
@@ -951,6 +995,7 @@ export default function ModuloElectricidad() {
               <Warn t="⚠️ En Zona 1/2 (IEC 60079) o División 1/2 (API RP 500): motor EX certificado obligatorio. VFD reduce Iarranque a ≈1.1 × I_nom." />
             </ResBox>
           )}
+          {datosMotor && <BotonesExportar visible={true} datos={datosMotor} />}
         </div>
       )}
 
@@ -1027,6 +1072,7 @@ export default function ModuloElectricidad() {
           </div>
 
           <Warn t="⚠️ La clasificación definitiva de áreas peligrosas requiere ingeniero matriculado y estudio de riesgo según API RP 500 / IEC 60079-10-1. Este módulo es orientativo." />
+          {datosPeligrosa && <BotonesExportar visible={true} datos={datosPeligrosa} />}
         </div>
       )}
 
@@ -1088,6 +1134,7 @@ export default function ModuloElectricidad() {
               </div>
             </ResBox>
           )}
+          {datosLuz && <BotonesExportar visible={true} datos={datosLuz} />}
         </div>
       )}
 
@@ -1152,6 +1199,7 @@ export default function ModuloElectricidad() {
               <Warn t="⚠️ Seleccionar potencia comercial estándar inmediatamente superior. Proteger con interruptor termomagnético y relé diferencial. Verificar cortocircuito en secundario." />
             </ResBox>
           )}
+          {datosTrafo && <BotonesExportar visible={true} datos={datosTrafo} />}
         </div>
       )}
     </div>

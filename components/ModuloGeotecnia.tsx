@@ -1,5 +1,6 @@
 ﻿'use client';
 import { publicarResultado } from '@/components/ResultadoContexto';
+import BotonesExportar, { DatosExportar } from '@/components/BotonesExportar';
 import { useState } from 'react';
 
 // Capacidad portante - Meyerhof con nivel freatico
@@ -125,6 +126,7 @@ export default function ModuloGeotecnia() {
   const [FS,    setFS]    = useState('3.0');
   const [Dw,    setDw]    = useState('10');
   const [resCP, setResCP] = useState<ReturnType<typeof calcCapacidadPortante>>(null);
+  const [datosCP, setDatosCP] = useState<DatosExportar | null>(null);
 
   // Estabilidad talud
   const [H,     setH]     = useState('8');
@@ -134,6 +136,7 @@ export default function ModuloGeotecnia() {
   const [gamma, setGamma] = useState('1800');
   const [DwT,   setDwT]   = useState('5');
   const [resET, setResET] = useState<ReturnType<typeof calcEstabilidadTalud>>(null);
+  const [datosET, setDatosET] = useState<DatosExportar | null>(null);
   const [error, setError] = useState('');
 
   const calcCP = () => {
@@ -144,6 +147,33 @@ export default function ModuloGeotecnia() {
     );
     if (!r) { setError('Verificar datos de entrada.'); return; }
     setResCP(r);
+    const sueloLabel = SUELOS.find(s => s.id === suelo)?.label ?? suelo;
+    const payload: DatosExportar = {
+      tipo: 'CAPACIDAD_PORTANTE',
+      normativa: 'CIRSOC 102 | Meyerhof 1963 | Das 2011',
+      parametros: {
+        'Tipo de suelo': sueloLabel,
+        'Ancho B (m)': B,
+        'Largo L (m)': L2,
+        'Profundidad Df (m)': Df,
+        'Carga Q (kN)': Q,
+        'Factor seguridad FS': FS,
+        'Nivel freatico Dw (m)': Dw,
+      },
+      resultado: {
+        'qu ultima (kPa)': r.qu,
+        'qa admisible (kPa)': r.qa,
+        'q aplicada (kPa)': r.q_aplicada,
+        'Utilizacion (%)': r.utilizacion,
+        'Nq': r.Nq,
+        'Nc': r.Nc,
+        'Nivel freatico': r.freatic,
+        'Apta': r.ok ? 'SI' : 'NO',
+        'Estado': r.riesgo,
+      },
+    };
+    setDatosCP(payload);
+    publicarResultado(payload);
   };
 
   const calcET = () => {
@@ -154,6 +184,25 @@ export default function ModuloGeotecnia() {
     );
     if (!r) { setError('Verificar datos de entrada.'); return; }
     setResET(r);
+    const payload: DatosExportar = {
+      tipo: 'ESTABILIDAD_TALUD',
+      normativa: 'Bishop 1955 | CIRSOC 102',
+      parametros: {
+        'Altura H (m)': H,
+        'Angulo beta (grados)': beta,
+        'Cohesion c (kPa)': c,
+        'Angulo friccion phi (grados)': phi,
+        'Peso especifico gamma (kg/m3)': gamma,
+        'Nivel freatico Dw (m)': DwT,
+      },
+      resultado: {
+        'Factor de Seguridad FS': r.FS,
+        'Estado': r.estado,
+        'Riesgo': r.riesgo,
+      },
+    };
+    setDatosET(payload);
+    publicarResultado(payload);
   };
 
   const inputStyle = {
@@ -318,6 +367,7 @@ export default function ModuloGeotecnia() {
             </div>
           </div>
         )}
+        {tab === 'cp' && datosCP && <BotonesExportar visible={true} datos={datosCP} />}
 
         {/* RESULTADOS ESTABILIDAD TALUDES */}
         {tab === 'et' && resET && (
@@ -354,6 +404,7 @@ export default function ModuloGeotecnia() {
             </div>
           </div>
         )}
+        {tab === 'et' && datosET && <BotonesExportar visible={true} datos={datosET} />}
 
       </div>
     </div>

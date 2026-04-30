@@ -1,5 +1,6 @@
 ﻿'use client';
 import { publicarResultado } from '@/components/ResultadoContexto';
+import BotonesExportar, { DatosExportar } from '@/components/BotonesExportar';
 import { useState } from 'react';
 
 // Diseno de vigas de acero - AISC LRFD 360-16
@@ -127,6 +128,7 @@ export default function ModuloCivil() {
   const [Lv, setLv] = useState('6');
   const [perfil, setPerfil] = useState('W310x39');
   const [resViga, setResViga] = useState<ReturnType<typeof calcVigaAcero>>(null);
+  const [datosViga, setDatosViga] = useState<DatosExportar | null>(null);
 
   // Columna
   const [Pu, setPu] = useState('1200');
@@ -137,6 +139,7 @@ export default function ModuloCivil() {
   const [fc, setFc] = useState('25');
   const [fy, setFy] = useState('420');
   const [resCol, setResCol] = useState<ReturnType<typeof calcColumnaHormigon>>(null);
+  const [datosCol, setDatosCol] = useState<DatosExportar | null>(null);
   const [error, setError] = useState('');
 
   const calcViga = () => {
@@ -144,6 +147,32 @@ export default function ModuloCivil() {
     const r = calcVigaAcero(parseFloat(Mu), parseFloat(Vu), parseFloat(Lv), perfil);
     if (!r) { setError('Verificar datos.'); return; }
     setResViga(r);
+    const payload: DatosExportar = {
+      tipo: 'VIGA_ACERO_AISC',
+      normativa: 'AISC 360-16 LRFD | ASCE 7-22',
+      parametros: {
+        'Momento ultimo Mu (kN.m)': Mu,
+        'Cortante ultimo Vu (kN)': Vu,
+        'Longitud L (m)': Lv,
+        'Perfil W': perfil,
+        'Acero': 'A36 — Fy=250 MPa',
+      },
+      resultado: {
+        'phi.Mn capacidad (kN.m)': r.phi_Mn,
+        'Utilizacion flexion (%)': r.util_M,
+        'Flexion': r.ok_M ? 'OK' : 'FALLA',
+        'phi.Vn capacidad (kN)': r.phi_Vn,
+        'Utilizacion cortante (%)': r.util_V,
+        'Cortante': r.ok_V ? 'OK' : 'FALLA',
+        'Deflexion (mm)': r.delta_mm,
+        'Limite L/360 (mm)': r.delta_limite,
+        'Servicio': r.ok_D ? 'OK' : 'EXCEDE',
+        'Peso viga (kg)': r.peso_kg,
+        'Estado': r.riesgo,
+      },
+    };
+    setDatosViga(payload);
+    publicarResultado(payload);
   };
 
   const calcCol = () => {
@@ -154,6 +183,31 @@ export default function ModuloCivil() {
     );
     if (!r) { setError('Verificar datos.'); return; }
     setResCol(r);
+    const payload: DatosExportar = {
+      tipo: 'COLUMNA_HORMIGON_ACI',
+      normativa: 'ACI 318-19 | CIRSOC 201',
+      parametros: {
+        'Carga axial Pu (kN)': Pu,
+        'Momento Mu (kN.m)': Mc,
+        'Ancho b (mm)': b,
+        'Alto h (mm)': h,
+        'Area acero As (mm2)': As,
+        'Resistencia hormigon fc (MPa)': fc,
+        'Resistencia acero fy (MPa)': fy,
+      },
+      resultado: {
+        'phi.Pn capacidad (kN)': r.phi_Pn,
+        'Utilizacion axial (%)': r.util_P,
+        'Cuantia acero rho (%)': r.rho_pct,
+        'Seccion Ag (cm2)': r.Ag_cm2,
+        'Excentricidad real (mm)': r.e_mm,
+        'Excentricidad minima (mm)': r.e_min,
+        'Cuantia dentro de limites': r.acero_ok ? 'SI' : 'NO',
+        'Estado': r.riesgo,
+      },
+    };
+    setDatosCol(payload);
+    publicarResultado(payload);
   };
 
   const inputStyle = {
@@ -274,6 +328,7 @@ export default function ModuloCivil() {
             </div>
           </div>
         )}
+        {tab === 'viga' && datosViga && <BotonesExportar visible={true} datos={datosViga} />}
 
         {tab === 'col' && resCol && (
           <div style={{ background: '#1e293b', border: `2px solid ${riskColor[resCol.riesgo]}`, borderRadius: 12, padding: 24 }}>
@@ -308,6 +363,7 @@ export default function ModuloCivil() {
             </div>
           </div>
         )}
+        {tab === 'col' && datosCol && <BotonesExportar visible={true} datos={datosCol} />}
       </div>
     </div>
   );
