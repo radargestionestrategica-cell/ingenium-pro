@@ -9,6 +9,32 @@
 import PDFDocument from 'pdfkit';
 import QRCode from 'qrcode';
 
+// Mapa país → IANA timezone (valores que puede contener Usuario.pais)
+const TIMEZONES: Record<string, string> = {
+  argentina:        'America/Argentina/Buenos_Aires',
+  uruguay:          'America/Montevideo',
+  chile:            'America/Santiago',
+  colombia:         'America/Bogota',
+  peru:             'America/Lima',
+  perú:             'America/Lima',
+  mexico:           'America/Mexico_City',
+  méxico:           'America/Mexico_City',
+  venezuela:        'America/Caracas',
+  bolivia:          'America/La_Paz',
+  ecuador:          'America/Guayaquil',
+  paraguay:         'America/Asuncion',
+  brasil:           'America/Sao_Paulo',
+  brazil:           'America/Sao_Paulo',
+  españa:           'Europe/Madrid',
+  spain:            'Europe/Madrid',
+  'estados unidos': 'America/New_York',
+  usa:              'America/New_York',
+};
+
+function obtenerTimezone(pais: string): string {
+  return TIMEZONES[pais.toLowerCase().trim()] ?? 'America/Argentina/Buenos_Aires';
+}
+
 export interface DatosPDF {
   hash:         string;
   moduloNombre: string;
@@ -18,6 +44,7 @@ export interface DatosPDF {
   proyectoNombre?:string;
   industria?:   string;
   ingeniero:    string;
+  email:        string;
   empresa:      string;
   pais:         string;
   fecha:        Date;
@@ -147,21 +174,26 @@ export async function generarPDF(datos: DatosPDF): Promise<Buffer> {
           .text(valor, 180, yPos);
       };
 
+      // Fecha con zona horaria correcta según el país del usuario registrado
+      const tz = obtenerTimezone(datos.pais);
+      const fechaFormateada = new Intl.DateTimeFormat('es-AR', {
+        timeZone: tz,
+        day: '2-digit', month: 'long', year: 'numeric',
+        hour: '2-digit', minute: '2-digit',
+      }).format(datos.fecha);
+
       filaInfo('Proyecto',      datos.proyectoNombre || '—',   y);
       filaInfo('Activo físico', datos.activoNombre   || '—',   y + 18);
       filaInfo('Industria',     datos.industria       || '—',   y + 36);
       filaInfo('Ingeniero',     datos.ingeniero,               y + 54);
-      filaInfo('Empresa',       datos.empresa,                 y + 72);
-      filaInfo('País',          datos.pais,                    y + 90);
-      filaInfo('Fecha y hora',  datos.fecha.toLocaleString('es-AR', {
-        timeZone: 'America/Argentina/Buenos_Aires',
-        day: '2-digit', month: 'long', year: 'numeric',
-        hour: '2-digit', minute: '2-digit',
-      }),                                                       y + 108);
+      filaInfo('Email',         datos.email || '—',            y + 72);
+      filaInfo('Empresa',       datos.empresa,                 y + 90);
+      filaInfo('País',          datos.pais,                    y + 108);
+      filaInfo('Fecha y hora',  fechaFormateada,               y + 126);
 
       // ── ALERTA ───────────────────────────────────────────────
       if (datos.alerta && datos.alertaMsg) {
-        y += 138;
+        y += 156;
         doc.rect(50, y, doc.page.width - 100, 36).fill('#2d0a0a');
         doc.rect(50, y, doc.page.width - 100, 36).stroke(COLOR_ROJO);
         doc.fillColor(COLOR_ROJO).fontSize(8).font('Helvetica-Bold')
@@ -170,7 +202,7 @@ export async function generarPDF(datos: DatosPDF): Promise<Buffer> {
           .text(datos.alertaMsg, 60, y + 18, { width: doc.page.width - 120 });
         y += 50;
       } else {
-        y += 138;
+        y += 156;
       }
 
       // Línea divisoria

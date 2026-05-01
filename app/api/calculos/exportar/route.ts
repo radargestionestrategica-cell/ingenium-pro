@@ -8,9 +8,9 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
-import { generarExcel } from '@/lib/generarEXCEL';
+import { generarExcel } from '@/lib/generarExcel';
 import { generarPDF } from '@/lib/generarPDF';
-import type { RegistroHistorial } from '@/lib/generarEXCEL';
+import type { RegistroHistorial } from '@/lib/generarExcel';
 
 const prisma = new PrismaClient();
 
@@ -42,6 +42,7 @@ type CalcConRel = {
   createdAt: Date;
   user: {
     nombre: string;
+    email: string;
     empresa: string;
     pais: string;
   } | null;
@@ -72,6 +73,7 @@ const INCLUDE = {
   user: {
     select: {
       nombre: true,
+      email:  true,
       empresa: true,
       pais: true,
     },
@@ -203,8 +205,9 @@ async function generarRespuestaExportacion(solicitud: SolicitudExportacion): Pro
   const primero = calculos[0];
 
   const ingeniero = primero.user?.nombre ?? primero.usuario ?? 'Ingeniero';
-  const empresa = primero.user?.empresa ?? 'INGENIUM PRO';
-  const pais = primero.user?.pais ?? '';
+  const email     = primero.user?.email ?? '';
+  const empresa   = primero.user?.empresa ?? 'INGENIUM PRO';
+  const pais      = primero.user?.pais ?? '';
   const proyecto = primero.proyecto?.nombre ?? 'Sin proyecto';
   const industria = primero.proyecto?.industria ?? 'Ingeniería';
   const fechaArchivo = new Date().toISOString().slice(0, 10);
@@ -223,6 +226,7 @@ async function generarRespuestaExportacion(solicitud: SolicitudExportacion): Pro
       proyectoNombre: calc.proyecto?.nombre ?? undefined,
       industria: calc.proyecto?.industria ?? undefined,
       ingeniero,
+      email,
       empresa,
       pais,
       fecha: calc.createdAt,
@@ -272,6 +276,7 @@ async function generarRespuestaExportacion(solicitud: SolicitudExportacion): Pro
     activoNombre: primero.activoNombre ?? '—',
     moduloId: primero.moduloId ?? primero.tipo,
     ingeniero,
+    email,
     empresa,
     pais,
     normativa: primero.normativa ?? '—',
