@@ -1417,11 +1417,6 @@ export interface ParamsTuberias {
        ' 10',x1.toFixed(3),' 20',y1.toFixed(3),' 30','0.000',
        ' 11',x2.toFixed(3),' 21',y2.toFixed(3),' 31','0.000'].join('\n');
 
-    const C = (cx: number, cy: number, r: number, layer: string, color: number) =>
-      ['  0','CIRCLE','  8',layer,' 62',String(color),
-       ' 10',cx.toFixed(3),' 20',cy.toFixed(3),' 30','0.000',
-       ' 40',r.toFixed(3)].join('\n');
-
     const T = (x: number, y: number, h: number, txt: string, layer: string, color: number) =>
       ['  0','TEXT','  8',layer,' 62',String(color),
        ' 10',x.toFixed(3),' 20',y.toFixed(3),' 30','0.000',
@@ -1429,16 +1424,30 @@ export interface ParamsTuberias {
 
     const ents: string[] = [];
 
-    // ── CUERPO — rectángulo cuerpo válvula (F2F × alto estimado) — blanco 7 ──
-    ents.push(L(bx0, by0, bx1, by0, 'CUERPO', 7));
-    ents.push(L(bx1, by0, bx1, by1, 'CUERPO', 7));
-    ents.push(L(bx1, by1, bx0, by1, 'CUERPO', 7));
-    ents.push(L(bx0, by1, bx0, by0, 'CUERPO', 7));
+    // ── CUERPO — rectángulo cuerpo válvula (F2F × alto estimado) + paso bore — blanco 7 ──
+    ents.push(L(bx0, by0, bx1, by0, 'CUERPO', 7)); // fondo
+    ents.push(L(bx1, by0, bx1, by1, 'CUERPO', 7)); // derecha
+    ents.push(L(bx1, by1, bx0, by1, 'CUERPO', 7)); // techo
+    ents.push(L(bx0, by1, bx0, by0, 'CUERPO', 7)); // izquierda
+    // Paso de bore (tubería de conexión, visible a ambos lados)
+    const hb = bore_mm / 2;
+    ents.push(L(bx0 - 22,  hb, bx1 + 22,  hb, 'CUERPO', 7));
+    ents.push(L(bx0 - 22, -hb, bx1 + 22, -hb, 'CUERPO', 7));
 
-    // ── BORE — círculo bore en cada cara de brida — azul 5 ──────────────────
-    ents.push(C(bx0, 0, bore_mm / 2, 'BORE', 5));
-    ents.push(C(bx1, 0, bore_mm / 2, 'BORE', 5));
-    ents.push(L(bx0 - 22, 0, bx1 + 22, 0, 'BORE', 5)); // eje de flujo
+    // ── CUÑA — compuerta/cuña (gate wedge schematic) — rojo 1 ───────────────
+    const cuna_w  = Math.min(bore_mm * 0.45, body_h * 0.30); // semi-ancho horizontal
+    const cuna_h  = Math.min(body_h  * 0.35, bore_mm * 0.65); // semi-alto vertical
+    const stem_ht = Math.max(22, body_h * 0.28); // extensión vástago sobre cuerpo
+    // Rombo (cuña)
+    ents.push(L( 0,       cuna_h,  cuna_w, 0,       'CUÑA', 1));
+    ents.push(L( cuna_w,  0,       0,     -cuna_h,  'CUÑA', 1));
+    ents.push(L( 0,      -cuna_h, -cuna_w, 0,       'CUÑA', 1));
+    ents.push(L(-cuna_w,  0,       0,      cuna_h,  'CUÑA', 1));
+    // Vástago (stem)
+    ents.push(L(0, cuna_h, 0, by1 + stem_ht, 'CUÑA', 1));
+    // Indicador actuador / volante
+    ents.push(L(-10, by1 + stem_ht,     10, by1 + stem_ht,     'CUÑA', 1));
+    ents.push(L( -7, by1 + stem_ht + 5,  7, by1 + stem_ht + 5, 'CUÑA', 1));
 
     // ── BRIDA — indicación B16.5 en cada extremo — verde 3 ─────────────────
     ents.push(L(bx0 - flange_t, fy0, bx0,            fy0, 'BRIDA', 3));
@@ -1460,7 +1469,7 @@ export interface ParamsTuberias {
     ents.push(T(bx0 - flange_t, ay_top + 28, 5,
       `NPS ${nps}" - Class ${clase} - Face-to-Face: ${F2F.toFixed(0)} mm (ASME B16.10 Tabla 1, valvula compuerta)`, 'ANOTACIONES', 2));
     ents.push(T(bx0 - flange_t, ay_top + 16, 4.5,
-      `Bore: ${bore_mm.toFixed(1)} mm - OD brida: ${OD_mm.toFixed(1)} mm - BC pernos: ${BC_mm.toFixed(1)} mm - N pernos: ${n_pern} - Brida ASME B16.5-2017`, 'ANOTACIONES', 2));
+      `Bore: ${bore_mm.toFixed(1)} mm - OD brida: ${OD_mm.toFixed(1)} mm - BC pernos: ${BC_mm.toFixed(1)} mm - N pernos: ${n_pern} - Brida ASME B16.5 | Compuerta ASME B16.34/API 600`, 'ANOTACIONES', 2));
     ents.push(T(bx0 - flange_t, ay_top + 4, 4,
       `Proyecto: ${proyecto || 'Sin nombre'} - Fecha: ${fecha} - Normativa: ASME B16.34 / B16.10 / B16.5`, 'ANOTACIONES', 2));
 
@@ -1480,16 +1489,17 @@ export interface ParamsTuberias {
     ents.push(T(bx0 - flange_t, ay_bot - 26, 4,
       '* Verificar todas las dimensiones con el fabricante. Plano NO apto para fabricacion directa.', 'ANOTACIONES', 1));
 
-    // Cabecera DXF con las 4 capas nominadas
+    // Cabecera DXF AC1015 (2000+) — soporta caracteres extendidos (Ñ)
+    // 4 capas: CUERPO, CUÑA, BRIDA, ANOTACIONES
     const header = [
       '  0','SECTION','  2','HEADER',
-      '  9','$ACADVER','  1','AC1009',
+      '  9','$ACADVER','  1','AC1015',
       '  9','$INSUNITS',' 70','4',
       '  0','ENDSEC',
       '  0','SECTION','  2','TABLES',
       '  0','TABLE','  2','LAYER',' 70','4',
       '  0','LAYER','  2','CUERPO',      ' 70','0',' 62','7','  6','CONTINUOUS',
-      '  0','LAYER','  2','BORE',        ' 70','0',' 62','5','  6','CONTINUOUS',
+      '  0','LAYER','  2','CUÑA',        ' 70','0',' 62','1','  6','CONTINUOUS',
       '  0','LAYER','  2','BRIDA',       ' 70','0',' 62','3','  6','CONTINUOUS',
       '  0','LAYER','  2','ANOTACIONES', ' 70','0',' 62','2','  6','CONTINUOUS',
       '  0','ENDTAB','  0','ENDSEC',
