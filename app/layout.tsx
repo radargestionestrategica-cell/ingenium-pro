@@ -1,4 +1,5 @@
 import './globals.css';
+import TerminosModal from '@/components/TerminosModal';
 
 export default function RootLayout({
   children,
@@ -7,7 +8,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es">
-      <body>{children}</body>
+      <body>
+        <TerminosModal />
+        {children}
+      </body>
     </html>
   );
 }
