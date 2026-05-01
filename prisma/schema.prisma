@@ -16,6 +16,7 @@ model Usuario {
   nombre    String
   empresa   String
   pais      String     @default("Argentina")
+  matricula String?    @default("")
   plan      String     @default("trial")
   activo    Boolean    @default(true)
   createdAt DateTime   @default(now())

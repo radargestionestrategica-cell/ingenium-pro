@@ -41,7 +41,7 @@ function OjoIcono({ visible }: { visible: boolean }) {
 export default function LoginPage() {
   const router = useRouter();
   const [modo, setModo] = useState<'login' | 'signup'>('login');
-  const [form, setForm] = useState({ email:'', password:'', nombre:'', empresa:'', pais:'' });
+  const [form, setForm] = useState({ email:'', password:'', nombre:'', empresa:'', pais:'', matricula:'' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [exito, setExito] = useState('');
@@ -58,7 +58,7 @@ export default function LoginPage() {
       const url = modo === 'login' ? '/api/v1/auth/login' : '/api/v1/auth/signup';
       const body = modo === 'login'
         ? { email: form.email, password: form.password }
-        : { email: form.email, password: form.password, nombre: form.nombre, empresa: form.empresa, pais: form.pais };
+        : { email: form.email, password: form.password, nombre: form.nombre, empresa: form.empresa, pais: form.pais, matricula: form.matricula };
 
       const res = await fetch(url, {
         method: 'POST',
@@ -82,7 +82,7 @@ export default function LoginPage() {
       } else {
         setExito('Cuenta creada. Podés iniciar sesión ahora.');
         setModo('login');
-        setForm({ email: form.email, password:'', nombre:'', empresa:'', pais:'' });
+        setForm({ email: form.email, password:'', nombre:'', empresa:'', pais:'', matricula:'' });
       }
     } catch {
       setError('Error de conexión. Verificá tu internet.');
@@ -129,6 +129,10 @@ export default function LoginPage() {
                 <option value="" style={{ background:PANEL }}>Seleccioná tu país</option>
                 {PAISES.map(p => <option key={p} value={p} style={{ background:PANEL }}>{p}</option>)}
               </select>
+            </div>
+            <div style={{ marginBottom:14 }}>
+              <label style={lbl}>Matrícula profesional (opcional)</label>
+              <input name="matricula" value={form.matricula} onChange={handleChange} style={inp} placeholder="MP 12345 / REG-67890" />
             </div>
           </>
         )}

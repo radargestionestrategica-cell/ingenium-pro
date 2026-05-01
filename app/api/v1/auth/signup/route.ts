@@ -13,7 +13,7 @@ export async function POST(req: Request) {
   if (limited) return limited;
 
   try {
-    const { email, password, nombre, empresa, pais } = await req.json();
+    const { email, password, nombre, empresa, pais, matricula } = await req.json();
     if (!email || !password || !nombre || !empresa) {
       return NextResponse.json({ error: 'Todos los campos son requeridos' }, { status: 400 });
     }
@@ -22,7 +22,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'El email ya está registrado' }, { status: 409 });
     }
     const usuario = await prisma.usuario.create({
-      data: { email, password: hashPassword(password), nombre, empresa, pais: pais || 'Argentina' },
+      data: { email, password: hashPassword(password), nombre, empresa, pais: pais || 'Argentina', matricula: matricula || '' },
     });
     return NextResponse.json({ success: true, id: usuario.id, nombre: usuario.nombre });
   } catch (err) {
