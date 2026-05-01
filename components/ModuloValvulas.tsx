@@ -99,6 +99,15 @@ const B165: Record<string, Record<string, FlangeData>> = {
   },
 };
 
+// Face-to-face ASME B16.10 Table 1 — Válvula compuerta (gate), bridada, raised face (mm)
+// Fuente: ASME B16.10-2017. SOLO para plano esquemático DXF — verificar con fabricante.
+const F2F_B1610: Record<string, Record<string, number>> = {
+  '150': { '0.5':108,'0.75':117,'1':130,'1.5':159,'2':178,'2.5':216,'3':229,'4':267,'6':356,'8':457,'10':533,'12':610 },
+  '300': { '0.5':140,'0.75':152,'1':165,'1.5':197,'2':216,'2.5':254,'3':279,'4':318,'6':419,'8':521,'10':622,'12':711 },
+  '600': { '0.5':140,'0.75':152,'1':165,'1.5':197,'2':267,'2.5':292,'3':318,'4':368,'6':470,'8':584,'10':711,'12':813 },
+  '900': { '2':292,'2.5':330,'3':356,'4':406,'6':533,'8':660,'10':787,'12':914 },
+};
+
 // NPS disponibles por clase
 const NPS_POR_CLASE: Record<string, string[]> = {
   '150': ['0.5','0.75','1','1.5','2','2.5','3','4','6','8','10','12'],
@@ -170,8 +179,8 @@ function interpolarPT(tabla: Record<number, Record<string, number>>, tempC: numb
   return Math.round((p1 + (p2 - p1) * (tempC - t1) / (t2 - t1)) * 10) / 10;
 }
 
-// ── Generador DXF ASCII — válido AutoCAD 2004+ ────────────────────
-function generarDXF(nps: string, clase: string, fd: FlangeData, proyecto?: string): string {
+// DXF generado por lib/exportarDXF.ts → exportarDXFBridaB165 (4 capas: CUERPO, BORE, BRIDA, ANOTACIONES)
+function _dxfPlaceholder(nps: string, clase: string, fd: FlangeData, proyecto?: string): string {
   const OD_mm = fd.OD * 25.4;
   const BC_mm = fd.BC * 25.4;
   const bore_mm = fd.bore * 25.4;
@@ -438,7 +447,7 @@ export default function ModuloValvulas() {
   const [brNPS, setBrNPS] = useState('4');
   const [brClase, setBrClase] = useState('300');
   const [brProyecto, setBrProyecto] = useState('');
-  const [resBr, setResBr] = useState<null|{ fd: FlangeData; nps: string; clase: string }>(null);
+  const [resBr, setResBr] = useState<null|{ fd: FlangeData | null; nps: string; clase: string; f2f_mm: number | null }>(null);
 
   // ── Estado: Cv ───────────────────────────────────────────────
   const [cvQ, setCvQ] = useState('50');
@@ -595,9 +604,14 @@ export default function ModuloValvulas() {
   // ── CÁLCULO 3: DIMENSIONES BRIDA B16.5 ───────────────────────
   const calcBrida = () => {
     R(); setResBr(null);
-    const fd = B165[brClase]?.[brNPS];
-    if (!fd) { setErr(`Combinación NPS ${brNPS}" Class ${brClase} no disponible en B16.5`); return; }
-    setResBr({ fd, nps: brNPS, clase: brClase });
+    const fd = B165[brClase]?.[brNPS] ?? null;
+    if (!fd) {
+      // Dato no disponible en tabla — NUNCA calcular ni interpolar
+      setResBr({ fd: null, nps: brNPS, clase: brClase, f2f_mm: null });
+      return;
+    }
+    const f2f_mm = F2F_B1610[brClase]?.[brNPS] ?? null;
+    setResBr({ fd, nps: brNPS, clase: brClase, f2f_mm });
     const payloadBr: DatosExportar = {
       tipo: 'VALVULAS_BRIDA_B16_5',
       normativa: 'ASME B16.5-2017',
@@ -605,6 +619,7 @@ export default function ModuloValvulas() {
         'NPS (pulg)': brNPS,
         'Clase de presion': brClase,
         'Proyecto': brProyecto || 'Sin nombre',
+        'F2F ASME B16.10 (mm)': f2f_mm ?? 'Consultar fabricante',
       },
       resultado: {
         'OD exterior (pulg)': fd.OD,
@@ -621,18 +636,8 @@ export default function ModuloValvulas() {
     publicarResultado(payloadBr);
   };
 
-  const exportarDXF = () => {
-    if (!resBr) return;
-    const { fd, nps, clase } = resBr;
-    const contenido = generarDXF(nps, clase, fd, brProyecto);
-    const blob = new Blob([contenido], { type: 'application/octet-stream' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `BRIDA_NPS${nps}_Class${clase}_B16-5.dxf`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
+  // DXF se genera via BotonesExportar → exportarDXFBridaB165 en lib/exportarDXF.ts
+  void _dxfPlaceholder; // evita advertencia de no-uso en dev
 
   // ── CÁLCULO 4: COEFICIENTE Cv (ISA 75.01.01) ─────────────────
   // Para líquidos: Cv = Q(GPM) × √(SG / ΔP_psi)
@@ -850,21 +855,38 @@ export default function ModuloValvulas() {
 
           <Btn onClick={calcBrida} text="Consultar dimensiones B16.5" />
 
-          {resBr && (() => {
-            const fd = resBr.fd;
-            const OD_mm = Math.round(fd.OD * 25.4 * 10) / 10;
-            const BC_mm = Math.round(fd.BC * 25.4 * 10) / 10;
-            const bore_mm = Math.round(fd.bore * 25.4 * 10) / 10;
-            const db_mm = Math.round(fd.db * 25.4 * 10) / 10;
-            const bh_mm = Math.round((fd.db + 0.125) * 25.4 * 10) / 10; // agujero = db + 1/8" per B16.5
+          {/* Caso: combinación no disponible en tabla */}
+          {resBr && !resBr.fd && (
+            <ResBox>
+              <div style={{ fontSize: 15, fontWeight: 800, color: '#f59e0b', marginBottom: 10 }}>
+                Consultar fabricante — dato no disponible en tabla estándar
+              </div>
+              <div style={{ fontSize: 13, color: '#94a3b8', lineHeight: 1.7, marginBottom: 12 }}>
+                La combinación <strong style={{ color: '#f1f5f9' }}>NPS {resBr.nps}″ Class {resBr.clase}</strong> no está presente
+                en la tabla ASME B16.5-2017 embebida. No se calculan ni interpolan valores.
+                Contactar al fabricante o consultar la edición vigente del estándar.
+              </div>
+              <Warn t="⚠️ NUNCA dimensionar, mecanizar ni fabricar basándose en valores calculados o interpolados no presentes en el estándar." rojo />
+            </ResBox>
+          )}
+
+          {/* Caso: datos disponibles */}
+          {resBr && resBr.fd && (() => {
+            const fd = resBr.fd!;
+            const OD_mm  = Math.round(fd.OD  * 25.4 * 10) / 10;
+            const BC_mm  = Math.round(fd.BC  * 25.4 * 10) / 10;
+            const bore_mm= Math.round(fd.bore * 25.4 * 10) / 10;
+            const db_mm  = Math.round(fd.db  * 25.4 * 10) / 10;
+            const bh_mm  = Math.round((fd.db + 0.125) * 25.4 * 10) / 10;
+            const f2f    = resBr.f2f_mm;
 
             return (
               <ResBox>
                 <RLbl t={`BRIDA NPS ${resBr.nps}" Class ${resBr.clase} — ASME B16.5-2017`} />
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10, marginBottom: 16 }}>
                   {[
-                    { l: 'Diámetro exterior OD', v: `${OD_mm} mm`, s: `${fd.OD}" pulgadas` },
-                    { l: 'Círculo de pernos BC', v: `${BC_mm} mm`, s: `${fd.BC}" pulgadas` },
+                    { l: 'Diámetro exterior OD', v: `${OD_mm} mm`,  s: `${fd.OD}" pulgadas` },
+                    { l: 'Círculo de pernos BC', v: `${BC_mm} mm`,  s: `${fd.BC}" pulgadas` },
                     { l: 'Diámetro interior bore', v: `${bore_mm} mm`, s: `${fd.bore}" pulgadas` },
                     { l: 'N° de pernos', v: `${fd.n} pernos`, s: 'equiespaciados' },
                     { l: 'Diámetro perno', v: `${db_mm} mm`, s: `${fd.db}" (UNC)` },
@@ -878,14 +900,28 @@ export default function ModuloValvulas() {
                   ))}
                 </div>
 
-                {/* Vista esquemática SVG — completamente en código */}
+                {/* Face-to-face ASME B16.10 */}
+                <div style={{ background: '#0a0f1e', borderRadius: 10, padding: 14, marginBottom: 14 }}>
+                  <div style={{ fontSize: 9, color: '#475569', textTransform: 'uppercase' as const, marginBottom: 4, letterSpacing: 0.4 }}>Face-to-Face ASME B16.10 — Válvula compuerta (referencia)</div>
+                  {f2f ? (
+                    <div style={{ fontSize: 16, fontWeight: 800, color: COLOR }}>{f2f} mm
+                      <span style={{ fontSize: 11, color: '#475569', fontWeight: 400, marginLeft: 10 }}>({(f2f / 25.4).toFixed(2)}")</span>
+                    </div>
+                  ) : (
+                    <div style={{ fontSize: 13, color: '#f59e0b', fontWeight: 700 }}>Consultar fabricante — dato no disponible en tabla estándar</div>
+                  )}
+                  {!f2f && <div style={{ fontSize: 11, color: '#475569', marginTop: 4 }}>ASME B16.10 no cubre esta combinación en la tabla embebida.</div>}
+                  {f2f && <div style={{ fontSize: 11, color: '#475569', marginTop: 4 }}>Plano DXF disponible: 4 capas (CUERPO · BORE · BRIDA · ANOTACIONES). Requiere validación de fabricante antes de mecanizar.</div>}
+                </div>
+
+                {/* Vista esquemática SVG — sección transversal brida */}
                 <div style={{ display: 'flex', justifyContent: 'center', margin: '16px 0' }}>
                   {(() => {
                     const scale = 160 / (fd.OD * 25.4 / 2 + 20);
-                    const R_od = fd.OD * 25.4 / 2 * scale;
-                    const R_bc = fd.BC * 25.4 / 2 * scale;
+                    const R_od   = fd.OD  * 25.4 / 2 * scale;
+                    const R_bc   = fd.BC  * 25.4 / 2 * scale;
                     const R_bore = fd.bore * 25.4 / 2 * scale;
-                    const r_bh = (fd.db * 25.4 / 2 + 1.5875) * scale;
+                    const r_bh   = (fd.db * 25.4 / 2 + 1.5875) * scale;
                     const cx = 180, cy = 180, svgSize = 360;
                     const boltPoints: { x: number; y: number }[] = [];
                     for (let i = 0; i < fd.n; i++) {
@@ -894,14 +930,14 @@ export default function ModuloValvulas() {
                     }
                     return (
                       <svg width={svgSize} height={svgSize} style={{ background: '#0a0f1e', borderRadius: 12, border: '1px solid rgba(13,148,136,0.2)' }}>
-                        <circle cx={cx} cy={cy} r={R_od} fill="none" stroke={COLOR} strokeWidth={2} />
-                        <circle cx={cx} cy={cy} r={R_bc} fill="none" stroke="#475569" strokeWidth={1} strokeDasharray="4 3" />
-                        <circle cx={cx} cy={cy} r={R_bore} fill="none" stroke="#3b82f6" strokeWidth={1.5} />
+                        <circle cx={cx} cy={cy} r={R_od}   fill="none" stroke={COLOR}    strokeWidth={2} />
+                        <circle cx={cx} cy={cy} r={R_bc}   fill="none" stroke="#475569"  strokeWidth={1} strokeDasharray="4 3" />
+                        <circle cx={cx} cy={cy} r={R_bore} fill="none" stroke="#3b82f6"  strokeWidth={1.5} />
                         {boltPoints.map((p, i) => <circle key={i} cx={p.x} cy={p.y} r={r_bh} fill="none" stroke="#ef4444" strokeWidth={1.5} />)}
                         <line x1={cx - R_od - 8} y1={cy} x2={cx + R_od + 8} y2={cy} stroke="#1e293b" strokeWidth={1} />
                         <line x1={cx} y1={cy - R_od - 8} x2={cx} y2={cy + R_od + 8} stroke="#1e293b" strokeWidth={1} />
-                        <text x={cx + 4} y={cy - R_od + 12} fill={COLOR} fontSize={8}>OD={OD_mm}mm</text>
-                        <text x={cx + 4} y={cy - R_bc + 12} fill="#475569" fontSize={7}>BC={BC_mm}mm</text>
+                        <text x={cx + 4} y={cy - R_od  + 12} fill={COLOR}    fontSize={8}>OD={OD_mm}mm</text>
+                        <text x={cx + 4} y={cy - R_bc  + 12} fill="#475569"  fontSize={7}>BC={BC_mm}mm</text>
                         <text x={cx + 4} y={cy - R_bore + 12} fill="#3b82f6" fontSize={7}>Bore={bore_mm}mm</text>
                         <text x={cx - R_od + 4} y={cy + R_od + 16} fill="#f1f5f9" fontSize={8}>NPS {resBr.nps}" Class {resBr.clase} — ASME B16.5</text>
                       </svg>
@@ -909,7 +945,8 @@ export default function ModuloValvulas() {
                   })()}
                 </div>
 
-                <Info t="El DXF contiene: círculo exterior (OD), círculo de pernos (BC), agujeros de perno individuales, diámetro interior (bore) y datos del proyecto. Abrí en AutoCAD, FreeCAD o cualquier CAD compatible." />
+                {f2f && <Info t="DXF: 4 capas — CUERPO (cuerpo válvula F2F × alto estimado), BORE (diámetro interior), BRIDA (indicación B16.5), ANOTACIONES (NPS, Clase, F2F, normativa, fecha, proyecto). Plano esquemático de referencia — requiere validación de fabricante antes de mecanizar." />}
+                {!f2f && <Warn t="⚠️ Face-to-face no disponible en tabla ASME B16.10 embebida — DXF de cuerpo de válvula no disponible. Consultar fabricante." />}
               </ResBox>
             );
           })()}
