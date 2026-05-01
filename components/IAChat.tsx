@@ -1,6 +1,7 @@
 'use client';
 import { useState, useRef, useEffect } from 'react';
 import { DatosExportar } from '@/components/BotonesExportar';
+import ReactMarkdown from 'react-markdown';
 
 const PANEL = '#0a0f1e';
 const INDIGO = '#6366f1';
@@ -143,8 +144,15 @@ export default function IAChat({ datos }: Props) {
         .ia-dot:nth-child(1){ animation:ia-pulse 1.2s ease-in-out 0s infinite; }
         .ia-dot:nth-child(2){ animation:ia-pulse 1.2s ease-in-out .2s infinite; }
         .ia-dot:nth-child(3){ animation:ia-pulse 1.2s ease-in-out .4s infinite; }
-        .ia-msg-ia { font-size:12px; color:#cbd5e1; line-height:1.85; white-space:pre-wrap; word-break:break-word; }
-        .ia-msg-ia b { color:#f1f5f9; }
+        .ia-msg-ia { font-size:12px; color:#cbd5e1; line-height:1.85; word-break:break-word; }
+        .ia-msg-ia p  { margin:4px 0; line-height:1.85; }
+        .ia-msg-ia ul { padding-left:16px; margin:6px 0; display:flex; flex-direction:column; gap:3px; }
+        .ia-msg-ia ol { padding-left:18px; margin:6px 0; display:flex; flex-direction:column; gap:3px; }
+        .ia-msg-ia li { line-height:1.7; }
+        .ia-msg-ia b, .ia-msg-ia strong { color:#f1f5f9; font-weight:700; }
+        .ia-msg-ia code { background:rgba(99,102,241,0.12); padding:1px 5px; border-radius:4px; font-family:ui-monospace,monospace; font-size:11px; color:#a5b4fc; }
+        .ia-msg-ia blockquote { border-left:3px solid rgba(99,102,241,0.45); padding-left:10px; margin:6px 0; color:#94a3b8; }
+        .ia-msg-ia hr { border:none; border-top:1px solid rgba(99,102,241,0.15); margin:10px 0; }
         .ia-input:focus { border-color:${INDIGO} !important; }
       `}</style>
 
@@ -236,7 +244,15 @@ export default function IAChat({ datos }: Props) {
                         fontSize: 12, marginTop: 2,
                       }}>⚡</div>
                       <div className="ia-msg-ia">
-                        {m.content}
+                        <ReactMarkdown
+                          components={{
+                            h1: ({children}) => <div style={{fontSize:14,fontWeight:900,color:'#f1f5f9',margin:'12px 0 4px',paddingBottom:4,borderBottom:'1px solid rgba(99,102,241,0.2)'}}>{children}</div>,
+                            h2: ({children}) => <div style={{fontSize:13,fontWeight:800,color:'#f1f5f9',margin:'10px 0 4px',paddingBottom:3,borderBottom:'1px solid rgba(99,102,241,0.12)'}}>{children}</div>,
+                            h3: ({children}) => <div style={{fontSize:12,fontWeight:700,color:'#e2e8f0',margin:'8px 0 3px'}}>{children}</div>,
+                          }}
+                        >
+                          {m.content}
+                        </ReactMarkdown>
                       </div>
                     </div>
                   )}
