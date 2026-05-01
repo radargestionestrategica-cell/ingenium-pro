@@ -10,9 +10,9 @@ import type { Prisma } from '@prisma/client';
 export const dynamic = 'force-dynamic';
 
 interface PageProps {
-  params: {
+  params: Promise<{
     hash: string;
-  };
+  }>;
 }
 
 type CalculoVerificacion = Prisma.CalculoGetPayload<{
@@ -95,7 +95,8 @@ function TablaDatos({
 }
 
 export default async function VerifyPage({ params }: PageProps) {
-  const hashLimpio = decodificarHash(params.hash);
+  const { hash } = await params;
+  const hashLimpio = decodificarHash(hash);
 
   let calculo: CalculoVerificacion | null = null;
   let errorConsulta = false;
