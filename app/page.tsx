@@ -76,9 +76,9 @@ const industrias = [
 
 const planes = [
   { nombre:'Demo',       precio:'Gratis',  periodo:'3 días', color: GRAY,  bajada:'Conocer la plataforma sin compromiso.',  features:['Acceso de prueba completo','Módulos principales','PDF y Excel de muestra','Sin tarjeta de crédito'], href:'/Login',  cta:'Comenzar demo gratuito', destacado:false },
-  { nombre:'Senior',     precio:'USD 189', periodo:'mes',    color: GOLD,  bajada:'Para el profesional que necesita velocidad y trazabilidad.',   features:['1 usuario profesional','Todos los módulos técnicos','Historial de proyectos','PDF · Excel · DXF · QR','Auditoría IA'], href:'/planes', cta:'Activar Senior',        destacado:true  },
-  { nombre:'Team',       precio:'USD 549', periodo:'mes',    color: GREEN, bajada:'Para equipos técnicos, consultoras e ingeniería interna.',      features:['3 usuarios activos','Proyectos compartidos','Dashboard de equipo','Gestión de activos','Soporte prioritario'],           href:'/planes', cta:'Activar Team',          destacado:false },
-  { nombre:'Enterprise', precio:'A medida',periodo:'empresa',color: CYAN,  bajada:'Configuración por sector, usuarios ilimitados y soporte dedicado.', features:['Usuarios ilimitados','Módulos configurables','API de integración','Soporte dedicado 24/7','Capacitación inicial'],  href:'mailto:radargestionestrategica@gmail.com?subject=Enterprise%20INGENIUM%20Pro', cta:'Solicitar cotización', destacado:false },
+  { nombre:'Senior',     precio:'USD 189', periodo:'mes',    color: GOLD,  bajada:'Para el profesional que necesita velocidad y trazabilidad.',   features:['1 usuario profesional','Todos los módulos técnicos','Historial de proyectos','PDF · Excel · DXF · QR','Auditoría IA'], href:'https://www.mercadopago.com.ar/subscriptions/checkout?preapproval_plan_id=7977d5695fec4f99be5cc3e56c7b9428', target:'_blank', cta:'Activar Senior',        destacado:true  },
+  { nombre:'Team',       precio:'USD 549', periodo:'mes',    color: GREEN, bajada:'Para equipos técnicos, consultoras e ingeniería interna.',      features:['3 usuarios activos','Proyectos compartidos','Dashboard de equipo','Gestión de activos','Soporte prioritario'],           href:'https://www.mercadopago.com.ar/subscriptions/checkout?preapproval_plan_id=a82fae7648024090a3b6dc195d136ccd', target:'_blank', cta:'Activar Team',          destacado:false },
+  { nombre:'Enterprise', precio:'A medida',periodo:'empresa',color: CYAN,  bajada:'Configuración por sector, usuarios ilimitados y soporte dedicado.', features:['Usuarios ilimitados','Módulos configurables','API de integración','Soporte dedicado 24/7','Capacitación inicial'],  href:'mailto:radargestionestrategica@gmail.com?subject=Consulta Enterprise INGENIUM PRO', target:'_blank', cta:'Solicitar cotización', destacado:false },
 ];
 
 const faqs = [
@@ -741,7 +741,7 @@ export default function LandingPage() {
                     </li>
                   ))}
                 </ul>
-                <a className={`plan-cta${p.destacado ? ' featured' : ''}`} href={p.href}>{p.cta}</a>
+                <a className={`plan-cta${p.destacado ? ' featured' : ''}`} href={p.href} {...(p.target ? { target: p.target, rel: 'noopener noreferrer' } : {})}>{p.cta}</a>
               </article>
             ))}
           </div>
@@ -810,7 +810,7 @@ export default function LandingPage() {
             </div>
             <div className="footer-copy" style={{ marginTop:10 }}>
               © 2026 Silvana Belén Colombo · INGENIUM Pro · Todos los derechos reservados<br />
-              Plataforma de cálculo técnico profesional · Buenos Aires, Argentina
+              Plataforma de cálculo técnico profesional · Río Negro, Argentina
             </div>
           </div>
           <div className="footer-links">
