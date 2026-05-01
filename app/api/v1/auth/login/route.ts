@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import * as crypto from 'crypto';
+import { rateLimit } from '@/lib/rate-limit';
 
 function hashPassword(password: string): string {
   return crypto
@@ -20,6 +21,10 @@ function generarToken(payload: object): string {
 }
 
 export async function POST(req: Request) {
+  const ip = req.headers.get('x-forwarded-for') ?? req.headers.get('x-real-ip') ?? 'unknown';
+  const limited = rateLimit(`login:${ip}`, 10, 60_000);
+  if (limited) return limited;
+
   try {
     const body = await req.json();
 

@@ -1,22 +1,29 @@
-const requestCounts: Record<string, { count: number; resetTime: number }> = {};
+import { NextResponse } from 'next/server';
 
-export function checkRateLimit(
+type Entry = { count: number; resetTime: number };
+const store = new Map<string, Entry>();
+
+export function rateLimit(
   key: string,
-  maxRequests: number = 100,
-  windowMs: number = 60000
-): boolean {
+  maxRequests = 20,
+  windowMs = 60_000
+): NextResponse | null {
   const now = Date.now();
-  const record = requestCounts[key];
+  const entry = store.get(key);
 
-  if (!record || now > record.resetTime) {
-    requestCounts[key] = { count: 1, resetTime: now + windowMs };
-    return true;
+  if (!entry || now > entry.resetTime) {
+    store.set(key, { count: 1, resetTime: now + windowMs });
+    return null;
   }
 
-  if (record.count >= maxRequests) {
-    return false;
+  if (entry.count >= maxRequests) {
+    const retryAfter = Math.ceil((entry.resetTime - now) / 1000);
+    return NextResponse.json(
+      { error: 'Demasiadas solicitudes. Intentá más tarde.' },
+      { status: 429, headers: { 'Retry-After': String(retryAfter) } }
+    );
   }
 
-  record.count++;
-  return true;
+  entry.count++;
+  return null;
 }

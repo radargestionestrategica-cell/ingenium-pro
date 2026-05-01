@@ -1,12 +1,17 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import * as crypto from 'crypto';
+import { rateLimit } from '@/lib/rate-limit';
 
 function hashPassword(p: string): string {
   return crypto.createHash('sha256').update(p + 'ingenium_salt_2026').digest('hex');
 }
 
 export async function POST(req: Request) {
+  const ip = req.headers.get('x-forwarded-for') ?? req.headers.get('x-real-ip') ?? 'unknown';
+  const limited = rateLimit(`signup:${ip}`, 5, 60_000);
+  if (limited) return limited;
+
   try {
     const { email, password, nombre, empresa, pais } = await req.json();
     if (!email || !password || !nombre || !empresa) {
