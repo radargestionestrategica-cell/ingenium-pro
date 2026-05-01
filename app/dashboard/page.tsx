@@ -3,6 +3,7 @@ import { useState } from 'react';
 import AuthGuard from '@/components/AuthGuard';
 import { ResultadoProvider, useResultado } from '@/components/ResultadoContexto';
 import BotonesExportar from '@/components/BotonesExportar';
+import IAChat from '@/components/IAChat';
 import SelectorIdioma from '@/components/SelectorIdioma';
 import BienvenidaModal from '@/components/BienvenidaModal';
 import TerminosModal from '@/components/TerminosModal';
@@ -126,11 +127,15 @@ function Dashboard() {
             : <DashboardHome onSelectModulo={cambiarModulo} />
           }
 
-          {/* BARRA DE EXPORTAR — aparece automáticamente al calcular */}
+          {/* BARRA DE EXPORTAR + IA — aparecen automáticamente al calcular */}
           {datos && moduloActivo && (
             <div style={{ padding: '0 24px 24px' }}>
               <BotonesExportar
                 visible={true}
+                datos={datos}
+              />
+              <IAChat
+                key={`${datos.tipo}-${datos.moduloId ?? ''}-${Object.keys(datos.resultado).length}`}
                 datos={datos}
               />
             </div>
