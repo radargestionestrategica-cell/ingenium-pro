@@ -137,36 +137,79 @@ export default function BotonesExportar({ datos, visible }: Props) {
 
       let contenido = '';
 
-      if      (key.includes('MAOP') || key.includes('PETROLEO') || key.includes('TUBERIA'))
-        contenido = mod.exportarDXFTuberias(p);
-      else if (key.includes('HARDY'))
-        contenido = mod.exportarDXFHardyCross(p);
-      else if (key === 'DW' || key.includes('HIDRAULICA'))
-        contenido = mod.exportarDXFHidraulica(p);
-      else if (key === 'WH' || key.includes('JOUKOWSKY') || key.includes('ARIETE'))
-        contenido = mod.exportarDXFGolpeAriete(p);
-      else if (key.includes('GEOTECNIA') || key === 'CP' || key === 'ET')
-        contenido = mod.exportarDXFGeotecnia(p);
-      else if (key.includes('CANERIAS') || key.includes('CANERIA') || key.includes('ESP') || key.includes('HOOP'))
-        contenido = mod.exportarDXFCanerias(p);
-      else if (key.includes('MMO'))
-        contenido = mod.exportarDXFMMO(p);
-      else if (key.includes('SOLDADURA') || key.includes('SEL') || key.includes('HI') || key.includes('FIL'))
-        contenido = mod.exportarDXFSoldadura(p);
-      else if (key.includes('ELECTRICIDAD') || key.includes('CABLE') || key.includes('TRAFO'))
-        contenido = mod.exportarDXFElectricidad(p);
-      else if (key.includes('VALVULA') || key.includes('BRIDA') || key.includes('CV'))
-        contenido = mod.exportarDXFValvulas(p);
-      else if (key.includes('TERMICA') || key === 'DIL' || key.includes('DILATACION'))
-        contenido = mod.exportarDXFDilatacion(p);
-      else if (key.includes('INTEGRIDAD'))
-        contenido = mod.exportarDXFIntegridad(p);
-      else if (key.includes('REPRESAS') || key.includes('VERTEDERO') || key.includes('FILTRACION'))
-        contenido = mod.exportarDXFHidrologia(p);
-      else if (key.includes('FATIGA'))
-        contenido = mod.exportarDXFFatiga(p);
-      else if (key.includes('TALUD'))
-        contenido = mod.exportarDXFTaludes(p);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      type DXFFn = (p: any) => string;
+      const DXF_MAP: Record<string, DXFFn> = {
+        // Petróleo
+        MAOP:                        mod.exportarDXFTuberias,
+        // Perforación
+        PERFORACION:                 mod.exportarDXFTuberias,
+        // Hidráulica
+        DARCY_WEISBACH:              mod.exportarDXFHidraulica,
+        GOLPE_ARIETE:                mod.exportarDXFGolpeAriete,
+        // Cañerías
+        CANERIAS_ESPESOR:            mod.exportarDXFCanerias,
+        CANERIAS_HOOP:               mod.exportarDXFCanerias,
+        CANERIAS_ARIETE:             mod.exportarDXFCanerias,
+        CANERIAS_CIERRE:             mod.exportarDXFCanerias,
+        CANERIAS_REMANENTE:          mod.exportarDXFCanerias,
+        // Electricidad
+        ELECTRICIDAD_CABLE:          mod.exportarDXFElectricidad,
+        ELECTRICIDAD_CAIDA_TENSION:  mod.exportarDXFElectricidad,
+        ELECTRICIDAD_CORTOCIRCUITO:  mod.exportarDXFElectricidad,
+        ELECTRICIDAD_FACTOR_POTENCIA:mod.exportarDXFElectricidad,
+        ELECTRICIDAD_MOTOR:          mod.exportarDXFElectricidad,
+        ELECTRICIDAD_ILUMINACION:    mod.exportarDXFElectricidad,
+        ELECTRICIDAD_AREA_PELIGROSA: mod.exportarDXFElectricidad,
+        ELECTRICIDAD_TRANSFORMADOR:  mod.exportarDXFElectricidad,
+        // Geotecnia
+        CAPACIDAD_PORTANTE:          mod.exportarDXFGeotecnia,
+        ESTABILIDAD_TALUD:           mod.exportarDXFTaludes,
+        // Soldadura
+        SELECTOR_SOLDADURA:          mod.exportarDXFSoldadura,
+        HEAT_INPUT:                  mod.exportarDXFSoldadura,
+        FILETE_SOLDADURA:            mod.exportarDXFSoldadura,
+        CONSUMO_ELECTRODOS:          mod.exportarDXFSoldadura,
+        PRECALENTAMIENTO:            mod.exportarDXFSoldadura,
+        // MMO
+        HORMIGON_MMO:                mod.exportarDXFMMO,
+        HIERRO_MMO:                  mod.exportarDXFMMO,
+        MAMPOSTERIA_MMO:             mod.exportarDXFMMO,
+        LOSA_MMO:                    mod.exportarDXFMMO,
+        REVOQUE_MMO:                 mod.exportarDXFMMO,
+        CERAMICO_MMO:                mod.exportarDXFMMO,
+        CONTRAPISO_MMO:              mod.exportarDXFMMO,
+        ZAPATA_MMO:                  mod.exportarDXFMMO,
+        EXCAVACION_MMO:              mod.exportarDXFMMO,
+        MORTERO_MMO:                 mod.exportarDXFMMO,
+        RENDIMIENTO_MMO:             mod.exportarDXFMMO,
+        // Válvulas
+        VALVULAS_CLASE_B16_34:       mod.exportarDXFValvulas,
+        VALVULAS_MATERIAL_NACE:      mod.exportarDXFValvulas,
+        VALVULAS_BRIDA_B16_5:        mod.exportarDXFValvulas,
+        VALVULAS_COEFICIENTE_CV:     mod.exportarDXFValvulas,
+        // Civil
+        VIGA_ACERO_AISC:             mod.exportarDXFCanerias,
+        COLUMNA_HORMIGON_ACI:        mod.exportarDXFCanerias,
+        // Vialidad
+        PAVIMENTO_AASHTO93:          mod.exportarDXFGeotecnia,
+        DRENAJE_VIAL_HEC22:          mod.exportarDXFHidrologia,
+        // Represas
+        VERTEDERO_FRANCIS:           mod.exportarDXFHidrologia,
+        FILTRACION_DARCY:            mod.exportarDXFHidrologia,
+        // Minería
+        RMR_BIENIAWSKI:              mod.exportarDXFGeotecnia,
+        VENTILACION_SUBTERRANEA:     mod.exportarDXFMMO,
+        // Térmica
+        DILATACION_TERMICA:          mod.exportarDXFDilatacion,
+        INTERCAMBIADOR_LMTD:         mod.exportarDXFDilatacion,
+        // Arquitectura
+        ARQUITECTURA_VIENTO:         mod.exportarDXFGeotecnia,
+        ARQUITECTURA_SISMO:          mod.exportarDXFGeotecnia,
+        ARQUITECTURA_ILUMINACION:    mod.exportarDXFElectricidad,
+      };
+      const fn = DXF_MAP[key];
+      contenido = fn ? fn(p) : '';
 
       if (contenido) {
         mod.descargarDXF(contenido, `INGENIUM_PRO_${datos.tipo}_${Date.now()}.dxf`);
