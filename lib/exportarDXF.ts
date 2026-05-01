@@ -1507,4 +1507,138 @@ export interface ParamsTuberias {
     ].join('\n');
 
     return [header, ...ents, '  0','ENDSEC','  0','EOF'].join('\n');
-  } 
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  //  MÓDULO VÁLVULAS — BOLA (Ball Valve) API 6D / ASME B16.10
+  //  Capas: CUERPO · ESFERA · BRIDA · ANOTACIONES
+  //  Face-to-face per ASME B16.10 Long Pattern (bola)
+  //  Plano esquemático de referencia — NO dimensional
+  // ═══════════════════════════════════════════════════════════
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  export function exportarDXFBola(p: Record<string, any>): string {
+    const nps      = String(p['NPS (pulg)']          ?? '');
+    const clase    = String(p['Clase de presion']     ?? '');
+    const OD_mm    = Number(p['OD (mm)']              ?? 0);
+    const BC_mm    = Number(p['BC (mm)']              ?? 0);
+    const bore_mm  = Number(p['Bore (mm)']            ?? 0);
+    const n_pern   = Number(p['Numero de pernos']     ?? 0);
+    const proyecto = String(p['Proyecto']             ?? '');
+    const f2f_raw  = p['F2F ASME B16.10 (mm)'];
+    const fecha    = new Date().toLocaleDateString('es-AR');
+
+    const f2f_num = (f2f_raw != null && f2f_raw !== 'Consultar fabricante') ? Number(f2f_raw) : 0;
+    if (!f2f_num || f2f_num <= 0) return '';
+
+    const F2F      = f2f_num;
+    const ref_h    = bore_mm > 0 ? bore_mm : OD_mm > 0 ? OD_mm * 0.5 : F2F * 0.4;
+    const body_h   = Math.min(Math.max(ref_h * 2.5, OD_mm > 0 ? OD_mm * 1.0 : 0), F2F * 0.65);
+    const flange_t = Math.max(OD_mm > 0 ? OD_mm * 0.09 : 10, 10);
+
+    const bx0 = -F2F / 2;
+    const bx1 =  F2F / 2;
+    const by0 = -body_h / 2;
+    const by1 =  body_h / 2;
+    const fy0 = -(OD_mm > 0 ? OD_mm / 2 : body_h / 2);
+    const fy1 =  (OD_mm > 0 ? OD_mm / 2 : body_h / 2);
+
+    const L = (x1: number, y1: number, x2: number, y2: number, layer: string, color: number) =>
+      ['  0','LINE','  8',layer,' 62',String(color),
+       ' 10',x1.toFixed(3),' 20',y1.toFixed(3),' 30','0.000',
+       ' 11',x2.toFixed(3),' 21',y2.toFixed(3),' 31','0.000'].join('\n');
+
+    const C = (cx: number, cy: number, r: number, layer: string, color: number) =>
+      ['  0','CIRCLE','  8',layer,' 62',String(color),
+       ' 10',cx.toFixed(3),' 20',cy.toFixed(3),' 30','0.000',
+       ' 40',r.toFixed(3)].join('\n');
+
+    const T = (x: number, y: number, h: number, txt: string, layer: string, color: number) =>
+      ['  0','TEXT','  8',layer,' 62',String(color),
+       ' 10',x.toFixed(3),' 20',y.toFixed(3),' 30','0.000',
+       ' 40',h.toFixed(3),'  1',txt,' 50','0.000'].join('\n');
+
+    const ents: string[] = [];
+
+    // ── CUERPO — rectángulo cuerpo válvula + paso bore — blanco 7 ──
+    ents.push(L(bx0, by0, bx1, by0, 'CUERPO', 7));
+    ents.push(L(bx1, by0, bx1, by1, 'CUERPO', 7));
+    ents.push(L(bx1, by1, bx0, by1, 'CUERPO', 7));
+    ents.push(L(bx0, by1, bx0, by0, 'CUERPO', 7));
+    if (bore_mm > 0) {
+      const hb = bore_mm / 2;
+      ents.push(L(bx0 - 22,  hb, bx1 + 22,  hb, 'CUERPO', 7));
+      ents.push(L(bx0 - 22, -hb, bx1 + 22, -hb, 'CUERPO', 7));
+    }
+
+    // ── ESFERA — bola de cierre full bore + tallo 1/4 vuelta — cyan 4 ──
+    if (bore_mm > 0) {
+      const ball_r   = bore_mm / 2;
+      const stem_top = by1 + Math.max(22, body_h * 0.30);
+      ents.push(C(0, 0, ball_r, 'ESFERA', 4));
+      ents.push(L(0, ball_r, 0, stem_top, 'ESFERA', 4));
+      ents.push(L(-12, stem_top,     12, stem_top,     'ESFERA', 4));
+      ents.push(L( -9, stem_top + 6,  9, stem_top + 6, 'ESFERA', 4));
+    }
+
+    // ── BRIDA — indicación B16.5 en cada extremo — verde 3 ──
+    ents.push(L(bx0 - flange_t, fy0, bx0,            fy0, 'BRIDA', 3));
+    ents.push(L(bx0,            fy0, bx0,            fy1, 'BRIDA', 3));
+    ents.push(L(bx0,            fy1, bx0 - flange_t, fy1, 'BRIDA', 3));
+    ents.push(L(bx0 - flange_t, fy1, bx0 - flange_t, fy0, 'BRIDA', 3));
+    ents.push(L(bx1,            fy0, bx1 + flange_t, fy0, 'BRIDA', 3));
+    ents.push(L(bx1 + flange_t, fy0, bx1 + flange_t, fy1, 'BRIDA', 3));
+    ents.push(L(bx1 + flange_t, fy1, bx1,            fy1, 'BRIDA', 3));
+    ents.push(L(bx1,            fy1, bx1,            fy0, 'BRIDA', 3));
+
+    // ── ANOTACIONES — amarillo 2 / rojo 1 advertencias ──
+    const clearance = Math.max(OD_mm > 0 ? OD_mm / 2 : body_h / 2, body_h / 2);
+    const stem_ext  = bore_mm > 0 ? Math.max(22, body_h * 0.30) + 12 : 30;
+    const ay_top    = clearance + stem_ext + 20;
+    const ay_bot    = -(clearance + 14);
+
+    ents.push(T(bx0 - flange_t, ay_top + 40, 6,
+      'INGENIUM PRO v8.1 - VALVULA DE BOLA - PLANO ESQUEMATICO', 'ANOTACIONES', 2));
+    ents.push(T(bx0 - flange_t, ay_top + 28, 5,
+      `NPS ${nps}" - Class ${clase} - Face-to-Face: ${F2F.toFixed(0)} mm (ASME B16.10 Long Pattern, API 6D)`, 'ANOTACIONES', 2));
+
+    const bore_txt = bore_mm > 0
+      ? `Bore: ${bore_mm.toFixed(1)} mm - OD brida: ${OD_mm.toFixed(1)} mm - BC: ${BC_mm.toFixed(1)} mm - N pernos: ${n_pern} - Bola full bore ASME B16.34/API 6D`
+      : `OD brida: ${OD_mm.toFixed(1)} mm - BC: ${BC_mm.toFixed(1)} mm - N pernos: ${n_pern} - Bore: consultar fabricante`;
+    ents.push(T(bx0 - flange_t, ay_top + 16, 4.5, bore_txt, 'ANOTACIONES', 2));
+    ents.push(T(bx0 - flange_t, ay_top + 4, 4,
+      `Proyecto: ${proyecto || 'Sin nombre'} - Fecha: ${fecha} - Normativa: ASME B16.34 / B16.10 / B16.5 / API 6D`, 'ANOTACIONES', 2));
+
+    // Cota F2F
+    const yd = by0 - 12;
+    ents.push(L(bx0 - flange_t, by0 - 4, bx0 - flange_t, by0 - 18, 'ANOTACIONES', 2));
+    ents.push(L(bx1 + flange_t, by0 - 4, bx1 + flange_t, by0 - 18, 'ANOTACIONES', 2));
+    ents.push(L(bx0 - flange_t, yd,      bx1 + flange_t, yd,       'ANOTACIONES', 2));
+    ents.push(T(-F2F / 4, yd - 8, 3.5, `F-to-F = ${F2F.toFixed(0)} mm`, 'ANOTACIONES', 2));
+
+    // Advertencias obligatorias
+    ents.push(T(bx0 - flange_t, ay_bot - 2, 4.5,
+      '* Plano esquematico - requiere validacion de fabricante antes de mecanizar.', 'ANOTACIONES', 1));
+    ents.push(T(bx0 - flange_t, ay_bot - 14, 4,
+      `* Alto de cuerpo (${body_h.toFixed(0)} mm) ESTIMADO - no dimensional. F-to-F segun ASME B16.10 Long Pattern.`, 'ANOTACIONES', 1));
+    ents.push(T(bx0 - flange_t, ay_bot - 26, 4,
+      '* Verificar todas las dimensiones con el fabricante. Plano NO apto para fabricacion directa.', 'ANOTACIONES', 1));
+
+    // Cabecera AC1015 — 4 capas: CUERPO, ESFERA, BRIDA, ANOTACIONES
+    const header = [
+      '  0','SECTION','  2','HEADER',
+      '  9','$ACADVER','  1','AC1015',
+      '  9','$INSUNITS',' 70','4',
+      '  0','ENDSEC',
+      '  0','SECTION','  2','TABLES',
+      '  0','TABLE','  2','LAYER',' 70','4',
+      '  0','LAYER','  2','CUERPO',      ' 70','0',' 62','7','  6','CONTINUOUS',
+      '  0','LAYER','  2','ESFERA',      ' 70','0',' 62','4','  6','CONTINUOUS',
+      '  0','LAYER','  2','BRIDA',       ' 70','0',' 62','3','  6','CONTINUOUS',
+      '  0','LAYER','  2','ANOTACIONES', ' 70','0',' 62','2','  6','CONTINUOUS',
+      '  0','ENDTAB','  0','ENDSEC',
+      '  0','SECTION','  2','ENTITIES',
+    ].join('\n');
+
+    return [header, ...ents, '  0','ENDSEC','  0','EOF'].join('\n');
+  }

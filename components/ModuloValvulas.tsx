@@ -119,6 +119,43 @@ const NPS_POR_CLASE: Record<string, string[]> = {
 // Clases disponibles
 const CLASES = ['150','300','600','900'];
 
+// ─── ASME B16.10 Long Pattern — Válvula BOLA (Ball) API 6D ─────────
+// Valores verificados: ASME B16.34-2017 + ASME B16.10-2018 + API 6D
+// SOLO para plano esquemático DXF — verificar con fabricante
+const F2F_BOLA: Record<string, Record<string, number>> = {
+  '150': { '0.5':108,'0.75':117,'1':127,'1.25':140,'1.5':165,'2':178,'2.5':190,'3':203,'4':229,'6':394,'8':457,'10':533,'12':610 },
+  '300': { '0.5':140,'0.75':152,'1':165,'1.25':178,'1.5':190,'2':216,'2.5':241,'3':282,'4':305,'6':403,'8':502,'10':568,'12':648 },
+  '600': { '0.5':165,'0.75':190,'1':216,'1.25':229,'1.5':241,'2':292,'2.5':330,'3':356,'4':432,'6':559,'8':660,'10':787,'12':838 },
+};
+
+type TipoDisenio = 'compuerta' | 'globo' | 'bola';
+
+const CLASES_DISENO: Record<TipoDisenio, string[]> = {
+  compuerta: ['150','300','600','900'],
+  globo:     ['150','300','600','900'],
+  bola:      ['150','300','600'],
+};
+
+const NPS_DISENO: Record<TipoDisenio, Record<string, string[]>> = {
+  compuerta: {
+    '150': ['0.5','0.75','1','1.5','2','2.5','3','4','6','8','10','12'],
+    '300': ['0.5','0.75','1','1.5','2','2.5','3','4','6','8','10','12'],
+    '600': ['0.5','0.75','1','1.25','1.5','2','2.5','3','4','6','8','10','12'],
+    '900': ['2','2.5','3','4','6','8','10','12'],
+  },
+  globo: {
+    '150': ['0.5','0.75','1','1.5','2','2.5','3','4','6','8','10','12'],
+    '300': ['0.5','0.75','1','1.5','2','2.5','3','4','6','8','10','12'],
+    '600': ['0.5','0.75','1','1.5','2','2.5','3','4','6','8','10','12'],
+    '900': ['2','2.5','3','4','6','8','10','12'],
+  },
+  bola: {
+    '150': ['0.5','0.75','1','1.25','1.5','2','2.5','3','4','6','8','10','12'],
+    '300': ['0.5','0.75','1','1.25','1.5','2','2.5','3','4','6','8','10','12'],
+    '600': ['0.5','0.75','1','1.25','1.5','2','2.5','3','4','6','8','10','12'],
+  },
+};
+
 // Tipos de válvula por aplicación — datos reales de industria
 const TIPOS_VALVULA = [
   { tipo: 'Compuerta (Gate)', norma: 'API 600 / ASME B16.34', apertura: 'Abierto/cerrado total', dP: 'Muy bajo (<0.5 bar)', throttling: false, industrias: ['Petróleo','Gas','Agua'], usos: 'Aislamiento en líneas de transmisión. NO usar para throttling — erosiona el asiento.' },
@@ -129,11 +166,12 @@ const TIPOS_VALVULA = [
   { tipo: 'Plug / Tapón',    norma: 'ASME B16.34 / API 6D', apertura: '1/4 vuelta', dP: 'Bajo', throttling: false, industrias: ['Slurry','Minería','Petróleo'], usos: 'Ideal para fluidos con sólidos, slurry y fluidos viscosos. Lubricated o non-lubricated.' },
 ];
 
-type Sub = 'clase' | 'material' | 'brida' | 'cv' | 'tipo';
+type Sub = 'clase' | 'material' | 'brida' | 'diseno' | 'cv' | 'tipo';
 const SUBS: { id: Sub; label: string; icon: string }[] = [
   { id: 'clase',    label: 'Clase B16.34', icon: '🏷️' },
   { id: 'material', label: 'Material',     icon: '🔩' },
   { id: 'brida',    label: 'Brida B16.5',  icon: '⭕' },
+  { id: 'diseno',   label: 'Diseño',       icon: '📐' },
   { id: 'cv',       label: 'Coef. Cv',     icon: '💨' },
   { id: 'tipo',     label: 'Tipo válvula', icon: '🔧' },
 ];
@@ -466,7 +504,21 @@ export default function ModuloValvulas() {
   const [datosClase, setDatosClase] = useState<DatosExportar | null>(null);
   const [datosMaterial, setDatosMaterial] = useState<DatosExportar | null>(null);
   const [datosBrida, setDatosBrida] = useState<DatosExportar | null>(null);
+  const [datosDis, setDatosDis] = useState<DatosExportar | null>(null);
   const [datosCv, setDatosCv] = useState<DatosExportar | null>(null);
+
+  // ── Estado: Diseño de válvula ─────────────────────────────────
+  const [disTipo, setDisTipo] = useState<TipoDisenio>('compuerta');
+  const [disClase, setDisClase] = useState('300');
+  const [disNPS, setDisNPS] = useState('4');
+  const [disProyecto, setDisProyecto] = useState('');
+  const [resDis, setResDis] = useState<null|{
+    f2f_mm: number | null;
+    fd: FlangeData | null;
+    nps: string;
+    clase: string;
+    tipo: TipoDisenio;
+  }>(null);
 
   // ── CÁLCULO 1: CLASE REQUERIDA (B16.34) ──────────────────────
   const calcClase = () => {
@@ -639,6 +691,47 @@ export default function ModuloValvulas() {
   // DXF se genera via BotonesExportar → exportarDXFBridaB165 en lib/exportarDXF.ts
   void _dxfPlaceholder; // evita advertencia de no-uso en dev
 
+  // ── CÁLCULO: DISEÑO DE VÁLVULA (F2F + B16.5) ─────────────────
+  const calcDisenio = () => {
+    R(); setResDis(null);
+    const fd = B165[disClase]?.[disNPS] ?? null;
+    let f2f_mm: number | null = null;
+    if (disTipo === 'compuerta') f2f_mm = F2F_B1610[disClase]?.[disNPS] ?? null;
+    else if (disTipo === 'bola') f2f_mm = F2F_BOLA[disClase]?.[disNPS] ?? null;
+    // globo: f2f_mm = null (no hay tabla embebida verificada)
+    setResDis({ f2f_mm, fd, nps: disNPS, clase: disClase, tipo: disTipo });
+
+    const tipoKey = disTipo === 'compuerta' ? 'VALVULAS_BRIDA_B16_5'
+                  : disTipo === 'bola'       ? 'VALVULAS_DISENO_BOLA'
+                  :                            'VALVULAS_DISENO_GLOBO';
+    const normativa = disTipo === 'bola'
+      ? 'ASME B16.34-2017 + ASME B16.10-2018 + API 6D'
+      : disTipo === 'compuerta'
+      ? 'ASME B16.34-2017 + ASME B16.10-2018 + API 600'
+      : 'ASME B16.34-2017 + ASME B16.10-2018';
+
+    const payload: DatosExportar = {
+      tipo: tipoKey,
+      normativa,
+      parametros: {
+        'NPS (pulg)': disNPS,
+        'Clase de presion': disClase,
+        'Tipo valvula': disTipo,
+        'Proyecto': disProyecto || 'Sin nombre',
+        'F2F ASME B16.10 (mm)': f2f_mm ?? 'Consultar fabricante',
+      },
+      resultado: {
+        'F2F Long Pattern (mm)': f2f_mm ?? 'Consultar fabricante',
+        'OD (mm)':   fd ? Math.round(fd.OD   * 25.4 * 10) / 10 : 0,
+        'BC (mm)':   fd ? Math.round(fd.BC   * 25.4 * 10) / 10 : 0,
+        'Bore (mm)': fd ? Math.round(fd.bore * 25.4 * 10) / 10 : 0,
+        'Numero de pernos': fd ? fd.n : 0,
+      },
+    };
+    setDatosDis(payload);
+    publicarResultado(payload);
+  };
+
   // ── CÁLCULO 4: COEFICIENTE Cv (ISA 75.01.01) ─────────────────
   // Para líquidos: Cv = Q(GPM) × √(SG / ΔP_psi)
   // Kv = Cv / 1.1561 (conversión ISA verificada)
@@ -692,7 +785,7 @@ export default function ModuloValvulas() {
 
   const npsDisponibles = NPS_POR_CLASE[brClase] || [];
 
-  const datosActivo = sub === 'clase' ? datosClase : sub === 'material' ? datosMaterial : sub === 'brida' ? datosBrida : datosCv;
+  const datosActivo = sub === 'clase' ? datosClase : sub === 'material' ? datosMaterial : sub === 'brida' ? datosBrida : sub === 'diseno' ? datosDis : datosCv;
 
   return (
     <div style={{ padding: 24, color: '#f1f5f9', fontFamily: 'Inter,sans-serif', maxWidth: 960, margin: '0 auto' }}>
@@ -947,6 +1040,142 @@ export default function ModuloValvulas() {
 
                 {f2f && <Info t="DXF: 4 capas — CUERPO (cuerpo válvula F2F × alto estimado), BORE (diámetro interior), BRIDA (indicación B16.5), ANOTACIONES (NPS, Clase, F2F, normativa, fecha, proyecto). Plano esquemático de referencia — requiere validación de fabricante antes de mecanizar." />}
                 {!f2f && <Warn t="⚠️ Face-to-face no disponible en tabla ASME B16.10 embebida — DXF de cuerpo de válvula no disponible. Consultar fabricante." />}
+              </ResBox>
+            );
+          })()}
+        </div>
+      )}
+
+      {/* ══ DISEÑO DE VÁLVULA ══ */}
+      {sub === 'diseno' && (
+        <div>
+          <Tit t="Diseño de válvula — Face-to-Face ASME B16.10 + DXF esquemático" />
+          <Info t="Valores F2F exclusivamente de tablas verificadas. NUNCA interpolados ni calculados. Si la combinación no está en tabla → Consultar fabricante." />
+
+          {/* Selector tipo válvula */}
+          <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+            {([
+              { id: 'compuerta' as TipoDisenio, label: 'Compuerta (Gate)', icon: '🔲', norma: 'API 600 / ASME B16.34' },
+              { id: 'globo'     as TipoDisenio, label: 'Globo (Globe)',    icon: '🔵', norma: 'ASME B16.34' },
+              { id: 'bola'      as TipoDisenio, label: 'Bola (Ball)',      icon: '⚽', norma: 'API 6D / ASME B16.34' },
+            ]).map(t => (
+              <button key={t.id} onClick={() => {
+                setDisTipo(t.id);
+                const firstClase = CLASES_DISENO[t.id][0];
+                setDisClase(firstClase);
+                const npsList = NPS_DISENO[t.id][firstClase] || [];
+                setDisNPS(npsList[Math.min(4, npsList.length - 1)] || npsList[0] || '');
+                setResDis(null);
+              }}
+                style={{ flex: 1, padding: '12px 8px', border: `1px solid ${disTipo === t.id ? COLOR : 'rgba(13,148,136,0.2)'}`, borderRadius: 10, cursor: 'pointer', fontSize: 12, fontWeight: 700, background: disTipo === t.id ? `linear-gradient(135deg,${COLOR},#0f766e)` : '#0a0f1e', color: disTipo === t.id ? '#fff' : '#64748b', textAlign: 'center' as const }}
+              >
+                <div style={{ fontSize: 20, marginBottom: 4 }}>{t.icon}</div>
+                <div>{t.label}</div>
+                <div style={{ fontSize: 9, fontWeight: 400, opacity: 0.7, marginTop: 2 }}>{t.norma}</div>
+              </button>
+            ))}
+          </div>
+
+          <div style={g3}>
+            <div><label style={lbl}>Clase de presión</label>
+              <select value={disClase} onChange={e => {
+                const cl = e.target.value; setDisClase(cl);
+                const npsList = NPS_DISENO[disTipo][cl] || [];
+                setDisNPS(npsList[Math.min(4, npsList.length - 1)] || npsList[0] || '');
+                setResDis(null);
+              }} style={inp}>
+                {CLASES_DISENO[disTipo].map(c => <option key={c} value={c} style={{ background: '#0a0f1e' }}>Class {c}</option>)}
+              </select>
+            </div>
+            <div><label style={lbl}>NPS — Diámetro nominal (pulgadas)</label>
+              <select value={disNPS} onChange={e => { setDisNPS(e.target.value); setResDis(null); }} style={inp}>
+                {(NPS_DISENO[disTipo][disClase] || []).map(n => <option key={n} value={n} style={{ background: '#0a0f1e' }}>NPS {n}"</option>)}
+              </select>
+            </div>
+            <div><label style={lbl}>Nombre proyecto (para DXF)</label>
+              <input value={disProyecto} onChange={e => setDisProyecto(e.target.value)} style={inp} placeholder="Ej: Planta GNL Norte" />
+            </div>
+          </div>
+
+          <Btn onClick={calcDisenio} text={
+            disTipo === 'compuerta' ? 'Consultar F2F — Compuerta ASME B16.10 Tabla 1' :
+            disTipo === 'globo'     ? 'Consultar dimensiones — Globo ASME B16.34' :
+                                     'Consultar F2F — Bola API 6D / ASME B16.10 Long Pattern'
+          } />
+
+          {resDis && (() => {
+            const { f2f_mm, fd, nps, clase, tipo } = resDis;
+            const tipoLabel = tipo === 'compuerta' ? 'Compuerta (Gate)' : tipo === 'globo' ? 'Globo (Globe)' : 'Bola (Ball)';
+            const normaLabel = tipo === 'bola' ? 'ASME B16.34 + B16.10 Long Pattern + API 6D'
+                             : tipo === 'compuerta' ? 'ASME B16.34 + B16.10 Tabla 1 + API 600'
+                             : 'ASME B16.34 + B16.10';
+            const OD_mm   = fd ? Math.round(fd.OD   * 25.4 * 10) / 10 : null;
+            const BC_mm   = fd ? Math.round(fd.BC   * 25.4 * 10) / 10 : null;
+            const bore_mm = fd ? Math.round(fd.bore * 25.4 * 10) / 10 : null;
+            const db_mm   = fd ? Math.round(fd.db   * 25.4 * 10) / 10 : null;
+            const bh_mm   = fd ? Math.round((fd.db + 0.125) * 25.4 * 10) / 10 : null;
+            const capaLabel = tipo === 'bola' ? 'ESFERA' : tipo === 'compuerta' ? 'CUÑA' : '—';
+
+            return (
+              <ResBox>
+                <RLbl t={`${tipoLabel} — NPS ${nps}" Class ${clase} — ${normaLabel}`} />
+
+                {/* F2F principal */}
+                <div style={{ background: '#0a0f1e', borderRadius: 10, padding: 16, marginBottom: 14 }}>
+                  <div style={{ fontSize: 9, color: '#475569', textTransform: 'uppercase' as const, marginBottom: 6, letterSpacing: 0.4 }}>
+                    Face-to-Face ASME B16.10 {tipo === 'bola' ? '— Long Pattern' : tipo === 'compuerta' ? '— Tabla 1 (Raised Face)' : ''}
+                  </div>
+                  {f2f_mm ? (
+                    <div style={{ fontSize: 22, fontWeight: 800, color: COLOR }}>
+                      {f2f_mm} mm
+                      <span style={{ fontSize: 13, color: '#475569', fontWeight: 400, marginLeft: 12 }}>({(f2f_mm / 25.4).toFixed(2)}")</span>
+                    </div>
+                  ) : (
+                    <div style={{ fontSize: 14, color: '#f59e0b', fontWeight: 700 }}>
+                      Consultar fabricante — dato no disponible en tabla estándar
+                    </div>
+                  )}
+                  {!f2f_mm && tipo === 'globo' && (
+                    <div style={{ fontSize: 11, color: '#475569', marginTop: 6 }}>
+                      F2F para Globo varía por modelo (short/long pattern). Consultar ASME B16.10 con el fabricante.
+                    </div>
+                  )}
+                  {f2f_mm && tipo === 'bola' && <div style={{ fontSize: 11, color: '#475569', marginTop: 6 }}>Long Pattern · Full Bore · API 6D · DXF disponible con capa ESFERA.</div>}
+                  {f2f_mm && tipo === 'compuerta' && <div style={{ fontSize: 11, color: '#475569', marginTop: 6 }}>Raised face · DXF disponible con capa CUÑA (compuerta).</div>}
+                </div>
+
+                {/* Brida B16.5 */}
+                {fd ? (
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10, marginBottom: 14 }}>
+                    {([
+                      { l: 'OD exterior brida', v: `${OD_mm} mm`, s: `${fd.OD}" pulgadas` },
+                      { l: 'Círculo de pernos BC', v: `${BC_mm} mm`, s: `${fd.BC}" pulgadas` },
+                      { l: 'Bore interior', v: `${bore_mm} mm`, s: `${fd.bore}" pulgadas` },
+                      { l: 'N° de pernos', v: `${fd.n}`, s: 'equiespaciados' },
+                      { l: 'Diámetro perno', v: `${db_mm} mm`, s: `${fd.db}"` },
+                      { l: 'Agujero perno (db+1/8")', v: `${bh_mm} mm`, s: 'ASME B16.5' },
+                    ] as const).map((r, i) => (
+                      <div key={i} style={{ background: '#0a0f1e', borderRadius: 10, padding: 12 }}>
+                        <div style={{ fontSize: 9, color: '#475569', textTransform: 'uppercase' as const, marginBottom: 3 }}>{r.l}</div>
+                        <div style={{ fontSize: 14, fontWeight: 800, color: COLOR }}>{r.v}</div>
+                        <div style={{ fontSize: 10, color: '#334155' }}>{r.s}</div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div style={{ background: '#0a0f1e', borderRadius: 10, padding: 14, marginBottom: 14 }}>
+                    <div style={{ fontSize: 13, color: '#f59e0b', fontWeight: 700, marginBottom: 4 }}>
+                      Dimensiones de brida ASME B16.5: Consultar fabricante
+                    </div>
+                    <div style={{ fontSize: 11, color: '#475569' }}>
+                      NPS {nps}" Class {clase} no está en tabla B16.5 embebida. Usar tab <strong style={{ color: '#f1f5f9' }}>Brida B16.5</strong> o consultar el estándar vigente.
+                    </div>
+                  </div>
+                )}
+
+                {f2f_mm && <Info t={`DXF disponible: 4 capas (CUERPO · ${capaLabel} · BRIDA · ANOTACIONES). Plano esquemático — validar con fabricante antes de mecanizar.`} />}
+                {!f2f_mm && <Warn t="⚠️ F2F no disponible en tabla embebida — DXF no generado. Consultar fabricante." />}
+                <Warn t="⚠️ Plano esquemático de referencia — requiere validación de fabricante antes de mecanizar. Normativa: ASME B16.34 · B16.10 · B16.5 · API 6D." />
               </ResBox>
             );
           })()}
