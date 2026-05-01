@@ -128,12 +128,13 @@ const F2F_BOLA: Record<string, Record<string, number>> = {
   '600': { '0.5':165,'0.75':190,'1':216,'1.25':229,'1.5':241,'2':292,'2.5':330,'3':356,'4':432,'6':559,'8':660,'10':787,'12':838 },
 };
 
-type TipoDisenio = 'compuerta' | 'globo' | 'bola';
+type TipoDisenio = 'compuerta' | 'globo' | 'bola' | 'mariposa';
 
 const CLASES_DISENO: Record<TipoDisenio, string[]> = {
   compuerta: ['150','300','600','900'],
   globo:     ['150','300','600','900'],
   bola:      ['150','300','600'],
+  mariposa:  ['150','300'],
 };
 
 const NPS_DISENO: Record<TipoDisenio, Record<string, string[]>> = {
@@ -153,6 +154,10 @@ const NPS_DISENO: Record<TipoDisenio, Record<string, string[]>> = {
     '150': ['0.5','0.75','1','1.25','1.5','2','2.5','3','4','6','8','10','12'],
     '300': ['0.5','0.75','1','1.25','1.5','2','2.5','3','4','6','8','10','12'],
     '600': ['0.5','0.75','1','1.25','1.5','2','2.5','3','4','6','8','10','12'],
+  },
+  mariposa: {
+    '150': ['2','2.5','3','4','6','8','10','12'],
+    '300': ['2','2.5','3','4','6','8','10','12'],
   },
 };
 
@@ -512,6 +517,7 @@ export default function ModuloValvulas() {
   const [disClase, setDisClase] = useState('300');
   const [disNPS, setDisNPS] = useState('4');
   const [disProyecto, setDisProyecto] = useState('');
+  const [disEstilo, setDisEstilo] = useState('Wafer');
   const [resDis, setResDis] = useState<null|{
     f2f_mm: number | null;
     fd: FlangeData | null;
@@ -702,13 +708,13 @@ export default function ModuloValvulas() {
     setResDis({ f2f_mm, fd, nps: disNPS, clase: disClase, tipo: disTipo });
 
     const tipoKey = disTipo === 'compuerta' ? 'VALVULAS_BRIDA_B16_5'
-                  : disTipo === 'bola'       ? 'VALVULAS_DISENO_BOLA'
-                  :                            'VALVULAS_DISENO_GLOBO';
-    const normativa = disTipo === 'bola'
-      ? 'ASME B16.34-2017 + ASME B16.10-2018 + API 6D'
-      : disTipo === 'compuerta'
-      ? 'ASME B16.34-2017 + ASME B16.10-2018 + API 600'
-      : 'ASME B16.34-2017 + ASME B16.10-2018';
+                  : disTipo === 'bola'      ? 'VALVULAS_DISENO_BOLA'
+                  : disTipo === 'mariposa'  ? 'VALVULAS_DISENO_MARIPOSA'
+                  :                          'VALVULAS_DISENO_GLOBO';
+    const normativa = disTipo === 'bola'     ? 'ASME B16.34-2017 + ASME B16.10-2018 + API 6D'
+                    : disTipo === 'compuerta'? 'ASME B16.34-2017 + ASME B16.10-2018 + API 600'
+                    : disTipo === 'mariposa' ? 'API 609 / MSS SP-67 / ASME B16.34-2017'
+                    :                         'ASME B16.34-2017 + ASME B16.10-2018';
 
     const payload: DatosExportar = {
       tipo: tipoKey,
@@ -717,11 +723,13 @@ export default function ModuloValvulas() {
         'NPS (pulg)': disNPS,
         'Clase de presion': disClase,
         'Tipo valvula': disTipo,
+        ...(disTipo === 'mariposa' ? { 'Estilo': disEstilo } : {}),
         'Proyecto': disProyecto || 'Sin nombre',
         'F2F ASME B16.10 (mm)': f2f_mm ?? 'Consultar fabricante',
       },
       resultado: {
-        'F2F Long Pattern (mm)': f2f_mm ?? 'Consultar fabricante',
+        'F2F ASME B16.10 resultado (mm)': f2f_mm ?? 'Consultar fabricante',
+        ...(disTipo === 'mariposa' ? { 'Diametro disco (mm)': Math.round(parseFloat(disNPS) * 25.4 * 10) / 10 } : {}),
         'OD (mm)':   fd ? Math.round(fd.OD   * 25.4 * 10) / 10 : 0,
         'BC (mm)':   fd ? Math.round(fd.BC   * 25.4 * 10) / 10 : 0,
         'Bore (mm)': fd ? Math.round(fd.bore * 25.4 * 10) / 10 : 0,
@@ -1053,11 +1061,12 @@ export default function ModuloValvulas() {
           <Info t="Valores F2F exclusivamente de tablas verificadas. NUNCA interpolados ni calculados. Si la combinación no está en tabla → Consultar fabricante." />
 
           {/* Selector tipo válvula */}
-          <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+          <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' as const }}>
             {([
-              { id: 'compuerta' as TipoDisenio, label: 'Compuerta (Gate)', icon: '🔲', norma: 'API 600 / ASME B16.34' },
-              { id: 'globo'     as TipoDisenio, label: 'Globo (Globe)',    icon: '🔵', norma: 'ASME B16.34' },
-              { id: 'bola'      as TipoDisenio, label: 'Bola (Ball)',      icon: '⚽', norma: 'API 6D / ASME B16.34' },
+              { id: 'compuerta' as TipoDisenio, label: 'Compuerta (Gate)',    icon: '🔲', norma: 'API 600 / B16.34' },
+              { id: 'globo'     as TipoDisenio, label: 'Globo (Globe)',       icon: '🔵', norma: 'ASME B16.34' },
+              { id: 'bola'      as TipoDisenio, label: 'Bola (Ball)',         icon: '⚽', norma: 'API 6D / B16.34' },
+              { id: 'mariposa'  as TipoDisenio, label: 'Mariposa (Butterfly)',icon: '🦋', norma: 'API 609 / MSS SP-67' },
             ]).map(t => (
               <button key={t.id} onClick={() => {
                 setDisTipo(t.id);
@@ -1067,7 +1076,7 @@ export default function ModuloValvulas() {
                 setDisNPS(npsList[Math.min(4, npsList.length - 1)] || npsList[0] || '');
                 setResDis(null);
               }}
-                style={{ flex: 1, padding: '12px 8px', border: `1px solid ${disTipo === t.id ? COLOR : 'rgba(13,148,136,0.2)'}`, borderRadius: 10, cursor: 'pointer', fontSize: 12, fontWeight: 700, background: disTipo === t.id ? `linear-gradient(135deg,${COLOR},#0f766e)` : '#0a0f1e', color: disTipo === t.id ? '#fff' : '#64748b', textAlign: 'center' as const }}
+                style={{ flex: '1 1 calc(25% - 8px)', minWidth: 100, padding: '12px 8px', border: `1px solid ${disTipo === t.id ? COLOR : 'rgba(13,148,136,0.2)'}`, borderRadius: 10, cursor: 'pointer', fontSize: 12, fontWeight: 700, background: disTipo === t.id ? `linear-gradient(135deg,${COLOR},#0f766e)` : '#0a0f1e', color: disTipo === t.id ? '#fff' : '#64748b', textAlign: 'center' as const }}
               >
                 <div style={{ fontSize: 20, marginBottom: 4 }}>{t.icon}</div>
                 <div>{t.label}</div>
@@ -1097,52 +1106,87 @@ export default function ModuloValvulas() {
             </div>
           </div>
 
+          {/* Estilo — solo para válvula mariposa */}
+          {disTipo === 'mariposa' && (
+            <div style={{ marginBottom: 16 }}>
+              <label style={lbl}>Estilo de instalación</label>
+              <select value={disEstilo} onChange={e => setDisEstilo(e.target.value)} style={inp}>
+                <option value="Wafer"          style={{ background: '#0a0f1e' }}>Wafer — entre bridones (más económico)</option>
+                <option value="Lug"            style={{ background: '#0a0f1e' }}>Lug — con orejas roscadas (end-of-line)</option>
+                <option value="Double Flanged" style={{ background: '#0a0f1e' }}>Double Flanged — con bridas propias</option>
+              </select>
+            </div>
+          )}
+
           <Btn onClick={calcDisenio} text={
             disTipo === 'compuerta' ? 'Consultar F2F — Compuerta ASME B16.10 Tabla 1' :
-            disTipo === 'globo'     ? 'Consultar dimensiones — Globo ASME B16.34' :
+            disTipo === 'globo'     ? 'Consultar dimensiones — Globo ASME B16.34'      :
+            disTipo === 'mariposa'  ? 'Generar esquema — Mariposa API 609 / MSS SP-67' :
                                      'Consultar F2F — Bola API 6D / ASME B16.10 Long Pattern'
           } />
 
           {resDis && (() => {
             const { f2f_mm, fd, nps, clase, tipo } = resDis;
-            const tipoLabel = tipo === 'compuerta' ? 'Compuerta (Gate)' : tipo === 'globo' ? 'Globo (Globe)' : 'Bola (Ball)';
-            const normaLabel = tipo === 'bola' ? 'ASME B16.34 + B16.10 Long Pattern + API 6D'
+            const tipoLabel = tipo === 'compuerta' ? 'Compuerta (Gate)' : tipo === 'globo' ? 'Globo (Globe)' : tipo === 'mariposa' ? 'Mariposa (Butterfly)' : 'Bola (Ball)';
+            const normaLabel = tipo === 'bola'      ? 'ASME B16.34 + B16.10 Long Pattern + API 6D'
                              : tipo === 'compuerta' ? 'ASME B16.34 + B16.10 Tabla 1 + API 600'
-                             : 'ASME B16.34 + B16.10';
+                             : tipo === 'mariposa'  ? 'API 609 / MSS SP-67 / ASME B16.34'
+                             :                       'ASME B16.34 + B16.10';
             const OD_mm   = fd ? Math.round(fd.OD   * 25.4 * 10) / 10 : null;
             const BC_mm   = fd ? Math.round(fd.BC   * 25.4 * 10) / 10 : null;
             const bore_mm = fd ? Math.round(fd.bore * 25.4 * 10) / 10 : null;
             const db_mm   = fd ? Math.round(fd.db   * 25.4 * 10) / 10 : null;
             const bh_mm   = fd ? Math.round((fd.db + 0.125) * 25.4 * 10) / 10 : null;
-            const capaLabel = tipo === 'bola' ? 'ESFERA' : tipo === 'compuerta' ? 'CUÑA' : '—';
+            const capaLabel = tipo === 'bola' ? 'ESFERA' : tipo === 'compuerta' ? 'CUÑA' : tipo === 'mariposa' ? 'EJE' : '—';
+            const disc_d_mm = tipo === 'mariposa' ? Math.round(parseFloat(nps) * 25.4 * 10) / 10 : null;
 
             return (
               <ResBox>
                 <RLbl t={`${tipoLabel} — NPS ${nps}" Class ${clase} — ${normaLabel}`} />
 
-                {/* F2F principal */}
-                <div style={{ background: '#0a0f1e', borderRadius: 10, padding: 16, marginBottom: 14 }}>
-                  <div style={{ fontSize: 9, color: '#475569', textTransform: 'uppercase' as const, marginBottom: 6, letterSpacing: 0.4 }}>
-                    Face-to-Face ASME B16.10 {tipo === 'bola' ? '— Long Pattern' : tipo === 'compuerta' ? '— Tabla 1 (Raised Face)' : ''}
-                  </div>
-                  {f2f_mm ? (
-                    <div style={{ fontSize: 22, fontWeight: 800, color: COLOR }}>
-                      {f2f_mm} mm
-                      <span style={{ fontSize: 13, color: '#475569', fontWeight: 400, marginLeft: 12 }}>({(f2f_mm / 25.4).toFixed(2)}")</span>
+                {/* Diámetro disco para mariposa */}
+                {tipo === 'mariposa' && (
+                  <div style={{ background: '#0a0f1e', borderRadius: 10, padding: 16, marginBottom: 14 }}>
+                    <div style={{ fontSize: 9, color: '#475569', textTransform: 'uppercase' as const, marginBottom: 6, letterSpacing: 0.4 }}>Diámetro disco (NPS × 25.4)</div>
+                    <div style={{ fontSize: 22, fontWeight: 800, color: COLOR }}>{disc_d_mm} mm
+                      <span style={{ fontSize: 13, color: '#475569', fontWeight: 400, marginLeft: 12 }}>({nps}" = {disc_d_mm} mm)</span>
                     </div>
-                  ) : (
-                    <div style={{ fontSize: 14, color: '#f59e0b', fontWeight: 700 }}>
-                      Consultar fabricante — dato no disponible en tabla estándar
-                    </div>
-                  )}
-                  {!f2f_mm && tipo === 'globo' && (
                     <div style={{ fontSize: 11, color: '#475569', marginTop: 6 }}>
-                      F2F para Globo varía por modelo (short/long pattern). Consultar ASME B16.10 con el fabricante.
+                      Estilo: <strong style={{ color: '#f1f5f9' }}>{disEstilo}</strong> · Apertura 1/4 vuelta · API 609 / MSS SP-67 · DXF disponible con capa EJE.
                     </div>
-                  )}
-                  {f2f_mm && tipo === 'bola' && <div style={{ fontSize: 11, color: '#475569', marginTop: 6 }}>Long Pattern · Full Bore · API 6D · DXF disponible con capa ESFERA.</div>}
-                  {f2f_mm && tipo === 'compuerta' && <div style={{ fontSize: 11, color: '#475569', marginTop: 6 }}>Raised face · DXF disponible con capa CUÑA (compuerta).</div>}
-                </div>
+                  </div>
+                )}
+
+                {/* F2F — ocultar label de F2F para mariposa si no hay dato */}
+                {tipo !== 'mariposa' && (
+                  <div style={{ background: '#0a0f1e', borderRadius: 10, padding: 16, marginBottom: 14 }}>
+                    <div style={{ fontSize: 9, color: '#475569', textTransform: 'uppercase' as const, marginBottom: 6, letterSpacing: 0.4 }}>
+                      Face-to-Face ASME B16.10 {tipo === 'bola' ? '— Long Pattern' : tipo === 'compuerta' ? '— Tabla 1 (Raised Face)' : ''}
+                    </div>
+                    {f2f_mm ? (
+                      <div style={{ fontSize: 22, fontWeight: 800, color: COLOR }}>
+                        {f2f_mm} mm
+                        <span style={{ fontSize: 13, color: '#475569', fontWeight: 400, marginLeft: 12 }}>({(f2f_mm / 25.4).toFixed(2)}")</span>
+                      </div>
+                    ) : (
+                      <div style={{ fontSize: 14, color: '#f59e0b', fontWeight: 700 }}>
+                        Consultar fabricante — dato no disponible en tabla estándar
+                      </div>
+                    )}
+                    {!f2f_mm && tipo === 'globo' && <div style={{ fontSize: 11, color: '#475569', marginTop: 6 }}>F2F para Globo varía por modelo (short/long pattern). Consultar ASME B16.10 con el fabricante.</div>}
+                    {f2f_mm && tipo === 'bola' && <div style={{ fontSize: 11, color: '#475569', marginTop: 6 }}>Long Pattern · Full Bore · API 6D · DXF disponible con capa ESFERA.</div>}
+                    {f2f_mm && tipo === 'compuerta' && <div style={{ fontSize: 11, color: '#475569', marginTop: 6 }}>Raised face · DXF disponible con capa CUÑA (compuerta).</div>}
+                  </div>
+                )}
+
+                {/* F2F para mariposa siempre es Consultar fabricante */}
+                {tipo === 'mariposa' && (
+                  <div style={{ background: '#0a0f1e', borderRadius: 10, padding: 12, marginBottom: 14 }}>
+                    <div style={{ fontSize: 9, color: '#475569', textTransform: 'uppercase' as const, marginBottom: 4 }}>Face-to-Face ASME B16.10</div>
+                    <div style={{ fontSize: 13, color: '#f59e0b', fontWeight: 700 }}>Consultar fabricante — dato no disponible en tabla estándar</div>
+                    <div style={{ fontSize: 11, color: '#475569', marginTop: 4 }}>F2F varía según estilo (Wafer/Lug/Double Flanged) y fabricante. Consultar API 609 / ASME B16.10 con el proveedor.</div>
+                  </div>
+                )}
 
                 {/* Brida B16.5 */}
                 {fd ? (
@@ -1173,9 +1217,14 @@ export default function ModuloValvulas() {
                   </div>
                 )}
 
-                {f2f_mm && <Info t={`DXF disponible: 4 capas (CUERPO · ${capaLabel} · BRIDA · ANOTACIONES). Plano esquemático — validar con fabricante antes de mecanizar.`} />}
-                {!f2f_mm && <Warn t="⚠️ F2F no disponible en tabla embebida — DXF no generado. Consultar fabricante." />}
-                <Warn t="⚠️ Plano esquemático de referencia — requiere validación de fabricante antes de mecanizar. Normativa: ASME B16.34 · B16.10 · B16.5 · API 6D." />
+                {tipo === 'mariposa'
+                  ? <Info t="DXF disponible: 4 capas (CUERPO · EJE · BRIDA · ANOTACIONES). Disco circular diámetro = NPS en mm. Plano esquemático — validar con fabricante." />
+                  : (f2f_mm
+                    ? <Info t={`DXF disponible: 4 capas (CUERPO · ${capaLabel} · BRIDA · ANOTACIONES). Plano esquemático — validar con fabricante antes de mecanizar.`} />
+                    : <Warn t="⚠️ F2F no disponible en tabla embebida — DXF no generado. Consultar fabricante." />
+                  )
+                }
+                <Warn t="⚠️ Plano esquemático de referencia — requiere validación de fabricante antes de mecanizar. Normativa: ASME B16.34 · B16.10 · B16.5 · API 6D / API 609." />
               </ResBox>
             );
           })()}

@@ -1642,3 +1642,128 @@ export interface ParamsTuberias {
 
     return [header, ...ents, '  0','ENDSEC','  0','EOF'].join('\n');
   }
+
+  // ═══════════════════════════════════════════════════════════
+  //  MÓDULO VÁLVULAS — MARIPOSA (Butterfly) API 609 / MSS SP-67
+  //  Capas: CUERPO · EJE · BRIDA · ANOTACIONES
+  //  CUERPO = disco circular diámetro = NPS en mm
+  //  Plano esquemático de referencia — NO dimensional
+  // ═══════════════════════════════════════════════════════════
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  export function exportarDXFMariposa(p: Record<string, any>): string {
+    const nps      = String(p['NPS (pulg)']          ?? '');
+    const clase    = String(p['Clase de presion']     ?? '');
+    const estilo   = String(p['Estilo']               ?? 'Wafer');
+    const proyecto = String(p['Proyecto']             ?? '');
+    const f2f_raw  = p['F2F ASME B16.10 (mm)'];
+    const fecha    = new Date().toLocaleDateString('es-AR');
+
+    const nps_num = parseFloat(nps);
+    if (isNaN(nps_num) || nps_num <= 0) return '';
+
+    const disc_r   = (nps_num * 25.4) / 2;          // radio disco = NPS/2 en mm
+    const disc_d   = disc_r * 2;                     // diámetro disco en mm
+    const body_hw  = Math.max(disc_r * 0.15, 8);    // semi-ancho cuerpo estimado (flujo)
+    const stem_len = Math.max(disc_r * 0.55, 22);   // extensión vástago sobre disco
+    const flange_t = Math.max(disc_r * 0.12, 8);    // espesor referencia cara brida
+
+    const f2f_num = (f2f_raw != null && f2f_raw !== 'Consultar fabricante') ? Number(f2f_raw) : 0;
+
+    const L = (x1: number, y1: number, x2: number, y2: number, layer: string, color: number) =>
+      ['  0','LINE','  8',layer,' 62',String(color),
+       ' 10',x1.toFixed(3),' 20',y1.toFixed(3),' 30','0.000',
+       ' 11',x2.toFixed(3),' 21',y2.toFixed(3),' 31','0.000'].join('\n');
+
+    const C = (cx: number, cy: number, r: number, layer: string, color: number) =>
+      ['  0','CIRCLE','  8',layer,' 62',String(color),
+       ' 10',cx.toFixed(3),' 20',cy.toFixed(3),' 30','0.000',
+       ' 40',r.toFixed(3)].join('\n');
+
+    const T = (x: number, y: number, h: number, txt: string, layer: string, color: number) =>
+      ['  0','TEXT','  8',layer,' 62',String(color),
+       ' 10',x.toFixed(3),' 20',y.toFixed(3),' 30','0.000',
+       ' 40',h.toFixed(3),'  1',txt,' 50','0.000'].join('\n');
+
+    const ents: string[] = [];
+
+    // ── CUERPO — disco circular diámetro = NPS en mm + líneas cara cuerpo — blanco 7 ──
+    ents.push(C(0, 0, disc_r, 'CUERPO', 7));
+    ents.push(L(-body_hw, -disc_r, -body_hw, disc_r, 'CUERPO', 7)); // cara cuerpo izq
+    ents.push(L( body_hw, -disc_r,  body_hw, disc_r, 'CUERPO', 7)); // cara cuerpo der
+
+    // ── EJE — vástago central + indicador palanca 1/4 vuelta — magenta 6 ──
+    const stem_top = disc_r + stem_len;
+    ents.push(L(0, -(disc_r * 0.9), 0, stem_top, 'EJE', 6));        // eje completo
+    ents.push(L(-14, stem_top,      14, stem_top,     'EJE', 6));    // palanca
+    ents.push(L(-10, stem_top + 7,  10, stem_top + 7, 'EJE', 6));    // palanca sup
+
+    // ── BRIDA — caras de conexión (pipe flanges) — verde 3 ──
+    const fy0 = -(disc_r + 8);
+    const fy1 =  (disc_r + 8);
+    ents.push(L(-(body_hw + flange_t), fy0, -body_hw,             fy0, 'BRIDA', 3));
+    ents.push(L(-body_hw,             fy0, -body_hw,             fy1, 'BRIDA', 3));
+    ents.push(L(-body_hw,             fy1, -(body_hw + flange_t), fy1, 'BRIDA', 3));
+    ents.push(L(-(body_hw + flange_t), fy1, -(body_hw + flange_t), fy0, 'BRIDA', 3));
+    ents.push(L( body_hw,              fy0,  body_hw + flange_t,  fy0, 'BRIDA', 3));
+    ents.push(L( body_hw + flange_t,   fy0,  body_hw + flange_t, fy1, 'BRIDA', 3));
+    ents.push(L( body_hw + flange_t,   fy1,  body_hw,            fy1, 'BRIDA', 3));
+    ents.push(L( body_hw,              fy1,  body_hw,            fy0, 'BRIDA', 3));
+
+    // ── ANOTACIONES — amarillo 2 / rojo 1 advertencias ──
+    const ax0     = -(disc_r + body_hw + flange_t);
+    const ay_top  = stem_top + 22;
+    const ay_bot  = -(disc_r + 28);
+    const f2f_txt = f2f_num > 0 ? `${f2f_num.toFixed(0)} mm` : 'Consultar fabricante';
+
+    ents.push(T(ax0, ay_top + 40, 6,
+      'INGENIUM PRO v8.1 - VALVULA DE MARIPOSA - PLANO ESQUEMATICO', 'ANOTACIONES', 2));
+    ents.push(T(ax0, ay_top + 28, 5,
+      `NPS ${nps}" - Class ${clase} - Estilo: ${estilo} - Face-to-Face: ${f2f_txt}`, 'ANOTACIONES', 2));
+    ents.push(T(ax0, ay_top + 16, 4.5,
+      `Diametro disco: ${disc_d.toFixed(1)} mm (NPS x 25.4) - Normativa: API 609 / MSS SP-67 / ASME B16.34 / B16.5`, 'ANOTACIONES', 2));
+    ents.push(T(ax0, ay_top + 4, 4,
+      `Proyecto: ${proyecto || 'Sin nombre'} - Fecha: ${fecha} - Apertura: 1/4 vuelta`, 'ANOTACIONES', 2));
+
+    // Cota disco (siempre disponible) o F2F
+    const yd = -(disc_r + 14);
+    if (f2f_num > 0) {
+      const xf0 = -(body_hw + flange_t);
+      const xf1 =  (body_hw + flange_t);
+      ents.push(L(xf0, -(disc_r + 4), xf0, -(disc_r + 18), 'ANOTACIONES', 2));
+      ents.push(L(xf1, -(disc_r + 4), xf1, -(disc_r + 18), 'ANOTACIONES', 2));
+      ents.push(L(xf0, yd, xf1, yd, 'ANOTACIONES', 2));
+      ents.push(T(0, yd - 9, 3.5, `F-to-F = ${f2f_num.toFixed(0)} mm`, 'ANOTACIONES', 2));
+    } else {
+      ents.push(L(-disc_r, -(disc_r - 4), -disc_r, yd, 'ANOTACIONES', 2));
+      ents.push(L( disc_r, -(disc_r - 4),  disc_r, yd, 'ANOTACIONES', 2));
+      ents.push(L(-disc_r, yd, disc_r, yd, 'ANOTACIONES', 2));
+      ents.push(T(0, yd - 9, 3.5, `Disco = ${disc_d.toFixed(1)} mm (NPS x 25.4)`, 'ANOTACIONES', 2));
+    }
+
+    // Advertencias obligatorias
+    ents.push(T(ax0, ay_bot, 4.5,
+      '* Plano esquematico - requiere validacion de fabricante antes de mecanizar.', 'ANOTACIONES', 1));
+    ents.push(T(ax0, ay_bot - 12, 4,
+      `* Ancho cuerpo (${(body_hw * 2).toFixed(0)} mm) ESTIMADO - F-to-F segun API 609 / ASME B16.10 (estilo ${estilo}).`, 'ANOTACIONES', 1));
+    ents.push(T(ax0, ay_bot - 24, 4,
+      '* Verificar con fabricante. Plano NO apto para fabricacion directa.', 'ANOTACIONES', 1));
+
+    // Cabecera AC1015 — 4 capas: CUERPO, EJE, BRIDA, ANOTACIONES
+    const header = [
+      '  0','SECTION','  2','HEADER',
+      '  9','$ACADVER','  1','AC1015',
+      '  9','$INSUNITS',' 70','4',
+      '  0','ENDSEC',
+      '  0','SECTION','  2','TABLES',
+      '  0','TABLE','  2','LAYER',' 70','4',
+      '  0','LAYER','  2','CUERPO',      ' 70','0',' 62','7','  6','CONTINUOUS',
+      '  0','LAYER','  2','EJE',         ' 70','0',' 62','6','  6','CONTINUOUS',
+      '  0','LAYER','  2','BRIDA',       ' 70','0',' 62','3','  6','CONTINUOUS',
+      '  0','LAYER','  2','ANOTACIONES', ' 70','0',' 62','2','  6','CONTINUOUS',
+      '  0','ENDTAB','  0','ENDSEC',
+      '  0','SECTION','  2','ENTITIES',
+    ].join('\n');
+
+    return [header, ...ents, '  0','ENDSEC','  0','EOF'].join('\n');
+  }
