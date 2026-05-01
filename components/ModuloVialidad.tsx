@@ -248,6 +248,8 @@ export default function ModuloVialidad() {
     fontSize: 14, boxSizing: 'border-box' as const
   };
 
+  const datosActivo = tab === 'pav' ? datosPav : datosDren;
+
   return (
     <div style={{ minHeight: '100vh', background: '#0f172a', padding: '24px 16px', fontFamily: 'system-ui' }}>
       <div style={{ maxWidth: 800, margin: '0 auto' }}>
@@ -375,7 +377,6 @@ export default function ModuloVialidad() {
             </div>
           </div>
         )}
-        {tab === 'pav' && datosPav && <BotonesExportar visible={true} datos={datosPav} />}
 
         {/* RESULTADOS DRENAJE */}
         {tab === 'dren' && resDren && (
@@ -406,7 +407,7 @@ export default function ModuloVialidad() {
             </div>
           </div>
         )}
-        {tab === 'dren' && datosDren && <BotonesExportar visible={true} datos={datosDren} />}
+        {datosActivo && <BotonesExportar visible={true} datos={datosActivo} />}
 
       </div>
     </div>

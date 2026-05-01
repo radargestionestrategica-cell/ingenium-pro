@@ -216,6 +216,8 @@ export default function ModuloGeotecnia() {
     boxSizing: 'border-box' as const,
   };
 
+  const datosActivo = tab === 'cp' ? datosCP : datosET;
+
   return (
     <div style={{ minHeight: '100vh', background: '#0f172a', padding: '24px 16px', fontFamily: 'system-ui' }}>
       <div style={{ maxWidth: 800, margin: '0 auto' }}>
@@ -367,7 +369,6 @@ export default function ModuloGeotecnia() {
             </div>
           </div>
         )}
-        {tab === 'cp' && datosCP && <BotonesExportar visible={true} datos={datosCP} />}
 
         {/* RESULTADOS ESTABILIDAD TALUDES */}
         {tab === 'et' && resET && (
@@ -404,9 +405,9 @@ export default function ModuloGeotecnia() {
             </div>
           </div>
         )}
-        {tab === 'et' && datosET && <BotonesExportar visible={true} datos={datosET} />}
+        {datosActivo && <BotonesExportar visible={true} datos={datosActivo} />}
 
       </div>
     </div>
   );
-} 
+}

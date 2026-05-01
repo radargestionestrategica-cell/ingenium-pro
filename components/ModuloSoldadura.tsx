@@ -426,6 +426,9 @@ export default function ModuloSoldadura() {
     publicarResultado(payload);
   };
 
+  const DATOS_MAP: Record<string, typeof datosSel> = { selector: datosSel, heat_input: datosHI, filete: datosFil, consumo: datosCons, precalentamiento: datosPre };
+  const datosActivo = DATOS_MAP[sub] ?? null;
+
   return (
     <div style={{ padding: 24, color: '#f1f5f9', fontFamily: 'Inter,sans-serif', maxWidth: 960, margin: '0 auto' }}>
 
@@ -511,7 +514,6 @@ export default function ModuloSoldadura() {
               })}
             </div>
           )}
-          {datosSel && <BotonesExportar visible={true} datos={datosSel} />}
         </div>
       )}
 
@@ -623,7 +625,6 @@ export default function ModuloSoldadura() {
             </div>
             <Info text="Referencia: Tubería API 1104: 1.0-2.5 kJ/mm · Estructural AWS D1.1: 0.5-3.0 kJ/mm · ASME B31.3: según WPS calificado" />
           </ResBox>}
-          {datosHI && <BotonesExportar visible={true} datos={datosHI} />}
         </div>
       )}
 
@@ -660,7 +661,6 @@ export default function ModuloSoldadura() {
             </div>
             <Info text={`${fEl}: Fu = ${ELECTRODOS[fEl].rupturaKgcm2} kgf/cm² · Norma: AWS D1.1:2020 / AISC-360`} />
           </ResBox>}
-          {datosFil && <BotonesExportar visible={true} datos={datosFil} />}
         </div>
       )}
 
@@ -698,7 +698,6 @@ export default function ModuloSoldadura() {
             </div>
             <Warn text="⚠️ Estimación de referencia. El consumo real varía según diseño de junta, técnica del soldador y condiciones de obra. Agregar 15-20% de desperdicio al pedir materiales." />
           </ResBox>}
-          {datosCons && <BotonesExportar visible={true} datos={datosCons} />}
         </div>
       )}
 
@@ -739,9 +738,9 @@ export default function ModuloSoldadura() {
             </div>
             <Warn text="⚠️ Para proyectos API 1104 / ASME B31 el precalentamiento debe definirse en WPS calificado según ASME Sec. IX." />
           </ResBox>}
-          {datosPre && <BotonesExportar visible={true} datos={datosPre} />}
         </div>
       )}
+      {datosActivo && <BotonesExportar visible={true} datos={datosActivo} />}
     </div>
   );
 }

@@ -180,6 +180,8 @@ export default function ModuloHidraulica() {
     fontSize: 14
   };
 
+  const datosActivo = tab === 'dw' ? datosDW : datosWH;
+
   return (
     <div style={{ minHeight: '100vh', background: '#0f172a', padding: '24px 16px', fontFamily: 'system-ui' }}>
       <div style={{ maxWidth: 800, margin: '0 auto' }}>
@@ -348,7 +350,6 @@ export default function ModuloHidraulica() {
             </div>
           </div>
         )}
-        {tab === 'dw' && datosDW && <BotonesExportar visible={true} datos={datosDW} />}
 
         {/* RESULTADOS WH */}
         {tab === 'wh' && resWH && (
@@ -379,7 +380,7 @@ export default function ModuloHidraulica() {
             </div>
           </div>
         )}
-        {tab === 'wh' && datosWH && <BotonesExportar visible={true} datos={datosWH} />}
+        {datosActivo && <BotonesExportar visible={true} datos={datosActivo} />}
 
       </div>
     </div>

@@ -649,6 +649,9 @@ export default function ModuloElectricidad() {
 
   const zd = ZONAS[apZona];
 
+  const DATOS_MAP: Record<string, DatosExportar | null> = { cable: datosCable, caida: datosCaida, cc: datosCC, fp: datosFP, motor: datosMotor, peligrosa: datosPeligrosa, luz: datosLuz, trafo: datosTrafo };
+  const datosActivo = DATOS_MAP[sub] ?? null;
+
   return (
     <div style={{ padding:24, color:'#f1f5f9', fontFamily:'Inter,sans-serif', maxWidth:960, margin:'0 auto' }}>
 
@@ -748,7 +751,6 @@ export default function ModuloElectricidad() {
               </div>
             </ResBox>
           )}
-          {datosCable && <BotonesExportar visible={true} datos={datosCable} />}
         </div>
       )}
 
@@ -817,7 +819,6 @@ export default function ModuloElectricidad() {
               </div>
             </ResBox>
           )}
-          {datosCaida && <BotonesExportar visible={true} datos={datosCaida} />}
         </div>
       )}
 
@@ -879,7 +880,6 @@ export default function ModuloElectricidad() {
               <Warn t="⚠️ Poder de corte del interruptor automático debe ser ≥ Icc máximo. Coordinar protecciones con ingeniería eléctrica matriculada." />
             </ResBox>
           )}
-          {datosCC && <BotonesExportar visible={true} datos={datosCC} />}
         </div>
       )}
 
@@ -940,7 +940,6 @@ export default function ModuloElectricidad() {
               <Info t={`Reducción de corriente: ${Math.round((1 - resFP.I2 / resFP.I1) * 100)}% — Ahorro significativo en pérdidas y facturación eléctrica`} />
             </ResBox>
           )}
-          {datosFP && <BotonesExportar visible={true} datos={datosFP} />}
         </div>
       )}
 
@@ -995,7 +994,6 @@ export default function ModuloElectricidad() {
               <Warn t="⚠️ En Zona 1/2 (IEC 60079) o División 1/2 (API RP 500): motor EX certificado obligatorio. VFD reduce Iarranque a ≈1.1 × I_nom." />
             </ResBox>
           )}
-          {datosMotor && <BotonesExportar visible={true} datos={datosMotor} />}
         </div>
       )}
 
@@ -1072,7 +1070,6 @@ export default function ModuloElectricidad() {
           </div>
 
           <Warn t="⚠️ La clasificación definitiva de áreas peligrosas requiere ingeniero matriculado y estudio de riesgo según API RP 500 / IEC 60079-10-1. Este módulo es orientativo." />
-          {datosPeligrosa && <BotonesExportar visible={true} datos={datosPeligrosa} />}
         </div>
       )}
 
@@ -1134,7 +1131,6 @@ export default function ModuloElectricidad() {
               </div>
             </ResBox>
           )}
-          {datosLuz && <BotonesExportar visible={true} datos={datosLuz} />}
         </div>
       )}
 
@@ -1199,9 +1195,9 @@ export default function ModuloElectricidad() {
               <Warn t="⚠️ Seleccionar potencia comercial estándar inmediatamente superior. Proteger con interruptor termomagnético y relé diferencial. Verificar cortocircuito en secundario." />
             </ResBox>
           )}
-          {datosTrafo && <BotonesExportar visible={true} datos={datosTrafo} />}
         </div>
       )}
+      {datosActivo && <BotonesExportar visible={true} datos={datosActivo} />}
     </div>
   );
 }

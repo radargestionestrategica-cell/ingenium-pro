@@ -490,6 +490,9 @@ const calcMortero = () => {
     publicarResultado(payload);
   };
 
+  const DATOS_MAP: Record<string, typeof datosH> = { hormigon: datosH, hierro: datosHierro, mamposteria: datosMamp, losa: datosLosa, revoque: datosRev, ceramico: datosCer, contrapiso: datosCp, zapata: datosZap, excavacion: datosExc, mortero: datosMort, rendimiento: datosRend };
+  const datosActivo = DATOS_MAP[sub] ?? null;
+
   return (
    <div style={{ padding: 24, color: '#f1f5f9', fontFamily: 'Inter,sans-serif', maxWidth: 920, margin: '0 auto' }}>
 
@@ -557,7 +560,6 @@ const calcMortero = () => {
             </div>
             <InfoBox text={`${cfg.normativa} · Cemento recomendado: ${cfg.marcasCemento}`} />
           </ResBox>}
-          {datosH && <BotonesExportar visible={true} datos={datosH} />}
         </div>
       )}
 
@@ -588,7 +590,6 @@ const calcMortero = () => {
               <Card label="Metro lineal total" val={`${resHierro.metrosTotales} m`} />
             </div>
           </ResBox>}
-          {datosHierro && <BotonesExportar visible={true} datos={datosHierro} />}
         </div>
       )}
 
@@ -620,7 +621,6 @@ const calcMortero = () => {
               <Card label="Arena para mortero" val={`${resMamp.arenaM3} m³`} />
             </div>
           </ResBox>}
-          {datosMamp && <BotonesExportar visible={true} datos={datosMamp} />}
         </div>
       )}
 
@@ -654,7 +654,6 @@ const calcMortero = () => {
             </div>
             <WarnBox text="⚠️ Predimensionado de referencia. El cálculo estructural definitivo requiere Ingeniero Civil matriculado." />
           </ResBox>}
-          {datosLosa && <BotonesExportar visible={true} datos={datosLosa} />}
         </div>
       )}
 
@@ -684,7 +683,6 @@ const calcMortero = () => {
             </div>
             <InfoBox text="Incluir 10% de desperdicio al comprar materiales. El tiempo de secado del revoque grueso es 10-15 días antes de aplicar fino." />
           </ResBox>}
-          {datosRev && <BotonesExportar visible={true} datos={datosRev} />}
         </div>
       )}
 
@@ -721,7 +719,6 @@ const calcMortero = () => {
             </div>
             <InfoBox text="Aplicar pastina 24-48 hs después del pegamento. Dejar juntas de dilatación cada 20-25 m²." />
           </ResBox>}
-          {datosCer && <BotonesExportar visible={true} datos={datosCer} />}
         </div>
       )}
 
@@ -754,7 +751,6 @@ const calcMortero = () => {
             </div>
             <InfoBox text="Curar manteniendo húmedo 3-7 días. Nivelar con regla de aluminio dejando pendiente 1-2% hacia desagüe en exteriores." />
           </ResBox>}
-          {datosCp && <BotonesExportar visible={true} datos={datosCp} />}
         </div>
       )}
 
@@ -787,7 +783,6 @@ const calcMortero = () => {
             </div>
             <WarnBox text="⚠️ Este es un predimensionado de referencia únicamente. El diseño definitivo de la zapata (armado, verificación por punzonamiento y corte) debe realizarlo un Ingeniero Civil matriculado con estudio de suelos." />
           </ResBox>}
-          {datosZap && <BotonesExportar visible={true} datos={datosZap} />}
         </div>
       )}
 
@@ -822,7 +817,6 @@ const calcMortero = () => {
               <Card label="Camiones volcadores (6 m³)" val={`${resExc.camiones} viajes`} />
             </div>
           </ResBox>}
-          {datosExc && <BotonesExportar visible={true} datos={datosExc} />}
         </div>
       )}
 
@@ -852,7 +846,6 @@ const calcMortero = () => {
               <Card label="Arena" val={`${resMort.arenaM3} m³`} />
             </div>
           </ResBox>}
-          {datosMort && <BotonesExportar visible={true} datos={datosMort} />}
         </div>
       )}
 
@@ -884,9 +877,9 @@ const calcMortero = () => {
             </div>
             <InfoBox text="Los rendimientos son valores estándar de industria. Pueden variar ±20% según condiciones de obra, experiencia del personal y condiciones climáticas." />
           </ResBox>}
-          {datosRend && <BotonesExportar visible={true} datos={datosRend} />}
         </div>
       )}
+      {datosActivo && <BotonesExportar visible={true} datos={datosActivo} />}
     </div>
   );
 }

@@ -233,6 +233,8 @@ export default function ModuloTermica() {
     fontSize: 15, boxSizing: 'border-box' as const
   };
 
+  const datosActivo = tab === 'dil' ? datosDil : datosInt;
+
   return (
     <div style={{ minHeight: '100vh', background: '#0f172a', padding: '24px 16px', fontFamily: 'system-ui' }}>
       <div style={{ maxWidth: 800, margin: '0 auto' }}>
@@ -367,7 +369,6 @@ export default function ModuloTermica() {
             </div>
           </div>
         )}
-        {tab === 'dil' && datosDil && <BotonesExportar visible={true} datos={datosDil} />}
 
         {/* RESULTADOS INTERCAMBIADOR */}
         {tab === 'int' && resInt && (
@@ -398,7 +399,7 @@ export default function ModuloTermica() {
             </div>
           </div>
         )}
-        {tab === 'int' && datosInt && <BotonesExportar visible={true} datos={datosInt} />}
+        {datosActivo && <BotonesExportar visible={true} datos={datosActivo} />}
 
       </div>
     </div>

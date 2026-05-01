@@ -687,6 +687,8 @@ export default function ModuloValvulas() {
 
   const npsDisponibles = NPS_POR_CLASE[brClase] || [];
 
+  const datosActivo = sub === 'clase' ? datosClase : sub === 'material' ? datosMaterial : sub === 'brida' ? datosBrida : datosCv;
+
   return (
     <div style={{ padding: 24, color: '#f1f5f9', fontFamily: 'Inter,sans-serif', maxWidth: 960, margin: '0 auto' }}>
 
@@ -770,7 +772,6 @@ export default function ModuloValvulas() {
               <Warn t="⚠️ Selección de clase definitiva requiere análisis completo de condiciones de proceso, transitorios de presión y temperatura, tipo de servicio (cíclico/continuo) y código de instalación aplicable." />
             </ResBox>
           )}
-          {datosClase && <BotonesExportar visible={true} datos={datosClase} />}
         </div>
       )}
 
@@ -823,7 +824,6 @@ export default function ModuloValvulas() {
               <Warn t="⚠️ La selección definitiva de material requiere ingeniero de materiales o corrosión matriculado. Este módulo es orientativo." />
             </ResBox>
           )}
-          {datosMaterial && <BotonesExportar visible={true} datos={datosMaterial} />}
         </div>
       )}
 
@@ -913,7 +913,6 @@ export default function ModuloValvulas() {
               </ResBox>
             );
           })()}
-          {datosBrida && <BotonesExportar visible={true} datos={datosBrida} onDXF={exportarDXF} />}
         </div>
       )}
 
@@ -964,9 +963,9 @@ export default function ModuloValvulas() {
               <Warn t="⚠️ Este Cv es para flujo turbulento no crítico en líquidos. Para gas, vapor, flujo bifásico, cavitación o servicio crítico consultar ISA 75.01.01 completo con ingeniero de control." />
             </ResBox>
           )}
-          {datosCv && <BotonesExportar visible={true} datos={datosCv} />}
         </div>
       )}
+      {datosActivo && <BotonesExportar visible={true} datos={datosActivo} />}
 
       {/* ══ TIPO DE VÁLVULA ══ */}
       {sub === 'tipo' && (

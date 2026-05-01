@@ -263,6 +263,8 @@ export default function ModuloMineria() {
     fontSize: 13
   };
 
+  const datosActivo = tab === 'rmr' ? datosRMR : datosVent;
+
   return (
     <div style={{ minHeight: '100vh', background: '#0f172a', padding: '24px 16px', fontFamily: 'system-ui' }}>
       <div style={{ maxWidth: 800, margin: '0 auto' }}>
@@ -409,7 +411,6 @@ export default function ModuloMineria() {
             </div>
           </div>
         )}
-        {tab === 'rmr' && datosRMR && <BotonesExportar visible={true} datos={datosRMR} />}
 
         {/* RESULTADOS VENTILACION */}
         {tab === 'vent' && resVent && (
@@ -443,7 +444,7 @@ export default function ModuloMineria() {
             </div>
           </div>
         )}
-        {tab === 'vent' && datosVent && <BotonesExportar visible={true} datos={datosVent} />}
+        {datosActivo && <BotonesExportar visible={true} datos={datosActivo} />}
 
       </div>
     </div>

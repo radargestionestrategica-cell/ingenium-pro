@@ -130,6 +130,8 @@ export default function ModuloRepresas() {
     }
   };
 
+  const datosActivo = calculo === 'vertedero' ? datosV : datosF;
+
   return (
     <div style={{ padding: 24, color: '#f1f5f9', fontFamily: 'Inter, sans-serif' }}>
       {/* HEADER */}
@@ -273,7 +275,6 @@ export default function ModuloRepresas() {
           </div>
         </div>
       )}
-      {datosV && calculo === 'vertedero' && <BotonesExportar visible={true} datos={datosV} />}
 
       {/* RESULTADO FILTRACIÓN */}
       {resF && (
@@ -303,7 +304,7 @@ export default function ModuloRepresas() {
           </div>
         </div>
       )}
-      {datosF && calculo === 'filtracion' && <BotonesExportar visible={true} datos={datosF} />}
+      {datosActivo && <BotonesExportar visible={true} datos={datosActivo} />}
     </div>
   );
 }

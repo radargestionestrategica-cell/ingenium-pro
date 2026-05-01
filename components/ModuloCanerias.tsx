@@ -471,6 +471,9 @@ export default function ModuloCanerias() {
   };
 
   // ── RENDER ────────────────────────────────────────────────
+  const DATOS_MAP: Record<string, typeof datosEsp> = { espesor: datosEsp, hoop: datosHoop, ariete: datosAr, cierre: datosCi, remanente: datosRem };
+  const datosActivo = DATOS_MAP[sub] ?? null;
+
   return (
     <div style={{ padding: 24, color: '#f1f5f9', fontFamily: 'Inter,sans-serif', maxWidth: 960, margin: '0 auto' }}>
 
@@ -556,7 +559,6 @@ export default function ModuloCanerias() {
               <Warn t="⚠️ Este cálculo es de referencia. El diseño definitivo requiere ingeniero matriculado, análisis de cargas externas, pandeo y verificación ante códigos locales." />
             </ResBox>
           )}
-          {datosEsp && <BotonesExportar visible datos={datosEsp} />}
         </div>
       )}
 
@@ -612,7 +614,6 @@ export default function ModuloCanerias() {
               {!resHoop.ok && <Warn t="Reducir presión de operación o reemplazar tramo por cañería de mayor espesor. Inspección de integridad obligatoria." rojo />}
             </ResBox>
           )}
-          {datosHoop && <BotonesExportar visible datos={datosHoop} />}
         </div>
       )}
 
@@ -656,7 +657,6 @@ export default function ModuloCanerias() {
               <Warn t={`⚠️ Esta es la sobrepresión para cierre INSTANTÁNEO. Si el tiempo de cierre de la válvula es mayor a ${resAr.t_ret_s} s, la sobrepresión real es menor. Usá el sub-módulo "Cierre válvula" para calcularlo con tu tiempo real.`} />
             </ResBox>
           )}
-          {datosAr && <BotonesExportar visible datos={datosAr} />}
         </div>
       )}
 
@@ -714,7 +714,6 @@ export default function ModuloCanerias() {
               </div>
             </ResBox>
           )}
-          {datosCi && <BotonesExportar visible datos={datosCi} />}
         </div>
       )}
 
@@ -763,9 +762,9 @@ export default function ModuloCanerias() {
               <Warn t="⚠️ La evaluación de vida remanente requiere inspección física API 570 por inspector certificado. Este cálculo es orientativo basado en los datos ingresados." />
             </ResBox>
           )}
-          {datosRem && <BotonesExportar visible datos={datosRem} />}
         </div>
       )}
+      {datosActivo && <BotonesExportar visible={true} datos={datosActivo} />}
 
     </div>
   );

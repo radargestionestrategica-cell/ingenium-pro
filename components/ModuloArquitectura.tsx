@@ -389,6 +389,8 @@ export default function ModuloArquitectura() {
     publicarResultado(payload);
   };
 
+  const datosActivo = tab === 'viento' ? datosViento : tab === 'ilum' ? datosIlum : datosSismo;
+
   return (
     <div style={{ minHeight: '100vh', background: BG, padding: '24px 16px', fontFamily: 'Inter,system-ui,sans-serif' }}>
       <div style={{ maxWidth: 860, margin: '0 auto' }}>
@@ -594,7 +596,6 @@ export default function ModuloArquitectura() {
             )}
           </div>
         )}
-        {tab === 'viento' && datosViento && <BotonesExportar visible={true} datos={datosViento} />}
 
         {/* ── RESULTADOS ILUMINACIÓN ── */}
         {tab === 'ilum' && resIlum && (
@@ -639,7 +640,6 @@ export default function ModuloArquitectura() {
             </div>
           </div>
         )}
-        {tab === 'ilum' && datosIlum && <BotonesExportar visible={true} datos={datosIlum} />}
 
         {/* ── RESULTADOS SISMO ── */}
         {tab === 'sismo' && resSismo && (
@@ -675,7 +675,7 @@ export default function ModuloArquitectura() {
             </div>
           </div>
         )}
-        {tab === 'sismo' && datosSismo && <BotonesExportar visible={true} datos={datosSismo} />}
+        {datosActivo && <BotonesExportar visible={true} datos={datosActivo} />}
 
       </div>
     </div>

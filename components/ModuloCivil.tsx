@@ -216,6 +216,8 @@ export default function ModuloCivil() {
     fontSize: 15, boxSizing: 'border-box' as const
   };
 
+  const datosActivo = tab === 'viga' ? datosViga : datosCol;
+
   return (
     <div style={{ minHeight: '100vh', background: '#0f172a', padding: '24px 16px', fontFamily: 'system-ui' }}>
       <div style={{ maxWidth: 800, margin: '0 auto' }}>
@@ -328,7 +330,6 @@ export default function ModuloCivil() {
             </div>
           </div>
         )}
-        {tab === 'viga' && datosViga && <BotonesExportar visible={true} datos={datosViga} />}
 
         {tab === 'col' && resCol && (
           <div style={{ background: '#1e293b', border: `2px solid ${riskColor[resCol.riesgo]}`, borderRadius: 12, padding: 24 }}>
@@ -363,7 +364,7 @@ export default function ModuloCivil() {
             </div>
           </div>
         )}
-        {tab === 'col' && datosCol && <BotonesExportar visible={true} datos={datosCol} />}
+        {datosActivo && <BotonesExportar visible={true} datos={datosActivo} />}
       </div>
     </div>
   );
