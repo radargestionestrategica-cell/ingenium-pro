@@ -1,14 +1,8 @@
 'use client';
-// components/BotonesExportar.tsx
-// INGENIUM PRO v8.1 — Barra universal de exportación
-// Se agrega al final de cualquier módulo con resultado calculado
-// PDF y Excel llaman a /api/calculos/exportar (ya implementado)
-// DXF corre en el browser via callback onDXF del módulo
-
 import { useState } from 'react';
 
 export interface DatosExportar {
-  tipo:          string;                    // 'MAOP' | 'PERFORACION' | etc.
+  tipo:          string;
   parametros:    Record<string, unknown>;
   resultado:     Record<string, unknown>;
   normativa?:    string;
@@ -27,9 +21,9 @@ export interface DatosExportar {
 }
 
 interface Props {
-  datos:    DatosExportar;
-  onDXF?:  () => void;   // función DXF del módulo — opcional
-  visible: boolean;       // solo se muestra si hay resultado calculado
+  datos:   DatosExportar;
+  visible: boolean;
+  onDXF?:  () => void; // mantenido por compatibilidad — no se usa
 }
 
 const GREEN = '#22c55e';
@@ -37,19 +31,19 @@ const GOLD  = '#E8A020';
 const BLUE  = '#6366f1';
 const BG    = '#0a0f1e';
 
-export default function BotonesExportar({ datos, onDXF, visible }: Props) {
-  const [guardando,   setGuardando]   = useState(false);
-  const [exportando,  setExportando]  = useState<'pdf'|'excel'|null>(null);
-  const [calculoId,   setCalculoId]   = useState<string | null>(null);
-  const [hash,        setHash]        = useState<string | null>(null);
-  const [msgOk,       setMsgOk]       = useState('');
-  const [msgErr,      setMsgErr]      = useState('');
+export default function BotonesExportar({ datos, visible }: Props) {
+  const [guardando,  setGuardando]  = useState(false);
+  const [exportando, setExportando] = useState<'pdf' | 'excel' | 'dxf' | null>(null);
+  const [calculoId,  setCalculoId]  = useState<string | null>(null);
+  const [hash,       setHash]       = useState<string | null>(null);
+  const [msgOk,      setMsgOk]      = useState('');
+  const [msgErr,     setMsgErr]     = useState('');
 
   if (!visible) return null;
 
   // ── 1. GUARDAR en BD ─────────────────────────────────────────
   const guardar = async (): Promise<string | null> => {
-    if (calculoId) return calculoId; // ya guardado en esta sesión
+    if (calculoId) return calculoId;
     setGuardando(true);
     setMsgErr('');
     try {
@@ -91,10 +85,7 @@ export default function BotonesExportar({ datos, onDXF, visible }: Props) {
     if (!id) { setExportando(null); return; }
     try {
       const res = await fetch(`/api/calculos/exportar?id=${id}&tipo=pdf`);
-      if (!res.ok) {
-        setMsgErr('Error al generar PDF');
-        return;
-      }
+      if (!res.ok) { setMsgErr('Error al generar PDF'); return; }
       const blob = await res.blob();
       const url  = URL.createObjectURL(blob);
       const a    = document.createElement('a');
@@ -118,10 +109,7 @@ export default function BotonesExportar({ datos, onDXF, visible }: Props) {
     if (!id) { setExportando(null); return; }
     try {
       const res = await fetch(`/api/calculos/exportar?id=${id}&tipo=excel`);
-      if (!res.ok) {
-        setMsgErr('Error al generar Excel');
-        return;
-      }
+      if (!res.ok) { setMsgErr('Error al generar Excel'); return; }
       const blob = await res.blob();
       const url  = URL.createObjectURL(blob);
       const a    = document.createElement('a');
@@ -137,15 +125,60 @@ export default function BotonesExportar({ datos, onDXF, visible }: Props) {
     }
   };
 
-  // ── 4. EXPORTAR DXF ──────────────────────────────────────────
-  const exportarDXF = () => {
+  // ── 4. EXPORTAR DXF — dynamic import por módulo ─────────────
+  const exportarDXF = async () => {
+    setExportando('dxf');
     setMsgErr('');
-    if (!onDXF) {
-      setMsgErr('DXF no disponible para este módulo aún');
-      return;
+    try {
+      const mod = await import('@/lib/exportarDXF');
+      const key = (datos.moduloId ?? datos.tipo ?? '').toUpperCase();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const p = { ...datos.parametros, ...datos.resultado } as any;
+
+      let contenido = '';
+
+      if      (key.includes('MAOP') || key.includes('PETROLEO') || key.includes('TUBERIA'))
+        contenido = mod.exportarDXFTuberias(p);
+      else if (key.includes('HARDY'))
+        contenido = mod.exportarDXFHardyCross(p);
+      else if (key === 'DW' || key.includes('HIDRAULICA'))
+        contenido = mod.exportarDXFHidraulica(p);
+      else if (key === 'WH' || key.includes('JOUKOWSKY') || key.includes('ARIETE'))
+        contenido = mod.exportarDXFGolpeAriete(p);
+      else if (key.includes('GEOTECNIA') || key === 'CP' || key === 'ET')
+        contenido = mod.exportarDXFGeotecnia(p);
+      else if (key.includes('CANERIAS') || key.includes('CANERIA') || key.includes('ESP') || key.includes('HOOP'))
+        contenido = mod.exportarDXFCanerias(p);
+      else if (key.includes('MMO'))
+        contenido = mod.exportarDXFMMO(p);
+      else if (key.includes('SOLDADURA') || key.includes('SEL') || key.includes('HI') || key.includes('FIL'))
+        contenido = mod.exportarDXFSoldadura(p);
+      else if (key.includes('ELECTRICIDAD') || key.includes('CABLE') || key.includes('TRAFO'))
+        contenido = mod.exportarDXFElectricidad(p);
+      else if (key.includes('VALVULA') || key.includes('BRIDA') || key.includes('CV'))
+        contenido = mod.exportarDXFValvulas(p);
+      else if (key.includes('TERMICA') || key === 'DIL' || key.includes('DILATACION'))
+        contenido = mod.exportarDXFDilatacion(p);
+      else if (key.includes('INTEGRIDAD'))
+        contenido = mod.exportarDXFIntegridad(p);
+      else if (key.includes('REPRESAS') || key.includes('VERTEDERO') || key.includes('FILTRACION'))
+        contenido = mod.exportarDXFHidrologia(p);
+      else if (key.includes('FATIGA'))
+        contenido = mod.exportarDXFFatiga(p);
+      else if (key.includes('TALUD'))
+        contenido = mod.exportarDXFTaludes(p);
+
+      if (contenido) {
+        mod.descargarDXF(contenido, `INGENIUM_PRO_${datos.tipo}_${Date.now()}.dxf`);
+        setMsgOk('Archivo DXF descargado ✓');
+      } else {
+        setMsgErr('DXF no disponible para este módulo');
+      }
+    } catch {
+      setMsgErr('Error al generar DXF');
+    } finally {
+      setExportando(null);
     }
-    onDXF();
-    setMsgOk('Archivo DXF descargado ✓');
   };
 
   const cargando = guardando || exportando !== null;
@@ -179,16 +212,14 @@ export default function BotonesExportar({ datos, onDXF, visible }: Props) {
           {exportando === 'excel' ? '⏳' : '📊'} {exportando === 'excel' ? 'Generando...' : 'Excel'}
         </button>
 
-        {/* DXF */}
-        {onDXF && (
-          <button
-            onClick={exportarDXF}
-            disabled={cargando}
-            style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 18px', borderRadius: 10, border: `1px solid rgba(232,160,32,0.4)`, background: 'transparent', color: GOLD, fontSize: 13, fontWeight: 700, cursor: cargando ? 'wait' : 'pointer', opacity: cargando ? 0.5 : 1 }}
-          >
-            📐 DXF AutoCAD
-          </button>
-        )}
+        {/* DXF — dynamic import por módulo */}
+        <button
+          onClick={exportarDXF}
+          disabled={cargando}
+          style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 18px', borderRadius: 10, border: `1px solid rgba(232,160,32,0.4)`, background: exportando === 'dxf' ? 'rgba(232,160,32,0.15)' : 'transparent', color: GOLD, fontSize: 13, fontWeight: 700, cursor: cargando ? 'wait' : 'pointer', opacity: cargando && exportando !== 'dxf' ? 0.5 : 1 }}
+        >
+          {exportando === 'dxf' ? '⏳' : '📐'} {exportando === 'dxf' ? 'Generando...' : 'DXF CAD'}
+        </button>
 
         {/* GUARDAR SOLO */}
         {!calculoId && (
@@ -220,12 +251,8 @@ export default function BotonesExportar({ datos, onDXF, visible }: Props) {
       )}
 
       {/* MENSAJES */}
-      {msgOk && (
-        <div style={{ marginTop: 10, fontSize: 12, color: GREEN, fontWeight: 600 }}>✓ {msgOk}</div>
-      )}
-      {msgErr && (
-        <div style={{ marginTop: 10, fontSize: 12, color: '#ef4444' }}>✗ {msgErr}</div>
-      )}
+      {msgOk && <div style={{ marginTop: 10, fontSize: 12, color: GREEN, fontWeight: 600 }}>✓ {msgOk}</div>}
+      {msgErr && <div style={{ marginTop: 10, fontSize: 12, color: '#ef4444' }}>✗ {msgErr}</div>}
 
       {/* AVISO LEGAL */}
       <div style={{ marginTop: 14, fontSize: 9, color: '#1e3a5f', lineHeight: 1.5 }}>
@@ -234,4 +261,4 @@ export default function BotonesExportar({ datos, onDXF, visible }: Props) {
       </div>
     </div>
   );
-} 
+}

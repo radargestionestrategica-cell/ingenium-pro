@@ -5,7 +5,9 @@
       "Bash(git -C \"C:\\\\Users\\\\Usuario\\\\Desktop\\\\INGENIUM-PRO-RADAR\\\\radar-app\" ls-files --cached)",
       "Bash(npm i *)",
       "Bash(grep -E \"\\\\.ts$\")",
-      "Bash(git add *)"
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git push *)"
     ]
   }
 }
