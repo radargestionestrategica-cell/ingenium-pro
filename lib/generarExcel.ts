@@ -11,6 +11,32 @@
 
 import ExcelJS from 'exceljs';
 
+// Mapa país → IANA timezone (valores que puede contener Usuario.pais)
+const TIMEZONES_XLS: Record<string, string> = {
+  argentina:        'America/Argentina/Buenos_Aires',
+  uruguay:          'America/Montevideo',
+  chile:            'America/Santiago',
+  colombia:         'America/Bogota',
+  peru:             'America/Lima',
+  perú:             'America/Lima',
+  mexico:           'America/Mexico_City',
+  méxico:           'America/Mexico_City',
+  venezuela:        'America/Caracas',
+  bolivia:          'America/La_Paz',
+  ecuador:          'America/Guayaquil',
+  paraguay:         'America/Asuncion',
+  brasil:           'America/Sao_Paulo',
+  brazil:           'America/Sao_Paulo',
+  españa:           'Europe/Madrid',
+  spain:            'Europe/Madrid',
+  'estados unidos': 'America/New_York',
+  usa:              'America/New_York',
+};
+
+function obtenerTimezoneXls(pais: string): string {
+  return TIMEZONES_XLS[pais.toLowerCase().trim()] ?? 'America/Argentina/Buenos_Aires';
+}
+
 export interface RegistroHistorial {
   fecha:        Date;
   submodulo:    string;
@@ -30,8 +56,10 @@ export interface DatosExcel {
   activoNombre:    string;
   moduloId:        string;
   ingeniero:       string;
+  email:           string;
   empresa:         string;
   pais:            string;
+  matricula?:      string;
   normativa:       string;
   historial:       RegistroHistorial[];
   t_nom_mm?:       number;
@@ -94,9 +122,13 @@ export async function generarExcel(datos: DatosExcel): Promise<Buffer> {
   wb.created  = new Date();
   wb.modified = new Date();
 
-  const fecha = new Date().toLocaleDateString('es-AR', {
+  // Fecha y hora con zona horaria correcta según el país del usuario registrado
+  const tz = obtenerTimezoneXls(datos.pais);
+  const fecha = new Intl.DateTimeFormat('es-AR', {
+    timeZone: tz,
     day: '2-digit', month: 'long', year: 'numeric',
-  });
+    hour: '2-digit', minute: '2-digit',
+  }).format(new Date());
 
   // ════════════════════════════════════════════════════════════
   // HOJA 1 — DATOS DEL ACTIVO
@@ -129,8 +161,11 @@ export async function generarExcel(datos: DatosExcel): Promise<Buffer> {
     ['Módulo de cálculo',     datos.moduloId],
     ['Normativa aplicada',    datos.normativa],
     ['Ingeniero responsable', datos.ingeniero],
+    ['Matrícula profesional', datos.matricula || '—'],
+    ['Email profesional',     datos.email || '—'],
     ['Empresa',               datos.empresa],
     ['País',                  datos.pais],
+    ['Fecha y hora emisión',  fecha],
     ['Total de registros',    datos.historial.length],
     ['Alertas detectadas',    datos.historial.filter(r => r.alerta).length],
     ['Espesor nominal (mm)',  datos.t_nom_mm ?? '—'],
