@@ -5,7 +5,6 @@ import { ResultadoProvider, useResultado } from '@/components/ResultadoContexto'
 import IAChat from '@/components/IAChat';
 import SelectorIdioma from '@/components/SelectorIdioma';
 import BienvenidaModal from '@/components/BienvenidaModal';
-import TerminosModal from '@/components/TerminosModal';
 import ConversorUnidades from '@/components/ConversorUnidades';
 import ModuloIntro from '@/components/ModuloIntro';
 import DashboardHome from '@/components/DashboardHome';
@@ -69,7 +68,6 @@ function Dashboard() {
   return (
     <div style={{ minHeight: '100vh', background: BG, color: '#f1f5f9', fontFamily: 'Inter,sans-serif', display: 'flex', flexDirection: 'column' }}>
 
-      <TerminosModal />
       <BienvenidaModal />
 
       {/* HEADER */}

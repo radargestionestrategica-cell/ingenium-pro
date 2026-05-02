@@ -68,6 +68,7 @@ export async function POST(req: Request) {
       id: usuario.id,
       email: usuario.email,
       plan: usuario.plan,
+      demoExpira: Date.now() + 259_200_000,
     });
 
     return NextResponse.json({
