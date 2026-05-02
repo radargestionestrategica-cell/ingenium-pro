@@ -213,7 +213,23 @@ async function generarRespuestaExportacion(solicitud: SolicitudExportacion): Pro
   const matricula  = primero.user?.matricula ?? '';
   const proyecto = primero.proyecto?.nombre ?? 'Sin proyecto';
   const industria = primero.proyecto?.industria ?? 'Ingeniería';
-  const fechaArchivo = new Date().toISOString().slice(0, 10);
+
+  // Fecha del archivo en zona horaria del usuario (no UTC raw)
+  const IANA_TZ_EXP: Record<string, string> = {
+    argentina: 'America/Argentina/Buenos_Aires', uruguay:  'America/Montevideo',
+    chile:     'America/Santiago',               colombia: 'America/Bogota',
+    peru:      'America/Lima',                   perú:     'America/Lima',
+    mexico:    'America/Mexico_City',            méxico:   'America/Mexico_City',
+    venezuela: 'America/Caracas',                bolivia:  'America/La_Paz',
+    ecuador:   'America/Guayaquil',              paraguay: 'America/Asuncion',
+    brasil:    'America/Sao_Paulo',              brazil:   'America/Sao_Paulo',
+    españa:    'Europe/Madrid',                  spain:    'Europe/Madrid',
+    'estados unidos': 'America/New_York',        usa:      'America/New_York',
+  };
+  const tzUser = IANA_TZ_EXP[pais.toLowerCase().trim()] ?? 'America/Argentina/Buenos_Aires';
+  const fechaArchivo = new Intl.DateTimeFormat('en-CA', {
+    timeZone: tzUser, year: 'numeric', month: '2-digit', day: '2-digit',
+  }).format(new Date());
 
   if (formato === 'pdf') {
     const calc = calculos[0];
