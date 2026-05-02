@@ -47,6 +47,7 @@ export default function BotonesExportar({ datos, visible }: Props) {
     setGuardando(true);
     setMsgErr('');
     try {
+      const usr = (() => { try { return JSON.parse(localStorage.getItem('ip_usuario') || '{}'); } catch { return {}; } })();
       const res = await fetch('/api/calculos/guardar', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -58,6 +59,8 @@ export default function BotonesExportar({ datos, visible }: Props) {
           normativa:    datos.normativa    ?? null,
           parametros:   datos.parametros,
           resultado:    datos.resultado,
+          usuarioId:    usr?.id     ?? null,
+          usuario:      usr?.nombre ?? usr?.email ?? null,
         }),
       });
       if (!res.ok) {
