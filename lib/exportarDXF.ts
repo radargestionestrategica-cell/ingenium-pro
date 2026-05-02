@@ -1657,7 +1657,8 @@ export interface ParamsTuberias {
     const estilo   = String(p['Estilo']               ?? 'Wafer');
     const proyecto = String(p['Proyecto']             ?? '');
     const f2f_raw  = p['F2F ASME B16.10 (mm)'];
-    const fecha    = new Date().toLocaleDateString('es-AR');
+    const _ahora   = new Date();
+    const fechaHora = `${_ahora.getFullYear()}-${String(_ahora.getMonth()+1).padStart(2,'0')}-${String(_ahora.getDate()).padStart(2,'0')} ${String(_ahora.getHours()).padStart(2,'0')}:${String(_ahora.getMinutes()).padStart(2,'0')}`;
 
     const nps_num = parseFloat(nps);
     if (isNaN(nps_num) || nps_num <= 0) return '';
@@ -1723,7 +1724,7 @@ export interface ParamsTuberias {
     ents.push(T(ax0, ay_top + 16, 4.5,
       `Diametro disco: ${disc_d.toFixed(1)} mm (NPS x 25.4) - Normativa: API 609 / MSS SP-67 / ASME B16.34 / B16.5`, 'ANOTACIONES', 2));
     ents.push(T(ax0, ay_top + 4, 4,
-      `Proyecto: ${proyecto || 'Sin nombre'} - Fecha: ${fecha} - Apertura: 1/4 vuelta`, 'ANOTACIONES', 2));
+      `Proyecto: ${proyecto || 'Sin nombre'} - Fecha/Hora: ${fechaHora} - Apertura: 1/4 vuelta`, 'ANOTACIONES', 2));
 
     // Cota disco (siempre disponible) o F2F
     const yd = -(disc_r + 14);
@@ -1779,7 +1780,8 @@ export function exportarDXFRetencion(p: Record<string, unknown>): string {
   const clase    = String(p['Clase de presion'] ?? p['clase'] ?? '600');
   const subtipo  = String(p['Subtipo'] ?? 'Swing');
   const proyecto = String(p['Proyecto'] ?? p['proyecto'] ?? '');
-  const fecha    = new Date().toISOString().slice(0, 10);
+  const ahora    = new Date();
+  const fechaHora = `${ahora.getFullYear()}-${String(ahora.getMonth()+1).padStart(2,'0')}-${String(ahora.getDate()).padStart(2,'0')} ${String(ahora.getHours()).padStart(2,'0')}:${String(ahora.getMinutes()).padStart(2,'0')}`;
 
   const f2f_raw = p['F2F ASME B16.10 (mm)'] ?? p['F2F ASME B16.10 resultado (mm)'] ?? p['F2F'] ?? 0;
   const f2f_num = typeof f2f_raw === 'number' ? f2f_raw : parseFloat(String(f2f_raw));
@@ -1869,7 +1871,7 @@ export function exportarDXFRetencion(p: Record<string, unknown>): string {
   ents.push(T(ax0, ay_top + 16, 4.5,
     `Face-to-Face: ${f2f_num.toFixed(0)} mm (${(f2f_num / 25.4).toFixed(2)}") - Normativa: ASME B16.10-2022 + API STD 594`, 'ANOTACIONES', 2));
   ents.push(T(ax0, ay_top + 4, 4,
-    `Proyecto: ${proyecto || 'Sin nombre'} - Fecha: ${fecha}`, 'ANOTACIONES', 2));
+    `Proyecto: ${proyecto || 'Sin nombre'} - Fecha/Hora: ${fechaHora}`, 'ANOTACIONES', 2));
 
   const xf0 = -(hw + flange_t);
   const xf1 =  (hw + flange_t);
