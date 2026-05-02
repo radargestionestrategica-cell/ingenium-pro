@@ -1767,3 +1767,266 @@ export interface ParamsTuberias {
 
     return [header, ...ents, '  0','ENDSEC','  0','EOF'].join('\n');
   }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// VÁLVULA DE RETENCIÓN — ASME B16.10-2022 + API STD 594
+// Subtipos: Swing (clapeta giratoria), Lift (disco axial), Tilting Disc
+// 4 capas: CUERPO (7), CLAPETA (5), BRIDA (3), ANOTACIONES (2/1)
+// ─────────────────────────────────────────────────────────────────────────────
+export function exportarDXFRetencion(p: Record<string, unknown>): string {
+  const nps_num  = parseFloat(String(p['NPS (pulg)'] ?? p['NPS'] ?? 0));
+  if (!(nps_num > 0)) return '';
+  const clase    = String(p['Clase de presion'] ?? p['clase'] ?? '600');
+  const subtipo  = String(p['Subtipo'] ?? 'Swing');
+  const proyecto = String(p['Proyecto'] ?? p['proyecto'] ?? '');
+  const fecha    = new Date().toISOString().slice(0, 10);
+
+  const f2f_raw = p['F2F ASME B16.10 (mm)'] ?? p['F2F ASME B16.10 resultado (mm)'] ?? p['F2F'] ?? 0;
+  const f2f_num = typeof f2f_raw === 'number' ? f2f_raw : parseFloat(String(f2f_raw));
+  if (!(f2f_num > 0)) return '';
+
+  const OD_raw    = p['OD (mm)'];
+  const BC_raw    = p['BC (mm)'];
+  const bore_raw  = p['Bore (mm)'];
+  const npern_raw = p['Numero de pernos'];
+  const OD_mm   = typeof OD_raw    === 'number' ? OD_raw    : parseFloat(String(OD_raw    ?? 0));
+  const BC_mm   = typeof BC_raw    === 'number' ? BC_raw    : parseFloat(String(BC_raw    ?? 0));
+  const bore_mm = typeof bore_raw  === 'number' ? bore_raw  : parseFloat(String(bore_raw  ?? (nps_num * 25.4 * 0.9)));
+  const n_pern  = typeof npern_raw === 'number' ? npern_raw : parseInt(String(npern_raw   ?? 8));
+
+  const hw       = f2f_num / 2;
+  const body_h   = OD_mm > 0 ? OD_mm / 2 : nps_num * 25.4 * 0.8;
+  const bore_r   = bore_mm > 0 ? bore_mm / 2 : nps_num * 25.4 / 2;
+  const flange_t = OD_mm > 0 ? OD_mm * 0.06 : nps_num * 25.4 * 0.12;
+  const flange_h = OD_mm > 0 ? OD_mm / 2 : body_h;
+
+  type Ent = string;
+  const ents: Ent[] = [];
+
+  const L = (x1: number, y1: number, x2: number, y2: number, lyr: string, col: number): Ent =>
+    `  0\nLINE\n  8\n${lyr}\n 62\n${col}\n 10\n${x1.toFixed(3)}\n 20\n${y1.toFixed(3)}\n 30\n0.0\n 11\n${x2.toFixed(3)}\n 21\n${y2.toFixed(3)}\n 31\n0.0`;
+  const C = (cx: number, cy: number, r: number, lyr: string, col: number): Ent =>
+    `  0\nCIRCLE\n  8\n${lyr}\n 62\n${col}\n 10\n${cx.toFixed(3)}\n 20\n${cy.toFixed(3)}\n 30\n0.0\n 40\n${r.toFixed(3)}`;
+  const T = (x: number, y: number, h: number, txt: string, lyr: string, col: number): Ent =>
+    `  0\nTEXT\n  8\n${lyr}\n 62\n${col}\n 10\n${x.toFixed(3)}\n 20\n${y.toFixed(3)}\n 30\n0.0\n 40\n${h.toFixed(2)}\n  1\n${txt}\n 72\n1\n 11\n${x.toFixed(3)}\n 21\n${y.toFixed(3)}\n 31\n0.0`;
+
+  // CUERPO — body rectangle + bore passage lines
+  ents.push(L(-hw, -body_h,  hw, -body_h, 'CUERPO', 7));
+  ents.push(L( hw, -body_h,  hw,  body_h, 'CUERPO', 7));
+  ents.push(L( hw,  body_h, -hw,  body_h, 'CUERPO', 7));
+  ents.push(L(-hw,  body_h, -hw, -body_h, 'CUERPO', 7));
+  ents.push(L(-hw,  bore_r,  hw,  bore_r, 'CUERPO', 7));
+  ents.push(L(-hw, -bore_r,  hw, -bore_r, 'CUERPO', 7));
+
+  // CLAPETA — schematic in semi-open position
+  if (subtipo === 'Swing') {
+    const hx  = hw * 0.1;
+    const hy  = bore_r;
+    const dl  = bore_r * 2;
+    const ang = Math.PI / 4;
+    ents.push(C(hx, hy, bore_r * 0.08, 'CLAPETA', 5));
+    ents.push(L(hx, hy, hx + dl * Math.sin(ang), hy - dl * Math.cos(ang), 'CLAPETA', 5));
+    ents.push(L(hx, hy, hx, hy - dl, 'CLAPETA', 5));
+  } else if (subtipo === 'Lift') {
+    ents.push(C(0, 0, bore_r * 0.45, 'CLAPETA', 5));
+    ents.push(L(0, bore_r * 0.45, 0, bore_r, 'CLAPETA', 5));
+    ents.push(L(-bore_r * 0.5, 0, bore_r * 0.5, 0, 'CLAPETA', 5));
+  } else {
+    const tilt = Math.PI / 6;
+    const tdx = bore_r * Math.sin(tilt);
+    const tdy = bore_r * Math.cos(tilt);
+    ents.push(C(0, 0, bore_r * 0.08, 'CLAPETA', 5));
+    ents.push(L(-tdx, -tdy, tdx, tdy, 'CLAPETA', 5));
+  }
+
+  // BRIDA — left and right flanges with bolt holes
+  for (const side of [-1, 1] as const) {
+    const x0 = side * hw;
+    const x1 = side * (hw + flange_t);
+    ents.push(L(x0, -flange_h, x1, -flange_h, 'BRIDA', 3));
+    ents.push(L(x1, -flange_h, x1,  flange_h, 'BRIDA', 3));
+    ents.push(L(x1,  flange_h, x0,  flange_h, 'BRIDA', 3));
+    if (BC_mm > 0 && n_pern > 0) {
+      const r_bc  = BC_mm / 2;
+      const scale = flange_h / (OD_mm > 0 ? OD_mm / 2 : flange_h);
+      const cx    = side * (hw + flange_t * 0.5);
+      for (let i = 0; i < n_pern; i++) {
+        const bang = (Math.PI * i) / n_pern;
+        ents.push(C(cx, r_bc * Math.sin(bang) * scale, 1.5, 'BRIDA', 3));
+      }
+    }
+  }
+
+  // ANOTACIONES
+  const ax0    = -(hw + flange_t);
+  const ay_top = body_h + 12;
+  const ay_bot = -(body_h + 22);
+
+  ents.push(T(ax0, ay_top + 40, 5,
+    'INGENIUM PRO v8.1 - VALVULA DE RETENCION - PLANO ESQUEMATICO', 'ANOTACIONES', 2));
+  ents.push(T(ax0, ay_top + 28, 5,
+    `NPS ${nps_num}" - Class ${clase} - Subtipo: ${subtipo} Check`, 'ANOTACIONES', 2));
+  ents.push(T(ax0, ay_top + 16, 4.5,
+    `Face-to-Face: ${f2f_num.toFixed(0)} mm (${(f2f_num / 25.4).toFixed(2)}") - Normativa: ASME B16.10-2022 + API STD 594`, 'ANOTACIONES', 2));
+  ents.push(T(ax0, ay_top + 4, 4,
+    `Proyecto: ${proyecto || 'Sin nombre'} - Fecha: ${fecha}`, 'ANOTACIONES', 2));
+
+  const xf0 = -(hw + flange_t);
+  const xf1 =  (hw + flange_t);
+  const yd  = -(body_h + 8);
+  ents.push(L(xf0, -(body_h - 2), xf0, yd, 'ANOTACIONES', 2));
+  ents.push(L(xf1, -(body_h - 2), xf1, yd, 'ANOTACIONES', 2));
+  ents.push(L(xf0, yd, xf1, yd, 'ANOTACIONES', 2));
+  ents.push(T(0, yd - 9, 3.5, `F-to-F = ${f2f_num.toFixed(0)} mm`, 'ANOTACIONES', 2));
+
+  ents.push(T(ax0, ay_bot,      4.5, '* Plano esquematico - requiere validacion de fabricante antes de mecanizar.', 'ANOTACIONES', 1));
+  ents.push(T(ax0, ay_bot - 12, 4,   `* Subtipo: ${subtipo} Check - Clapeta en posicion semi-abierta. ASME B16.10-2022 + API STD 594.`, 'ANOTACIONES', 1));
+  ents.push(T(ax0, ay_bot - 24, 4,   '* Verificar con fabricante. Plano NO apto para fabricacion directa.', 'ANOTACIONES', 1));
+
+  const header = [
+    '  0','SECTION','  2','HEADER',
+    '  9','$ACADVER','  1','AC1015',
+    '  9','$INSUNITS',' 70','4',
+    '  0','ENDSEC',
+    '  0','SECTION','  2','TABLES',
+    '  0','TABLE','  2','LAYER',' 70','4',
+    '  0','LAYER','  2','CUERPO',      ' 70','0',' 62','7','  6','CONTINUOUS',
+    '  0','LAYER','  2','CLAPETA',     ' 70','0',' 62','5','  6','CONTINUOUS',
+    '  0','LAYER','  2','BRIDA',       ' 70','0',' 62','3','  6','CONTINUOUS',
+    '  0','LAYER','  2','ANOTACIONES', ' 70','0',' 62','2','  6','CONTINUOUS',
+    '  0','ENDTAB','  0','ENDSEC',
+    '  0','SECTION','  2','ENTITIES',
+  ].join('\n');
+
+  return [header, ...ents, '  0','ENDSEC','  0','EOF'].join('\n');
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// VÁLVULA DE TAPÓN — ASME B16.10-2022 + MSS SP-78
+// Patrones: Regular / Venturi — F2F idéntico por patrón
+// 4 capas: CUERPO (7), TAPON_CONICO (4), BRIDA (3), ANOTACIONES (2/1)
+// ─────────────────────────────────────────────────────────────────────────────
+export function exportarDXFTapon(p: Record<string, unknown>): string {
+  const nps_num  = parseFloat(String(p['NPS (pulg)'] ?? p['NPS'] ?? 0));
+  if (!(nps_num > 0)) return '';
+  const clase    = String(p['Clase de presion'] ?? p['clase'] ?? '600');
+  const patron   = String(p['Patron'] ?? p['patron'] ?? 'Regular');
+  const proyecto = String(p['Proyecto'] ?? p['proyecto'] ?? '');
+  const fecha    = new Date().toISOString().slice(0, 10);
+
+  const f2f_raw = p['F2F ASME B16.10 (mm)'] ?? p['F2F ASME B16.10 resultado (mm)'] ?? p['F2F'] ?? 0;
+  const f2f_num = typeof f2f_raw === 'number' ? f2f_raw : parseFloat(String(f2f_raw));
+  if (!(f2f_num > 0)) return '';
+
+  const OD_raw    = p['OD (mm)'];
+  const BC_raw    = p['BC (mm)'];
+  const bore_raw  = p['Bore (mm)'];
+  const npern_raw = p['Numero de pernos'];
+  const OD_mm   = typeof OD_raw    === 'number' ? OD_raw    : parseFloat(String(OD_raw    ?? 0));
+  const BC_mm   = typeof BC_raw    === 'number' ? BC_raw    : parseFloat(String(BC_raw    ?? 0));
+  const bore_mm = typeof bore_raw  === 'number' ? bore_raw  : parseFloat(String(bore_raw  ?? (nps_num * 25.4 * 0.9)));
+  const n_pern  = typeof npern_raw === 'number' ? npern_raw : parseInt(String(npern_raw   ?? 8));
+
+  const hw       = f2f_num / 2;
+  const body_h   = OD_mm > 0 ? OD_mm / 2 : nps_num * 25.4 * 0.8;
+  const bore_r   = bore_mm > 0 ? bore_mm / 2 : nps_num * 25.4 / 2;
+  const flange_t = OD_mm > 0 ? OD_mm * 0.06 : nps_num * 25.4 * 0.12;
+  const flange_h = OD_mm > 0 ? OD_mm / 2 : body_h;
+
+  // Plug cone geometry: trapezoid rotated 90° (taper axis = vertical)
+  const cone_top_w  = bore_r * 1.1;    // half-width at top (wider end of taper)
+  const cone_bot_w  = bore_r * 0.5;    // half-width at bottom (narrower end)
+  const cone_top_y  = body_h * 0.7;    // top y-position
+  const cone_bot_y  = -body_h * 0.65;  // bottom y-position
+
+  type Ent = string;
+  const ents: Ent[] = [];
+
+  const L = (x1: number, y1: number, x2: number, y2: number, lyr: string, col: number): Ent =>
+    `  0\nLINE\n  8\n${lyr}\n 62\n${col}\n 10\n${x1.toFixed(3)}\n 20\n${y1.toFixed(3)}\n 30\n0.0\n 11\n${x2.toFixed(3)}\n 21\n${y2.toFixed(3)}\n 31\n0.0`;
+  const C = (cx: number, cy: number, r: number, lyr: string, col: number): Ent =>
+    `  0\nCIRCLE\n  8\n${lyr}\n 62\n${col}\n 10\n${cx.toFixed(3)}\n 20\n${cy.toFixed(3)}\n 30\n0.0\n 40\n${r.toFixed(3)}`;
+  const T = (x: number, y: number, h: number, txt: string, lyr: string, col: number): Ent =>
+    `  0\nTEXT\n  8\n${lyr}\n 62\n${col}\n 10\n${x.toFixed(3)}\n 20\n${y.toFixed(3)}\n 30\n0.0\n 40\n${h.toFixed(2)}\n  1\n${txt}\n 72\n1\n 11\n${x.toFixed(3)}\n 21\n${y.toFixed(3)}\n 31\n0.0`;
+
+  // CUERPO — body rectangle + bore passage lines
+  ents.push(L(-hw, -body_h,  hw, -body_h, 'CUERPO', 7));
+  ents.push(L( hw, -body_h,  hw,  body_h, 'CUERPO', 7));
+  ents.push(L( hw,  body_h, -hw,  body_h, 'CUERPO', 7));
+  ents.push(L(-hw,  body_h, -hw, -body_h, 'CUERPO', 7));
+  ents.push(L(-hw,  bore_r,  hw,  bore_r, 'CUERPO', 7));
+  ents.push(L(-hw, -bore_r,  hw, -bore_r, 'CUERPO', 7));
+
+  // TAPON_CONICO — trapezoidal plug rotated 90° (cone open-position, bore aligned)
+  // Trapezoid: top side at cone_top_y, bottom side at cone_bot_y
+  ents.push(L(-cone_top_w, cone_top_y,  cone_top_w, cone_top_y, 'TAPON_CONICO', 4));  // top edge (wide)
+  ents.push(L(-cone_bot_w, cone_bot_y,  cone_bot_w, cone_bot_y, 'TAPON_CONICO', 4));  // bottom edge (narrow)
+  ents.push(L(-cone_top_w, cone_top_y, -cone_bot_w, cone_bot_y, 'TAPON_CONICO', 4));  // left taper
+  ents.push(L( cone_top_w, cone_top_y,  cone_bot_w, cone_bot_y, 'TAPON_CONICO', 4));  // right taper
+  // Bore hole through plug (Venturi = smaller, Regular = standard)
+  const plug_bore_r = patron === 'Venturi' ? bore_r * 0.55 : bore_r * 0.85;
+  ents.push(C(0, (cone_top_y + cone_bot_y) / 2, plug_bore_r, 'TAPON_CONICO', 4));
+  // Stem indicator (top of plug)
+  ents.push(L(0, cone_top_y, 0, cone_top_y + body_h * 0.25, 'TAPON_CONICO', 4));
+
+  // BRIDA — left and right flanges with bolt holes
+  for (const side of [-1, 1] as const) {
+    const x0 = side * hw;
+    const x1 = side * (hw + flange_t);
+    ents.push(L(x0, -flange_h, x1, -flange_h, 'BRIDA', 3));
+    ents.push(L(x1, -flange_h, x1,  flange_h, 'BRIDA', 3));
+    ents.push(L(x1,  flange_h, x0,  flange_h, 'BRIDA', 3));
+    if (BC_mm > 0 && n_pern > 0) {
+      const r_bc  = BC_mm / 2;
+      const scale = flange_h / (OD_mm > 0 ? OD_mm / 2 : flange_h);
+      const cx    = side * (hw + flange_t * 0.5);
+      for (let i = 0; i < n_pern; i++) {
+        const bang = (Math.PI * i) / n_pern;
+        ents.push(C(cx, r_bc * Math.sin(bang) * scale, 1.5, 'BRIDA', 3));
+      }
+    }
+  }
+
+  // ANOTACIONES
+  const ax0    = -(hw + flange_t);
+  const ay_top = body_h + 12;
+  const ay_bot = -(body_h + 22);
+
+  ents.push(T(ax0, ay_top + 40, 5,
+    'INGENIUM PRO v8.1 - VALVULA DE TAPON - PLANO ESQUEMATICO', 'ANOTACIONES', 2));
+  ents.push(T(ax0, ay_top + 28, 5,
+    `NPS ${nps_num}" - Class ${clase} - Patron: ${patron}`, 'ANOTACIONES', 2));
+  ents.push(T(ax0, ay_top + 16, 4.5,
+    `Face-to-Face: ${f2f_num.toFixed(0)} mm (${(f2f_num / 25.4).toFixed(2)}") - Normativa: ASME B16.10-2022 + MSS SP-78`, 'ANOTACIONES', 2));
+  ents.push(T(ax0, ay_top + 4, 4,
+    `Proyecto: ${proyecto || 'Sin nombre'} - Fecha: ${fecha} - Apertura: 1/4 vuelta`, 'ANOTACIONES', 2));
+
+  const xf0 = -(hw + flange_t);
+  const xf1 =  (hw + flange_t);
+  const yd  = -(body_h + 8);
+  ents.push(L(xf0, -(body_h - 2), xf0, yd, 'ANOTACIONES', 2));
+  ents.push(L(xf1, -(body_h - 2), xf1, yd, 'ANOTACIONES', 2));
+  ents.push(L(xf0, yd, xf1, yd, 'ANOTACIONES', 2));
+  ents.push(T(0, yd - 9, 3.5, `F-to-F = ${f2f_num.toFixed(0)} mm`, 'ANOTACIONES', 2));
+
+  ents.push(T(ax0, ay_bot,      4.5, '* Plano esquematico - requiere validacion de fabricante antes de mecanizar.', 'ANOTACIONES', 1));
+  ents.push(T(ax0, ay_bot - 12, 4,   `* Patron ${patron} - Cono girado 90deg (posicion abierta). ASME B16.10-2022 + MSS SP-78.`, 'ANOTACIONES', 1));
+  ents.push(T(ax0, ay_bot - 24, 4,   '* Verificar con fabricante. Plano NO apto para fabricacion directa.', 'ANOTACIONES', 1));
+
+  const header = [
+    '  0','SECTION','  2','HEADER',
+    '  9','$ACADVER','  1','AC1015',
+    '  9','$INSUNITS',' 70','4',
+    '  0','ENDSEC',
+    '  0','SECTION','  2','TABLES',
+    '  0','TABLE','  2','LAYER',' 70','4',
+    '  0','LAYER','  2','CUERPO',        ' 70','0',' 62','7','  6','CONTINUOUS',
+    '  0','LAYER','  2','TAPON_CONICO',  ' 70','0',' 62','4','  6','CONTINUOUS',
+    '  0','LAYER','  2','BRIDA',         ' 70','0',' 62','3','  6','CONTINUOUS',
+    '  0','LAYER','  2','ANOTACIONES',   ' 70','0',' 62','2','  6','CONTINUOUS',
+    '  0','ENDTAB','  0','ENDSEC',
+    '  0','SECTION','  2','ENTITIES',
+  ].join('\n');
+
+  return [header, ...ents, '  0','ENDSEC','  0','EOF'].join('\n');
+}

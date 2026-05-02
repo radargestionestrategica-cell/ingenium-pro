@@ -189,6 +189,8 @@ export default function BotonesExportar({ datos, visible }: Props) {
         VALVULAS_BRIDA_B16_5:        mod.exportarDXFBridaB165,
         VALVULAS_DISENO_BOLA:        mod.exportarDXFBola,
         VALVULAS_DISENO_MARIPOSA:    mod.exportarDXFMariposa,
+        VALVULAS_DISENO_RETENCION:   mod.exportarDXFRetencion,
+        VALVULAS_DISENO_TAPON:       mod.exportarDXFTapon,
         VALVULAS_COEFICIENTE_CV:     mod.exportarDXFValvulas,
         // Civil
         VIGA_ACERO_AISC:             mod.exportarDXFCanerias,

@@ -10,7 +10,11 @@
       "Bash(git push *)",
       "Bash(node -e \"require\\('react-markdown'\\); console.log\\('OK'\\)\")",
       "Bash(node -e \"console.log\\(require\\('react-markdown/package.json'\\).version\\)\")",
-      "Bash(findstr \"\\\\\"version\\\\\"\")"
+      "Bash(findstr \"\\\\\"version\\\\\"\")",
+      "Bash(grep -v \"//\")",
+      "Bash(dir C:\\\\Users\\\\Usuario\\\\Desktop\\\\INGENIUM-PRO-RADAR\\\\radar-app\\\\components\\\\Modulo*.tsx /b)",
+      "Bash(npx prisma *)",
+      "Bash(git rm *)"
     ]
   }
 }

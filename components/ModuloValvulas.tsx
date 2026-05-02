@@ -128,13 +128,28 @@ const F2F_BOLA: Record<string, Record<string, number>> = {
   '600': { '0.5':165,'0.75':190,'1':216,'1.25':229,'1.5':241,'2':292,'2.5':330,'3':356,'4':432,'6':559,'8':660,'10':787,'12':838 },
 };
 
-type TipoDisenio = 'compuerta' | 'globo' | 'bola' | 'mariposa';
+// ─── Swing Check — ASME B16.10-2022 + API STD 594 ────────────────
+// Solo Swing Class 600 con datos verificados. Clases 150/300: Consultar fabricante.
+const F2F_RETENCION: Record<string, Record<string, number>> = {
+  '600': { '1.5':241,'2':292,'2.5':330,'3':356,'4':432,'5':508,'6':559,'8':660,'10':787,'12':838,'14':889,'16':991,'18':1092,'20':1194,'22':1295,'24':1397,'26':1448,'28':1600,'30':1651,'36':2083 },
+};
+
+// ─── Tapón Regular/Venturi — ASME B16.10-2022 + MSS SP-78 ────────
+// Class 600 y Class 900 (parcial). Clases 150/300: Consultar fabricante.
+const F2F_TAPON: Record<string, Record<string, number>> = {
+  '600': { '1':216,'1.25':229,'1.5':241,'2':292,'2.5':330,'3':356,'4':432,'6':559,'8':660,'10':787,'12':838,'14':889,'16':991,'18':1092,'20':1194,'22':1295,'24':1397,'26':1448,'30':1651,'32':1778,'34':1930,'36':2083 },
+  '900': { '8':794,'10':940,'12':1067 },
+};
+
+type TipoDisenio = 'compuerta' | 'globo' | 'bola' | 'mariposa' | 'retencion' | 'tapon';
 
 const CLASES_DISENO: Record<TipoDisenio, string[]> = {
   compuerta: ['150','300','600','900'],
   globo:     ['150','300','600','900'],
   bola:      ['150','300','600'],
   mariposa:  ['150','300'],
+  retencion: ['150','300','600'],
+  tapon:     ['150','300','600','900'],
 };
 
 const NPS_DISENO: Record<TipoDisenio, Record<string, string[]>> = {
@@ -158,6 +173,17 @@ const NPS_DISENO: Record<TipoDisenio, Record<string, string[]>> = {
   mariposa: {
     '150': ['2','2.5','3','4','6','8','10','12'],
     '300': ['2','2.5','3','4','6','8','10','12'],
+  },
+  retencion: {
+    '150': ['1.5','2','2.5','3','4','6','8','10','12'],
+    '300': ['1.5','2','2.5','3','4','6','8','10','12'],
+    '600': ['1.5','2','2.5','3','4','5','6','8','10','12','14','16','18','20','22','24','26','28','30','36'],
+  },
+  tapon: {
+    '150': ['0.5','0.75','1','1.25','1.5','2','2.5','3','4','6','8','10','12'],
+    '300': ['0.5','0.75','1','1.25','1.5','2','2.5','3','4','6','8','10','12'],
+    '600': ['1','1.25','1.5','2','2.5','3','4','6','8','10','12','14','16','18','20','22','24','26','30','32','34','36'],
+    '900': ['8','10','12'],
   },
 };
 
@@ -518,12 +544,15 @@ export default function ModuloValvulas() {
   const [disNPS, setDisNPS] = useState('4');
   const [disProyecto, setDisProyecto] = useState('');
   const [disEstilo, setDisEstilo] = useState('Wafer');
+  const [disSubtipo, setDisSubtipo] = useState('Swing');
+  const [disPatron, setDisPatron] = useState('Regular');
   const [resDis, setResDis] = useState<null|{
     f2f_mm: number | null;
     fd: FlangeData | null;
     nps: string;
     clase: string;
     tipo: TipoDisenio;
+    subtipo?: string;
   }>(null);
 
   // ── CÁLCULO 1: CLASE REQUERIDA (B16.34) ──────────────────────
@@ -704,17 +733,26 @@ export default function ModuloValvulas() {
     let f2f_mm: number | null = null;
     if (disTipo === 'compuerta') f2f_mm = F2F_B1610[disClase]?.[disNPS] ?? null;
     else if (disTipo === 'bola') f2f_mm = F2F_BOLA[disClase]?.[disNPS] ?? null;
-    // globo: f2f_mm = null (no hay tabla embebida verificada)
-    setResDis({ f2f_mm, fd, nps: disNPS, clase: disClase, tipo: disTipo });
+    else if (disTipo === 'retencion' && disSubtipo === 'Swing') f2f_mm = F2F_RETENCION[disClase]?.[disNPS] ?? null;
+    else if (disTipo === 'tapon') f2f_mm = F2F_TAPON[disClase]?.[disNPS] ?? null;
+    // globo, mariposa, retencion Lift/Tilting: f2f_mm = null
+    setResDis({
+      f2f_mm, fd, nps: disNPS, clase: disClase, tipo: disTipo,
+      subtipo: disTipo === 'retencion' ? disSubtipo : disTipo === 'tapon' ? disPatron : undefined,
+    });
 
-    const tipoKey = disTipo === 'compuerta' ? 'VALVULAS_BRIDA_B16_5'
-                  : disTipo === 'bola'      ? 'VALVULAS_DISENO_BOLA'
-                  : disTipo === 'mariposa'  ? 'VALVULAS_DISENO_MARIPOSA'
-                  :                          'VALVULAS_DISENO_GLOBO';
-    const normativa = disTipo === 'bola'     ? 'ASME B16.34-2017 + ASME B16.10-2018 + API 6D'
-                    : disTipo === 'compuerta'? 'ASME B16.34-2017 + ASME B16.10-2018 + API 600'
-                    : disTipo === 'mariposa' ? 'API 609 / MSS SP-67 / ASME B16.34-2017'
-                    :                         'ASME B16.34-2017 + ASME B16.10-2018';
+    const tipoKey = disTipo === 'compuerta'  ? 'VALVULAS_BRIDA_B16_5'
+                  : disTipo === 'bola'       ? 'VALVULAS_DISENO_BOLA'
+                  : disTipo === 'mariposa'   ? 'VALVULAS_DISENO_MARIPOSA'
+                  : disTipo === 'retencion'  ? 'VALVULAS_DISENO_RETENCION'
+                  : disTipo === 'tapon'      ? 'VALVULAS_DISENO_TAPON'
+                  :                           'VALVULAS_DISENO_GLOBO';
+    const normativa = disTipo === 'bola'      ? 'ASME B16.34-2017 + ASME B16.10-2018 + API 6D'
+                    : disTipo === 'compuerta' ? 'ASME B16.34-2017 + ASME B16.10-2018 + API 600'
+                    : disTipo === 'mariposa'  ? 'API 609 / MSS SP-67 / ASME B16.34-2017'
+                    : disTipo === 'retencion' ? 'ASME B16.10-2022 + API STD 594'
+                    : disTipo === 'tapon'     ? 'ASME B16.10-2022 + MSS SP-78'
+                    :                          'ASME B16.34-2017 + ASME B16.10-2018';
 
     const payload: DatosExportar = {
       tipo: tipoKey,
@@ -723,7 +761,9 @@ export default function ModuloValvulas() {
         'NPS (pulg)': disNPS,
         'Clase de presion': disClase,
         'Tipo valvula': disTipo,
-        ...(disTipo === 'mariposa' ? { 'Estilo': disEstilo } : {}),
+        ...(disTipo === 'mariposa'  ? { 'Estilo': disEstilo } : {}),
+        ...(disTipo === 'retencion' ? { 'Subtipo': disSubtipo } : {}),
+        ...(disTipo === 'tapon'     ? { 'Patron': disPatron } : {}),
         'Proyecto': disProyecto || 'Sin nombre',
         'F2F ASME B16.10 (mm)': f2f_mm ?? 'Consultar fabricante',
       },
@@ -1063,10 +1103,12 @@ export default function ModuloValvulas() {
           {/* Selector tipo válvula */}
           <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' as const }}>
             {([
-              { id: 'compuerta' as TipoDisenio, label: 'Compuerta (Gate)',    icon: '🔲', norma: 'API 600 / B16.34' },
-              { id: 'globo'     as TipoDisenio, label: 'Globo (Globe)',       icon: '🔵', norma: 'ASME B16.34' },
-              { id: 'bola'      as TipoDisenio, label: 'Bola (Ball)',         icon: '⚽', norma: 'API 6D / B16.34' },
-              { id: 'mariposa'  as TipoDisenio, label: 'Mariposa (Butterfly)',icon: '🦋', norma: 'API 609 / MSS SP-67' },
+              { id: 'compuerta'  as TipoDisenio, label: 'Compuerta (Gate)',    icon: '🔲', norma: 'API 600 / B16.34' },
+              { id: 'globo'      as TipoDisenio, label: 'Globo (Globe)',        icon: '🔵', norma: 'ASME B16.34' },
+              { id: 'bola'       as TipoDisenio, label: 'Bola (Ball)',          icon: '⚽', norma: 'API 6D / B16.34' },
+              { id: 'mariposa'   as TipoDisenio, label: 'Mariposa (Butterfly)', icon: '🦋', norma: 'API 609 / MSS SP-67' },
+              { id: 'retencion'  as TipoDisenio, label: 'Retención (Check)',    icon: '↩️', norma: 'API 594 / B16.10' },
+              { id: 'tapon'      as TipoDisenio, label: 'Tapón (Plug)',         icon: '🔌', norma: 'MSS SP-78 / B16.10' },
             ]).map(t => (
               <button key={t.id} onClick={() => {
                 setDisTipo(t.id);
@@ -1076,7 +1118,7 @@ export default function ModuloValvulas() {
                 setDisNPS(npsList[Math.min(4, npsList.length - 1)] || npsList[0] || '');
                 setResDis(null);
               }}
-                style={{ flex: '1 1 calc(25% - 8px)', minWidth: 100, padding: '12px 8px', border: `1px solid ${disTipo === t.id ? COLOR : 'rgba(13,148,136,0.2)'}`, borderRadius: 10, cursor: 'pointer', fontSize: 12, fontWeight: 700, background: disTipo === t.id ? `linear-gradient(135deg,${COLOR},#0f766e)` : '#0a0f1e', color: disTipo === t.id ? '#fff' : '#64748b', textAlign: 'center' as const }}
+                style={{ flex: '1 1 calc(20% - 8px)', minWidth: 90, padding: '10px 6px', border: `1px solid ${disTipo === t.id ? COLOR : 'rgba(13,148,136,0.2)'}`, borderRadius: 10, cursor: 'pointer', fontSize: 11, fontWeight: 700, background: disTipo === t.id ? `linear-gradient(135deg,${COLOR},#0f766e)` : '#0a0f1e', color: disTipo === t.id ? '#fff' : '#64748b', textAlign: 'center' as const }}
               >
                 <div style={{ fontSize: 20, marginBottom: 4 }}>{t.icon}</div>
                 <div>{t.label}</div>
@@ -1118,26 +1160,63 @@ export default function ModuloValvulas() {
             </div>
           )}
 
+          {/* Subtipo — solo para válvula de retención */}
+          {disTipo === 'retencion' && (
+            <div style={{ marginBottom: 16 }}>
+              <label style={lbl}>Subtipo de válvula de retención</label>
+              <select value={disSubtipo} onChange={e => setDisSubtipo(e.target.value)} style={inp}>
+                <option value="Swing"        style={{ background: '#0a0f1e' }}>Swing Check — clapeta giratoria (bajo ΔP, caudal alto)</option>
+                <option value="Lift"         style={{ background: '#0a0f1e' }}>Lift Check — disco axial (alta presión, flujo limpio)</option>
+                <option value="Tilting Disc" style={{ background: '#0a0f1e' }}>Tilting Disc — disco inclinado (cierre rápido, agua)</option>
+              </select>
+            </div>
+          )}
+
+          {/* Patrón — solo para válvula de tapón */}
+          {disTipo === 'tapon' && (
+            <div style={{ marginBottom: 16 }}>
+              <label style={lbl}>Patrón de tapón</label>
+              <select value={disPatron} onChange={e => setDisPatron(e.target.value)} style={inp}>
+                <option value="Regular" style={{ background: '#0a0f1e' }}>Regular — orificio estándar (MSS SP-78)</option>
+                <option value="Venturi" style={{ background: '#0a0f1e' }}>Venturi — orificio reducido (menor pérdida de presión)</option>
+              </select>
+            </div>
+          )}
+
           <Btn onClick={calcDisenio} text={
-            disTipo === 'compuerta' ? 'Consultar F2F — Compuerta ASME B16.10 Tabla 1' :
-            disTipo === 'globo'     ? 'Consultar dimensiones — Globo ASME B16.34'      :
-            disTipo === 'mariposa'  ? 'Generar esquema — Mariposa API 609 / MSS SP-67' :
-                                     'Consultar F2F — Bola API 6D / ASME B16.10 Long Pattern'
+            disTipo === 'compuerta'  ? 'Consultar F2F — Compuerta ASME B16.10 Tabla 1'       :
+            disTipo === 'globo'      ? 'Consultar dimensiones — Globo ASME B16.34'            :
+            disTipo === 'mariposa'   ? 'Generar esquema — Mariposa API 609 / MSS SP-67'       :
+            disTipo === 'retencion'  ? 'Consultar F2F — Retención ASME B16.10-2022 + API 594' :
+            disTipo === 'tapon'      ? 'Consultar F2F — Tapón ASME B16.10-2022 + MSS SP-78'   :
+                                      'Consultar F2F — Bola API 6D / ASME B16.10 Long Pattern'
           } />
 
           {resDis && (() => {
-            const { f2f_mm, fd, nps, clase, tipo } = resDis;
-            const tipoLabel = tipo === 'compuerta' ? 'Compuerta (Gate)' : tipo === 'globo' ? 'Globo (Globe)' : tipo === 'mariposa' ? 'Mariposa (Butterfly)' : 'Bola (Ball)';
+            const { f2f_mm, fd, nps, clase, tipo, subtipo } = resDis;
+            const tipoLabel = tipo === 'compuerta' ? 'Compuerta (Gate)'
+                            : tipo === 'globo'     ? 'Globo (Globe)'
+                            : tipo === 'mariposa'  ? 'Mariposa (Butterfly)'
+                            : tipo === 'retencion' ? `Retención — ${subtipo ?? 'Swing'} Check`
+                            : tipo === 'tapon'     ? `Tapón ${subtipo ?? 'Regular'} (Plug)`
+                            :                       'Bola (Ball)';
             const normaLabel = tipo === 'bola'      ? 'ASME B16.34 + B16.10 Long Pattern + API 6D'
                              : tipo === 'compuerta' ? 'ASME B16.34 + B16.10 Tabla 1 + API 600'
                              : tipo === 'mariposa'  ? 'API 609 / MSS SP-67 / ASME B16.34'
+                             : tipo === 'retencion' ? 'ASME B16.10-2022 + API STD 594'
+                             : tipo === 'tapon'     ? 'ASME B16.10-2022 + MSS SP-78'
                              :                       'ASME B16.34 + B16.10';
             const OD_mm   = fd ? Math.round(fd.OD   * 25.4 * 10) / 10 : null;
             const BC_mm   = fd ? Math.round(fd.BC   * 25.4 * 10) / 10 : null;
             const bore_mm = fd ? Math.round(fd.bore * 25.4 * 10) / 10 : null;
             const db_mm   = fd ? Math.round(fd.db   * 25.4 * 10) / 10 : null;
             const bh_mm   = fd ? Math.round((fd.db + 0.125) * 25.4 * 10) / 10 : null;
-            const capaLabel = tipo === 'bola' ? 'ESFERA' : tipo === 'compuerta' ? 'CUÑA' : tipo === 'mariposa' ? 'EJE' : '—';
+            const capaLabel = tipo === 'bola'      ? 'ESFERA'
+                            : tipo === 'compuerta' ? 'CUÑA'
+                            : tipo === 'mariposa'  ? 'EJE'
+                            : tipo === 'retencion' ? 'CLAPETA'
+                            : tipo === 'tapon'     ? 'TAPON_CONICO'
+                            :                       '—';
             const disc_d_mm = tipo === 'mariposa' ? Math.round(parseFloat(nps) * 25.4 * 10) / 10 : null;
 
             return (
@@ -1157,8 +1236,8 @@ export default function ModuloValvulas() {
                   </div>
                 )}
 
-                {/* F2F — ocultar label de F2F para mariposa si no hay dato */}
-                {tipo !== 'mariposa' && (
+                {/* F2F — ocultar para mariposa, retencion y tapon (tienen su propia sección) */}
+                {tipo !== 'mariposa' && tipo !== 'retencion' && tipo !== 'tapon' && (
                   <div style={{ background: '#0a0f1e', borderRadius: 10, padding: 16, marginBottom: 14 }}>
                     <div style={{ fontSize: 9, color: '#475569', textTransform: 'uppercase' as const, marginBottom: 6, letterSpacing: 0.4 }}>
                       Face-to-Face ASME B16.10 {tipo === 'bola' ? '— Long Pattern' : tipo === 'compuerta' ? '— Tabla 1 (Raised Face)' : ''}
@@ -1185,6 +1264,66 @@ export default function ModuloValvulas() {
                     <div style={{ fontSize: 9, color: '#475569', textTransform: 'uppercase' as const, marginBottom: 4 }}>Face-to-Face ASME B16.10</div>
                     <div style={{ fontSize: 13, color: '#f59e0b', fontWeight: 700 }}>Consultar fabricante — dato no disponible en tabla estándar</div>
                     <div style={{ fontSize: 11, color: '#475569', marginTop: 4 }}>F2F varía según estilo (Wafer/Lug/Double Flanged) y fabricante. Consultar API 609 / ASME B16.10 con el proveedor.</div>
+                  </div>
+                )}
+
+                {/* F2F para retención */}
+                {tipo === 'retencion' && (
+                  <div style={{ background: '#0a0f1e', borderRadius: 10, padding: 16, marginBottom: 14 }}>
+                    <div style={{ fontSize: 9, color: '#475569', textTransform: 'uppercase' as const, marginBottom: 6, letterSpacing: 0.4 }}>
+                      Face-to-Face ASME B16.10-2022 — {subtipo ?? 'Swing'} Check
+                    </div>
+                    {f2f_mm ? (
+                      <>
+                        <div style={{ fontSize: 22, fontWeight: 800, color: COLOR }}>
+                          {f2f_mm} mm
+                          <span style={{ fontSize: 13, color: '#475569', fontWeight: 400, marginLeft: 12 }}>({(f2f_mm / 25.4).toFixed(2)}")</span>
+                        </div>
+                        <div style={{ fontSize: 11, color: '#475569', marginTop: 6 }}>
+                          Swing Check Class 600 · API STD 594 · DXF disponible con capa CLAPETA.
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div style={{ fontSize: 14, color: '#f59e0b', fontWeight: 700 }}>
+                          Consultar fabricante — dato no disponible en tabla estándar
+                        </div>
+                        <div style={{ fontSize: 11, color: '#475569', marginTop: 4 }}>
+                          {subtipo !== 'Swing'
+                            ? `F2F para ${subtipo ?? 'Lift'} Check varía por modelo y fabricante. Solo Swing Class 600 tiene valores embebidos.`
+                            : `F2F Swing Check para Class ${clase} no disponible en tabla embebida. Solo Class 600 verificada.`}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                )}
+
+                {/* F2F para tapón */}
+                {tipo === 'tapon' && (
+                  <div style={{ background: '#0a0f1e', borderRadius: 10, padding: 16, marginBottom: 14 }}>
+                    <div style={{ fontSize: 9, color: '#475569', textTransform: 'uppercase' as const, marginBottom: 6, letterSpacing: 0.4 }}>
+                      Face-to-Face ASME B16.10-2022 — Tapón {subtipo ?? 'Regular'}
+                    </div>
+                    {f2f_mm ? (
+                      <>
+                        <div style={{ fontSize: 22, fontWeight: 800, color: COLOR }}>
+                          {f2f_mm} mm
+                          <span style={{ fontSize: 13, color: '#475569', fontWeight: 400, marginLeft: 12 }}>({(f2f_mm / 25.4).toFixed(2)}")</span>
+                        </div>
+                        <div style={{ fontSize: 11, color: '#475569', marginTop: 6 }}>
+                          Patrón {subtipo ?? 'Regular'} · MSS SP-78 · Apertura 1/4 vuelta · DXF disponible con capa TAPON_CONICO.
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div style={{ fontSize: 14, color: '#f59e0b', fontWeight: 700 }}>
+                          Consultar fabricante — dato no disponible en tabla estándar
+                        </div>
+                        <div style={{ fontSize: 11, color: '#475569', marginTop: 4 }}>
+                          F2F para Class {clase} NPS {nps}" no disponible en tabla embebida. Solo Class 600 y Class 900 (NPS 8–12) verificadas.
+                        </div>
+                      </>
+                    )}
                   </div>
                 )}
 
@@ -1219,12 +1358,22 @@ export default function ModuloValvulas() {
 
                 {tipo === 'mariposa'
                   ? <Info t="DXF disponible: 4 capas (CUERPO · EJE · BRIDA · ANOTACIONES). Disco circular diámetro = NPS en mm. Plano esquemático — validar con fabricante." />
-                  : (f2f_mm
-                    ? <Info t={`DXF disponible: 4 capas (CUERPO · ${capaLabel} · BRIDA · ANOTACIONES). Plano esquemático — validar con fabricante antes de mecanizar.`} />
-                    : <Warn t="⚠️ F2F no disponible en tabla embebida — DXF no generado. Consultar fabricante." />
-                  )
+                  : tipo === 'retencion'
+                    ? (f2f_mm
+                      ? <Info t={`DXF disponible: 4 capas (CUERPO · CLAPETA · BRIDA · ANOTACIONES). Subtipo: ${subtipo ?? 'Swing'}. Plano esquemático — validar con fabricante antes de mecanizar.`} />
+                      : <Warn t="⚠️ F2F no disponible en tabla embebida — DXF no generado. Consultar fabricante." />
+                    )
+                  : tipo === 'tapon'
+                    ? (f2f_mm
+                      ? <Info t={`DXF disponible: 4 capas (CUERPO · TAPON_CONICO · BRIDA · ANOTACIONES). Patrón: ${subtipo ?? 'Regular'}. Plano esquemático — validar con fabricante antes de mecanizar.`} />
+                      : <Warn t="⚠️ F2F no disponible en tabla embebida — DXF no generado. Consultar fabricante." />
+                    )
+                    : (f2f_mm
+                      ? <Info t={`DXF disponible: 4 capas (CUERPO · ${capaLabel} · BRIDA · ANOTACIONES). Plano esquemático — validar con fabricante antes de mecanizar.`} />
+                      : <Warn t="⚠️ F2F no disponible en tabla embebida — DXF no generado. Consultar fabricante." />
+                    )
                 }
-                <Warn t="⚠️ Plano esquemático de referencia — requiere validación de fabricante antes de mecanizar. Normativa: ASME B16.34 · B16.10 · B16.5 · API 6D / API 609." />
+                <Warn t="⚠️ Plano esquemático de referencia — requiere validación de fabricante antes de mecanizar. Normativa: ASME B16.34 · B16.10 · B16.5 · API 6D / API 609 / API 594 / MSS SP-78." />
               </ResBox>
             );
           })()}
