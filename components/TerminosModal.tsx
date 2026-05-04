@@ -19,6 +19,7 @@ export default function TerminosModal() {
 
   const handleAceptar = () => {
     localStorage.setItem('ip_terminos_aceptados', '1');
+    window.dispatchEvent(new CustomEvent('ip_terminos_aceptados'));
     setVisible(false);
   };
 

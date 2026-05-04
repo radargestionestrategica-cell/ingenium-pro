@@ -9,14 +9,19 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
   const [verificado, setVerificado] = useState(false);
 
   useEffect(() => {
-    const token = localStorage.getItem('ip_token');
-    const pl=decodePayload(token)
-    if(pl&&pl.plan==='demo'&&typeof pl.demoExpira==='number'&&Date.now()>pl.demoExpira){router.replace('/planes');return}
-    if (!token) {
-      router.replace('/Login');
-    } else {
+    const check = () => {
+      const token = localStorage.getItem('ip_token');
+      if (!token) { router.replace('/Login'); return; }
+      const pl = decodePayload(token);
+      if (pl && pl.plan === 'demo' && typeof pl.demoExpira === 'number' && Date.now() > pl.demoExpira) {
+        router.replace('/planes'); return;
+      }
+      if (localStorage.getItem('ip_terminos_aceptados') !== '1') return;
       setVerificado(true);
-    }
+    };
+    check();
+    window.addEventListener('ip_terminos_aceptados', check);
+    return () => window.removeEventListener('ip_terminos_aceptados', check);
   }, [router]);
 
   if (!verificado) return null;

@@ -7,7 +7,7 @@ export default function TerminosModalWrapper() {
 
   useEffect(() => {
     setMostrar(
-      typeof window !== 'undefined' &&
+      !!localStorage.getItem('ip_token') &&
       localStorage.getItem('ip_terminos_aceptados') !== '1'
     );
   }, []);
