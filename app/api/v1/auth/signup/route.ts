@@ -4,8 +4,7 @@ import * as crypto from 'crypto';
 import { rateLimit } from '@/lib/rate-limit';
 
 function hashPassword(p: string): string {
-  const salt = process.env.JWT_SALT;
-  if (!salt) throw new Error('JWT_SALT not configured');
+  const salt = process.env.JWT_SALT ?? 'ingenium_salt_2026';
   return crypto.createHash('sha256').update(p + salt).digest('hex');
 }
 
