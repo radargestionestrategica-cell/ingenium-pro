@@ -7,15 +7,15 @@ const GOLD  = '#E8A020';
 const GREEN = '#22c55e';
 const BORD  = 'rgba(232,160,32,0.25)';
 
-export default function TerminosModal() {
-  const [visible, setVisible] = useState(false);
+export default function TerminosModal({ forzarVisible }: { forzarVisible?: boolean } = {}) {
+  const [visible, setVisible] = useState(forzarVisible ?? false);
   const [terminos, setTerminos] = useState(false);
   const [cookies, setCookies] = useState(false);
 
   useEffect(() => {
-    const aceptado = localStorage.getItem('ip_terminos_aceptados');
-    if (!aceptado) setVisible(true);
-  }, []);
+    if (forzarVisible !== undefined) { setVisible(forzarVisible); return; }
+    if (!localStorage.getItem('ip_terminos_aceptados')) setVisible(true);
+  }, [forzarVisible]);
 
   const handleAceptar = () => {
     localStorage.setItem('ip_terminos_aceptados', '1');

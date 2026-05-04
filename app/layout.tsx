@@ -1,5 +1,4 @@
 import './globals.css';
-import TerminosModalWrapper from '@/components/TerminosModalWrapper';
 
 export default function RootLayout({
   children,
@@ -9,7 +8,6 @@ export default function RootLayout({
   return (
     <html lang="es">
       <body>
-        <TerminosModalWrapper />
         {children}
       </body>
     </html>
