@@ -604,6 +604,15 @@ export default function ModuloValvulas() {
         'Temp max material (C)': resultadoClase.maxTempMat,
         'Advertencia': resultadoClase.advertencia,
       },
+      dxfParams: {
+        DN:    100,
+        tipo:  'bt',
+        nombre: `Valvula Clase ${resultadoClase.claseReq}`,
+        clase: resultadoClase.claseReq,
+        P_max: resultadoClase.Prating,
+        P_op:  parseFloat(clP),
+        norma: 'ASME B16.34',
+      },
     };
     setDatosClase(payloadClase);
     publicarResultado(payloadClase);
@@ -682,6 +691,15 @@ export default function ModuloValvulas() {
         'Servicio NACE MR0175': nace ? 'SI' : 'NO',
         'Temperatura maxima (C)': maxTemp,
         'Observaciones': obs,
+      },
+      dxfParams: {
+        DN:    100,
+        tipo:  'bt',
+        nombre: material,
+        clase: '300',
+        P_max: 50,
+        P_op:  40,
+        norma,
       },
     };
     setDatosMaterial(payloadMat);
@@ -815,6 +833,15 @@ export default function ModuloValvulas() {
         'Cv requerido (US)': Cv,
         'Kv requerido (metrico)': Kv,
         'Orientacion seleccion': desc,
+      },
+      dxfParams: {
+        DN:    100,
+        tipo:  'gl',
+        nombre: `Control Cv=${Cv}`,
+        clase: '300',
+        P_max: DP_psi * 0.0689,
+        P_op:  DP_psi * 0.0551,
+        norma: 'ISA 75.01.01',
       },
     };
     setDatosCv(payloadCv);

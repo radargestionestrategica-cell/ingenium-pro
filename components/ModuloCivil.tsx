@@ -170,6 +170,15 @@ export default function ModuloCivil() {
         'Peso viga (kg)': r.peso_kg,
         'Estado': r.riesgo,
       },
+      dxfParams: {
+        OD: r.phi_Mn * 2,
+        t: r.delta_mm,
+        material: perfil,
+        L: parseFloat(Lv),
+        codos: 0,
+        tees: 0,
+        red_DN: 0,
+      },
     };
     setDatosViga(payload);
     publicarResultado(payload);
@@ -204,6 +213,15 @@ export default function ModuloCivil() {
         'Excentricidad minima (mm)': r.e_min,
         'Cuantia dentro de limites': r.acero_ok ? 'SI' : 'NO',
         'Estado': r.riesgo,
+      },
+      dxfParams: {
+        OD: parseFloat(h),
+        t: parseFloat(b) / 10,
+        material: `H${fc}MPa-fy${fy}`,
+        L: r.Ag_cm2 / 100,
+        codos: 0,
+        tees: 0,
+        red_DN: 0,
       },
     };
     setDatosCol(payload);

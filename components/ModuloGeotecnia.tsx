@@ -107,6 +107,11 @@ const SUELOS = [
   { id: 'grava',          label: 'Grava (phi=40)'              },
 ];
 
+const GAMMA_SUELO: Record<string, number> = {
+  arena_suelta: 16.0, arena_compacta: 18.5, arcilla_blanda: 15.0,
+  arcilla_media: 17.0, arcilla_firme: 18.0, grava: 20.0,
+};
+
 const riskColor: Record<string, string> = {
   LOW: '#00E5A0', MEDIUM: '#E8A020', HIGH: '#ef4444', CRITICAL: '#dc2626'
 };
@@ -171,6 +176,17 @@ export default function ModuloGeotecnia() {
         'Apta': r.ok ? 'SI' : 'NO',
         'Estado': r.riesgo,
       },
+      dxfParams: {
+        B:     parseFloat(B),
+        L_cim: parseFloat(L2),
+        Df:    parseFloat(Df),
+        phi:   r.phi,
+        c:     r.c,
+        gamma: GAMMA_SUELO[suelo] ?? 17.0,
+        qu:    r.qu,
+        FS:    parseFloat(FS),
+        qa:    r.qa,
+      },
     };
     setDatosCP(payload);
     publicarResultado(payload);
@@ -199,6 +215,15 @@ export default function ModuloGeotecnia() {
         'Factor de Seguridad FS': r.FS,
         'Estado': r.estado,
         'Riesgo': r.riesgo,
+      },
+      dxfParams: {
+        H:     parseFloat(H),
+        beta:  parseFloat(beta),
+        phi:   parseFloat(phi),
+        c:     parseFloat(c),
+        gamma: parseFloat(gamma) / 100,
+        Fs:    r.FS,
+        R:     parseFloat(H) / Math.sin(parseFloat(beta) * Math.PI / 180) * 0.8,
       },
     };
     setDatosET(payload);

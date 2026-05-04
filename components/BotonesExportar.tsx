@@ -5,6 +5,7 @@ export interface DatosExportar {
   tipo:          string;
   parametros:    Record<string, unknown>;
   resultado:     Record<string, unknown>;
+  dxfParams?:    Record<string, unknown>;
   normativa?:    string;
   moduloId?:     string;
   submodulo?:    string;
@@ -136,7 +137,7 @@ export default function BotonesExportar({ datos, visible }: Props) {
       const mod = await import('@/lib/exportarDXF');
       const key = (datos.moduloId ?? datos.tipo ?? '').toUpperCase();
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const p = { ...datos.parametros, ...datos.resultado } as any;
+      const p = (datos.dxfParams ?? { ...datos.parametros, ...datos.resultado }) as any;
 
       let contenido = '';
 

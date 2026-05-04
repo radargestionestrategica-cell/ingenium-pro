@@ -294,6 +294,17 @@ export default function ModuloElectricidad() {
         'Capacidad Iz (A)': resultadoCable.Iz,
         'Corriente diseno (A)': resultadoCable.I,
       },
+      dxfParams: {
+        conductor:        cMat === 'cu' ? 'Cu' : 'Al',
+        seccion:          parseFloat(resultadoCable.calibre) || 4,
+        I_diseño:         parseFloat(cI),
+        I_cortocircuito:  0,
+        tension:          0.22,
+        L_circuito:       0,
+        caida_tension:    0,
+        num_conductores:  cTipo === 'trif' ? 3 : 2,
+        norma:            'NEC / IEC 60228',
+      },
     };
     setDatosCable(payloadCable);
     publicarResultado(payloadCable);
@@ -353,6 +364,17 @@ export default function ModuloElectricidad() {
         'Caida (%)': resultadoCaida.pct,
         'Cumple limite 4%': resultadoCaida.ok ? 'SI' : 'NO',
       },
+      dxfParams: {
+        conductor:        'Cu',
+        seccion:          parseFloat(cdCable) || 4,
+        I_diseño:         parseFloat(cdI),
+        I_cortocircuito:  0,
+        tension:          parseFloat(cdV) / 1000,
+        L_circuito:       parseFloat(cdL),
+        caida_tension:    resultadoCaida.pct,
+        num_conductores:  cdTipo === 'trif' ? 3 : 2,
+        norma:            'IEC 60364 / NEC',
+      },
     };
     setDatosCaida(payloadCaida);
     publicarResultado(payloadCaida);
@@ -410,6 +432,17 @@ export default function ModuloElectricidad() {
         'Icc minimo c=0.95 (A)': resultadoCC.Imin,
         'Potencia cortocircuito (kVA)': resultadoCC.Pcc,
       },
+      dxfParams: {
+        conductor:        'Cu',
+        seccion:          parseFloat(ccCable) || 16,
+        I_diseño:         resultadoCC.Imin,
+        I_cortocircuito:  resultadoCC.Imax / 1000,
+        tension:          parseFloat(ccV) / 1000,
+        L_circuito:       parseFloat(ccL),
+        caida_tension:    0,
+        num_conductores:  3,
+        norma:            'IEC 60909',
+      },
     };
     setDatosCC(payloadCC);
     publicarResultado(payloadCC);
@@ -462,6 +495,17 @@ export default function ModuloElectricidad() {
         'Corriente antes (A)': resultadoFP.I1,
         'Corriente despues (A)': resultadoFP.I2,
       },
+      dxfParams: {
+        conductor:        'Cu',
+        seccion:          25,
+        I_diseño:         resultadoFP.I2,
+        I_cortocircuito:  0,
+        tension:          parseFloat(fpV) / 1000,
+        L_circuito:       0,
+        caida_tension:    0,
+        num_conductores:  3,
+        norma:            'IEC 60364',
+      },
     };
     setDatosFP(payloadFP);
     publicarResultado(payloadFP);
@@ -512,6 +556,17 @@ export default function ModuloElectricidad() {
         'Potencia electrica (kW)': resultadoMotor.Pelec,
         'Calibre cable minimo': resultadoMotor.calibre,
       },
+      dxfParams: {
+        conductor:        'Cu',
+        seccion:          parseFloat(resultadoMotor.calibre) || 10,
+        I_diseño:         resultadoMotor.Inom,
+        I_cortocircuito:  resultadoMotor.Iarr / 1000,
+        tension:          parseFloat(mV) / 1000,
+        L_circuito:       0,
+        caida_tension:    0,
+        num_conductores:  3,
+        norma:            'NEC 430 / IEC 60947',
+      },
     };
     setDatosMotor(payloadMotor);
     publicarResultado(payloadMotor);
@@ -561,6 +616,18 @@ export default function ModuloElectricidad() {
         'Iluminancia real (lux)': resultadoLuz.luxReal,
         'Cumple normativa': resultadoLuz.ok ? 'SI' : 'NO',
       },
+      dxfParams: {
+        conductor:        'Cu',
+        seccion:          2.5,
+        I_diseño:         resultadoLuz.N * 0.5,
+        I_cortocircuito:  0,
+        tension:          0.22,
+        L_circuito:       A,
+        caida_tension:    0,
+        num_conductores:  2,
+        norma:            app.norma,
+        zona_exp:         lApp,
+      },
     };
     setDatosLuz(payloadLuz);
     publicarResultado(payloadLuz);
@@ -609,6 +676,17 @@ export default function ModuloElectricidad() {
         'Corriente secundaria (A)': resultadoTrafo.Is,
         'Corriente inrush (A)': resultadoTrafo.Iarr,
       },
+      dxfParams: {
+        conductor:        'Cu',
+        seccion:          50,
+        I_diseño:         resultadoTrafo.Is,
+        I_cortocircuito:  resultadoTrafo.Iarr / 1000,
+        tension:          parseFloat(trVp) / 1000,
+        L_circuito:       0,
+        caida_tension:    0,
+        num_conductores:  3,
+        norma:            'IEC 60076',
+      },
     };
     setDatosTrafo(payloadTrafo);
     publicarResultado(payloadTrafo);
@@ -641,6 +719,18 @@ export default function ModuloElectricidad() {
         'Division API': resultadoArea.divisionAPI,
         'Descripcion': resultadoArea.descripcion,
         'Equipo Ex requerido': resultadoArea.equipoExRequerido,
+      },
+      dxfParams: {
+        conductor:        'Cu',
+        seccion:          4,
+        I_diseño:         16,
+        I_cortocircuito:  0,
+        tension:          0.38,
+        L_circuito:       0,
+        caida_tension:    0,
+        num_conductores:  3,
+        norma:            'IEC 60079-10-1 / API RP 500',
+        zona_exp:         resultadoArea.zonaIEC,
       },
     };
     setDatosPeligrosa(payloadPeligrosa);

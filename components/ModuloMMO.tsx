@@ -213,6 +213,15 @@ excavacion_manual: { desc: 'Excavación manual suelo normal', unidad: 'm³', ren
         'Piedra/Grava (m3)': r.piedraM3,
         'Agua (L)': r.aguaL,
       },
+      dxfParams: {
+        equipo: h.label,
+        tag: 'HORM-001',
+        tipo_mto: 'Preventivo',
+        intervalo: 30,
+        horas_op: vol * 2,
+        costo_mto: r.cementoKg * 0.15,
+        disponibilidad: 95,
+      },
     };
     setDatosH(payload);
     publicarResultado(payload);
@@ -235,6 +244,15 @@ const calcHierro = () => {
         'Peso por barra (kg)': rHierro.kgBarra,
         'Peso total (kg)': rHierro.kgTotal,
         'Metros lineales totales (m)': rHierro.metrosTotales,
+      },
+      dxfParams: {
+        equipo: `Hierro ADN Ø${diam}mm`,
+        tag: 'HIER-001',
+        tipo_mto: 'Preventivo',
+        intervalo: 30,
+        horas_op: rHierro.metrosTotales / 50,
+        costo_mto: rHierro.kgTotal * 1.2,
+        disponibilidad: 95,
       },
     };
     setDatosHierro(payload);
@@ -261,6 +279,15 @@ const calcHierro = () => {
         [`Cemento mortero (bolsas ${cfg.cementoBolsaKg}kg)`]: rMamp.cementoBolsas,
         'Arena mortero (m3)': rMamp.arenaM3,
       },
+      dxfParams: {
+        equipo: `Mamposteria ${tipoMamp}`,
+        tag: 'MAMP-001',
+        tipo_mto: 'Preventivo',
+        intervalo: 30,
+        horas_op: m2 * 0.5,
+        costo_mto: rMamp.cementoBolsas * 8,
+        disponibilidad: 90,
+      },
     };
     setDatosMamp(payload);
     publicarResultado(payload);
@@ -284,6 +311,15 @@ const calcHierro = () => {
         'Hierro estimado (kg/m2)': rLosa.hierroKgM2,
         'Hormigon H25 total (m3)': rLosa.hormigonTotal,
         'Hierro total estimado (kg)': rLosa.hierroTotal,
+      },
+      dxfParams: {
+        equipo: `Losa ${losaTipo} luz=${luz}m`,
+        tag: 'LOSA-001',
+        tipo_mto: 'Preventivo',
+        intervalo: 30,
+        horas_op: m2 * 0.8,
+        costo_mto: rLosa.hormigonTotal * 150,
+        disponibilidad: 95,
       },
     };
     setDatosLosa(payload);
@@ -313,6 +349,15 @@ const calcHierro = () => {
           'Arena (m3)': rRev.arenaM3,
           'Cal hidraulica (bolsas 5kg)': calBolsas,
         },
+        dxfParams: {
+          equipo: 'Revoque grueso',
+          tag: 'REV-001',
+          tipo_mto: 'Preventivo',
+          intervalo: 30,
+          horas_op: m2 * 0.3,
+          costo_mto: rRev.cementoKg * 0.15,
+          disponibilidad: 90,
+        },
       };
       setDatosRev(payload);
       publicarResultado(payload);
@@ -330,6 +375,15 @@ const calcHierro = () => {
           [`Cemento (bolsas ${cfg.cementoBolsaKg}kg)`]: rRev.bolsas,
           'Cemento total (kg)': rRev.cementoKg,
           'Arena fina (m3)': rRev.arenaM3,
+        },
+        dxfParams: {
+          equipo: 'Revoque fino',
+          tag: 'REV-002',
+          tipo_mto: 'Preventivo',
+          intervalo: 30,
+          horas_op: m2 * 0.2,
+          costo_mto: rRev.cementoKg * 0.15,
+          disponibilidad: 90,
         },
       };
       setDatosRev(payload);
@@ -359,6 +413,15 @@ const calcHierro = () => {
         [`Pegamento (bolsas ${cfg.pegamentoBolsaKg}kg)`]: rCer.pegBolsas,
         'Pastina (kg)': rCer.pastKg,
       },
+      dxfParams: {
+        equipo: `Ceramico ${cerTam}`,
+        tag: 'CER-001',
+        tipo_mto: 'Preventivo',
+        intervalo: 30,
+        horas_op: m2 * 0.4,
+        costo_mto: rCer.pegBolsas * 12 + rCer.pastKg * 2,
+        disponibilidad: 95,
+      },
     };
     setDatosCer(payload);
     publicarResultado(payload);
@@ -386,6 +449,15 @@ const calcContrapiso = () => {
         [`Cemento (bolsas ${cfg.cementoBolsaKg}kg)`]: rCp.cementoBolsas,
         'Arena (m3)': rCp.arenaM3,
         'Cascote (m3)': rCp.cascoteM3,
+      },
+      dxfParams: {
+        equipo: `Contrapiso ${cpEspesor}cm`,
+        tag: 'CP-001',
+        tipo_mto: 'Preventivo',
+        intervalo: 30,
+        horas_op: m2 * 0.5,
+        costo_mto: rCp.cementoBolsas * 8,
+        disponibilidad: 95,
       },
     };
     setDatosCp(payload);
@@ -415,6 +487,15 @@ const calcZapata = () => {
         'Espesor referencial L/3 (m)': rZap.espesorAprox,
         'Hormigon H25 estimado (m3)': rZap.hormigonM3,
       },
+      dxfParams: {
+        equipo: `Zapata ${rZap.lado}x${rZap.lado}m`,
+        tag: 'ZAP-001',
+        tipo_mto: 'Preventivo',
+        intervalo: 30,
+        horas_op: rZap.hormigonM3 * 4,
+        costo_mto: rZap.hormigonM3 * 150,
+        disponibilidad: 95,
+      },
     };
     setDatosZap(payload);
     publicarResultado(payload);
@@ -437,6 +518,15 @@ const calcZapata = () => {
         'Volumen en banco (m3)': rExc.volNatural,
         [`Volumen esponjado ${rExc.esponj}% (m3)`]: rExc.volEsponjado,
         'Camiones volcadores 6m3': rExc.camiones,
+      },
+      dxfParams: {
+        equipo: `Excavacion ${tipoSuelo}`,
+        tag: 'EXC-001',
+        tipo_mto: 'Correctivo',
+        intervalo: 0,
+        horas_op: rExc.volNatural / 80,
+        costo_mto: rExc.volEsponjado * 15,
+        disponibilidad: 85,
       },
     };
     setDatosExc(payload);
@@ -463,6 +553,15 @@ const calcMortero = () => {
         'Cemento total (kg)': rMort.cementoKg,
         'Arena (m3)': rMort.arenaM3,
       },
+      dxfParams: {
+        equipo: `Mortero ${mortProp}`,
+        tag: 'MORT-001',
+        tipo_mto: 'Preventivo',
+        intervalo: 30,
+        horas_op: vol * 2,
+        costo_mto: rMort.cementoKg * 0.15,
+        disponibilidad: 95,
+      },
     };
     setDatosMort(payload);
     publicarResultado(payload);
@@ -484,6 +583,15 @@ const calcMortero = () => {
       resultado: {
         'Horas de trabajo': rRend.horas,
         'Dias (8 hs/dia)': rRend.dias,
+      },
+      dxfParams: {
+        equipo: r.desc,
+        tag: 'REND-001',
+        tipo_mto: 'Preventivo',
+        intervalo: 90,
+        horas_op: rRend.horas,
+        costo_mto: rRend.horas * 15,
+        disponibilidad: 90,
       },
     };
     setDatosRend(payload);

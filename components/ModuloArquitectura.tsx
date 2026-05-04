@@ -292,6 +292,17 @@ export default function ModuloArquitectura() {
         'P total diseno (kPa)':       r.p_total_kPa,
         'Estado':                     riskLabel[r.riesgo],
       },
+      dxfParams: {
+        B: parseFloat(h_m),
+        L_cim: parseFloat(h_m) * 0.4,
+        Df: parseFloat(h_m) * 0.05,
+        phi: 25,
+        c: 0,
+        gamma: r.qz_kPa,
+        qu: r.p_total_kPa * 1000,
+        FS: 2.5,
+        qa: r.p_total_kPa * 400,
+      },
     };
     setDatosViento(payload);
     publicarResultado(payload);
@@ -336,6 +347,17 @@ export default function ModuloArquitectura() {
         'FLD cumple':                 r.ok_fld ? 'SI' : 'NO',
         'RVP en rango 15-40%':        r.ok_rvp ? 'SI' : 'NO',
         'Estado':                     riskLabel[r.riesgo],
+      },
+      dxfParams: {
+        conductor:       'Cu',
+        seccion:         2.5,
+        I_diseño:        r.renovaciones_h,
+        I_cortocircuito: 0,
+        tension:         0.22,
+        L_circuito:      parseFloat(largo),
+        caida_tension:   r.RVP,
+        num_conductores: 2,
+        norma:           'IRAM 11601',
       },
     };
     setDatosIlum(payload);
@@ -383,6 +405,17 @@ export default function ModuloArquitectura() {
         'Coeficiente sismico Cs':       r.Cs,
         'Cortante basal V (kN)':        r.V_kN,
         'Estado':                       riskLabel[r.riesgo],
+      },
+      dxfParams: {
+        B: parseFloat(W_kN) / 1000,
+        L_cim: parseFloat(hn_m),
+        Df: r.T * 10,
+        phi: 30,
+        c: r.Cs * 100,
+        gamma: 18,
+        qu: r.V_kN,
+        FS: parseFloat(R_red),
+        qa: r.V_kN / parseFloat(R_red),
       },
     };
     setDatosSismo(payload);

@@ -201,6 +201,17 @@ export default function ModuloVialidad() {
         'Factor Zr': r.Zr,
         'Estado': r.riesgo,
       },
+      dxfParams: {
+        B: r.D1_cm / 10,
+        L_cim: r.D2_cm / 10,
+        Df: r.D3_cm / 10,
+        phi: 30,
+        c: 0,
+        gamma: parseFloat(MR) / 10000,
+        qu: r.SN * 100,
+        FS: 2.0,
+        qa: r.SN * 50,
+      },
     };
     setDatosPav(payload);
     publicarResultado(payload);
@@ -236,6 +247,15 @@ export default function ModuloVialidad() {
         'Ancho superficie T (m)': r.T_superficie,
         'Velocidad dentro de limite': r.ok_velocidad ? 'SI' : 'NO',
         'Estado': r.riesgo,
+      },
+      dxfParams: {
+        A: parseFloat(A_ha) / 100,
+        CN: parseFloat(C_val) * 100,
+        Tc: parseFloat(L_cun) / 60,
+        I: parseFloat(I_val),
+        Q_pico: r.Q_m3s,
+        L_cauce: parseFloat(L_cun),
+        H_cuenca: parseFloat(L_cun) * parseFloat(S_val),
       },
     };
     setDatosDren(payload);

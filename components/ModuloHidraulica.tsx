@@ -122,6 +122,15 @@ export default function ModuloHidraulica() {
         'Presion (Pa)': r.dP_Pa,
         'Estado': r.riesgo,
       },
+      dxfParams: {
+        D:  parseFloat(D),
+        L:  parseFloat(L),
+        Q:  parseFloat(Q),
+        V:  r.V,
+        hf: r.hf_total,
+        Re: r.Re,
+        f:  r.f,
+      },
     };
     setDatosDW(payload);
     publicarResultado(payload);
@@ -153,6 +162,16 @@ export default function ModuloHidraulica() {
         'Sobrepresion (bar)': r.dP_bar,
         'Tiempo critico Tc (s)': r.Tc,
         'Estado': r.riesgo,
+      },
+      dxfParams: {
+        D:    parseFloat(D),
+        t:    parseFloat(t),
+        L:    parseFloat(L),
+        V0:   parseFloat(dV),
+        a:    r.a,
+        dP:   r.dP_MPa,
+        Tc:   r.Tc,
+        MAOP: r.dP_MPa * 2,
       },
     };
     setDatosWH(payload);

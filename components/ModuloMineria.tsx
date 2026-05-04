@@ -204,6 +204,17 @@ export default function ModuloMineria() {
         'Soporte recomendado': r.soporte,
         'Estado': r.riesgo,
       },
+      dxfParams: {
+        B: parseFloat(espaciado) / 1000,
+        L_cim: parseFloat(espaciado) / 500,
+        Df: parseFloat(ucs) / 1000,
+        phi: 30 + r.rmr * 0.2,
+        c: parseFloat(ucs) * 0.01,
+        gamma: 25,
+        qu: parseFloat(ucs),
+        FS: r.rmr / 20,
+        qa: parseFloat(ucs) / 3,
+      },
     };
     setDatosRMR(payload);
     publicarResultado(payload);
@@ -236,6 +247,15 @@ export default function ModuloMineria() {
         'CO dentro de limite': r.co_ok ? 'SI' : 'NO',
         'Estado CO': r.riesgo_co,
         'Estado': r.riesgo,
+      },
+      dxfParams: {
+        equipo: 'Ventilador galeria',
+        tag: 'VENT-001',
+        tipo_mto: 'Preventivo',
+        intervalo: 90,
+        horas_op: r.Q_requerido * 10,
+        costo_mto: r.Q_requerido * 100,
+        disponibilidad: 95,
       },
     };
     setDatosVent(payload);

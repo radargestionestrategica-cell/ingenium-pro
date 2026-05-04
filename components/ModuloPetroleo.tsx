@@ -109,6 +109,14 @@ export default function ModuloPetroleo() {
         'Factor T temperatura':    r.T_factor,
         'Estado':                  riskLabel[r.risk],
       },
+      dxfParams: {
+        OD:   parseFloat(OD),
+        t:    parseFloat(t),
+        L:    1000,
+        SMYS: MATERIALES[smysIdx].smys,
+        MAOP: r.P,
+        P_op: r.P * 0.9,
+      },
     };
     setDatos(payload);
     publicarResultado(payload);

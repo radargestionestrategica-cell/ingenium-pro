@@ -275,6 +275,16 @@ export default function ModuloSoldadura() {
         'Electrodos recomendados': final.join(', '),
         'Cantidad': final.length,
       },
+      dxfParams: {
+        material_base:    sMat,
+        espesor:          10,
+        tipo_junta:       'BW',
+        proceso:          'SMAW',
+        electrodo:        final[0] ?? 'E7018',
+        garganta:         7,
+        precalentamiento: 0,
+        dureza_max:       248,
+      },
     };
     setDatosSel(payload);
     publicarResultado(payload);
@@ -309,6 +319,16 @@ export default function ModuloSoldadura() {
         'Heat Input (kJ/mm)': hi,
         'Clasificacion': r.clase,
       },
+      dxfParams: {
+        material_base:    'API 5L',
+        espesor:          12,
+        tipo_junta:       'BW',
+        proceso:          hiProc,
+        electrodo:        'E7018',
+        garganta:         8,
+        precalentamiento: 0,
+        dureza_max:       248,
+      },
     };
     setDatosHI(payload);
     publicarResultado(payload);
@@ -341,6 +361,16 @@ export default function ModuloSoldadura() {
         'Resistencia nominal (kgf)': r.res,
         'Resistencia nominal (kN)': r.reskN,
         'Tamaño aceptable': r.ok ? 'SI' : 'NO',
+      },
+      dxfParams: {
+        material_base:    'ASTM A36',
+        espesor:          parseFloat(fEsp),
+        tipo_junta:       'FW',
+        proceso:          ELECTRODOS[fEl].proceso,
+        electrodo:        fEl,
+        garganta:         r.garg,
+        precalentamiento: 0,
+        dureza_max:       248,
       },
     };
     setDatosFil(payload);
@@ -381,6 +411,16 @@ export default function ModuloSoldadura() {
         'Varillas estimadas': r.cantVarillas,
         'Pasadas estimadas': r.pasadas,
       },
+      dxfParams: {
+        material_base:    'ASTM A36',
+        espesor:          parseFloat(cEspPlaca),
+        tipo_junta:       'BW',
+        proceso:          ELECTRODOS[cEl].proceso,
+        electrodo:        cEl,
+        garganta:         parseFloat(cEspPlaca) * 0.7,
+        precalentamiento: 0,
+        dureza_max:       248,
+      },
     };
     setDatosCons(payload);
     publicarResultado(payload);
@@ -420,6 +460,16 @@ export default function ModuloSoldadura() {
         'Temperatura minima Tp (C)': Tp === 0 ? 'No requerido' : Tp,
         'Categoria AWS D1.1': cat,
         'Recomendacion': rec,
+      },
+      dxfParams: {
+        material_base:    `C=${prC} Mn=${prMn}`,
+        espesor:          parseFloat(prEsp),
+        tipo_junta:       'BW',
+        proceso:          'SMAW',
+        electrodo:        'E7018',
+        garganta:         parseFloat(prEsp) * 0.7,
+        precalentamiento: Tp,
+        dureza_max:       248,
       },
     };
     setDatosPre(payload);

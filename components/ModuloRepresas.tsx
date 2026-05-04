@@ -94,6 +94,15 @@ export default function ModuloRepresas() {
             'Numero de Froude Fr': rv.Fr,
             'Regimen': rv.tipo,
           },
+          dxfParams: {
+            A: lv * hv / 1000,
+            CN: 75,
+            Tc: rv.v > 0 ? lv / rv.v : 10,
+            I: hv * 10,
+            Q_pico: rv.Q,
+            L_cauce: lv,
+            H_cuenca: hv,
+          },
         };
         setDatosV(payloadV);
         publicarResultado(payloadV);
@@ -120,6 +129,15 @@ export default function ModuloRepresas() {
             'Caudal filtracion q (m2/s)': rf.q,
             'Gradiente hidraulico i': rf.gradiente,
             'Seguro (i < 0.5 Terzaghi)': rf.seguro ? 'SI' : 'NO',
+          },
+          dxfParams: {
+            A: dv * dv,
+            CN: rf.gradiente * 100,
+            Tc: lf / 60,
+            I: hf * 10,
+            Q_pico: rf.q * 1000,
+            L_cauce: lf,
+            H_cuenca: hf,
           },
         };
         setDatosF(payloadF);

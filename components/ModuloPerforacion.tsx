@@ -75,6 +75,14 @@ export default function ModuloPerforacion() {
         'Estado BHP': r.bhp.risk,
         'Estado lodo': r.mud.risk,
       },
+      dxfParams: {
+        OD:   244.5,
+        t:    11.05,
+        L:    tvd * 0.3048,
+        SMYS: 551,
+        MAOP: r.frac.fracPressure * 0.006895,
+        P_op: r.bhp.bhp * 0.006895,
+      },
     };
     setDatos(payload);
     publicarResultado(payload);

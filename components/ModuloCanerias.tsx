@@ -248,6 +248,15 @@ export default function ModuloCanerias() {
         'SMYS (MPa)':                       r.S_mpa,
         'Normativa aplicada':               r.norma,
       },
+      dxfParams: {
+        OD:       parseFloat(eDmm),
+        t:        r.t_dis_mm,
+        material: g.label,
+        L:        100,
+        codos:    0,
+        tees:     0,
+        red_DN:   0,
+      },
     };
     setDatosEsp(payload);
     publicarResultado(payload);
@@ -303,6 +312,15 @@ export default function ModuloCanerias() {
         'Factor T aplicado':               r.T_factor,
         'Estado':                          r.ok ? 'APTA — Dentro del límite B31.8' : 'NO APTA — Supera límite B31.8',
       },
+      dxfParams: {
+        OD:       parseFloat(hDmm),
+        t:        parseFloat(hTmm),
+        material: g.label,
+        L:        100,
+        codos:    0,
+        tees:     0,
+        red_DN:   0,
+      },
     };
     setDatosHoop(payload);
     publicarResultado(payload);
@@ -348,6 +366,15 @@ export default function ModuloCanerias() {
         'Sobrepresión ΔP (bar)':            r.dP_bar,
         'Sobrepresión ΔP (psi)':            r.dP_psi,
         'Tiempo retorno de onda 2L/a (s)':  r.t_ret_s,
+      },
+      dxfParams: {
+        OD:       parseFloat(aDmm),
+        t:        parseFloat(aTmm),
+        material: fl.nombre,
+        L:        parseFloat(aLm),
+        codos:    0,
+        tees:     0,
+        red_DN:   0,
       },
     };
     setDatosAr(payload);
@@ -413,6 +440,15 @@ export default function ModuloCanerias() {
         'Estado':                           r.ok ? 'CIERRE SEGURO' : 'CIERRE PELIGROSO',
         'Diagnóstico':                      r.riesgo.replace(/[^\x20-\x7EÀ-ɏ]/g, '').trim(),
       },
+      dxfParams: {
+        OD:       parseFloat(cDmm),
+        t:        parseFloat(cTmm),
+        material: g.label,
+        L:        parseFloat(cLm),
+        codos:    0,
+        tees:     0,
+        red_DN:   0,
+      },
     };
     setDatosCi(payload);
     publicarResultado(payload);
@@ -464,6 +500,15 @@ export default function ModuloCanerias() {
         'Estado de integridad':           r.estado,
         'Nivel de riesgo':                r.riesgo.replace(/[^\x20-\x7EÀ-ɏ]/g, '').trim(),
         'Recomendación API 579':          r.rec,
+      },
+      dxfParams: {
+        OD:       273.1,
+        t:        parseFloat(rTmed),
+        material: 'API 5L X52',
+        L:        100,
+        codos:    0,
+        tees:     0,
+        red_DN:   0,
       },
     };
     setDatosRem(payload);

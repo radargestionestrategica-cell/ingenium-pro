@@ -187,6 +187,16 @@ export default function ModuloTermica() {
         'Efectividad (%)': r.efectividad,
         'Estado': r.riesgo,
       },
+      dxfParams: {
+        D:         219.1,
+        t:         8.18,
+        L:         parseFloat(Q_kW) / 10,
+        dT:        parseFloat(T_hi) - parseFloat(T_ho),
+        alpha:     11.7,
+        dL:        r.A_m2,
+        F_termico: parseFloat(Q_kW),
+        material:  tipo,
+      },
     };
     setDatosInt(payload);
     publicarResultado(payload);
@@ -221,6 +231,16 @@ export default function ModuloTermica() {
         'Longitud lira U (m)': r.L_lira_m,
         'Estado': r.ok ? 'APTO' : 'REQUIERE LIRA',
         'Riesgo': r.riesgo,
+      },
+      dxfParams: {
+        D:         parseFloat(OD),
+        t:         parseFloat(t_esp),
+        L:         parseFloat(L),
+        dT:        r.dT,
+        alpha:     r.alpha,
+        dL:        r.dL_mm,
+        F_termico: r.sigma_MPa,
+        material:  matLabel,
       },
     };
     setDatosDil(payload);
