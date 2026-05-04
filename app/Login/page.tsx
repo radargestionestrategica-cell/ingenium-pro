@@ -46,6 +46,8 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [exito, setExito] = useState('');
   const [verPass, setVerPass] = useState(false);
+  const [aceptoTerminos, setAceptoTerminos] = useState(false);
+  const [aceptoCookies, setAceptoCookies]   = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -74,10 +76,9 @@ export default function LoginPage() {
       }
 
       if (modo === 'login') {
-        // GUARDAR TOKEN Y USUARIO EN localStorage
         localStorage.setItem('ip_token', data.token);
         localStorage.setItem('ip_usuario', JSON.stringify(data.usuario));
-        // Redirigir al dashboard
+        localStorage.setItem('ip_terminos_aceptados', '1');
         router.replace('/dashboard');
       } else {
         setExito('Cuenta creada. Podés iniciar sesión ahora.');
@@ -161,6 +162,31 @@ export default function LoginPage() {
           </div>
         </div>
 
+        {/* TÉRMINOS Y COOKIES — obligatorios */}
+        {(['login','signup'] as const).includes(modo) && (
+          <div style={{ marginBottom:18, display:'flex', flexDirection:'column', gap:10 }}>
+            {[
+              { key:'terminos', checked:aceptoTerminos, set:setAceptoTerminos,
+                label: <><a href="/terminos" target="_blank" rel="noopener noreferrer" style={{ color:GOLD, textDecoration:'underline' }}>Términos y Condiciones</a> — incluyendo el Protocolo de Exención de Responsabilidad Técnica</> },
+              { key:'cookies', checked:aceptoCookies, set:setAceptoCookies,
+                label: 'Política de Cookies — cookies de sesión para autenticación y preferencias' },
+            ].map(({ key, checked, set, label }) => (
+              <label key={key} onClick={() => set(v => !v)}
+                style={{ display:'flex', alignItems:'flex-start', gap:12, padding:'11px 14px', borderRadius:10, cursor:'pointer',
+                  background: checked ? 'rgba(34,197,94,0.06)' : 'rgba(255,255,255,0.02)',
+                  border: `1px solid ${checked ? 'rgba(34,197,94,0.25)' : 'rgba(255,255,255,0.07)'}` }}>
+                <div style={{ flexShrink:0, marginTop:1, width:18, height:18, borderRadius:5,
+                  border:`2px solid ${checked ? GREEN : '#334155'}`,
+                  background: checked ? GREEN : 'transparent',
+                  display:'flex', alignItems:'center', justifyContent:'center' }}>
+                  {checked && <svg width="10" height="10" viewBox="0 0 12 12" fill="none"><polyline points="2,6 5,9 10,3" stroke="#020609" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                </div>
+                <span style={{ fontSize:12, color:'#cbd5e1', lineHeight:1.5 }}>{label}</span>
+              </label>
+            ))}
+          </div>
+        )}
+
         {/* ERROR / ÉXITO */}
         {error && (
           <div style={{ padding:'10px 14px', borderRadius:10, marginBottom:14, background:'rgba(239,68,68,0.08)', border:'1px solid rgba(239,68,68,0.3)', color:'#f87171', fontSize:13 }}>
@@ -174,10 +200,20 @@ export default function LoginPage() {
         )}
 
         {/* BOTÓN */}
-        <button onClick={handleSubmit} disabled={loading}
-          style={{ width:'100%', padding:'13px 0', background:`linear-gradient(135deg,${GOLD},#c47a10)`, border:'none', borderRadius:12, color:BG, fontSize:15, fontWeight:800, cursor: loading ? 'wait' : 'pointer', opacity: loading ? 0.7 : 1, letterSpacing:0.5 }}>
-          {loading ? 'Procesando...' : modo === 'login' ? 'Ingresar →' : 'Crear cuenta →'}
-        </button>
+        {(() => {
+          const listo = aceptoTerminos && aceptoCookies;
+          const bloqueado = loading || !listo;
+          return (
+            <button onClick={handleSubmit} disabled={bloqueado}
+              style={{ width:'100%', padding:'13px 0', border:'none', borderRadius:12, fontSize:15, fontWeight:800, letterSpacing:0.5,
+                background: listo ? `linear-gradient(135deg,${GOLD},#c47a10)` : 'rgba(255,255,255,0.05)',
+                color: listo ? BG : '#475569',
+                cursor: bloqueado ? 'not-allowed' : 'pointer',
+                opacity: loading ? 0.7 : 1 }}>
+              {loading ? 'Procesando...' : !listo ? 'Aceptá los términos para continuar' : modo === 'login' ? 'Ingresar →' : 'Crear cuenta →'}
+            </button>
+          );
+        })()}
 
         {/* FOOTER */}
         <div style={{ marginTop:20, textAlign:'center', fontSize:11, color:'#334155' }}>
