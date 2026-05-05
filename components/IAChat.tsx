@@ -243,16 +243,21 @@ export default function IAChat({ datos }: Props) {
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         fontSize: 12, marginTop: 2,
                       }}>⚡</div>
-                      <div className="ia-msg-ia">
-                        <ReactMarkdown
-                          components={{
-                            h1: ({children}) => <div style={{fontSize:14,fontWeight:900,color:'#f1f5f9',margin:'12px 0 4px',paddingBottom:4,borderBottom:'1px solid rgba(99,102,241,0.2)'}}>{children}</div>,
-                            h2: ({children}) => <div style={{fontSize:13,fontWeight:800,color:'#f1f5f9',margin:'10px 0 4px',paddingBottom:3,borderBottom:'1px solid rgba(99,102,241,0.12)'}}>{children}</div>,
-                            h3: ({children}) => <div style={{fontSize:12,fontWeight:700,color:'#e2e8f0',margin:'8px 0 3px'}}>{children}</div>,
-                          }}
-                        >
-                          {m.content}
-                        </ReactMarkdown>
+                      <div style={{ flex: 1 }}>
+                        <div className="ia-msg-ia">
+                          <ReactMarkdown
+                            components={{
+                              h1: ({children}) => <div style={{fontSize:14,fontWeight:900,color:'#f1f5f9',margin:'12px 0 4px',paddingBottom:4,borderBottom:'1px solid rgba(99,102,241,0.2)'}}>{children}</div>,
+                              h2: ({children}) => <div style={{fontSize:13,fontWeight:800,color:'#f1f5f9',margin:'10px 0 4px',paddingBottom:3,borderBottom:'1px solid rgba(99,102,241,0.12)'}}>{children}</div>,
+                              h3: ({children}) => <div style={{fontSize:12,fontWeight:700,color:'#e2e8f0',margin:'8px 0 3px'}}>{children}</div>,
+                            }}
+                          >
+                            {m.content}
+                          </ReactMarkdown>
+                        </div>
+                        <div style={{ marginTop: 8, fontSize: 10, color: '#475569', lineHeight: 1.5 }}>
+                          ⚠️ La IA puede cometer errores. Los resultados deben ser validados por un profesional matriculado antes de su aplicación en obra.
+                        </div>
                       </div>
                     </div>
                   )}
@@ -273,19 +278,6 @@ export default function IAChat({ datos }: Props) {
                 </div>
               )}
             </div>
-
-            {/* ADVERTENCIA IA */}
-            {mensajes.some(m => m.role === 'assistant') && (
-              <div style={{
-                padding: '7px 16px',
-                borderTop: '1px solid rgba(255,255,255,.04)',
-                fontSize: 10,
-                color: '#475569',
-                lineHeight: 1.5,
-              }}>
-                ⚠️ La IA puede cometer errores. Verificá siempre con un profesional matriculado antes de aplicar en obra.
-              </div>
-            )}
 
             {/* INPUT */}
             <div style={{
