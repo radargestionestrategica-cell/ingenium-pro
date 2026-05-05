@@ -274,6 +274,19 @@ export default function IAChat({ datos }: Props) {
               )}
             </div>
 
+            {/* ADVERTENCIA IA */}
+            {mensajes.some(m => m.role === 'assistant') && (
+              <div style={{
+                padding: '7px 16px',
+                borderTop: '1px solid rgba(255,255,255,.04)',
+                fontSize: 10,
+                color: '#475569',
+                lineHeight: 1.5,
+              }}>
+                ⚠️ La IA puede cometer errores. Verificá siempre con un profesional matriculado antes de aplicar en obra.
+              </div>
+            )}
+
             {/* INPUT */}
             <div style={{
               padding: '10px 14px 14px',
