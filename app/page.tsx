@@ -8,7 +8,7 @@ export const metadata: Metadata = {
   title: 'INGENIUM Pro | Plataforma de cálculo técnico, auditoría IA y documentación profesional',
   description:
     'Plataforma profesional con 15 módulos técnicos, 130+ normativas internacionales, auditoría IA, exportación PDF/Excel/DXF y trazabilidad QR. Petróleo, minería, civil, electricidad, soldadura y más.',
-  keywords: 'cálculo técnico, ingeniería, ASME, API, IEC, NACE, auditoría técnica, exportación PDF, normativas internacionales',
+  keywords: 'ingeniería industrial, cálculo MAOP, ASME B31.8, API 6D, válvulas industriales, DXF CAD ingeniería, plataforma ingeniería online',
 };
 
 const BG    = '#020609';

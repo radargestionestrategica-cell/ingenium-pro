@@ -1,5 +1,6 @@
 User-agent: *
 Allow: /
-Disallow: /api/
-Disallow: /dashboard/
-Sitemap: https://www.ingeniumpro.store/sitemap.xml
+Disallow: /dashboard
+Disallow: /api
+Disallow: /verify
+Sitemap: https://ingeniumpro.store/sitemap.xml
