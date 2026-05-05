@@ -16,7 +16,9 @@
       "Bash(npx prisma *)",
       "Bash(git rm *)",
       "Bash(Test-Path *)",
-      "Bash(npx tsc *)"
+      "Bash(npx tsc *)",
+      "Bash(npm install *)",
+      "Bash(./node_modules/.bin/vitest run *)"
     ]
   }
 }
