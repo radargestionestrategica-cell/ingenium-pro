@@ -2,6 +2,7 @@
 
 import type { Metadata } from 'next';
 import ModulosCarrusel from '@/components/ModulosCarrusel';
+import ExportacionCarrusel from '@/components/ExportacionCarrusel';
 
 export const metadata: Metadata = {
   title: 'INGENIUM Pro | Plataforma de cálculo técnico, auditoría IA y documentación profesional',
@@ -565,7 +566,7 @@ export default function LandingPage() {
                 </div>
                 <div className="preview-export-row">
                   <div className="preview-exp-btn pdf">PDF</div>
-                  <div className="preview-exp-btn xls">XLSX</div>
+                  <div className="preview-exp-btn xls">Excel</div>
                   <div className="preview-exp-btn dxf">DXF</div>
                   <div className="preview-exp-btn qr">QR</div>
                 </div>
@@ -616,6 +617,21 @@ export default function LandingPage() {
           </div>
 
           <ModulosCarrusel modulos={modulos} />
+        </div>
+      </section>
+
+      {/* ═══ EXPORTACIÓN ═════════════════════════════════════════ */}
+      <section className="section">
+        <div className="wrap">
+          <div className="section-head">
+            <div className="eyebrow">Demostración en vivo</div>
+            <h2>Así exporta INGENIUM PRO — Válvulas</h2>
+            <p className="section-sub">
+              Cada módulo genera 4 entregables reales: PDF con QR verificable, Excel con fórmulas editables,
+              plano DXF para fabricación y código QR auditable por terceros.
+            </p>
+          </div>
+          <ExportacionCarrusel />
         </div>
       </section>
 

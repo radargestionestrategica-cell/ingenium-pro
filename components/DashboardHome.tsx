@@ -145,7 +145,7 @@ export default function DashboardHome({ onSelectModulo }: Props) {
       <div style={{ marginTop:28, padding:'14px 20px', background:'rgba(0,0,0,.25)', border:'1px solid rgba(255,255,255,.04)', borderRadius:12, display:'flex', alignItems:'center', gap:16, flexWrap:'wrap' }}>
         <span style={{ fontSize:10, color:'#1e3a5f', fontFamily:'ui-monospace,SFMono-Regular,monospace', fontWeight:700, letterSpacing:1 }}>INGENIUM PRO v8.1</span>
         <span style={{ fontSize:10, color:'#1e3a5f' }}>·</span>
-        <span style={{ fontSize:10, color:'#1e3a5f' }}>Exportación PDF · XLSX · DXF · QR</span>
+        <span style={{ fontSize:10, color:'#1e3a5f' }}>Exportación PDF · Excel · DXF · QR</span>
         <span style={{ fontSize:10, color:'#1e3a5f' }}>·</span>
         <span style={{ fontSize:10, color:'#1e3a5f' }}>Auditoría IA integrada</span>
         <span style={{ fontSize:10, color:'#1e3a5f', marginLeft:'auto' }}>RADAR Gestión Estratégica © 2026</span>
