@@ -1,5 +1,15 @@
 import { describe, it, expect } from 'vitest';
-import { calcMAOP, calcDarcyWeisbach, calcGolpeAriete, calcCv } from '../calculos';
+import {
+  calcMAOP, calcDarcyWeisbach, calcGolpeAriete, calcCv,
+  calcBHP, calcFractureGradient, calcMudWeight,
+  calcCapacidadPortante,
+  calcIntercambiador, calcDilatacionLineal,
+  calcColumnaHormigon,
+  calcRMR, calcVentilacion,
+  calcHeatInputSoldadura, calcCarbonoEquivalente,
+  calcMotorTrifasico, calcTransformadorElect,
+  calcEspesorParedCaneria, calcHoopStressBarlow, calcVidaRemanente,
+} from '../calculos';
 
 // ════════════════════════════════════════════════════════════════
 // MAOP — ASME B31.8 §A842.221
@@ -259,5 +269,464 @@ describe('calcCv', () => {
   it('retorna null con valores negativos', () => {
     expect(calcCv(-5, 1, 1.0)).toBeNull();
     expect(calcCv(10, -1, 1.0)).toBeNull();
+  });
+});
+
+// ════════════════════════════════════════════════════════════════
+// PERFORACIÓN — API RP 13D
+// ════════════════════════════════════════════════════════════════
+describe('calcBHP', () => {
+  it('BHP = hidrostática + cuttings', () => {
+    const r = calcBHP(3000, 10.5, 50);
+    expect(r).not.toBeNull();
+    expect(r!.hydrostaticPsi).toBeCloseTo(0.052 * 10.5 * 3000, 0);
+    expect(r!.bhp).toBeCloseTo(r!.hydrostaticPsi + 50, 0);
+  });
+
+  it('riesgo LOW a 3000 ft, 10.5 ppg sin cuttings', () => {
+    const r = calcBHP(3000, 10.5);
+    expect(r!.risk).toBe('LOW');
+    // 0.052 × 10.5 × 3000 = 1638 psi → LOW
+    expect(r!.bhp).toBeCloseTo(1638, 0);
+  });
+
+  it('riesgo CRITICAL a 15000 ft, 16 ppg', () => {
+    const r = calcBHP(15000, 16.0);
+    expect(r!.risk).toBe('CRITICAL');
+    expect(r!.bhp).toBeGreaterThan(10000);
+  });
+
+  it('mayor profundidad aumenta BHP', () => {
+    const r1 = calcBHP(3000, 10.5);
+    const r2 = calcBHP(6000, 10.5);
+    expect(r2!.bhp).toBeCloseTo(r1!.bhp * 2, 0);
+  });
+
+  it('retorna null con TVD=0', () => {
+    expect(calcBHP(0, 10.5)).toBeNull();
+  });
+
+  it('retorna null con mudWeight=0', () => {
+    expect(calcBHP(3000, 0)).toBeNull();
+  });
+});
+
+describe('calcFractureGradient', () => {
+  it('fórmula Eaton con Poisson=0.25', () => {
+    const r = calcFractureGradient(3000, 1.0, 0.25);
+    expect(r).not.toBeNull();
+    // nu/(1-nu) = 0.25/0.75 = 0.3333
+    // fracGrad = 0.3333 × (1.0 - 0.433) + 0.433 = 0.622
+    expect(r!.fracGrad).toBeCloseTo(0.622, 2);
+    expect(r!.fracPressure).toBeCloseTo(0.622 * 3000, 0);
+  });
+
+  it('Poisson más alto → gradiente más alto', () => {
+    const r1 = calcFractureGradient(3000, 1.0, 0.25);
+    const r2 = calcFractureGradient(3000, 1.0, 0.40);
+    expect(r2!.fracGrad).toBeGreaterThan(r1!.fracGrad);
+  });
+
+  it('retorna null con depth=0', () => {
+    expect(calcFractureGradient(0, 1.0)).toBeNull();
+  });
+});
+
+describe('calcMudWeight', () => {
+  it('mudWeight = porePresGrad + safetyFactor', () => {
+    const r = calcMudWeight(10.0, 0.5);
+    expect(r!.mudWeight).toBeCloseTo(10.5, 1);
+    expect(r!.ecd).toBeCloseTo(10.5 * 1.02, 1);
+  });
+
+  it('riesgo CRITICAL cuando mudWeight > 18 ppg', () => {
+    const r = calcMudWeight(17.6, 0.5);
+    expect(r!.mudWeight).toBeCloseTo(18.1, 1);
+    expect(r!.risk).toBe('CRITICAL');
+  });
+
+  it('riesgo LOW a 9 ppg', () => {
+    expect(calcMudWeight(8.5)!.risk).toBe('LOW');
+  });
+
+  it('retorna null con porePresGrad=0', () => {
+    expect(calcMudWeight(0)).toBeNull();
+  });
+});
+
+// ════════════════════════════════════════════════════════════════
+// GEOTECNIA — Meyerhof (1963)
+// ════════════════════════════════════════════════════════════════
+describe('calcCapacidadPortante', () => {
+  it('arcilla media — carga admisible correcta', () => {
+    // B=3, L=4, Df=1.2, Q=500 kN, FS=3
+    const r = calcCapacidadPortante('arcilla_media', 3, 4, 1.2, 500, 3, 99);
+    expect(r).not.toBeNull();
+    expect(r!.ok).toBe(true);
+    // q_aplicada = 500/(3×4) = 41.7 kPa < qa
+    expect(r!.q_aplicada).toBeCloseTo(41.7, 1);
+    expect(r!.qa).toBeGreaterThan(r!.q_aplicada);
+  });
+
+  it('sobrecarga → ok=false', () => {
+    const r = calcCapacidadPortante('arcilla_blanda', 1, 1, 0.5, 5000, 3, 99);
+    expect(r!.ok).toBe(false);
+  });
+
+  it('napa superficial reduce capacidad (arena)', () => {
+    const rSeco   = calcCapacidadPortante('arena_compacta', 3, 3, 1.5, 1000, 3, 99);
+    const rNapa   = calcCapacidadPortante('arena_compacta', 3, 3, 1.5, 1000, 3, 0.5);
+    expect(rNapa!.qa).toBeLessThan(rSeco!.qa);
+  });
+
+  it('retorna null con B=0', () => {
+    expect(calcCapacidadPortante('grava', 0, 3, 1, 100, 3, 99)).toBeNull();
+  });
+
+  it('retorna null con FS=0', () => {
+    expect(calcCapacidadPortante('grava', 2, 2, 1, 100, 0, 99)).toBeNull();
+  });
+});
+
+// ════════════════════════════════════════════════════════════════
+// TÉRMICA — LMTD / Dilatación
+// ════════════════════════════════════════════════════════════════
+describe('calcIntercambiador', () => {
+  it('LMTD contracorriente — Q=500kW, U=500', () => {
+    // dT1 = 120-80=40, dT2 = 60-20=40 → LMTD = 40 (iguales)
+    const r = calcIntercambiador(500, 120, 60, 20, 80, 500, 'contracorriente');
+    expect(r).not.toBeNull();
+    expect(r!.LMTD).toBeCloseTo(40, 0);
+    expect(r!.A_m2).toBeCloseTo(500 * 1000 / (500 * 40), 1);
+  });
+
+  it('paralelo — dT1 y dT2 correctos', () => {
+    // dT1 = 120-20=100, dT2 = 60-80 negativo → saltar
+    // usar T_cold_out < T_hot_out
+    const r = calcIntercambiador(200, 100, 60, 20, 50, 300, 'paralelo');
+    expect(r).not.toBeNull();
+    // dT1=100-20=80, dT2=60-50=10 → LMTD=(80-10)/ln(8)=33.0
+    expect(r!.LMTD).toBeCloseTo((80 - 10) / Math.log(80 / 10), 1);
+  });
+
+  it('mayor U → menor área necesaria', () => {
+    const r1 = calcIntercambiador(300, 90, 50, 20, 60, 300, 'contracorriente');
+    const r2 = calcIntercambiador(300, 90, 50, 20, 60, 600, 'contracorriente');
+    expect(r2!.A_m2).toBeLessThan(r1!.A_m2);
+    expect(r2!.A_m2).toBeCloseTo(r1!.A_m2 / 2, 1);
+  });
+
+  it('efectividad = (Th_in - Th_out)/(Th_in - Tc_in) × 100', () => {
+    const r = calcIntercambiador(500, 120, 60, 20, 80, 500, 'contracorriente');
+    expect(r!.efectividad).toBeCloseTo((120 - 60) / (120 - 20) * 100, 0);
+  });
+
+  it('retorna null con Q=0', () => {
+    expect(calcIntercambiador(0, 100, 60, 20, 80, 500)).toBeNull();
+  });
+});
+
+describe('calcDilatacionLineal', () => {
+  it('dL correcta — acero 100 m, ΔT=180°C, α=11.7µ', () => {
+    const r = calcDilatacionLineal(100, 20, 200, 11.7);
+    expect(r).not.toBeNull();
+    // dL = 11.7e-6 × 100 × 180 × 1000 = 210.6 mm
+    expect(r!.dL_mm).toBeCloseTo(11.7e-6 * 100 * 180 * 1000, 1);
+  });
+
+  it('restringido genera tensión — CRITICAL si > 300 MPa', () => {
+    // sigma = 200×1000 × 11.7e-6 × 180 = 421.2 MPa
+    const r = calcDilatacionLineal(100, 20, 200, 11.7, true, 200);
+    expect(r!.sigma_MPa).toBeCloseTo(421.2, 0);
+    expect(r!.risk).toBe('CRITICAL');
+  });
+
+  it('sin restricción → sigma=0', () => {
+    const r = calcDilatacionLineal(100, 20, 200, 11.7, false);
+    expect(r!.sigma_MPa).toBe(0);
+  });
+
+  it('ΔT negativo produce mismo dL que positivo (valor absoluto)', () => {
+    const r1 = calcDilatacionLineal(50, 20, 80, 11.7);
+    const r2 = calcDilatacionLineal(50, 80, 20, 11.7);
+    expect(r1!.dL_mm).toBeCloseTo(r2!.dL_mm, 2);
+  });
+
+  it('retorna null con L=0', () => {
+    expect(calcDilatacionLineal(0, 20, 200, 11.7)).toBeNull();
+  });
+});
+
+// ════════════════════════════════════════════════════════════════
+// CIVIL — ACI 318-19
+// ════════════════════════════════════════════════════════════════
+describe('calcColumnaHormigon', () => {
+  it('phi_Pn correcta — columna 300×300, fc=25, fy=420', () => {
+    // Ag=90000, Pn_max = 0.80×(0.85×25×(90000-1800)+420×1800) = 2111.7 kN
+    // phi_Pn = 0.65 × 2111.7 = 1372.6 kN
+    const r = calcColumnaHormigon(1200, 50, 300, 300, 1800, 25, 420);
+    expect(r).not.toBeNull();
+    expect(r!.phi_Pn).toBeGreaterThan(1300);
+    expect(r!.ok_P).toBe(true);
+  });
+
+  it('Pu > phi_Pn → ok_P=false, riesgo=CRITICAL', () => {
+    const r = calcColumnaHormigon(9999, 0, 200, 200, 1200, 20, 420);
+    expect(r!.ok_P).toBe(false);
+    expect(r!.riesgo).toBe('CRITICAL');
+  });
+
+  it('rho fuera de [1%–8%] → ok_rho=false', () => {
+    // As muy pequeño → rho < 1%
+    const r = calcColumnaHormigon(100, 0, 400, 400, 100, 25, 420);
+    expect(r!.ok_rho).toBe(false);
+  });
+
+  it('rho calculado correctamente', () => {
+    const r = calcColumnaHormigon(500, 0, 300, 300, 2700, 25, 420);
+    // rho = 2700/(300×300) = 0.03 → 3%
+    expect(r!.rho).toBeCloseTo(3.0, 1);
+    expect(r!.ok_rho).toBe(true);
+  });
+
+  it('retorna null con b=0', () => {
+    expect(calcColumnaHormigon(1000, 0, 0, 300, 1800, 25, 420)).toBeNull();
+  });
+});
+
+// ════════════════════════════════════════════════════════════════
+// MINERÍA — RMR / Ventilación
+// ════════════════════════════════════════════════════════════════
+describe('calcRMR', () => {
+  it('roca buena — clase II', () => {
+    // ucs=101→p1=12, rqd=80→p2=17, espaciado=500→p3=10 (200–600), buena→p4=12, humedo→p5=10, favorable→adj=-2
+    const r = calcRMR(101, 80, 500, 'buena', 'humedo', 'favorable');
+    expect(r).not.toBeNull();
+    expect(r!.rmr).toBe(12 + 17 + 10 + 12 + 10 - 2);  // 59
+    expect(r!.clase).toBe('III');   // 41–60
+    expect(r!.riesgo).toBe('MEDIUM');
+  });
+
+  it('roca muy mala — clase V, riesgo CRITICAL', () => {
+    const r = calcRMR(3, 15, 30, 'muy_pobre', 'flujo', 'muy_desfavorable');
+    expect(r!.clase).toBe('V');
+    expect(r!.riesgo).toBe('CRITICAL');
+  });
+
+  it('suma de parámetros es correcta', () => {
+    const r = calcRMR(55, 60, 300, 'moderada', 'seco', 'moderada');
+    expect(r!.rmr).toBe(r!.p1 + r!.p2 + r!.p3 + r!.p4 + r!.p5 + r!.adj);
+  });
+});
+
+describe('calcVentilacion', () => {
+  it('caudal mínimo = 0.25 m³/s para galería vacía', () => {
+    const r = calcVentilacion(0, 0, 100, 8, 0);
+    expect(r!.Q_req).toBeCloseTo(0.25, 2);
+  });
+
+  it('Q = trabajadores×0.06 + diesel×0.06', () => {
+    const r = calcVentilacion(10, 200, 500, 8, 15);
+    expect(r!.Q_req).toBeCloseTo(10 * 0.06 + 200 * 0.06, 2);
+    expect(r!.V).toBeCloseTo(r!.Q_req / 8, 3);
+    expect(r!.co_ok).toBe(true);
+  });
+
+  it('CO > 25 ppm → co_ok=false, CRITICAL', () => {
+    const r = calcVentilacion(5, 50, 100, 4, 30);
+    expect(r!.co_ok).toBe(false);
+    expect(r!.riesgo).toBe('CRITICAL');
+  });
+
+  it('retorna null con seccion=0', () => {
+    expect(calcVentilacion(10, 50, 100, 0, 0)).toBeNull();
+  });
+});
+
+// ════════════════════════════════════════════════════════════════
+// SOLDADURA — ASME Sec. IX
+// ════════════════════════════════════════════════════════════════
+describe('calcHeatInputSoldadura', () => {
+  it('HI = V×I×60×η / (v×1000)', () => {
+    // (22×150×60×0.80) / (100×1000) = 158400/100000 = 1.584 kJ/mm
+    const r = calcHeatInputSoldadura(22, 150, 100, 0.80);
+    expect(r).not.toBeNull();
+    expect(r!.hi).toBeCloseTo(1.584, 3);
+    expect(r!.riesgo).toBe('LOW');
+  });
+
+  it('mayor corriente → mayor HI', () => {
+    const r1 = calcHeatInputSoldadura(22, 150, 100, 0.80);
+    const r2 = calcHeatInputSoldadura(22, 300, 100, 0.80);
+    expect(r2!.hi).toBeCloseTo(r1!.hi * 2, 2);
+  });
+
+  it('mayor velocidad → menor HI', () => {
+    const r1 = calcHeatInputSoldadura(22, 150, 100, 0.80);
+    const r2 = calcHeatInputSoldadura(22, 150, 200, 0.80);
+    expect(r2!.hi).toBeCloseTo(r1!.hi / 2, 2);
+  });
+
+  it('retorna null con V=0', () => {
+    expect(calcHeatInputSoldadura(0, 150, 100, 0.8)).toBeNull();
+  });
+});
+
+describe('calcCarbonoEquivalente', () => {
+  it('acero bajo carbono — CE < 0.35, Grupo I', () => {
+    // CE = 0.20 + 1.00/6 = 0.367 → Grupo II
+    const r = calcCarbonoEquivalente(0.20, 1.00, 0, 0, 0);
+    expect(r).not.toBeNull();
+    expect(r!.CE).toBeCloseTo(0.367, 2);
+    expect(r!.grupo).toBe('II');
+  });
+
+  it('aleaciones aumentan CE', () => {
+    const r1 = calcCarbonoEquivalente(0.15, 0.80, 0, 0, 0);
+    const r2 = calcCarbonoEquivalente(0.15, 0.80, 1.0, 0.5, 2.0);
+    expect(r2!.CE).toBeGreaterThan(r1!.CE);
+  });
+
+  it('formula IIW correcta', () => {
+    const r = calcCarbonoEquivalente(0.18, 1.20, 0.60, 0.30, 1.50);
+    const expected = 0.18 + 1.20/6 + (0.60+0.30)/5 + 1.50/15;
+    expect(r!.CE).toBeCloseTo(expected, 3);
+  });
+
+  it('retorna null con valores negativos', () => {
+    expect(calcCarbonoEquivalente(-0.1, 1, 0, 0, 0)).toBeNull();
+  });
+});
+
+// ════════════════════════════════════════════════════════════════
+// ELECTRICIDAD — NEC Art. 430 / IEC 60947
+// ════════════════════════════════════════════════════════════════
+describe('calcMotorTrifasico', () => {
+  it('Inom = P/(η) × 1000 / (√3 × V × FP)', () => {
+    const r = calcMotorTrifasico(75, 380, 0.85, 0.93);
+    expect(r).not.toBeNull();
+    const Pelec = 75 / 0.93;
+    const Inom  = Pelec * 1000 / (Math.sqrt(3) * 380 * 0.85);
+    expect(r!.Inom).toBeCloseTo(Inom, 0);
+    expect(r!.Iarr).toBeCloseTo(6 * Inom, 0);
+  });
+
+  it('Iarr = 6 × Inom', () => {
+    const r = calcMotorTrifasico(75, 380, 0.85, 0.93);
+    expect(r!.Iarr).toBeCloseTo(r!.Inom * 6, 0);
+  });
+
+  it('mayor tensión → menor corriente', () => {
+    const r380 = calcMotorTrifasico(75, 380,  0.85, 0.93);
+    const r660 = calcMotorTrifasico(75, 660,  0.85, 0.93);
+    expect(r660!.Inom).toBeLessThan(r380!.Inom);
+  });
+
+  it('retorna null con P=0', () => {
+    expect(calcMotorTrifasico(0, 380, 0.85, 0.93)).toBeNull();
+  });
+});
+
+describe('calcTransformadorElect', () => {
+  it('S = P/(FP×η), Is = S×1000/(√3×Vs)', () => {
+    const r = calcTransformadorElect(500, 0.85, 0.98, 13200, 400);
+    expect(r).not.toBeNull();
+    const S  = 500 / (0.85 * 0.98);
+    const Is = S * 1000 / (Math.sqrt(3) * 400);
+    expect(r!.S).toBeCloseTo(S, 0);
+    expect(r!.Is).toBeCloseTo(Is, 0);
+    expect(r!.Iarr).toBeCloseTo(10 * Is, 0);
+  });
+
+  it('Vs más bajo → Is más alto', () => {
+    const r1 = calcTransformadorElect(500, 0.85, 0.98, 13200, 400);
+    const r2 = calcTransformadorElect(500, 0.85, 0.98, 13200, 200);
+    expect(r2!.Is).toBeGreaterThan(r1!.Is);
+  });
+
+  it('retorna null con Vs=0', () => {
+    expect(calcTransformadorElect(500, 0.85, 0.98, 13200, 0)).toBeNull();
+  });
+});
+
+// ════════════════════════════════════════════════════════════════
+// CAÑERÍAS — ASME B31.4 / API 579-1
+// ════════════════════════════════════════════════════════════════
+describe('calcEspesorParedCaneria', () => {
+  it('t_min y t_dis para DN273, P=80bar, X52', () => {
+    // SMYS X52 = 448 MPa · F=0.72
+    const r = calcEspesorParedCaneria(273.1, 80, 448, 0.72, 1.0, 1.0, 1.6);
+    expect(r).not.toBeNull();
+    const D_in   = 273.1 / 25.4;
+    const P_psi  = 80 * 14.5038;
+    const S_psi  = 448 * 145.038;
+    const t_in   = (P_psi * D_in) / (2 * S_psi * 0.72 * 1.0 * 1.0);
+    expect(r!.t_min_mm).toBeCloseTo(t_in * 25.4, 1);
+    expect(r!.t_dis_mm).toBeCloseTo(r!.t_min_mm + 1.6, 1);
+  });
+
+  it('mayor presión → mayor espesor mínimo', () => {
+    const r1 = calcEspesorParedCaneria(273.1, 50, 448);
+    const r2 = calcEspesorParedCaneria(273.1, 100, 448);
+    expect(r2!.t_min_mm).toBeGreaterThan(r1!.t_min_mm);
+  });
+
+  it('retorna null con D=0', () => {
+    expect(calcEspesorParedCaneria(0, 80, 448)).toBeNull();
+  });
+});
+
+describe('calcHoopStressBarlow', () => {
+  it('sigma_h = P×D/(2×t) y ok si <= allow', () => {
+    const r = calcHoopStressBarlow(273.1, 9.3, 80, 448, 0.72);
+    expect(r).not.toBeNull();
+    const P_MPa   = 80 / 10;
+    const sigma_h = P_MPa * 273.1 / (2 * 9.3);
+    const allow   = 448 * 0.72;
+    expect(r!.sigma_h).toBeCloseTo(sigma_h, 1);
+    expect(r!.allow).toBeCloseTo(allow, 1);
+    expect(r!.ok).toBe(sigma_h <= allow);
+  });
+
+  it('tensión admisible proporcional a SMYS × F', () => {
+    const r1 = calcHoopStressBarlow(273.1, 9.3, 80, 448, 0.72);
+    const r2 = calcHoopStressBarlow(273.1, 9.3, 80, 448, 1.0);
+    expect(r2!.allow).toBeGreaterThan(r1!.allow);
+    expect(r2!.allow / r1!.allow).toBeCloseTo(1.0 / 0.72, 2);
+  });
+
+  it('retorna null con t=0', () => {
+    expect(calcHoopStressBarlow(273.1, 0, 80, 448)).toBeNull();
+  });
+});
+
+describe('calcVidaRemanente', () => {
+  it('vida = (t_med - t_min) / corr', () => {
+    // (7.8 - 5.5) / 0.2 = 11.5 años
+    const r = calcVidaRemanente(9.3, 7.8, 5.5, 0.2);
+    expect(r).not.toBeNull();
+    expect(r!.vida).toBeCloseTo(11.5, 1);
+    expect(r!.estado).toBe('EN SERVICIO NORMAL');
+  });
+
+  it('pct = (t_med - t_min) / (t_nom - t_min) × 100', () => {
+    const r = calcVidaRemanente(9.3, 7.8, 5.5, 0.2);
+    expect(r!.pct).toBeCloseTo((7.8 - 5.5) / (9.3 - 5.5) * 100, 1);
+  });
+
+  it('t_med <= t_min → FUERA DE SERVICIO', () => {
+    const r = calcVidaRemanente(9.3, 5.0, 5.5, 0.2);
+    expect(r!.estado).toBe('FUERA DE SERVICIO');
+    expect(r!.vida).toBe(0);
+  });
+
+  it('vida < 2 años → REEMPLAZO URGENTE', () => {
+    const r = calcVidaRemanente(9.3, 5.7, 5.5, 0.2);
+    // vida = 0.2/0.2 = 1.0 → REEMPLAZO
+    expect(r!.estado).toBe('REEMPLAZO URGENTE');
+  });
+
+  it('retorna null con corr=0', () => {
+    expect(calcVidaRemanente(9.3, 7.8, 5.5, 0)).toBeNull();
   });
 });

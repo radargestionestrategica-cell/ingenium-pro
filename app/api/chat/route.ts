@@ -57,6 +57,29 @@ type ResultadosDerivados = {
   notas_calculo:               string[];
 };
 
+// Busca un valor numérico en un objeto probando múltiples claves posibles.
+// Acepta claves exactas o fragmentos que aparezcan dentro de las claves del objeto.
+function findNum(obj: Record<string, unknown>, ...keys: string[]): number {
+  for (const k of keys) {
+    const direct = obj[k];
+    if (direct !== undefined && direct !== null && direct !== '') {
+      const n = Number(direct);
+      if (!isNaN(n)) return n;
+    }
+  }
+  // Búsqueda parcial: si ninguna clave exacta coincide, busca por fragmento
+  for (const k of keys) {
+    const kL = k.toLowerCase();
+    for (const [ok, ov] of Object.entries(obj)) {
+      if (ok.toLowerCase().includes(kL) || kL.includes(ok.toLowerCase().replace(/[^a-záéíóúüñ0-9]/gi, ''))) {
+        const n = Number(ov);
+        if (!isNaN(n) && isFinite(n)) return n;
+      }
+    }
+  }
+  return 0;
+}
+
 function preCalcular(ctx: ContextoCalculo): ResultadosDerivados {
   const p = ctx.parametros;
   const r = ctx.resultado;
@@ -72,18 +95,25 @@ function preCalcular(ctx: ContextoCalculo): ResultadosDerivados {
 
   // ── MAOP — ASME B31.8 ────────────────────────────────────────────────────
   if (ctx.moduloId === 'MAOP') {
-    const maop_bar = Number(r['bar']   ?? r['MAOP_bar']   ?? 0);
-    const P_op_bar = Number(p['P_bar'] ?? p['presion_bar'] ?? 0);
-    const t_nom    = Number(p['t']     ?? p['t_nom_mm']    ?? 0);
-    const t_min    = Number(r['t_min'] ?? 0);
-    const tasa_cor = Number(p['tasa_corrosion_mm_anio'] ?? 0.2);
+    // Módulos usan etiquetas legibles: 'MAOP (bar)', 'MAOP (MPa)', 'Espesor de pared t (mm)'
+    const maop_mpa = findNum(r, 'MAOP (MPa)', 'P', 'maop_mpa', 'bar') ;
+    const maop_bar_r = findNum(r, 'MAOP (bar)', 'bar', 'MAOP_bar');
+    const maop_bar = maop_bar_r || maop_mpa * 10;
+    // Presión de operación — puede no estar en parametros (MAOP no la recibe), usar 90% MAOP como referencia
+    const P_op_bar = findNum(p, 'P_bar', 'presion_bar', 'Presión de operación (bar)', 'P_op') || (maop_bar * 0.85);
+    const t_nom    = findNum(p, 't', 't_nom_mm', 'Espesor de pared t (mm)', 'Espesor pared');
+    // t_min no está en resultado de MAOP estándar; derivarlo si disponible
+    const t_min    = findNum(r, 't_min', 't_min_mm', 'Espesor mínimo', 'Espesor minimo');
+    const tasa_cor = findNum(p, 'tasa_corrosion_mm_anio', 'Tasa de corrosión (mm/año)', 'tasa') || 0.2;
 
     if (maop_bar > 0 && P_op_bar > 0) {
       resultado.utilizacion_pct = +((P_op_bar / maop_bar) * 100).toFixed(1);
-      notas.push(`Utilización de presión: ${resultado.utilizacion_pct}% del MAOP`);
+      notas.push(`Utilización de presión: ${resultado.utilizacion_pct}% del MAOP [CALCULADO]`);
       if (resultado.utilizacion_pct > 90)      nivel_riesgo = 'ALTO';
       else if (resultado.utilizacion_pct > 80) nivel_riesgo = 'MEDIO';
     }
+
+    notas.push(`MAOP: ${maop_bar > 0 ? maop_bar + ' bar' : maop_mpa + ' MPa'}`);
 
     // Fórmula real API 579-1/ASME FFS-1 §4: VR = (t_actual - t_mínimo) / tasa_corrosión
     if (t_nom > 0 && t_min > 0 && tasa_cor > 0) {
@@ -96,6 +126,7 @@ function preCalcular(ctx: ContextoCalculo): ResultadosDerivados {
 
     if (maop_bar > 0 && P_op_bar > 0) {
       resultado.margen_seguridad_pct = +((1 - P_op_bar / maop_bar) * 100).toFixed(1);
+      notas.push(`Margen de seguridad: ${resultado.margen_seguridad_pct}%`);
     }
 
     // API 580 §6.3: intervalo = min(VR/2, 60 meses)
@@ -104,17 +135,28 @@ function preCalcular(ctx: ContextoCalculo): ResultadosDerivados {
         Math.round(resultado.vida_remanente_anios / 2 * 12), 60
       );
       notas.push(`Intervalo inspección (API 580 §6.3): ${resultado.intervalo_inspeccion_meses} meses`);
+    } else {
+      // Sin datos de corrosión: usar intervalo estándar por nivel de riesgo
+      resultado.intervalo_inspeccion_meses = nivel_riesgo === 'CRITICO' ? 6 : nivel_riesgo === 'ALTO' ? 12 : 36;
     }
   }
 
   // ── HIDRÁULICA — Darcy-Weisbach ───────────────────────────────────────────
   if (ctx.moduloId === 'HIDRAULICA' || ctx.moduloId === 'DARCY') {
-    const V    = Number(r['V']    ?? r['velocidad']  ?? 0);
-    const P_op = Number(p['P_op'] ?? p['presion_bar'] ?? 0);
-    const maop = Number(p['MAOP'] ?? p['maop_bar']   ?? 0);
+    // Módulo usa: 'Velocidad V (m/s)', 'Presion (bar)', 'Numero de Reynolds Re'
+    const V    = findNum(r, 'V', 'Velocidad V (m/s)', 'velocidad', 'Velocidad (m/s)');
+    const Re   = findNum(r, 'Re', 'Numero de Reynolds Re', 'Reynolds');
+    const hf   = findNum(r, 'hf_total', 'hf Total (m)', 'hf_mayor', 'hf Mayor (m)');
+    const P_op = findNum(p, 'P_op', 'presion_bar', 'Presión de operación (bar)');
+    const maop = findNum(p, 'MAOP', 'maop_bar', 'MAOP (bar)');
 
-    if (V > 3.0)       { nivel_riesgo = 'CRITICO'; }
-    else if (V > 1.5)  { nivel_riesgo = 'ALTO'; notas.push(`Velocidad ${V} m/s > 1.5 m/s → riesgo de golpe de ariete`); }
+    if (V > 0) notas.push(`Velocidad de flujo: ${V} m/s`);
+    if (Re > 0) notas.push(`Régimen: ${Re < 2300 ? 'LAMINAR' : Re < 4000 ? 'TRANSICIÓN' : 'TURBULENTO'} (Re=${Re})`);
+    if (hf > 0) notas.push(`Pérdida de carga total: ${hf} m`);
+
+    if (V > 3.0)       { nivel_riesgo = 'CRITICO'; notas.push(`CRÍTICO: Velocidad ${V} m/s > 3.0 m/s → erosión severa`); }
+    else if (V > 2.0)  { nivel_riesgo = 'ALTO';    notas.push(`ALTO: Velocidad ${V} m/s > 2.0 m/s → riesgo erosión`); }
+    else if (V > 1.5)  { nivel_riesgo = 'MEDIO';   notas.push(`MEDIO: Velocidad ${V} m/s > 1.5 m/s → riesgo golpe de ariete`); }
 
     if (P_op > 0 && maop > 0) {
       resultado.utilizacion_pct  = +((P_op / maop) * 100).toFixed(1);
@@ -129,39 +171,65 @@ function preCalcular(ctx: ContextoCalculo): ResultadosDerivados {
 
   // ── JOUKOWSKY — Golpe de ariete ───────────────────────────────────────────
   if (ctx.moduloId === 'JOUKOWSKY') {
-    const dP_bar = Number(r['dP_bar'] ?? (r['dP_MPa'] ? Number(r['dP_MPa']) * 10 : 0));
-    const maop   = Number(p['maop_bar'] ?? p['P_bar'] ?? 0);
-    const P_op   = Number(p['P_op']     ?? maop * 0.85);
+    // Módulo usa: 'Sobrepresion (MPa)', 'Sobrepresion (bar)', 'Celeridad onda a (m/s)'
+    const dP_MPa = findNum(r, 'dP_MPa', 'Sobrepresion (MPa)', 'Sobrepresión (MPa)');
+    const dP_bar_r = findNum(r, 'dP_bar', 'Sobrepresion (bar)', 'Sobrepresión (bar)');
+    const dP_bar = dP_bar_r || dP_MPa * 10;
+    const a      = findNum(r, 'a', 'Celeridad onda a (m/s)', 'Celeridad de onda a (m/s)');
+    const Tc     = findNum(r, 'Tc', 'Tiempo critico Tc (s)', 'Tiempo retorno de onda 2L/a (s)');
+    const maop   = findNum(p, 'maop_bar', 'P_bar', 'MAOP (bar)');
+    const P_op   = findNum(p, 'P_op', 'presion_bar') || (maop * 0.85 || 0);
 
-    if (P_op > 0 && dP_bar > 0) {
+    if (a > 0) notas.push(`Celeridad de onda: ${a} m/s`);
+    if (Tc > 0) notas.push(`Tiempo crítico de cierre 2L/a: ${Tc} s`);
+
+    if (dP_bar > 0) {
       resultado.presion_ariete_bar = +dP_bar.toFixed(2);
-      resultado.presion_total_bar  = +(P_op + dP_bar).toFixed(2);
-      resultado.supera_admisible   = maop > 0 && (P_op + dP_bar) > maop;
-      notas.push(`Presión total (op + ariete): ${resultado.presion_total_bar} bar`);
+      notas.push(`Sobrepresión Joukowsky: ${dP_bar.toFixed(2)} bar [CALCULADO]`);
 
-      if (resultado.supera_admisible) {
-        nivel_riesgo = 'CRITICO';
-        const exceso = +((P_op + dP_bar - maop) / maop * 100).toFixed(1);
-        notas.push(`CRÍTICO: Supera MAOP en ${exceso}% — riesgo de rotura per ASME B31.8 §845`);
-      } else if (dP_bar > maop * 0.2) nivel_riesgo = 'ALTO';
-      else if (dP_bar > maop * 0.1)   nivel_riesgo = 'MEDIO';
+      if (P_op > 0) {
+        resultado.presion_total_bar  = +(P_op + dP_bar).toFixed(2);
+        resultado.supera_admisible   = maop > 0 && (P_op + dP_bar) > maop;
+        notas.push(`Presión total (op + ariete): ${resultado.presion_total_bar} bar`);
+        if (resultado.supera_admisible) {
+          nivel_riesgo = 'CRITICO';
+          const exceso = +((P_op + dP_bar - maop) / maop * 100).toFixed(1);
+          notas.push(`CRÍTICO: Supera MAOP en ${exceso}% — riesgo de rotura per ASME B31.8 §845`);
+        }
+      }
+
+      // Nivel de riesgo por magnitud del sobrepresión
+      if (nivel_riesgo !== 'CRITICO') {
+        if (dP_MPa > 2 || dP_bar > 20)      nivel_riesgo = 'CRITICO';
+        else if (dP_MPa > 1 || dP_bar > 10) nivel_riesgo = 'ALTO';
+        else if (dP_MPa > 0.5 || dP_bar > 5) nivel_riesgo = 'MEDIO';
+      }
     }
   }
 
-  // ── CAÑERÍAS — ASME B31.3 ────────────────────────────────────────────────
+  // ── CAÑERÍAS — ASME B31.3 / API 579 ─────────────────────────────────────
   if (ctx.moduloId === 'CANERIAS') {
-    const t_nom = Number(p['t_nom_mm'] ?? p['t_dis_mm']  ?? 0);
-    const t_min = Number(r['t_min_mm'] ?? 0);
-    const tasa  = Number(p['tasa_corrosion_mm_anio'] ?? 0.2);
-    const P_op  = Number(p['P_bar']    ?? p['presion_bar'] ?? 0);
-    const P_adm = Number(r['MAWP_bar'] ?? r['P_adm']      ?? 0);
+    // Diferentes sub-módulos: espesor, hoop, ariete, cierre, remanente
+    // remanente: p tiene 'Espesor nominal original (mm)', 'Espesor medido hoy (mm)', 'Espesor mínimo requerido (mm)', 'Tasa de corrosión (mm/año)'
+    // espesor: r tiene 'Espesor mínimo por presión (mm)', 'Espesor de diseño con CA (mm)'
+    const t_nom  = findNum(p, 't_nom_mm', 't_dis_mm', 'Espesor nominal original (mm)', 'Espesor medido hoy (mm)');
+    const t_min  = findNum(r, 't_min_mm', 'Espesor mínimo por presión (mm)')
+                || findNum(p, 't_min', 'Espesor mínimo requerido (mm)');
+    const tasa   = findNum(p, 'tasa_corrosion_mm_anio', 'Tasa de corrosión (mm/año)', 'tasa') || 0;
+    const P_op   = findNum(p, 'P_bar', 'presion_bar', 'Presión de diseño (bar)', 'Presión de operación (bar)');
+    const P_adm  = findNum(r, 'MAWP_bar', 'P_adm', 'Límite admisible S·F·E·T (MPa)');
 
     if (t_nom > 0 && t_min > 0 && tasa > 0) {
       resultado.vida_remanente_anios       = +((t_nom - t_min) / tasa).toFixed(1);
       resultado.intervalo_inspeccion_meses = Math.min(Math.round(resultado.vida_remanente_anios / 2 * 12), 60);
-      notas.push(`Vida remanente (API 579-1 §4): ${resultado.vida_remanente_anios} años`);
+      notas.push(`Vida remanente (API 579-1 §4): ${resultado.vida_remanente_anios} años a ${tasa} mm/año`);
       if (resultado.vida_remanente_anios < 2)       nivel_riesgo = 'CRITICO';
       else if (resultado.vida_remanente_anios < 5)  nivel_riesgo = 'ALTO';
+      else if (resultado.vida_remanente_anios < 10) nivel_riesgo = 'MEDIO';
+    } else if (t_nom > 0 && t_min > 0) {
+      // Tasa no disponible: reportar datos de espesor
+      const margen = +((t_nom - t_min) / t_nom * 100).toFixed(1);
+      notas.push(`Margen de espesor: ${margen}% sobre mínimo requerido`);
     }
 
     if (P_op > 0 && P_adm > 0) {
@@ -169,23 +237,48 @@ function preCalcular(ctx: ContextoCalculo): ResultadosDerivados {
       resultado.supera_admisible = P_op > P_adm;
       if (resultado.supera_admisible) nivel_riesgo = 'CRITICO';
     }
+
+    // Verificar vida remanente ya calculada en resultado del módulo
+    const vidaRes = findNum(r, 'Vida remanente estimada (años)', 'vida_anios', 'vida');
+    if (vidaRes > 0 && !resultado.vida_remanente_anios) {
+      resultado.vida_remanente_anios = vidaRes;
+      notas.push(`Vida remanente: ${vidaRes} años`);
+      if (vidaRes < 2)  nivel_riesgo = 'CRITICO';
+      else if (vidaRes < 5)  nivel_riesgo = 'ALTO';
+    }
   }
 
   // ── PERFORACIÓN — API RP 13D ──────────────────────────────────────────────
   if (ctx.moduloId === 'PERFORACION') {
-    const P_hidro = Number(r['presion_hidrostatica'] ?? 0);
-    const P_poro  = Number(p['presion_poro_bar']     ?? 0);
-    const P_frac  = Number(p['presion_fractura_bar'] ?? 0);
+    // Módulo usa psi: 'BHP (psi)', 'Presion hidrostatica (psi)', 'Presion de fractura (psi)'
+    // y 'Estado BHP' con valores CRITICAL/HIGH/MEDIUM/LOW
+    const bhp_psi  = findNum(r, 'BHP (psi)', 'BHP', 'presion_hidrostatica');
+    const frac_psi = findNum(r, 'Presion de fractura (psi)', 'presion_fractura', 'fracPressure');
+    const hidro_psi = findNum(r, 'Presion hidrostatica (psi)', 'hidrostatica');
+    const estadoBHP = String(r['Estado BHP'] ?? r['Estado lodo'] ?? '');
 
-    if (P_hidro > 0 && P_poro > 0 && P_frac > 0) {
-      const en_ventana         = P_hidro > P_poro && P_hidro < P_frac;
+    if (bhp_psi > 0) notas.push(`BHP: ${bhp_psi.toFixed(0)} psi`);
+    if (hidro_psi > 0) notas.push(`Presión hidrostática: ${hidro_psi.toFixed(0)} psi`);
+    if (frac_psi > 0) notas.push(`Presión de fractura: ${frac_psi.toFixed(0)} psi`);
+
+    if (bhp_psi > 0 && frac_psi > 0) {
+      const en_ventana = bhp_psi < frac_psi;
       resultado.supera_admisible = !en_ventana;
+      const margen_pct = +((1 - bhp_psi / frac_psi) * 100).toFixed(1);
+      resultado.margen_seguridad_pct = margen_pct;
       if (!en_ventana) {
         nivel_riesgo = 'CRITICO';
-        notas.push(`CRÍTICO: Presión hidrostática fuera de ventana operativa (poro=${P_poro} bar, fractura=${P_frac} bar)`);
+        notas.push(`CRÍTICO: BHP ${bhp_psi.toFixed(0)} psi supera presión de fractura ${frac_psi.toFixed(0)} psi`);
       } else {
-        notas.push(`Ventana operativa OK: poro=${P_poro} bar < hidro=${P_hidro} bar < fractura=${P_frac} bar`);
+        notas.push(`Ventana operativa OK: BHP=${bhp_psi.toFixed(0)} psi < Fractura=${frac_psi.toFixed(0)} psi (margen: ${margen_pct}%)`);
       }
+    }
+
+    // Mapear estado del módulo si no se calculó por ventana
+    if (nivel_riesgo === 'BAJO') {
+      if (estadoBHP === 'CRITICAL') nivel_riesgo = 'CRITICO';
+      else if (estadoBHP === 'HIGH') nivel_riesgo = 'ALTO';
+      else if (estadoBHP === 'MEDIUM') nivel_riesgo = 'MEDIO';
     }
   }
 

@@ -1,6 +1,7 @@
 ﻿'use client';
 import { publicarResultado } from '@/components/ResultadoContexto';
 import BotonesExportar, { DatosExportar } from '@/components/BotonesExportar';
+import IAChat from '@/components/IAChat';
 import { useState } from 'react';
 
 // RMR - Rock Mass Rating (Bieniawski 1989)
@@ -465,6 +466,7 @@ export default function ModuloMineria() {
           </div>
         )}
         {datosActivo && <BotonesExportar visible={true} datos={datosActivo} />}
+        {datosActivo && <IAChat datos={datosActivo} />}
 
       </div>
     </div>

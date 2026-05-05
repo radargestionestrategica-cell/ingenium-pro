@@ -2,6 +2,7 @@
 
 import { publicarResultado } from '@/components/ResultadoContexto';
 import BotonesExportar, { DatosExportar } from '@/components/BotonesExportar';
+import IAChat from '@/components/IAChat';
 import { useState, type CSSProperties, type ReactNode } from 'react';
 
 // MÓDULO ELECTRICIDAD INDUSTRIAL — INGENIUM PRO v8.1
@@ -1288,6 +1289,7 @@ export default function ModuloElectricidad() {
         </div>
       )}
       {datosActivo && <BotonesExportar visible={true} datos={datosActivo} />}
+      {datosActivo && <IAChat datos={datosActivo} />}
     </div>
   );
 }

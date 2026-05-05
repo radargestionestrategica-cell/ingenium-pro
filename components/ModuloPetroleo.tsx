@@ -1,6 +1,7 @@
 'use client';
 import { publicarResultado } from '@/components/ResultadoContexto';
 import BotonesExportar, { DatosExportar } from '@/components/BotonesExportar';
+import IAChat from '@/components/IAChat';
 import { useState } from 'react';
 
 function calcMAOP(OD: number, t: number, SMYS: number, F = 0.72, E = 1.0, T_op = 20) {
@@ -245,6 +246,7 @@ export default function ModuloPetroleo() {
 
         {/* BOTONES EXPORTAR */}
         {datos && <BotonesExportar visible={true} datos={datos} />}
+        {datos && <IAChat datos={datos} />}
 
       </div>
     </div>
