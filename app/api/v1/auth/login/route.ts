@@ -14,10 +14,7 @@ function hashPassword(password: string): string {
 function generarToken(payload: object): string {
   const secret = process.env.JWT_SECRET ?? 'ingenium_jwt_2026';
   const data = Buffer.from(JSON.stringify(payload)).toString('base64');
-  const sig = crypto
-    .createHash('sha256')
-    .update(data + secret)
-    .digest('hex');
+  const sig = crypto.createHmac('sha256', secret).update(data).digest('hex');
   return `${data}.${sig}`;
 }
 

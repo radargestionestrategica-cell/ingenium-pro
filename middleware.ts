@@ -8,7 +8,12 @@ async function verifyToken(token: string): Promise<boolean> {
 
   const secret = process.env.JWT_SECRET ?? 'ingenium_jwt_2026';
   const encoder = new TextEncoder();
-  const buf = await crypto.subtle.digest('SHA-256', encoder.encode(data + secret));
+  const key = await crypto.subtle.importKey(
+    'raw', encoder.encode(secret),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false, ['sign'],
+  );
+  const buf = await crypto.subtle.sign('HMAC', key, encoder.encode(data));
   const expected = Array.from(new Uint8Array(buf))
     .map(b => b.toString(16).padStart(2, '0'))
     .join('');

@@ -338,6 +338,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'messages es requerido' }, { status: 400 });
     }
 
+    if (messages.length > 40) {
+      return NextResponse.json({ error: 'Historial demasiado largo' }, { status: 400 });
+    }
+
+    const lastMsg = messages[messages.length - 1]?.content ?? '';
+    if (typeof lastMsg !== 'string' || lastMsg.length > 4000) {
+      return NextResponse.json({ error: 'Mensaje demasiado largo' }, { status: 400 });
+    }
+
     const derivados    = contexto ? preCalcular(contexto) : null;
     const systemPrompt = contexto && derivados
       ? construirSystemPrompt(contexto, derivados)

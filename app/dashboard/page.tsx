@@ -1,6 +1,8 @@
 'use client';
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import AuthGuard from '@/components/AuthGuard';
+import ErrorBoundary from '@/components/ErrorBoundary';
 import { ResultadoProvider, useResultado } from '@/components/ResultadoContexto';
 import IAChat from '@/components/IAChat';
 import SelectorIdioma from '@/components/SelectorIdioma';
@@ -50,10 +52,19 @@ const BORD  = 'rgba(232,160,32,0.15)';
 
 // Componente interno que usa el contexto
 function Dashboard() {
+  const router = useRouter();
   const [moduloActivo, setModuloActivo] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen]   = useState(true);
   const [conversorOpen, setConversorOpen] = useState(false);
   const { datos, limpiar } = useResultado();
+
+  const cerrarSesion = async () => {
+    await fetch('/api/v1/auth/logout', { method: 'POST' }).catch(() => {});
+    localStorage.removeItem('ip_token');
+    localStorage.removeItem('ip_usuario');
+    localStorage.removeItem('ip_terminos_aceptados');
+    router.replace('/Login');
+  };
 
   const ModuloActual = moduloActivo
     ? MODULOS.find(m => m.id === moduloActivo)?.component ?? null
@@ -88,6 +99,12 @@ function Dashboard() {
         <button onClick={() => setConversorOpen(o => !o)} style={{ background: conversorOpen ? 'rgba(34,197,94,0.15)' : 'none', border: `1px solid ${conversorOpen ? GREEN : 'rgba(34,197,94,0.2)'}`, borderRadius: 8, color: GREEN, fontSize: 12, fontWeight: 700, cursor: 'pointer', padding: '6px 12px' }}>⇄ CONVERSOR</button>
         <a href="/planes" style={{ background: `linear-gradient(135deg,${GOLD},#c47a10)`, borderRadius: 8, color: BG, fontSize: 12, fontWeight: 800, padding: '6px 14px', textDecoration: 'none' }}>★ PLANES</a>
         <SelectorIdioma />
+        <button
+          onClick={cerrarSesion}
+          style={{ background: 'none', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 8, color: '#ef4444', fontSize: 11, fontWeight: 700, cursor: 'pointer', padding: '6px 12px', flexShrink: 0 }}
+        >
+          ↩ SALIR
+        </button>
       </header>
 
       {/* BODY */}
@@ -116,10 +133,10 @@ function Dashboard() {
         <main style={{ flex: 1, overflowY: 'auto' }}>
           {ModuloActual
             ? (
-              <>
+              <ErrorBoundary modulo={MODULOS.find(m => m.id === moduloActivo)?.label}>
                 <ModuloIntro moduloId={moduloActivo!} />
                 <ModuloActual />
-              </>
+              </ErrorBoundary>
             )
             : <DashboardHome onSelectModulo={cambiarModulo} />
           }
