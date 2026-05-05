@@ -95,8 +95,11 @@ export default function BotonesExportar({ datos, visible }: Props) {
       const a    = document.createElement('a');
       a.href     = url;
       a.download = `INGENIUM_PRO_${datos.tipo}_${Date.now()}.pdf`;
+      a.style.display = 'none';
+      document.body.appendChild(a);
       a.click();
-      URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 100);
       setMsgOk('PDF descargado con QR verificable ✓');
     } catch {
       setMsgErr('Error de red al generar PDF');
@@ -119,8 +122,11 @@ export default function BotonesExportar({ datos, visible }: Props) {
       const a    = document.createElement('a');
       a.href     = url;
       a.download = `INGENIUM_PRO_${datos.tipo}_${Date.now()}.xlsx`;
+      a.style.display = 'none';
+      document.body.appendChild(a);
       a.click();
-      URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 100);
       setMsgOk('Excel descargado con fórmulas reales ✓');
     } catch {
       setMsgErr('Error de red al generar Excel');

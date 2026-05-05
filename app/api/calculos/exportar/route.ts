@@ -7,12 +7,10 @@
 // - No modifica Prisma schema, módulos, login, pagos ni dashboard.
 
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '@/lib/prisma';
 import { generarExcel } from '@/lib/generarExcel';
 import { generarPDF } from '@/lib/generarPDF';
 import type { RegistroHistorial } from '@/lib/generarExcel';
-
-const prisma = new PrismaClient();
 
 type FormatoExportacion = 'excel' | 'pdf';
 
