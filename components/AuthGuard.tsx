@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import TerminosModal from './TerminosModal';
 
 function decodePayload(t: string) {
-  try { return JSON.parse(atob(t.split('.')[1])); } catch { return null; }
+  try { return JSON.parse(atob(t.split('.')[0])); } catch { return null; }
 }
 
 type Estado = 'loading' | 'noterms' | 'ok';

@@ -69,7 +69,7 @@ export async function POST(req: Request) {
       demoExpira: Date.now() + 259_200_000,
     });
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       token,
       usuario: {
@@ -85,6 +85,16 @@ export async function POST(req: Request) {
         createdAt: usuario.createdAt,
       },
     });
+
+    response.cookies.set('ip_auth', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 259_200, // 3 días
+      path: '/',
+    });
+
+    return response;
   } catch (err) {
     console.error('[api/v1/auth/login] Error:', err);
 
