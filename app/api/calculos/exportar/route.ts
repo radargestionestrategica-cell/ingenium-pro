@@ -46,6 +46,7 @@ type CalcConRel = {
     empresa: string;
     pais: string;
     matricula: string | null;
+    dni: string | null;
   } | null;
   proyecto: {
     nombre: string;
@@ -78,6 +79,7 @@ const INCLUDE = {
       empresa: true,
       pais: true,
       matricula: true,
+      dni: true,
     },
   },
   proyecto: {
@@ -211,6 +213,7 @@ async function generarRespuestaExportacion(solicitud: SolicitudExportacion): Pro
   const empresa    = primero.user?.empresa ?? 'INGENIUM PRO';
   const pais       = primero.user?.pais ?? '';
   const matricula  = primero.user?.matricula ?? '';
+  const dni        = primero.user?.dni ?? '';
   const proyecto = primero.proyecto?.nombre ?? 'Sin proyecto';
   const industria = primero.proyecto?.industria ?? 'Ingeniería';
 
@@ -249,6 +252,7 @@ async function generarRespuestaExportacion(solicitud: SolicitudExportacion): Pro
       empresa,
       pais,
       matricula: matricula || undefined,
+      dni: dni || undefined,
       fecha: calc.createdAt,
       parametros,
       resultado,
@@ -300,6 +304,7 @@ async function generarRespuestaExportacion(solicitud: SolicitudExportacion): Pro
     empresa,
     pais,
     matricula: matricula || undefined,
+    dni: dni || undefined,
     normativa: primero.normativa ?? '—',
     historial,
     t_nom_mm,

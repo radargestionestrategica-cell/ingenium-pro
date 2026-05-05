@@ -60,6 +60,7 @@ export interface DatosExcel {
   empresa:         string;
   pais:            string;
   matricula?:      string;
+  dni?:            string;
   normativa:       string;
   historial:       RegistroHistorial[];
   t_nom_mm?:       number;
@@ -162,6 +163,7 @@ export async function generarExcel(datos: DatosExcel): Promise<Buffer> {
     ['Normativa aplicada',    datos.normativa],
     ['Ingeniero responsable', datos.ingeniero],
     ['Matrícula profesional', datos.matricula || '—'],
+    ['DNI / Documento',       datos.dni || '—'],
     ['Email profesional',     datos.email || '—'],
     ['Empresa',               datos.empresa],
     ['País',                  datos.pais],

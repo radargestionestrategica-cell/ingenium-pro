@@ -10,11 +10,10 @@ import type { Lang } from '@/lib/i18n';
 // ═══════════════════════════════════════════════════════════════
 
 export default function SelectorIdioma() {
-  const [lang, setLangState] = useState<Lang>('es');
+  const [lang, setLangState] = useState<Lang>(() => getLang()); // getLang() ya verifica typeof window
   const [abierto, setAbierto] = useState(false);
 
   useEffect(() => {
-    setLangState(getLang());
     const handler = (e: Event) => {
       const ce = e as CustomEvent<Lang>;
       setLangState(ce.detail);

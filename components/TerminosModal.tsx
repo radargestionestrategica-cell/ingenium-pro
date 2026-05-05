@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 
 const BG    = '#020609';
 const PANEL = '#0a0f1e';
@@ -8,14 +8,13 @@ const GREEN = '#22c55e';
 const BORD  = 'rgba(232,160,32,0.25)';
 
 export default function TerminosModal({ forzarVisible }: { forzarVisible?: boolean } = {}) {
-  const [visible, setVisible] = useState(forzarVisible ?? false);
+  const [visible, setVisible] = useState(() => {
+    if (forzarVisible !== undefined) return forzarVisible;
+    if (typeof window === 'undefined') return false;
+    return !localStorage.getItem('ip_terminos_aceptados');
+  });
   const [terminos, setTerminos] = useState(false);
   const [cookies, setCookies] = useState(false);
-
-  useEffect(() => {
-    if (forzarVisible !== undefined) { setVisible(forzarVisible); return; }
-    if (!localStorage.getItem('ip_terminos_aceptados')) setVisible(true);
-  }, [forzarVisible]);
 
   const handleAceptar = () => {
     localStorage.setItem('ip_terminos_aceptados', '1');

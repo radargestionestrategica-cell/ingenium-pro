@@ -772,6 +772,24 @@ export default function ModuloValvulas() {
                     : disTipo === 'tapon'     ? 'ASME B16.10-2022 + MSS SP-78'
                     :                          'ASME B16.34-2017 + ASME B16.10-2018';
 
+    // DN real en mm a partir de NPS en pulgadas (ASME B36.10M)
+    const dnMm = Math.round(parseFloat(disNPS) * 25.4 * 10) / 10;
+    // P-T rating a 38°C (WCB Group 1.1) — bar → MPa
+    const pMaxBarByClase: Record<string, number> = { '150': 19.6, '300': 51.1, '600': 102.1, '900': 153.0 };
+    const pMaxMPa = (pMaxBarByClase[disClase] ?? 19.6) / 10;
+    const tipoCode = disTipo === 'compuerta' ? 'cg'
+                   : disTipo === 'bola'      ? 'bt'
+                   : disTipo === 'mariposa'  ? 'mp'
+                   : disTipo === 'retencion' ? 'ch'
+                   : disTipo === 'tapon'     ? 'cg'
+                   : /* globo */               'gl';
+    const nombreLabel = disTipo === 'compuerta' ? `Compuerta NPS ${disNPS}" Clase ${disClase}`
+                      : disTipo === 'bola'      ? `Bola NPS ${disNPS}" Clase ${disClase}`
+                      : disTipo === 'mariposa'  ? `Mariposa NPS ${disNPS}" Clase ${disClase}`
+                      : disTipo === 'retencion' ? `Retencion NPS ${disNPS}" Clase ${disClase}`
+                      : disTipo === 'tapon'     ? `Tapon NPS ${disNPS}" Clase ${disClase}`
+                      :                           `Globo NPS ${disNPS}" Clase ${disClase}`;
+
     const payload: DatosExportar = {
       tipo: tipoKey,
       normativa,
@@ -792,6 +810,29 @@ export default function ModuloValvulas() {
         'BC (mm)':   fd ? Math.round(fd.BC   * 25.4 * 10) / 10 : 0,
         'Bore (mm)': fd ? Math.round(fd.bore * 25.4 * 10) / 10 : 0,
         'Numero de pernos': fd ? fd.n : 0,
+      },
+      // dxfParams: incluye claves en inglés (para exportarDXFValvulas / globo)
+      // Y claves en español (para exportarDXFBola / Mariposa / Retencion / Tapon)
+      dxfParams: {
+        // Claves Spanish — leídas por exportarDXFBola, exportarDXFMariposa, etc.
+        'NPS (pulg)':        disNPS,
+        'Clase de presion':  disClase,
+        'Proyecto':          disProyecto || 'Sin nombre',
+        'F2F ASME B16.10 (mm)': f2f_mm ?? 'Consultar fabricante',
+        ...(disTipo === 'mariposa'  ? { 'Estilo': disEstilo }   : {}),
+        ...(disTipo === 'retencion' ? { 'Subtipo': disSubtipo } : {}),
+        ...(disTipo === 'tapon'     ? { 'Patron': disPatron }   : {}),
+        // Claves TypeScript interface — leídas por exportarDXFValvulas (globo)
+        DN:       dnMm,
+        tipo:     tipoCode,
+        nombre:   nombreLabel,
+        clase:    disClase,
+        P_max:    pMaxMPa,
+        P_op:     pMaxMPa * 0.7,
+        norma:    normativa,
+        f2f_mm:   f2f_mm ?? undefined,
+        material: 'ASTM A216 WCB (default — verificar con material tab)',
+        proyecto: disProyecto || undefined,
       },
     };
     setDatosDis(payload);

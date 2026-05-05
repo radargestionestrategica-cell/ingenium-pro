@@ -131,13 +131,15 @@ export interface ParamsTuberias {
   }
   
   export interface ParamsValvulas {
-    DN: number;       // Diámetro nominal (mm)
-    tipo: string;     // 'bt'|'bf'|'mp'|'cg'|'kn'|'gl'|'ch'|'wh'
-    nombre: string;   // Nombre válvula
-    clase: string;    // Clase ASME
-    P_max: number;    // Presión máxima (MPa)
-    P_op: number;     // Presión operación (MPa)
-    norma: string;    // API 6D / ASME B16.34 / etc
+    DN: number;        // Diámetro nominal (mm)
+    tipo: string;      // 'bt'|'bf'|'mp'|'cg'|'kn'|'gl'|'ch'|'wh'
+    nombre: string;    // Nombre válvula
+    clase: string;     // Clase ASME
+    P_max: number;     // Presión máxima (MPa)
+    P_op: number;      // Presión operación (MPa)
+    norma: string;     // API 6D / ASME B16.34 / etc
+    f2f_mm?: number;   // Face-to-face ASME B16.10 (mm) — real de tabla
+    material?: string; // Especificación material ASTM (ej. A216 WCB)
     servicio?: string;
     proyecto?: string;
     ingeniero?: string;
@@ -304,36 +306,67 @@ export interface ParamsTuberias {
     ].join('\n');
   }
   
-  // Genera bloque de título estándar INGENIUM PRO
+  // Extrae datos del usuario inyectados por BotonesExportar (prefijo _usr_)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  function _usrData(p: any) {
+    return {
+      nombre:    String(p._usr_nombre    ?? '') || undefined,
+      email:     String(p._usr_email     ?? '') || undefined,
+      matricula: String(p._usr_matricula ?? '') || undefined,
+      dni:       String(p._usr_dni       ?? '') || undefined,
+      empresa:   String(p._usr_empresa   ?? '') || undefined,
+      pais:      String(p._usr_pais      ?? '') || undefined,
+    };
+  }
+
+  // Genera bloque de título estándar INGENIUM PRO con datos completos del usuario
   function _bloqueTitle(
     titulo: string,
     norma: string,
     proyecto: string,
     ing: string,
     fecha: string,
-    x0 = 0, y0 = -60
+    x0 = 0, y0 = -60,
+    extras?: { nombre?: string; email?: string; matricula?: string; dni?: string; empresa?: string; pais?: string }
   ): string {
-    const fechaFinal = fecha || new Date().toLocaleDateString('es-AR');
-    const ingFinal = ing || 'INGENIUM PRO';
-    const proyFinal = proyecto || 'SIN NOMBRE';
+    const fechaFinal  = fecha    || new Date().toLocaleDateString('es-AR');
+    const ingFinal    = extras?.nombre || ing || 'INGENIUM PRO';
+    const proyFinal   = proyecto || 'SIN NOMBRE';
+    const emailFinal  = extras?.email     || '—';
+    const matFinal    = extras?.matricula || '—';
+    const dniFinal    = extras?.dni       || '—';
+    const empFinal    = extras?.empresa   || '—';
+    const paisFinal   = extras?.pais      || '';
     const lines: string[] = [];
-    // Borde del cartel
-    lines.push(_linea(x0, y0, x0 + 260, y0, 'TITULO', 7));
-    lines.push(_linea(x0 + 260, y0, x0 + 260, y0 - 50, 'TITULO', 7));
-    lines.push(_linea(x0 + 260, y0 - 50, x0, y0 - 50, 'TITULO', 7));
-    lines.push(_linea(x0, y0 - 50, x0, y0, 'TITULO', 7));
-    // Divisores
-    lines.push(_linea(x0, y0 - 12, x0 + 260, y0 - 12, 'TITULO', 7));
-    lines.push(_linea(x0, y0 - 24, x0 + 260, y0 - 24, 'TITULO', 7));
-    lines.push(_linea(x0, y0 - 36, x0 + 260, y0 - 36, 'TITULO', 7));
-    lines.push(_linea(x0 + 130, y0 - 24, x0 + 130, y0 - 50, 'TITULO', 7));
-    // Textos
-    lines.push(_texto(x0 + 5, y0 - 9, 5, 'INGENIUM PRO v8 — RADAR © 2026', 'TITULO', 7));
-    lines.push(_texto(x0 + 5, y0 - 21, 4.5, titulo, 'TITULO', 2));
-    lines.push(_texto(x0 + 5, y0 - 33, 3.5, 'NORMA: ' + norma, 'TITULO', 3));
-    lines.push(_texto(x0 + 5, y0 - 45, 3, 'PROYECTO: ' + proyFinal.substring(0, 35), 'TITULO', 7));
-    lines.push(_texto(x0 + 135, y0 - 30, 3.5, 'ING: ' + ingFinal.substring(0, 22), 'TITULO', 7));
-    lines.push(_texto(x0 + 135, y0 - 45, 3, 'FECHA: ' + fechaFinal, 'TITULO', 7));
+    // Caja exterior ampliada para incluir todos los datos del profesional
+    lines.push(_linea(x0, y0, x0 + 280, y0, 'TITULO', 7));
+    lines.push(_linea(x0 + 280, y0, x0 + 280, y0 - 78, 'TITULO', 7));
+    lines.push(_linea(x0 + 280, y0 - 78, x0, y0 - 78, 'TITULO', 7));
+    lines.push(_linea(x0, y0 - 78, x0, y0, 'TITULO', 7));
+    // Divisores horizontales
+    lines.push(_linea(x0, y0 - 12, x0 + 280, y0 - 12, 'TITULO', 7));
+    lines.push(_linea(x0, y0 - 24, x0 + 280, y0 - 24, 'TITULO', 7));
+    lines.push(_linea(x0, y0 - 36, x0 + 280, y0 - 36, 'TITULO', 7));
+    lines.push(_linea(x0, y0 - 52, x0 + 280, y0 - 52, 'TITULO', 7));
+    lines.push(_linea(x0, y0 - 64, x0 + 280, y0 - 64, 'TITULO', 7));
+    // Divisores verticales
+    lines.push(_linea(x0 + 140, y0 - 36, x0 + 140, y0 - 78, 'TITULO', 7));
+    // Fila 1: encabezado
+    lines.push(_texto(x0 + 5, y0 - 9,  5,   'INGENIUM PRO v8 — RADAR © 2026', 'TITULO', 7));
+    // Fila 2: módulo + normativa
+    lines.push(_texto(x0 + 5, y0 - 21, 4.5, titulo.substring(0, 40), 'TITULO', 2));
+    // Fila 3: norma (izq) | ingeniero (der)
+    lines.push(_texto(x0 + 5,   y0 - 33, 3.5, 'NORMA: ' + norma.substring(0, 35), 'TITULO', 3));
+    lines.push(_texto(x0 + 145, y0 - 33, 3.5, 'ING: ' + ingFinal.substring(0, 28), 'TITULO', 7));
+    // Fila 4: proyecto (izq) | fecha (der)
+    lines.push(_texto(x0 + 5,   y0 - 45, 3,   'PROYECTO: ' + proyFinal.substring(0, 28), 'TITULO', 7));
+    lines.push(_texto(x0 + 145, y0 - 45, 3,   'FECHA: ' + fechaFinal, 'TITULO', 7));
+    // Fila 5: email | matrícula
+    lines.push(_texto(x0 + 5, y0 - 58,  3.5, 'EMAIL: ' + emailFinal.substring(0, 28), 'TITULO', 2));
+    lines.push(_texto(x0 + 145, y0 - 58, 3.5, 'MAT: ' + matFinal.substring(0, 18),   'TITULO', 2));
+    // Fila 6: empresa | DNI
+    lines.push(_texto(x0 + 5, y0 - 71,  3,   'EMPRESA: ' + empFinal.substring(0, 26), 'TITULO', 7));
+    lines.push(_texto(x0 + 145, y0 - 71, 3,   'DNI: ' + dniFinal + (paisFinal ? ' · ' + paisFinal.substring(0, 10) : ''), 'TITULO', 7));
     return lines.join('\n');
   }
   
@@ -441,7 +474,7 @@ export interface ParamsTuberias {
     });
   
     ents.push(_bloqueTitle('TUBERIA — SECCION TRANSVERSAL Y LONGITUDINAL', 'ASME B31.8 §841.11 / API 5L',
-      p.proyecto || '', p.ingeniero || '', fecha, 0, -60));
+      p.proyecto || '', p.ingeniero || '', fecha, 0, -60, _usrData(p)));
   
     return [_cabecera(), ...ents, _pie()].join('\n');
   }
@@ -472,8 +505,8 @@ export interface ParamsTuberias {
       ents.push(_linea(fx + 8, yc, fx + 4, yc - 3, 'DATOS', 2));
     }
   
-    // Gradiente piezométrico (línea inclinada sobre la tubería)
-    const hfScale = Math.min(p.hf * 2, 30);
+    // Gradiente piezométrico — escala logarítmica para no colapsar valores grandes
+    const hfScale = Math.max(Math.min(Math.log10(p.hf + 1) * 18, 38), 2);
     ents.push(_linea(x0, y_top + 20, x1, y_top + 20 - hfScale, 'COTAS', 2));
     ents.push(_texto(x0 + 5, y_top + 22, 3, 'LINEA DE ENERGIA', 'COTAS', 2));
     ents.push(_linea(x1, y_top + 20 - hfScale, x1, y_top, 'COTAS', 2));
@@ -501,7 +534,7 @@ export interface ParamsTuberias {
     });
   
     ents.push(_bloqueTitle('HIDRAULICA — DARCY-WEISBACH / PERFIL PIEZOMETRICO', 'Darcy-Weisbach / Colebrook-White',
-      p.proyecto || '', p.ingeniero || '', fecha));
+      p.proyecto || '', p.ingeniero || '', fecha, 0, -60, _usrData(p)));
   
     return [_cabecera(), ...ents, _pie()].join('\n');
   }
@@ -545,9 +578,9 @@ export interface ParamsTuberias {
     ents.push(_linea(px0, py0, px0, py0 - pH, 'COTAS', 2)); // eje P
     ents.push(_texto(px0 + pW + 2, py0 - 2, 3, 't (s)', 'COTAS', 2));
     ents.push(_texto(px0 - 3, py0 - pH - 3, 3, 'P', 'COTAS', 2));
-    // Forma de onda cuadrada
-    const tc_draw = Math.min(p.Tc * 8, pW * 0.4);
-    const dP_draw = Math.min(p.dP * 5, pH * 0.9);
+    // Forma de onda cuadrada — escala log para representar rango amplio de Tc y dP
+    const tc_draw = Math.max(Math.min(Math.log10(p.Tc + 1) * 28, pW * 0.7), 4);
+    const dP_draw = Math.max(Math.min(Math.log10(p.dP * 10 + 1) * 12, pH * 0.95), 2);
     ents.push(_linea(px0, py0, px0, py0 - dP_draw, 'DATOS', 2));
     ents.push(_linea(px0, py0 - dP_draw, px0 + tc_draw, py0 - dP_draw, 'DATOS', 2));
     ents.push(_linea(px0 + tc_draw, py0 - dP_draw, px0 + tc_draw, py0, 'DATOS', 2));
@@ -569,7 +602,7 @@ export interface ParamsTuberias {
     });
   
     ents.push(_bloqueTitle('GOLPE DE ARIETE — JOUKOWSKY / DIAGRAMA ONDA PRESION', 'AWWA M11 / ASME B31.1',
-      p.proyecto || '', p.ingeniero || '', fecha));
+      p.proyecto || '', p.ingeniero || '', fecha, 0, -60, _usrData(p)));
   
     return [_cabecera(), ...ents, _pie()].join('\n');
   }
@@ -583,13 +616,13 @@ export interface ParamsTuberias {
     const fecha = p.fecha || new Date().toLocaleDateString('es-AR');
   
     const x0 = 30, yNivel = 80;
-  
+
     // Nivel de terreno
     ents.push(_linea(x0 - 20, yNivel, x0 + 200, yNivel, 'GEOMETRIA', 3));
-    // Excavación
-    const escala = Math.min(50 / p.Df, 15);
-    const Df_d = p.Df * escala;
-    const B_d = Math.min(p.B * escala, 80);
+    // Escala fija para variación real: 7 DXF units/m → Df 0.5-8m produce 3.5-55 units
+    const escalaFija = 7;
+    const Df_d = Math.max(Math.min(p.Df * escalaFija, 55), 3);
+    const B_d  = Math.max(Math.min(p.B  * escalaFija, 80), 5);
     ents.push(_linea(x0, yNivel, x0, yNivel - Df_d, 'GEOMETRIA', 4));
     ents.push(_linea(x0 + B_d, yNivel, x0 + B_d, yNivel - Df_d, 'GEOMETRIA', 4));
     // Cimentación
@@ -627,7 +660,7 @@ export interface ParamsTuberias {
     });
   
     ents.push(_bloqueTitle('GEOTECNIA — CAPACIDAD PORTANTE / CIMENTACION', 'CIRSOC 421 / ACI 336 / Meyerhof',
-      p.proyecto || '', p.ingeniero || '', fecha));
+      p.proyecto || '', p.ingeniero || '', fecha, 0, -60, _usrData(p)));
   
     return [_cabecera(), ...ents, _pie()].join('\n');
   }
@@ -683,7 +716,7 @@ export interface ParamsTuberias {
     });
   
     ents.push(_bloqueTitle('FATIGA — DIAGRAMA GOODMAN / VIDA UTIL', 'ASME Sec.VIII Div.2 / ASME B31.3 App.W',
-      p.proyecto || '', p.ingeniero || '', fecha));
+      p.proyecto || '', p.ingeniero || '', fecha, 0, -60, _usrData(p)));
   
     return [_cabecera(), ...ents, _pie()].join('\n');
   }
@@ -738,7 +771,7 @@ export interface ParamsTuberias {
     });
   
     ents.push(_bloqueTitle('DILATACION TERMICA — EXPANSION / LIRA / ANCLAJE', 'ASME B31.3 §319 / EN 13480',
-      p.proyecto || '', p.ingeniero || '', fecha));
+      p.proyecto || '', p.ingeniero || '', fecha, 0, -60, _usrData(p)));
   
     return [_cabecera(), ...ents, _pie()].join('\n');
   }
@@ -795,7 +828,7 @@ export interface ParamsTuberias {
     });
   
     ents.push(_bloqueTitle('TALUD — ESTABILIDAD BISHOP SIMPLIFICADO / CIRCULO DE FALLA', 'USACE EM 1110-2-1902 / CIRSOC 421',
-      p.proyecto || '', p.ingeniero || '', fecha));
+      p.proyecto || '', p.ingeniero || '', fecha, 0, -60, _usrData(p)));
   
     return [_cabecera(), ...ents, _pie()].join('\n');
   }
@@ -807,10 +840,12 @@ export interface ParamsTuberias {
   export function exportarDXFHidrologia(p: ParamsHidrologia): string {
     const ents: string[] = [];
     const fecha = p.fecha || new Date().toLocaleDateString('es-AR');
-  
-    // Cuenca hidrográfica (contorno irregular)
-    const cx = 130, cy = 80, rx = 90, ry = 55;
-    // Elipse aproximada con líneas
+
+    // Cuenca hidrográfica — tamaño escalado por área A (km²) y desnivel H_cuenca
+    const cx = 130, cy = 80;
+    const rx = Math.max(Math.min(30 + Math.sqrt(p.A + 0.01) * 9, 100), 35);
+    const ry = Math.max(Math.min(20 + Math.sqrt(p.A + 0.01) * 5 + p.H_cuenca * 0.15, 65), 22);
+    // Elipse aproximada con líneas (contorno cuenca)
     const pts: [number, number][] = [];
     for (let a = 0; a <= 360; a += 30) {
       const ar = a * Math.PI / 180;
@@ -819,16 +854,19 @@ export interface ParamsTuberias {
     for (let i = 0; i < pts.length - 1; i++) {
       ents.push(_linea(pts[i][0], pts[i][1], pts[i + 1][0], pts[i + 1][1], 'GEOMETRIA', 3));
     }
-  
-    // Cauce principal
-    ents.push(_linea(cx - rx * 0.8, cy + ry * 0.3, cx - rx * 0.3, cy, 'GEOMETRIA', 4));
-    ents.push(_linea(cx - rx * 0.3, cy, cx + rx * 0.2, cy - ry * 0.2, 'GEOMETRIA', 4));
-    ents.push(_linea(cx + rx * 0.2, cy - ry * 0.2, cx + rx * 0.7, cy + ry * 0.5, 'GEOMETRIA', 4));
-  
-    // Cota área
-    ents.push(_texto(cx - 20, cy, 4, `A = ${p.A} km²`, 'DATOS', 2));
-    ents.push(_texto(cx - 20, cy + 10, 4, `CN = ${p.CN}`, 'DATOS', 3));
-    ents.push(_texto(cx - 20, cy + 20, 4, `Tc = ${p.Tc.toFixed(1)} min`, 'DATOS', 3));
+
+    // Cauce principal — longitud proporcional a L_cauce
+    const lcScale = Math.min(rx * 1.4 / Math.max(p.L_cauce, 1), 1.4);
+    const lcLen = Math.min(rx * 1.3, 120);
+    ents.push(_linea(cx - lcLen * 0.7, cy + ry * 0.25, cx - lcLen * 0.3, cy, 'GEOMETRIA', 4));
+    ents.push(_linea(cx - lcLen * 0.3, cy, cx + lcLen * 0.15, cy - ry * 0.2, 'GEOMETRIA', 4));
+    ents.push(_linea(cx + lcLen * 0.15, cy - ry * 0.2, cx + lcLen * 0.55, cy + ry * 0.45, 'GEOMETRIA', 4));
+    void lcScale;
+
+    // Cotas dentro de la cuenca
+    ents.push(_texto(cx - 18, cy, 4, `A = ${p.A} km2`, 'DATOS', 2));
+    ents.push(_texto(cx - 18, cy + 9, 3.5, `CN = ${p.CN}`, 'DATOS', 3));
+    ents.push(_texto(cx - 18, cy + 18, 3.5, `Tc = ${p.Tc.toFixed(1)} min`, 'DATOS', 3));
   
     // Punto de cierre (outlet)
     const ox = cx + rx * 0.7, oy = cy + ry * 0.5;
@@ -861,7 +899,7 @@ export interface ParamsTuberias {
     });
   
     ents.push(_bloqueTitle('HIDROLOGIA — CUENCA / HIDROGRAMA / CAUDAL PICO', 'USDA SCS TR-55 / USACE HEC-HMS / Kirpich',
-      p.proyecto || '', p.ingeniero || '', fecha));
+      p.proyecto || '', p.ingeniero || '', fecha, 0, -60, _usrData(p)));
   
     return [_cabecera(), ...ents, _pie()].join('\n');
   }
@@ -924,7 +962,7 @@ export interface ParamsTuberias {
     });
   
     ents.push(_bloqueTitle('INTEGRIDAD — CORROSION / DEFECTO / API 579', 'API 579-1/ASME FFS-1 / ASME B31G',
-      p.proyecto || '', p.ingeniero || '', fecha));
+      p.proyecto || '', p.ingeniero || '', fecha, 0, -60, _usrData(p)));
   
     return [_cabecera(), ...ents, _pie()].join('\n');
   }
@@ -933,85 +971,263 @@ export interface ParamsTuberias {
   //  MÓDULO 10 — VÁLVULAS (API 6D / API 6A / ASME B16.34)
   //  BASE VERIFICADA — Lógica equivalente a ModuloValvulas.tsx
   // ═══════════════════════════════════════════════════════════
-  
+
+  // ASME B16.10 Globe valve (short pattern, flanged ends) — face-to-face (mm)
+  // Class 150 = Class 300 para globo corto (mismo cuerpo, diferente espesor pared)
+  // Fuente: ASME B16.10-2017 Table 1. SOLO referencia esquemática DXF.
+  const F2F_GLOBO_B1610: Record<string, Record<string, number>> = {
+    '150': { '0.5':102,'0.75':102,'1':127,'1.25':140,'1.5':152,'2':178,'2.5':203,'3':216,'4':229,'6':267,'8':292,'10':330,'12':356 },
+    '300': { '0.5':102,'0.75':102,'1':127,'1.25':140,'1.5':152,'2':178,'2.5':203,'3':216,'4':229,'6':267,'8':292,'10':330,'12':356 },
+    '600': { '0.5':127,'0.75':152,'1':178,'1.25':203,'1.5':216,'2':254,'2.5':279,'3':305,'4':356,'6':432,'8':508,'10':584,'12':660 },
+    '900': { '2':305,'3':381,'4':457,'6':559,'8':660,'10':787,'12':914 },
+  };
+
+  // Convierte DN (mm) al NPS string más cercano para lookup en tabla
+  function _dnToNpsKey(dn: number): string {
+    const MAP: [number, string][] = [
+      [15,'0.5'],[20,'0.75'],[25,'1'],[32,'1.25'],[40,'1.5'],
+      [50,'2'],[65,'2.5'],[80,'3'],[100,'4'],[125,'5'],
+      [150,'6'],[200,'8'],[250,'10'],[300,'12'],
+    ];
+    const r = Math.round(dn);
+    return MAP.reduce((best, cur) =>
+      Math.abs(cur[0] - r) < Math.abs(best[0] - r) ? cur : best
+    )[1];
+  }
+
   export function exportarDXFValvulas(p: ParamsValvulas): string {
     const ents: string[] = [];
     const fecha = p.fecha || new Date().toLocaleDateString('es-AR');
-  
+
+    // Helpers de formato seguro — elimina decimales flotantes basura
+    const n2 = (x: number) => parseFloat(x.toFixed(2)).toFixed(2);
+    const n1 = (x: number) => parseFloat(x.toFixed(1)).toFixed(1);
+
+    // Escala dinámica por DN — sin cap fijo, cada tamaño produce geometría distinta
+    const cx = 130, cy = 75;
+    const r = Math.max(Math.min(p.DN * 0.1, 26), 3);
+    const bodyMaxR = r + 10;
+    const pConn = Math.max(bodyMaxR + 2, 22);
+    const pLen = 46;
+
     // Tubería de entrada y salida
-    const cx = 130, cy = 75, r = Math.min(p.DN * 0.12, 18);
-    ents.push(_linea(cx - 60, cy + r, cx - 20, cy + r, 'GEOMETRIA', 4));
-    ents.push(_linea(cx - 60, cy - r, cx - 20, cy - r, 'GEOMETRIA', 4));
-    ents.push(_linea(cx + 20, cy + r, cx + 60, cy + r, 'GEOMETRIA', 4));
-    ents.push(_linea(cx + 20, cy - r, cx + 60, cy - r, 'GEOMETRIA', 4));
-  
-    // Cuerpo de válvula — símbolo según tipo
+    ents.push(_linea(cx - pConn - pLen, cy + r, cx - pConn, cy + r, 'GEOMETRIA', 4));
+    ents.push(_linea(cx - pConn - pLen, cy - r, cx - pConn, cy - r, 'GEOMETRIA', 4));
+    ents.push(_linea(cx + pConn, cy + r, cx + pConn + pLen, cy + r, 'GEOMETRIA', 4));
+    ents.push(_linea(cx + pConn, cy - r, cx + pConn + pLen, cy - r, 'GEOMETRIA', 4));
+    // Bridas en extremos (cara raised face)
+    ents.push(_linea(cx - pConn, cy - r - 5, cx - pConn, cy + r + 5, 'GEOMETRIA', 4));
+    ents.push(_linea(cx - pConn - 3, cy - r - 5, cx - pConn - 3, cy + r + 5, 'GEOMETRIA', 4));
+    ents.push(_linea(cx + pConn, cy - r - 5, cx + pConn, cy + r + 5, 'GEOMETRIA', 4));
+    ents.push(_linea(cx + pConn + 3, cy - r - 5, cx + pConn + 3, cy + r + 5, 'GEOMETRIA', 4));
+
+    // ── GEOMETRÍA ESPECÍFICA POR TIPO ──────────────────────────
     if (p.tipo === 'bt' || p.tipo === 'bf') {
-      // Válvula de bola — ISA 5.1
-      ents.push(_circulo(cx, cy, r + 8, 'GEOMETRIA', 4));
-      ents.push(_circulo(cx, cy, r * 0.6, 'GEOMETRIA', 7)); // bola
-      ents.push(_linea(cx, cy + r + 8, cx, cy + r + 20, 'GEOMETRIA', 7)); // vástago
-      ents.push(_linea(cx - 8, cy + r + 20, cx + 8, cy + r + 20, 'GEOMETRIA', 7)); // volante
+      // Bola (Ball) — cuerpo circular con esfera interior y tallo
+      const bR = r + 8;
+      const ballR = Math.max(r * 0.55, 3);
+      ents.push(_circulo(cx, cy, bR, 'GEOMETRIA', 4));              // cuerpo
+      ents.push(_circulo(cx, cy, ballR, 'GEOMETRIA', 7));           // esfera de cierre
+      // Bore interior (paso)
+      ents.push(_linea(cx - pConn, cy + r * 0.4, cx - bR, cy + r * 0.4, 'GEOMETRIA', 7));
+      ents.push(_linea(cx - pConn, cy - r * 0.4, cx - bR, cy - r * 0.4, 'GEOMETRIA', 7));
+      ents.push(_linea(cx + pConn, cy + r * 0.4, cx + bR, cy + r * 0.4, 'GEOMETRIA', 7));
+      ents.push(_linea(cx + pConn, cy - r * 0.4, cx + bR, cy - r * 0.4, 'GEOMETRIA', 7));
+      // Tallo / actuador
+      ents.push(_linea(cx, cy + ballR, cx, cy + bR + 14, 'GEOMETRIA', 7));
+      ents.push(_linea(cx - 8, cy + bR + 14, cx + 8, cy + bR + 14, 'GEOMETRIA', 7));
+      ents.push(_linea(cx - 6, cy + bR + 18, cx + 6, cy + bR + 18, 'GEOMETRIA', 7));
+      ents.push(_texto(cx + bR + 4, cy + 2, 2.5, 'ESFERA', 'COTAS', 4));
+
     } else if (p.tipo === 'mp') {
-      // Mariposa
-      ents.push(_circulo(cx, cy, r + 6, 'GEOMETRIA', 4));
-      ents.push(_linea(cx - r * 0.7, cy - r * 0.7, cx + r * 0.7, cy + r * 0.7, 'GEOMETRIA', 7));
-      ents.push(_linea(cx, cy + r + 6, cx, cy + r + 20, 'GEOMETRIA', 7));
-      ents.push(_linea(cx - 8, cy + r + 20, cx + 8, cy + r + 20, 'GEOMETRIA', 7));
+      // Mariposa (Butterfly) — cuerpo delgado con disco inclinado y vástago
+      const bR = r + 6;
+      ents.push(_circulo(cx, cy, bR, 'GEOMETRIA', 4));
+      // Disco (plato) — inclinado 30°
+      const dR = Math.max(r * 0.85, 4);
+      const ang = 30 * Math.PI / 180;
+      ents.push(_linea(cx - dR * Math.cos(ang), cy - dR * Math.sin(ang),
+                       cx + dR * Math.cos(ang), cy + dR * Math.sin(ang), 'GEOMETRIA', 7));
+      // Eje del disco (horizontal)
+      ents.push(_linea(cx - dR, cy, cx + dR, cy, 'GEOMETRIA', 7));
+      // Vástago
+      ents.push(_linea(cx, cy + bR, cx, cy + bR + 14, 'GEOMETRIA', 7));
+      ents.push(_linea(cx - 7, cy + bR + 14, cx + 7, cy + bR + 14, 'GEOMETRIA', 7));
+      ents.push(_linea(cx - 5, cy + bR + 18, cx + 5, cy + bR + 18, 'GEOMETRIA', 7));
+      ents.push(_texto(cx + bR + 3, cy - 2, 2.5, 'DISCO', 'COTAS', 4));
+
     } else if (p.tipo === 'cg' || p.tipo === 'kn') {
-      // Compuerta / cuchilla
-      ents.push(_linea(cx - r - 6, cy - r - 6, cx + r + 6, cy - r - 6, 'GEOMETRIA', 4));
-      ents.push(_linea(cx - r - 6, cy + r + 6, cx + r + 6, cy + r + 6, 'GEOMETRIA', 4));
-      ents.push(_linea(cx - r - 6, cy - r - 6, cx - r - 6, cy + r + 6, 'GEOMETRIA', 4));
-      ents.push(_linea(cx + r + 6, cy - r - 6, cx + r + 6, cy + r + 6, 'GEOMETRIA', 4));
-      ents.push(_linea(cx, cy - r, cx, cy + r, 'GEOMETRIA', 7)); // cuña/cuchilla
-      ents.push(_linea(cx, cy + r + 6, cx, cy + r + 22, 'GEOMETRIA', 7));
-      ents.push(_circulo(cx, cy + r + 22, 5, 'GEOMETRIA', 7)); // actuador
+      // Compuerta / cuchilla — cuerpo rectangular + cuña + vástago
+      const bW = r + 6, bH = r + 6;
+      ents.push(_linea(cx - bW, cy - bH, cx + bW, cy - bH, 'GEOMETRIA', 4));
+      ents.push(_linea(cx - bW, cy + bH, cx + bW, cy + bH, 'GEOMETRIA', 4));
+      ents.push(_linea(cx - bW, cy - bH, cx - bW, cy + bH, 'GEOMETRIA', 4));
+      ents.push(_linea(cx + bW, cy - bH, cx + bW, cy + bH, 'GEOMETRIA', 4));
+      // Bore interior
+      ents.push(_linea(cx - pConn, cy + r * 0.45, cx - bW, cy + r * 0.45, 'GEOMETRIA', 7));
+      ents.push(_linea(cx - pConn, cy - r * 0.45, cx - bW, cy - r * 0.45, 'GEOMETRIA', 7));
+      ents.push(_linea(cx + pConn, cy + r * 0.45, cx + bW, cy + r * 0.45, 'GEOMETRIA', 7));
+      ents.push(_linea(cx + pConn, cy - r * 0.45, cx + bW, cy - r * 0.45, 'GEOMETRIA', 7));
+      // Cuña (wedge) — rombo central
+      const wH = bH * 0.7, wW = Math.max(r * 0.4, 2.5);
+      ents.push(_linea(cx, cy - wH, cx + wW, cy, 'GEOMETRIA', 7));
+      ents.push(_linea(cx + wW, cy, cx, cy + wH, 'GEOMETRIA', 7));
+      ents.push(_linea(cx, cy + wH, cx - wW, cy, 'GEOMETRIA', 7));
+      ents.push(_linea(cx - wW, cy, cx, cy - wH, 'GEOMETRIA', 7));
+      // Vástago y volante
+      const vstTop = cy + bH + 18;
+      ents.push(_linea(cx - wW * 0.6, cy + wH, cx - wW * 0.6, vstTop, 'GEOMETRIA', 7));
+      ents.push(_linea(cx + wW * 0.6, cy + wH, cx + wW * 0.6, vstTop, 'GEOMETRIA', 7));
+      ents.push(_linea(cx - bW * 0.7, vstTop, cx + bW * 0.7, vstTop, 'GEOMETRIA', 7));
+      ents.push(_linea(cx - bW * 0.5, vstTop + 4, cx + bW * 0.5, vstTop + 4, 'GEOMETRIA', 7));
+      ents.push(_texto(cx + bW + 3, cy - 4, 2.5, 'CUÑA', 'COTAS', 1));
+      ents.push(_texto(cx + bW + 3, cy + 6, 2.5, 'VASTAGO', 'COTAS', 7));
+
     } else if (p.tipo === 'gl') {
-      // Globo / control
-      ents.push(_circulo(cx, cy, r + 10, 'GEOMETRIA', 4));
-      ents.push(_linea(cx - r, cy, cx + r, cy, 'GEOMETRIA', 7)); // asiento
-      ents.push(_linea(cx, cy - 3, cx, cy + r + 10 + 15, 'GEOMETRIA', 7)); // vástago
-      ents.push(_circulo(cx, cy + r + 10 + 15, 5, 'GEOMETRIA', 7)); // actuador
+      // Globo (Globe) — sección de corte real: cuerpo, bonete, vástago, asiento, disco
+      const bodyR  = r + 10;                        // radio cuerpo globo
+      const boreR  = Math.max(r * 0.45, 3);         // semiancho bore
+      const seatW  = boreR * 1.1;                   // semiancho anillo asiento
+      const discH  = boreR * 0.65;                  // altura disco
+      const stemW  = Math.max(boreR * 0.22, 1.5);   // semiancho vástago
+      const bonW   = Math.max(stemW * 2.8, 5);      // semiancho bonete
+      const bonH   = bodyR * 1.25;                  // altura bonete
+
+      // Cuerpo circular
+      ents.push(_circulo(cx, cy, bodyR, 'GEOMETRIA', 4));
+
+      // Bore interior (paso de fluido — izq y der dentro del cuerpo)
+      ents.push(_linea(cx - pConn, cy + boreR, cx - bodyR * 0.72, cy + boreR, 'GEOMETRIA', 7));
+      ents.push(_linea(cx - pConn, cy - boreR, cx - bodyR * 0.72, cy - boreR, 'GEOMETRIA', 7));
+      ents.push(_linea(cx + pConn, cy + boreR, cx + bodyR * 0.72, cy + boreR, 'GEOMETRIA', 7));
+      ents.push(_linea(cx + pConn, cy - boreR, cx + bodyR * 0.72, cy - boreR, 'GEOMETRIA', 7));
+
+      // Anillo de asiento — línea horizontal con cara cónica (V)
+      const seatY = cy - boreR * 0.25;
+      ents.push(_linea(cx - seatW, seatY, cx + seatW, seatY, 'GEOMETRIA', 7));
+      ents.push(_linea(cx - seatW * 0.45, seatY, cx, seatY - discH * 0.55, 'GEOMETRIA', 7));
+      ents.push(_linea(cx + seatW * 0.45, seatY, cx, seatY - discH * 0.55, 'GEOMETRIA', 7));
+
+      // Disco / tapón — trapezoidal, encima del asiento (posición abierta parcial)
+      ents.push(_linea(cx - seatW * 0.88, seatY, cx - stemW, seatY + discH, 'GEOMETRIA', 7));
+      ents.push(_linea(cx + seatW * 0.88, seatY, cx + stemW, seatY + discH, 'GEOMETRIA', 7));
+      ents.push(_linea(cx - stemW, seatY + discH, cx + stemW, seatY + discH, 'GEOMETRIA', 7));
+
+      // Bonete — caja rectangular sobre el cuerpo
+      const bonBase = cy + bodyR;
+      ents.push(_linea(cx - bonW, bonBase, cx - bonW, bonBase + bonH, 'GEOMETRIA', 4));
+      ents.push(_linea(cx + bonW, bonBase, cx + bonW, bonBase + bonH, 'GEOMETRIA', 4));
+      ents.push(_linea(cx - bonW, bonBase + bonH, cx + bonW, bonBase + bonH, 'GEOMETRIA', 4));
+      // Prensaestopa (gland) — línea horizontal a 1/3 del bonete
+      ents.push(_linea(cx - bonW, bonBase + bonH * 0.35, cx + bonW, bonBase + bonH * 0.35, 'GEOMETRIA', 7));
+
+      // Vástago — desde disco hasta encima del bonete
+      const vstTop = bonBase + bonH + 8;
+      ents.push(_linea(cx - stemW, seatY + discH, cx - stemW, vstTop, 'GEOMETRIA', 7));
+      ents.push(_linea(cx + stemW, seatY + discH, cx + stemW, vstTop, 'GEOMETRIA', 7));
+
+      // Volante / actuador manual
+      ents.push(_linea(cx - r * 0.9, vstTop, cx + r * 0.9, vstTop,     'GEOMETRIA', 7));
+      ents.push(_linea(cx - r * 0.65, vstTop + 4, cx + r * 0.65, vstTop + 4, 'GEOMETRIA', 7));
+      ents.push(_linea(cx, vstTop, cx, vstTop + 4, 'GEOMETRIA', 7));
+
+      // Etiquetas de componentes
+      ents.push(_texto(cx + seatW + 2, seatY - 2,      2.5, 'ASIENTO', 'COTAS', 2));
+      ents.push(_texto(cx + stemW + 2, seatY + discH * 0.5, 2.5, 'DISCO',   'COTAS', 2));
+      ents.push(_texto(cx + bonW  + 2, bonBase + bonH * 0.5, 2.5, 'BONETE',  'COTAS', 4));
+      ents.push(_texto(cx + stemW + 2, bonBase + bonH * 0.15, 2.5, 'VASTAGO', 'COTAS', 3));
+
     } else if (p.tipo === 'ch') {
-      // Retención (check wafer) — mariposa unidireccional
-      ents.push(_circulo(cx, cy, r + 4, 'GEOMETRIA', 4));
-      ents.push(_arco(cx, cy, r * 0.8, 90, 270, 'GEOMETRIA', 7));
-      ents.push(_texto(cx - 6, cy - r - 8, 3.5, '→ FLUJO', 'COTAS', 2));
+      // Retención (Check) — cuerpo circular con clapeta/disco oscilante
+      const bR = r + 4;
+      ents.push(_circulo(cx, cy, bR, 'GEOMETRIA', 4));
+      // Clapeta oscilante (swing check) — arco + eje de giro
+      ents.push(_arco(cx, cy, Math.max(r * 0.78, 3), 90, 270, 'GEOMETRIA', 7));
+      ents.push(_linea(cx, cy - r * 0.78, cx, cy + r * 0.78, 'GEOMETRIA', 7));
+      // Asiento (horizontal)
+      ents.push(_linea(cx - r * 0.5, cy, cx + r * 0.5, cy, 'GEOMETRIA', 7));
+      // Indicador de flujo
+      ents.push(_texto(cx - 8, cy - bR - 6, 3, '-> FLUJO', 'COTAS', 2));
+      ents.push(_texto(cx + bR + 3, cy - 2, 2.5, 'CLAPETA', 'COTAS', 4));
+
     } else if (p.tipo === 'wh') {
-      // Cabezal de pozo API 6A
-      ents.push(_linea(cx - 25, cy + r + 5, cx + 25, cy + r + 5, 'GEOMETRIA', 4));
-      ents.push(_linea(cx - 25, cy - r - 5, cx + 25, cy - r - 5, 'GEOMETRIA', 4));
-      ents.push(_linea(cx - 25, cy - r - 5, cx - 25, cy + r + 5, 'GEOMETRIA', 4));
-      ents.push(_linea(cx + 25, cy - r - 5, cx + 25, cy + r + 5, 'GEOMETRIA', 4));
+      // Cabezal de pozo API 6A — perfil de árbol de navidad esquemático
+      const bW = 25, bH = r + 5;
+      ents.push(_linea(cx - bW, cy - bH, cx + bW, cy - bH, 'GEOMETRIA', 4));
+      ents.push(_linea(cx - bW, cy + bH, cx + bW, cy + bH, 'GEOMETRIA', 4));
+      ents.push(_linea(cx - bW, cy - bH, cx - bW, cy + bH, 'GEOMETRIA', 4));
+      ents.push(_linea(cx + bW, cy - bH, cx + bW, cy + bH, 'GEOMETRIA', 4));
+      // Flap lateral de kill line
+      ents.push(_linea(cx - bW, cy - 4, cx - bW - 12, cy - 4, 'GEOMETRIA', 3));
+      ents.push(_linea(cx - bW, cy + 4, cx - bW - 12, cy + 4, 'GEOMETRIA', 3));
+      ents.push(_linea(cx - bW - 12, cy - 4, cx - bW - 12, cy + 4, 'GEOMETRIA', 3));
       ents.push(_texto(cx - 12, cy + 3, 4, 'API 6A', 'DATOS', 2));
     }
-  
-    // Cotas DN
-    ents.push(_texto(cx - 5, cy - r - 15, 3.5, `DN ${p.DN}`, 'COTAS', 2));
-    ents.push(_cotaHoriz(cx - 60, cy + r + 5, cx + 60, cy + r + 5, `L total ref = ${(p.DN * 3.5 / 1000).toFixed(2)} m`, 12));
-  
-    // Tag y clase
-    ents.push(_texto(cx - 20, cy - r - 25, 4, `${p.nombre} / ${p.clase}`, 'DATOS', 2));
-    ents.push(_texto(cx - 20, cy - r - 32, 3.5, p.norma, 'DATOS', 3));
-  
-    // Datos
-    const datos = [
-      `MODULO: VALVULAS — ${p.norma}`,
-      `Tipo: ${p.nombre} | DN = ${p.DN} mm | Clase: ${p.clase}`,
-      `P max clase = ${p.P_max} MPa | P operacion = ${p.P_op} MPa`,
-      `Factor uso = ${((p.P_op / p.P_max) * 100).toFixed(1)}%`,
+
+    // Cota DN — diámetro nominal con NPS equivalente
+    const npsRef = (p.DN / 25.4).toFixed(1);
+    ents.push(_texto(cx - 10, cy - r - 12, 3.5, `DN ${Math.round(p.DN)} mm (NPS ${npsRef}")`, 'COTAS', 2));
+
+    // ── FACE-TO-FACE — tabla ASME B16.10 real por tipo y clase ──
+    let f2fVal: number;
+    if (p.f2f_mm != null && p.f2f_mm > 0) {
+      f2fVal = p.f2f_mm;
+    } else if (p.tipo === 'gl') {
+      // Globe: lookup en tabla ASME B16.10 Table 1 (short pattern)
+      const npsKey = _dnToNpsKey(p.DN);
+      f2fVal = F2F_GLOBO_B1610[p.clase]?.[npsKey]
+            ?? F2F_GLOBO_B1610['300']?.[npsKey]
+            ?? Math.round(p.DN * 2.3);
+    } else if (p.tipo === 'bt' || p.tipo === 'bf') {
+      // Bola: referencia proporcional API 6D (sin tabla embebida aquí)
+      f2fVal = Math.round(p.DN * 2.0);
+    } else if (p.tipo === 'mp') {
+      // Mariposa: cuerpo muy corto (wafer ≈ DN*0.4)
+      f2fVal = Math.round(p.DN * 0.4);
+    } else {
+      // Compuerta, retención, otros: proporcional estándar
+      f2fVal = Math.round(p.DN * 2.8);
+    }
+    const f2fSrc  = (p.f2f_mm != null && p.f2f_mm > 0) ? 'ASME B16.10'
+                  : (p.tipo === 'gl')                   ? 'ASME B16.10 Tabla 1 (globo)'
+                  : 'ref';
+    const f2fLabel = `F2F = ${f2fVal} mm  ${f2fSrc}`;
+    ents.push(_cotaHoriz(cx - pConn - pLen, cy + r + 6, cx + pConn + pLen, cy + r + 6, f2fLabel, 12));
+
+    // Tag, clase y norma
+    ents.push(_texto(cx - 22, cy - r - 22, 4, `${p.nombre} / Clase ${p.clase}`, 'DATOS', 2));
+    ents.push(_texto(cx - 22, cy - r - 29, 3.5, p.norma, 'DATOS', 3));
+
+    // Tolerancias ASME B16.34 / B16.10
+    const tolF2F = f2fVal <= 300 || p.DN <= 100 ? '+-1.5 mm' : '+-3.0 mm';
+    const tolBore = p.DN <= 100 ? 'H7' : 'H8';
+    const tolRF   = p.DN <= 200 ? '+-0.3 mm (RF)' : '+-0.5 mm (RF)';
+
+    // Presiones limpias — parseFloat elimina basura flotante antes de formatear
+    const pMaxFmt = n2(p.P_max);
+    const pOpFmt  = n2(p.P_op);
+    const pHidFmt = n2(p.P_max * 1.5);
+    const pBarFmt = n1(p.P_max * 10);
+    const factorFmt = p.P_max > 0 ? n1((p.P_op / p.P_max) * 100) : '—';
+
+    // Carátula de datos
+    const datos: string[] = [
+      `MODULO: VALVULAS INDUSTRIALES — ${p.norma}`,
+      `Tipo: ${p.nombre} | DN = ${Math.round(p.DN)} mm | Clase ASME: ${p.clase}`,
+      p.material ? `Material: ${p.material}` : `Material: A216 WCB / A105 (default)`,
+      `P max clase = ${pMaxFmt} MPa (${pBarFmt} bar) | P oper = ${pOpFmt} MPa`,
+      `Factor uso = ${factorFmt}% | Prueba hidrost = ${pHidFmt} MPa (ASME B16.34 Cl. 6.1)`,
+      `F2F = ${f2fVal} mm (${f2fSrc}) | Tol F2F: ${tolF2F} | Tol bore: ${tolBore} | Cara: ${tolRF}`,
+      `ESTADO: ${p.P_max > 0 && p.P_op <= p.P_max * 0.8 ? 'MARGEN ADECUADO (>20%)' : p.P_max > 0 && p.P_op <= p.P_max ? 'MARGEN REDUCIDO (<20%)' : 'VERIFICAR CONDICIONES'}`,
       p.servicio ? `Servicio: ${p.servicio}` : '',
-      `Prueba hidrostatica cuerpo = ${(p.P_max * 1.5).toFixed(2)} MPa (ASME B16.34)`,
-      `ESTADO: ${p.P_op <= p.P_max * 0.8 ? '✓ MARGEN ADECUADO' : p.P_op <= p.P_max ? '⚠ MARGEN REDUCIDO' : '✗ SOBREPRESION'}`,
     ].filter(Boolean) as string[];
     datos.forEach((d, i) => {
-      ents.push(_texto(0, 18 - i * 6, 3.5, d, 'DATOS', i === 0 ? 2 : (i === 6 ? 3 : 3)));
+      ents.push(_texto(0, 20 - i * 6, 3.5, d, 'DATOS', i === 0 ? 2 : 3));
     });
-  
-    ents.push(_bloqueTitle(`VALVULA — ${p.nombre} / SIMBOLOGIA ISA 5.1`, p.norma,
-      p.proyecto || '', p.ingeniero || '', fecha));
-  
+
+    ents.push(_bloqueTitle(`VALVULA ${p.nombre} / Clase ${p.clase} — ISA 5.1 / ASME B16.34`, p.norma,
+      p.proyecto || '', p.ingeniero || '', fecha, 0, -60, _usrData(p)));
+
     return [_cabecera(), ...ents, _pie()].join('\n');
   }
   
@@ -1086,7 +1302,7 @@ export interface ParamsTuberias {
     });
   
     ents.push(_bloqueTitle('RED DE TUBERIAS — HARDY-CROSS / ANALISIS HIDRAULICO', 'AWWA M32 / Darcy-Weisbach / Colebrook-White',
-      p.proyecto || '', p.ingeniero || '', fecha));
+      p.proyecto || '', p.ingeniero || '', fecha, 0, -60, _usrData(p)));
   
     return [_cabecera(), ...ents, _pie()].join('\n');
   }
@@ -1098,29 +1314,37 @@ export interface ParamsTuberias {
   export function exportarDXFCanerias(p: ParamsCanerias): string {
     const ents: string[] = [];
     const fecha = p.fecha || new Date().toLocaleDateString('es-AR');
-    const r = Math.min(p.OD * 0.15, 12);
-  
-    // Tramo horizontal principal
-    const x0 = 30, x1 = 220, yc = 80;
+    // Radio proporcional a OD — sin cap bajo que hace idénticos todos los calibres grandes
+    const r = Math.max(Math.min(p.OD * 0.15, 25), 3);
+
+    // Longitud visual de tubería proporcional a L (más corta = longitud menor)
+    const x0 = 30;
+    const x1 = x0 + Math.max(Math.min(p.L * 1.5, 200), 60);
+    const yc = 85;
     ents.push(_linea(x0, yc + r, x1, yc + r, 'GEOMETRIA', 4));
     ents.push(_linea(x0, yc - r, x1, yc - r, 'GEOMETRIA', 4));
     ents.push(_linea(x0, yc - r, x0, yc + r, 'GEOMETRIA', 4));
     // Eje
     ents.push(_linea(x0, yc, x1, yc, 'CENTRO', 1));
   
-    // Codos (representados a 90°)
-    const codoPosX = [x0 + 50, x0 + 120, x0 + 170];
+    // Codos (posición distribuida proporcionalmente en el tramo)
+    const pipeLen = x1 - x0;
+    const codoPosX = [
+      x0 + pipeLen * 0.25,
+      x0 + pipeLen * 0.50,
+      x0 + pipeLen * 0.75,
+    ];
     for (let i = 0; i < Math.min(p.codos, 3); i++) {
-      const cx = codoPosX[i];
-      ents.push(_arco(cx, yc + r, r, 90, 180, 'GEOMETRIA', 4));
-      ents.push(_linea(cx, yc + r, cx, yc + r + 25, 'GEOMETRIA', 4));
-      ents.push(_linea(cx - r, yc + r, cx - r, yc + r + 25, 'GEOMETRIA', 4));
-      ents.push(_texto(cx - 5, yc + r + 27, 3, `CODO R=1.5D`, 'DATOS', 3));
+      const cxc = codoPosX[i];
+      ents.push(_arco(cxc, yc + r, r, 90, 180, 'GEOMETRIA', 4));
+      ents.push(_linea(cxc, yc + r, cxc, yc + r + 22, 'GEOMETRIA', 4));
+      ents.push(_linea(cxc - r, yc + r, cxc - r, yc + r + 22, 'GEOMETRIA', 4));
+      ents.push(_texto(cxc - 5, yc + r + 24, 3, 'CODO R=1.5D', 'DATOS', 3));
     }
-  
-    // Tees
+
+    // Tees — posición relativa al tramo
     if (p.tees > 0) {
-      const tx = x0 + 90;
+      const tx = x0 + pipeLen * 0.42;
       ents.push(_linea(tx, yc + r, tx, yc + r + 20, 'GEOMETRIA', 3));
       ents.push(_linea(tx - r, yc + r, tx - r, yc + r + 20, 'GEOMETRIA', 3));
       ents.push(_linea(tx - r, yc + r + 20, tx + r, yc + r + 20, 'GEOMETRIA', 3));
@@ -1158,7 +1382,7 @@ export interface ParamsTuberias {
     });
   
     ents.push(_bloqueTitle('CAÑERIAS — ISOMETRICO / FITTINGS / ASME B16.9', 'ASME B31.3 / ASME B16.9 / API 5L',
-      p.proyecto || '', p.ingeniero || '', fecha));
+      p.proyecto || '', p.ingeniero || '', fecha, 0, -60, _usrData(p)));
   
     return [_cabecera(), ...ents, _pie()].join('\n');
   }
@@ -1170,24 +1394,43 @@ export interface ParamsTuberias {
   export function exportarDXFMMO(p: ParamsMMO): string {
     const ents: string[] = [];
     const fecha = p.fecha || new Date().toLocaleDateString('es-AR');
-  
-    // Representación genérica de equipo (rectángulo + motor)
-    const ex = 60, ey = 80, eW = 60, eH = 35;
-    ents.push(_linea(ex, ey, ex + eW, ey, 'GEOMETRIA', 4));
-    ents.push(_linea(ex, ey - eH, ex + eW, ey - eH, 'GEOMETRIA', 4));
-    ents.push(_linea(ex, ey, ex, ey - eH, 'GEOMETRIA', 4));
-    ents.push(_linea(ex + eW, ey, ex + eW, ey - eH, 'GEOMETRIA', 4));
-    // Motor (círculo)
-    ents.push(_circulo(ex + eW + 15, ey - eH / 2, eH / 4, 'GEOMETRIA', 3));
-    ents.push(_texto(ex + eW + 8, ey - eH / 2, 3.5, 'M', 'DATOS', 3));
-    // Eje motor-equipo
-    ents.push(_linea(ex + eW, ey - eH / 2, ex + eW + 11, ey - eH / 2, 'GEOMETRIA', 7));
-    // Tag del equipo
-    ents.push(_texto(ex + 5, ey - eH / 2, 4.5, p.tag, 'DATOS', 2));
-    ents.push(_texto(ex + 5, ey - eH / 2 - 8, 3.5, p.equipo.substring(0, 18), 'DATOS', 7));
-  
-    // Diagrama de Gantt de mantenimiento simplificado
-    const gx = 150, gy = 80, gW = 120, nMeses = 12;
+
+    // Dimensiones del equipo escaladas por horas_op y costo_mto — cada equipo tendrá distinto tamaño
+    const eW = Math.max(Math.min(Math.sqrt(Math.max(p.costo_mto, 0) + 1) * 3.5, 80), 32);
+    const eH = Math.max(Math.min(Math.sqrt(Math.max(p.horas_op, 0) + 1) * 4.5, 52), 16);
+    const ex = 55, ey = 85;
+
+    // Cuerpo equipo (rectángulo con dimensiones proporcionales)
+    ents.push(_linea(ex,      ey,      ex + eW, ey,      'GEOMETRIA', 4));
+    ents.push(_linea(ex,      ey - eH, ex + eW, ey - eH, 'GEOMETRIA', 4));
+    ents.push(_linea(ex,      ey,      ex,      ey - eH, 'GEOMETRIA', 4));
+    ents.push(_linea(ex + eW, ey,      ex + eW, ey - eH, 'GEOMETRIA', 4));
+    // Motor (radio ∝ horas_op)
+    const mR = Math.max(eH / 5, 4);
+    ents.push(_circulo(ex + eW + mR + 4, ey - eH / 2, mR, 'GEOMETRIA', 3));
+    ents.push(_texto(ex + eW + mR, ey - eH / 2, 3, 'M', 'DATOS', 3));
+    ents.push(_linea(ex + eW, ey - eH / 2, ex + eW + 4, ey - eH / 2, 'GEOMETRIA', 7));
+    // Tag y nombre
+    ents.push(_texto(ex + 3, ey - eH / 2 + 2,  4,   p.tag,                         'DATOS', 2));
+    ents.push(_texto(ex + 3, ey - eH / 2 - 6,  3.5, p.equipo.substring(0, 20),     'DATOS', 7));
+    ents.push(_texto(ex + 3, ey - eH / 2 - 12, 3,   `${p.horas_op.toFixed(0)} h/año | USD ${p.costo_mto.toFixed(0)}`, 'COTAS', 3));
+
+    // Gauge de disponibilidad — barra vertical proporcional (0–100%)
+    const gaugX = ex + eW + mR * 2 + 12, gaugY = ey, gaugH = eH;
+    const fillH = gaugH * Math.min(p.disponibilidad, 100) / 100;
+    ents.push(_linea(gaugX,     gaugY,          gaugX + 10, gaugY,          'GEOMETRIA', 7));
+    ents.push(_linea(gaugX,     gaugY - gaugH,  gaugX + 10, gaugY - gaugH,  'GEOMETRIA', 7));
+    ents.push(_linea(gaugX,     gaugY,          gaugX,      gaugY - gaugH,  'GEOMETRIA', 7));
+    ents.push(_linea(gaugX + 10,gaugY,          gaugX + 10, gaugY - gaugH,  'GEOMETRIA', 7));
+    ents.push(_linea(gaugX + 2, gaugY,          gaugX + 8,  gaugY,          'DATOS', p.disponibilidad >= 95 ? 3 : p.disponibilidad >= 85 ? 2 : 1));
+    ents.push(_linea(gaugX + 2, gaugY - fillH,  gaugX + 8,  gaugY - fillH,  'DATOS', p.disponibilidad >= 95 ? 3 : p.disponibilidad >= 85 ? 2 : 1));
+    ents.push(_linea(gaugX + 2, gaugY,          gaugX + 2,  gaugY - fillH,  'DATOS', p.disponibilidad >= 95 ? 3 : p.disponibilidad >= 85 ? 2 : 1));
+    ents.push(_linea(gaugX + 8, gaugY,          gaugX + 8,  gaugY - fillH,  'DATOS', p.disponibilidad >= 95 ? 3 : p.disponibilidad >= 85 ? 2 : 1));
+    ents.push(_texto(gaugX,     gaugY + 3,      3,   `${p.disponibilidad.toFixed(0)}%`, 'DATOS', 2));
+    ents.push(_texto(gaugX,     gaugY - gaugH - 5, 3, 'DISP', 'COTAS', 2));
+
+    // Diagrama de Gantt — barras de intervalo de mantenimiento
+    const gx = 165, gy = 85, gW = 110, nMeses = 12;
     ents.push(_texto(gx, gy + 5, 3.5, 'PLAN MANTENIMIENTO ANUAL', 'COTAS', 2));
     // Meses
     for (let m = 0; m <= nMeses; m++) {
@@ -1226,7 +1469,7 @@ export interface ParamsTuberias {
     });
   
     ents.push(_bloqueTitle('MMO — PLAN MANTENIMIENTO / DISPONIBILIDAD', 'ISO 55001 / NFPA 70B / API 510',
-      p.proyecto || '', p.ingeniero || '', fecha));
+      p.proyecto || '', p.ingeniero || '', fecha, 0, -60, _usrData(p)));
   
     return [_cabecera(), ...ents, _pie()].join('\n');
   }
@@ -1299,7 +1542,7 @@ export interface ParamsTuberias {
     });
   
     ents.push(_bloqueTitle('SOLDADURA — JUNTA / CALIFICACION / AWS SIMBOLO', 'AWS D1.1 / ASME IX / API 1104',
-      p.proyecto || '', p.ingeniero || '', fecha));
+      p.proyecto || '', p.ingeniero || '', fecha, 0, -60, _usrData(p)));
   
     return [_cabecera(), ...ents, _pie()].join('\n');
   }
@@ -1371,7 +1614,7 @@ export interface ParamsTuberias {
     });
   
     ents.push(_bloqueTitle('ELECTRICIDAD — SECCION CONDUCTOR / CONDUIT', 'NEC 310 / IEC 60228 / IEC 60909 / API RP 500',
-      p.proyecto || '', p.ingeniero || '', fecha));
+      p.proyecto || '', p.ingeniero || '', fecha, 0, -60, _usrData(p)));
 
     return [_cabecera(), ...ents, _pie()].join('\n');
   }
@@ -1472,6 +1715,10 @@ export interface ParamsTuberias {
       `Bore: ${bore_mm.toFixed(1)} mm - OD brida: ${OD_mm.toFixed(1)} mm - BC pernos: ${BC_mm.toFixed(1)} mm - N pernos: ${n_pern} - Brida ASME B16.5 | Compuerta ASME B16.34/API 600`, 'ANOTACIONES', 2));
     ents.push(T(bx0 - flange_t, ay_top + 4, 4,
       `Proyecto: ${proyecto || 'Sin nombre'} - Fecha: ${fecha} - Normativa: ASME B16.34 / B16.10 / B16.5`, 'ANOTACIONES', 2));
+    ents.push(T(bx0 - flange_t, ay_top - 9, 3.5,
+      `Ing: ${String(p._usr_nombre || '') || '—'}  Email: ${String(p._usr_email || '') || '—'}  Mat: ${String(p._usr_matricula || '') || '—'}  DNI: ${String(p._usr_dni || '') || '—'}`, 'ANOTACIONES', 7));
+    ents.push(T(bx0 - flange_t, ay_top - 21, 3.5,
+      `Empresa: ${String(p._usr_empresa || '') || '—'}  Pais: ${String(p._usr_pais || '') || '—'}`, 'ANOTACIONES', 7));
 
     // Cota F2F
     const yd = by0 - 12;
@@ -1608,6 +1855,10 @@ export interface ParamsTuberias {
     ents.push(T(bx0 - flange_t, ay_top + 16, 4.5, bore_txt, 'ANOTACIONES', 2));
     ents.push(T(bx0 - flange_t, ay_top + 4, 4,
       `Proyecto: ${proyecto || 'Sin nombre'} - Fecha: ${fecha} - Normativa: ASME B16.34 / B16.10 / B16.5 / API 6D`, 'ANOTACIONES', 2));
+    ents.push(T(bx0 - flange_t, ay_top - 9, 3.5,
+      `Ing: ${String(p._usr_nombre || '') || '—'}  Email: ${String(p._usr_email || '') || '—'}  Mat: ${String(p._usr_matricula || '') || '—'}  DNI: ${String(p._usr_dni || '') || '—'}`, 'ANOTACIONES', 7));
+    ents.push(T(bx0 - flange_t, ay_top - 21, 3.5,
+      `Empresa: ${String(p._usr_empresa || '') || '—'}  Pais: ${String(p._usr_pais || '') || '—'}`, 'ANOTACIONES', 7));
 
     // Cota F2F
     const yd = by0 - 12;
@@ -1725,6 +1976,10 @@ export interface ParamsTuberias {
       `Diametro disco: ${disc_d.toFixed(1)} mm (NPS x 25.4) - Normativa: API 609 / MSS SP-67 / ASME B16.34 / B16.5`, 'ANOTACIONES', 2));
     ents.push(T(ax0, ay_top + 4, 4,
       `Proyecto: ${proyecto || 'Sin nombre'} - Fecha/Hora: ${fechaHora} - Apertura: 1/4 vuelta`, 'ANOTACIONES', 2));
+    ents.push(T(ax0, ay_top - 9, 3.5,
+      `Ing: ${String(p._usr_nombre || '') || '—'}  Email: ${String(p._usr_email || '') || '—'}  Mat: ${String(p._usr_matricula || '') || '—'}  DNI: ${String(p._usr_dni || '') || '—'}`, 'ANOTACIONES', 7));
+    ents.push(T(ax0, ay_top - 21, 3.5,
+      `Empresa: ${String(p._usr_empresa || '') || '—'}  Pais: ${String(p._usr_pais || '') || '—'}`, 'ANOTACIONES', 7));
 
     // Cota disco (siempre disponible) o F2F
     const yd = -(disc_r + 14);
@@ -1872,6 +2127,10 @@ export function exportarDXFRetencion(p: Record<string, unknown>): string {
     `Face-to-Face: ${f2f_num.toFixed(0)} mm (${(f2f_num / 25.4).toFixed(2)}") - Normativa: ASME B16.10-2022 + API STD 594`, 'ANOTACIONES', 2));
   ents.push(T(ax0, ay_top + 4, 4,
     `Proyecto: ${proyecto || 'Sin nombre'} - Fecha/Hora: ${fechaHora}`, 'ANOTACIONES', 2));
+  ents.push(T(ax0, ay_top - 9, 3.5,
+    `Ing: ${String((p as any)._usr_nombre || '') || '—'}  Email: ${String((p as any)._usr_email || '') || '—'}  Mat: ${String((p as any)._usr_matricula || '') || '—'}  DNI: ${String((p as any)._usr_dni || '') || '—'}`, 'ANOTACIONES', 7));
+  ents.push(T(ax0, ay_top - 21, 3.5,
+    `Empresa: ${String((p as any)._usr_empresa || '') || '—'}  Pais: ${String((p as any)._usr_pais || '') || '—'}`, 'ANOTACIONES', 7));
 
   const xf0 = -(hw + flange_t);
   const xf1 =  (hw + flange_t);
@@ -2002,6 +2261,10 @@ export function exportarDXFTapon(p: Record<string, unknown>): string {
     `Face-to-Face: ${f2f_num.toFixed(0)} mm (${(f2f_num / 25.4).toFixed(2)}") - Normativa: ASME B16.10-2022 + MSS SP-78`, 'ANOTACIONES', 2));
   ents.push(T(ax0, ay_top + 4, 4,
     `Proyecto: ${proyecto || 'Sin nombre'} - Fecha: ${fecha} - Apertura: 1/4 vuelta`, 'ANOTACIONES', 2));
+  ents.push(T(ax0, ay_top - 9, 3.5,
+    `Ing: ${String((p as any)._usr_nombre || '') || '—'}  Email: ${String((p as any)._usr_email || '') || '—'}  Mat: ${String((p as any)._usr_matricula || '') || '—'}  DNI: ${String((p as any)._usr_dni || '') || '—'}`, 'ANOTACIONES', 7));
+  ents.push(T(ax0, ay_top - 21, 3.5,
+    `Empresa: ${String((p as any)._usr_empresa || '') || '—'}  Pais: ${String((p as any)._usr_pais || '') || '—'}`, 'ANOTACIONES', 7));
 
   const xf0 = -(hw + flange_t);
   const xf1 =  (hw + flange_t);

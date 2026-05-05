@@ -41,7 +41,7 @@ function OjoIcono({ visible }: { visible: boolean }) {
 export default function LoginPage() {
   const router = useRouter();
   const [modo, setModo] = useState<'login' | 'signup'>('login');
-  const [form, setForm] = useState({ email:'', password:'', nombre:'', empresa:'', pais:'', matricula:'' });
+  const [form, setForm] = useState({ email:'', password:'', nombre:'', empresa:'', pais:'', matricula:'', dni:'' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [exito, setExito] = useState('');
@@ -60,7 +60,7 @@ export default function LoginPage() {
       const url = modo === 'login' ? '/api/v1/auth/login' : '/api/v1/auth/signup';
       const body = modo === 'login'
         ? { email: form.email, password: form.password }
-        : { email: form.email, password: form.password, nombre: form.nombre, empresa: form.empresa, pais: form.pais, matricula: form.matricula };
+        : { email: form.email, password: form.password, nombre: form.nombre, empresa: form.empresa, pais: form.pais, matricula: form.matricula, dni: form.dni };
 
       const res = await fetch(url, {
         method: 'POST',
@@ -83,7 +83,7 @@ export default function LoginPage() {
       } else {
         setExito('Cuenta creada. Podés iniciar sesión ahora.');
         setModo('login');
-        setForm({ email: form.email, password:'', nombre:'', empresa:'', pais:'', matricula:'' });
+        setForm({ email: form.email, password:'', nombre:'', empresa:'', pais:'', matricula:'', dni:'' });
       }
     } catch {
       setError('Error de conexión. Verificá tu internet.');
@@ -134,6 +134,10 @@ export default function LoginPage() {
             <div style={{ marginBottom:14 }}>
               <label style={lbl}>Matrícula profesional (opcional)</label>
               <input name="matricula" value={form.matricula} onChange={handleChange} style={inp} placeholder="MP 12345 / REG-67890" />
+            </div>
+            <div style={{ marginBottom:14 }}>
+              <label style={lbl}>DNI / Documento de identidad (opcional)</label>
+              <input name="dni" value={form.dni} onChange={handleChange} style={inp} placeholder="12.345.678" />
             </div>
           </>
         )}

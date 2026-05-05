@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import {
   ProyectoData,
   PROYECTO_VACIO,
@@ -75,20 +75,19 @@ const g3: React.CSSProperties = {
 export default function ProyectoContexto() {
   const [abierto, setAbierto] = useState(false);
   const [editando, setEditando] = useState(false);
-  const [proyecto, setProyecto] = useState<ProyectoData>(PROYECTO_VACIO);
-  const [draft, setDraft] = useState<ProyectoData>(PROYECTO_VACIO);
-  const [guardado, setGuardado] = useState(false);
-  const [tieneProyecto, setTieneProyecto] = useState(false);
-
-  // Leer proyecto guardado al montar
-  useEffect(() => {
+  const [proyecto, setProyecto] = useState<ProyectoData>(() => {
+    const p = leerProyecto(); // leerProyecto() ya verifica typeof window
+    return (p && p.nombre) ? p : PROYECTO_VACIO;
+  });
+  const [draft, setDraft] = useState<ProyectoData>(() => {
     const p = leerProyecto();
-    if (p && p.nombre) {
-      setProyecto(p);
-      setDraft(p);
-      setTieneProyecto(true);
-    }
-  }, []);
+    return (p && p.nombre) ? p : PROYECTO_VACIO;
+  });
+  const [guardado, setGuardado] = useState(false);
+  const [tieneProyecto, setTieneProyecto] = useState(() => {
+    const p = leerProyecto();
+    return !!(p && p.nombre);
+  });
 
   const guardar = () => {
     guardarProyecto(draft);
@@ -317,7 +316,7 @@ export default function ProyectoContexto() {
                   <label style={lbl}>NPS tubería (pulgadas)</label>
                   <select value={draft.nps_pulgadas} onChange={e => upd('nps_pulgadas', e.target.value)} style={inp}>
                     <option value="" style={{ background: '#0a0f1e' }}>— Sin datos —</option>
-                    {NPS_LISTA.map(n => <option key={n} value={n} style={{ background: '#0a0f1e' }}>{n}"</option>)}
+                    {NPS_LISTA.map(n => <option key={n} value={n} style={{ background: '#0a0f1e' }}>{n}&quot;</option>)}
                   </select>
                 </div>
                 <div>

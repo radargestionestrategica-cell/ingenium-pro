@@ -14,7 +14,8 @@
       "Bash(grep -v \"//\")",
       "Bash(dir C:\\\\Users\\\\Usuario\\\\Desktop\\\\INGENIUM-PRO-RADAR\\\\radar-app\\\\components\\\\Modulo*.tsx /b)",
       "Bash(npx prisma *)",
-      "Bash(git rm *)"
+      "Bash(git rm *)",
+      "Bash(Test-Path *)"
     ]
   }
 }

@@ -1,6 +1,7 @@
 // app/page.tsx  — INGENIUM PRO v8.1 — Landing enterprise-grade
 
 import type { Metadata } from 'next';
+import ModulosCarrusel from '@/components/ModulosCarrusel';
 
 export const metadata: Metadata = {
   title: 'INGENIUM Pro | Plataforma de cálculo técnico, auditoría IA y documentación profesional',
@@ -614,28 +615,7 @@ export default function LandingPage() {
             </p>
           </div>
 
-          <div className="modules-grid">
-            {modulos.map(({ n, nombre, desc, norma, color, icon, calcs }) => (
-              <article
-                key={nombre}
-                className="module-card"
-                style={{ borderLeft:`3px solid ${color}` }}
-              >
-                <div className="module-icon-wrap" style={{ background:`${color}12` }}>
-                  <span>{icon}</span>
-                </div>
-                <div style={{ flex:1 }}>
-                  <div className="module-num">{n}</div>
-                  <div className="module-name">{nombre}</div>
-                  <div className="module-desc">{desc}</div>
-                  <div className="module-footer">
-                    <div className="module-norma" style={{ color }}>{norma}</div>
-                    <div className="module-calcs">{calcs} cálcs.</div>
-                  </div>
-                </div>
-              </article>
-            ))}
-          </div>
+          <ModulosCarrusel modulos={modulos} />
         </div>
       </section>
 

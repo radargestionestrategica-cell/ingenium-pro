@@ -48,6 +48,7 @@ export interface DatosPDF {
   empresa:      string;
   pais:         string;
   matricula?:   string;
+  dni?:         string;
   fecha:        Date;
   parametros:   Record<string, unknown>;
   resultado:    Record<string, unknown>;
@@ -188,14 +189,15 @@ export async function generarPDF(datos: DatosPDF): Promise<Buffer> {
       filaInfo('Industria',     datos.industria       || '—',   y + 36);
       filaInfo('Ingeniero',     datos.ingeniero,               y + 54);
       filaInfo('Matrícula',     datos.matricula       || '—',   y + 72);
-      filaInfo('Email',         datos.email || '—',            y + 90);
-      filaInfo('Empresa',       datos.empresa,                 y + 108);
-      filaInfo('País',          datos.pais,                    y + 126);
-      filaInfo('Fecha y hora',  fechaFormateada,               y + 144);
+      filaInfo('DNI',           datos.dni             || '—',   y + 90);
+      filaInfo('Email',         datos.email           || '—',   y + 108);
+      filaInfo('Empresa',       datos.empresa,                 y + 126);
+      filaInfo('País',          datos.pais,                    y + 144);
+      filaInfo('Fecha y hora',  fechaFormateada,               y + 162);
 
       // ── ALERTA ───────────────────────────────────────────────
       if (datos.alerta && datos.alertaMsg) {
-        y += 174;
+        y += 192;
         doc.rect(50, y, doc.page.width - 100, 36).fill('#2d0a0a');
         doc.rect(50, y, doc.page.width - 100, 36).stroke(COLOR_ROJO);
         doc.fillColor(COLOR_ROJO).fontSize(8).font('Helvetica-Bold')
@@ -204,7 +206,7 @@ export async function generarPDF(datos: DatosPDF): Promise<Buffer> {
           .text(datos.alertaMsg, 60, y + 18, { width: doc.page.width - 120 });
         y += 50;
       } else {
-        y += 174;
+        y += 192;
       }
 
       // Línea divisoria

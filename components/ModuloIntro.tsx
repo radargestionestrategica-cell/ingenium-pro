@@ -13,33 +13,32 @@ import type { Lang } from '@/lib/i18n';
 interface Props { moduloId: string; }
 
 export default function ModuloIntro({ moduloId }: Props) {
-  const [lang, setLang]       = useState<Lang>('es');
-  const [abierto, setAbierto] = useState(false);
+  // Lazy inits: solo corren en cliente ('use client' garantiza window disponible)
+  const [lang, setLang]       = useState<Lang>(() => getLang());
+  const [abierto, setAbierto] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    const llave = `ingenium_intro_visto_${moduloId}`;
+    if (!localStorage.getItem(llave)) {
+      localStorage.setItem(llave, '1');
+      return true;
+    }
+    return false;
+  });
   const [tab, setTab]         = useState<'que_es' | 'calcula' | 'normas' | 'usar'>('que_es');
 
   const data = MODULOS_INTRO[moduloId];
-  if (!data) return null;
 
   useEffect(() => {
-    // Leer idioma actual
-    const l = getLang();
-    setLang(l);
-
-    // Detectar primer uso del módulo → abrir automáticamente
-    const llave = `ingenium_intro_visto_${moduloId}`;
-    if (!localStorage.getItem(llave)) {
-      setAbierto(true);
-      localStorage.setItem(llave, '1');
-    }
-
-    // Escuchar cambios de idioma desde SelectorIdioma
+    // Solo suscribir al evento de cambio de idioma
     const handler = (e: Event) => {
       const ce = e as CustomEvent<Lang>;
       setLang(ce.detail);
     };
     window.addEventListener(EVENTO_IDIOMA, handler);
     return () => window.removeEventListener(EVENTO_IDIOMA, handler);
-  }, [moduloId]);
+  }, []);
+
+  if (!data) return null;
 
   const ui   = UI[lang];
   const rtl  = isRTL(lang);

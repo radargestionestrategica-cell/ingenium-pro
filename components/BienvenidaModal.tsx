@@ -1,18 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 
 export default function BienvenidaModal() {
-  // Inicializa en false para evitar problemas de hidratación en Next.js (SSR)
-  const [isVisible, setIsVisible] = useState(false);
-
-  useEffect(() => {
-    // Verifica el almacenamiento local solo cuando el componente ya está montado en el cliente
-    const vista = localStorage.getItem("ip_bienvenida_vista");
-    if (!vista) {
-      setIsVisible(true);
-    }
-  }, []);
+  // Lazy init: lee localStorage solo en cliente (typeof window evita error SSR)
+  const [isVisible, setIsVisible] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return !localStorage.getItem('ip_bienvenida_vista');
+  });
 
   const handleComenzar = () => {
     localStorage.setItem("ip_bienvenida_vista", "1");

@@ -139,6 +139,16 @@ export default function BotonesExportar({ datos, visible }: Props) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const p = (datos.dxfParams ?? { ...datos.parametros, ...datos.resultado }) as any;
 
+      // Inyectar datos del usuario registrado desde localStorage
+      const usr = (() => { try { return JSON.parse(localStorage.getItem('ip_usuario') || '{}'); } catch { return {}; } })();
+      p._usr_nombre    = usr.nombre    ?? '';
+      p._usr_email     = usr.email     ?? '';
+      p._usr_matricula = usr.matricula ?? '';
+      p._usr_dni       = usr.dni       ?? '';
+      p._usr_empresa   = usr.empresa   ?? '';
+      p._usr_pais      = usr.pais      ?? '';
+      p._usr_fecha     = new Date().toLocaleDateString('es-AR');
+
       let contenido = '';
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -195,6 +205,7 @@ export default function BotonesExportar({ datos, visible }: Props) {
         VALVULAS_DISENO_MARIPOSA:    mod.exportarDXFMariposa,
         VALVULAS_DISENO_RETENCION:   mod.exportarDXFRetencion,
         VALVULAS_DISENO_TAPON:       mod.exportarDXFTapon,
+        VALVULAS_DISENO_GLOBO:       mod.exportarDXFValvulas,
         VALVULAS_COEFICIENTE_CV:     mod.exportarDXFValvulas,
         // Civil
         VIGA_ACERO_AISC:             mod.exportarDXFCanerias,
