@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { createHash } from 'crypto'
+import { verificarTokenAPI, respuestaNoAutorizado } from '@/lib/api-auth'
+
 export async function POST(req: NextRequest) {
+  if (!verificarTokenAPI(req)) return respuestaNoAutorizado();
   try {
     const b = await req.json()
     if (!b.tipo||!b.parametros||!b.resultado)

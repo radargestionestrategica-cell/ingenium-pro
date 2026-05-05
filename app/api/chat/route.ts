@@ -12,6 +12,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { rateLimit } from '@/lib/rate-limit';
+import { verificarTokenAPI, respuestaNoAutorizado } from '@/lib/api-auth';
 
 // ── Tipos del contexto real del cálculo ──────────────────────────────────────
 type ContextoCalculo = {
@@ -322,6 +323,8 @@ Respondé en el idioma del ingeniero. Directo. Sin rodeos. Sin frases vacías.`;
 // ════════════════════════════════════════════════════════════════════════════
 
 export async function POST(req: NextRequest) {
+  if (!verificarTokenAPI(req)) return respuestaNoAutorizado();
+
   const ip = req.headers.get('x-forwarded-for') ?? req.headers.get('x-real-ip') ?? 'unknown';
   const limited = rateLimit(`chat:${ip}`, 20, 60_000);
   if (limited) return limited;

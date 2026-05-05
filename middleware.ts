@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-async function verifyToken(token: string): Promise<boolean> {
-  const parts = token.split('.');
-  if (parts.length !== 2) return false;
-  const [data, sig] = parts;
-  if (!data || !sig) return false;
+type Payload = { plan?: string; demoExpira?: number };
 
-  const secret = process.env.JWT_SECRET ?? 'ingenium_jwt_2026';
+async function verifyToken(token: string): Promise<Payload | null> {
+  const parts = token.split('.');
+  if (parts.length !== 2) return null;
+  const [data, sig] = parts;
+  if (!data || !sig) return null;
+
+  const secret  = process.env.JWT_SECRET ?? 'ingenium_jwt_2026';
   const encoder = new TextEncoder();
   const key = await crypto.subtle.importKey(
     'raw', encoder.encode(secret),
@@ -18,16 +20,33 @@ async function verifyToken(token: string): Promise<boolean> {
     .map(b => b.toString(16).padStart(2, '0'))
     .join('');
 
-  return sig === expected;
+  if (sig !== expected) return null;
+
+  try {
+    return JSON.parse(atob(data)) as Payload;
+  } catch {
+    return null;
+  }
 }
 
 export async function middleware(request: NextRequest) {
   const token = request.cookies.get('ip_auth')?.value;
 
-  if (!token || !(await verifyToken(token))) {
-    const loginUrl = new URL('/Login', request.url);
-    loginUrl.searchParams.set('redirect', request.nextUrl.pathname);
-    return NextResponse.redirect(loginUrl);
+  const loginUrl = new URL('/Login', request.url);
+  loginUrl.searchParams.set('redirect', request.nextUrl.pathname);
+
+  if (!token) return NextResponse.redirect(loginUrl);
+
+  const payload = await verifyToken(token);
+  if (!payload) return NextResponse.redirect(loginUrl);
+
+  // Demo expirado → redirigir a planes
+  if (
+    payload.plan === 'demo' &&
+    typeof payload.demoExpira === 'number' &&
+    Date.now() > payload.demoExpira
+  ) {
+    return NextResponse.redirect(new URL('/planes', request.url));
   }
 
   return NextResponse.next();

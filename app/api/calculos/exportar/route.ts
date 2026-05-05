@@ -11,6 +11,7 @@ import { prisma } from '@/lib/prisma';
 import { generarExcel } from '@/lib/generarExcel';
 import { generarPDF } from '@/lib/generarPDF';
 import type { RegistroHistorial } from '@/lib/generarExcel';
+import { verificarTokenAPI, respuestaNoAutorizado } from '@/lib/api-auth';
 
 type FormatoExportacion = 'excel' | 'pdf';
 
@@ -325,6 +326,7 @@ async function generarRespuestaExportacion(solicitud: SolicitudExportacion): Pro
 }
 
 export async function POST(req: NextRequest): Promise<Response> {
+  if (!verificarTokenAPI(req)) return respuestaNoAutorizado();
   try {
     const body = await req.json() as SolicitudExportacion;
 
@@ -337,44 +339,31 @@ export async function POST(req: NextRequest): Promise<Response> {
     });
   } catch (error) {
     console.error('[API calculos/exportar][POST]', error);
-
-    return NextResponse.json(
-      { error: 'Error interno al generar archivo' },
-      { status: 500 }
-    );
-  } finally {
-    await prisma.$disconnect();
+    return NextResponse.json({ error: 'Error interno al generar archivo' }, { status: 500 });
   }
 }
 
 export async function GET(req: NextRequest): Promise<Response> {
+  if (!verificarTokenAPI(req)) return respuestaNoAutorizado();
   try {
     const { searchParams } = new URL(req.url);
 
-    const id = limpiarTexto(searchParams.get('id')) ?? limpiarTexto(searchParams.get('calculoId'));
-    const usuarioId = limpiarTexto(searchParams.get('usuarioId'));
+    const id         = limpiarTexto(searchParams.get('id')) ?? limpiarTexto(searchParams.get('calculoId'));
+    const usuarioId  = limpiarTexto(searchParams.get('usuarioId'));
     const proyectoId = limpiarTexto(searchParams.get('proyectoId'));
-
-    const tipoParam = limpiarTexto(searchParams.get('tipo'));
+    const tipoParam  = limpiarTexto(searchParams.get('tipo'));
     const formatoParam = limpiarTexto(searchParams.get('formato'));
-
     const tipoEsFormato = tipoParam === 'pdf' || tipoParam === 'excel';
 
     return await generarRespuestaExportacion({
       calculoId: id,
       usuarioId,
       proyectoId,
-      tipo: tipoEsFormato ? undefined : tipoParam,
+      tipo:    tipoEsFormato ? undefined : tipoParam,
       formato: normalizarFormato(formatoParam ?? (tipoEsFormato ? tipoParam : undefined)),
     });
   } catch (error) {
     console.error('[API calculos/exportar][GET]', error);
-
-    return NextResponse.json(
-      { error: 'Error interno al generar archivo' },
-      { status: 500 }
-    );
-  } finally {
-    await prisma.$disconnect();
+    return NextResponse.json({ error: 'Error interno al generar archivo' }, { status: 500 });
   }
 }
