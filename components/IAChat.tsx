@@ -3,6 +3,12 @@ import { useState, useRef, useEffect } from 'react';
 import { DatosExportar } from '@/components/BotonesExportar';
 import ReactMarkdown from 'react-markdown';
 
+function ipAuthHeader(): Record<string, string> {
+  if (typeof window === 'undefined') return {};
+  const t = localStorage.getItem('ip_token');
+  return t ? { Authorization: `Bearer ${t}` } : {};
+}
+
 const PANEL = '#0a0f1e';
 const INDIGO = '#6366f1';
 
@@ -91,7 +97,7 @@ export default function IAChat({ datos }: Props) {
     try {
       const res = await fetch('/api/chat', {
         method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...ipAuthHeader() },
         body: JSON.stringify({ messages: cola, contexto: construirContexto() }),
       });
 

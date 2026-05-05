@@ -1,6 +1,12 @@
 'use client';
 import { useState } from 'react';
 
+function ipAuthHeader(): Record<string, string> {
+  if (typeof window === 'undefined') return {};
+  const t = localStorage.getItem('ip_token');
+  return t ? { Authorization: `Bearer ${t}` } : {};
+}
+
 export interface DatosExportar {
   tipo:          string;
   parametros:    Record<string, unknown>;
@@ -51,7 +57,7 @@ export default function BotonesExportar({ datos, visible }: Props) {
       const usr = (() => { try { return JSON.parse(localStorage.getItem('ip_usuario') || '{}'); } catch { return {}; } })();
       const res = await fetch('/api/calculos/guardar', {
         method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...ipAuthHeader() },
         body: JSON.stringify({
           tipo:         datos.tipo,
           moduloId:     datos.moduloId    ?? datos.tipo,
@@ -88,7 +94,7 @@ export default function BotonesExportar({ datos, visible }: Props) {
     const id = await guardar();
     if (!id) { setExportando(null); return; }
     try {
-      const res = await fetch(`/api/calculos/exportar?id=${id}&tipo=pdf`);
+      const res = await fetch(`/api/calculos/exportar?id=${id}&tipo=pdf`, { headers: ipAuthHeader() });
       if (!res.ok) { setMsgErr('Error al generar PDF'); return; }
       const blob = await res.blob();
       const url  = URL.createObjectURL(blob);
@@ -115,7 +121,7 @@ export default function BotonesExportar({ datos, visible }: Props) {
     const id = await guardar();
     if (!id) { setExportando(null); return; }
     try {
-      const res = await fetch(`/api/calculos/exportar?id=${id}&tipo=excel`);
+      const res = await fetch(`/api/calculos/exportar?id=${id}&tipo=excel`, { headers: ipAuthHeader() });
       if (!res.ok) { setMsgErr('Error al generar Excel'); return; }
       const blob = await res.blob();
       const url  = URL.createObjectURL(blob);

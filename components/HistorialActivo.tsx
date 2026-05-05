@@ -6,6 +6,12 @@
 
 import { useState, useEffect, useCallback } from 'react';
 
+function ipAuthHeader(): Record<string, string> {
+  if (typeof window === 'undefined') return {};
+  const t = localStorage.getItem('ip_token');
+  return t ? { Authorization: `Bearer ${t}` } : {};
+}
+
 // ── Tipos exactos basados en schema.prisma verificado ────────────────────────
 type Calculo = {
   id:           string;
@@ -90,7 +96,7 @@ export default function HistorialActivo({ usuarioId, proyectoId, activoNombre, m
 
       const res = await fetch('/api/calculos/exportar', {
         method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...ipAuthHeader() },
         body:    JSON.stringify(body),
       });
 
