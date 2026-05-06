@@ -4,7 +4,8 @@ import { createHash } from 'crypto'
 import { verificarTokenAPI, respuestaNoAutorizado } from '@/lib/api-auth'
 
 export async function POST(req: NextRequest) {
-  if (!verificarTokenAPI(req)) return respuestaNoAutorizado();
+  const payload = verificarTokenAPI(req);
+  if (!payload) return respuestaNoAutorizado();
   try {
     const b = await req.json()
     if (!b.tipo||!b.parametros||!b.resultado)
@@ -15,8 +16,8 @@ export async function POST(req: NextRequest) {
       activoNombre:b.activoNombre??null,parametros:b.parametros,resultado:b.resultado,
       normativa:b.normativa??null,hash,alerta:b.alerta??false,
       alertaMsg:b.alertaMsg??null,usuario:b.usuario??'anonimo',
-      usuarioId:b.usuarioId??null,proyectoId:b.proyectoId??null}
-    const c=await prisma.calculo.upsert({where:{hash},create:data,update:{}})
+      usuarioId:payload.id,proyectoId:b.proyectoId??null}
+    const c=await prisma.calculo.upsert({where:{hash},create:data,update:{usuarioId:payload.id}})
     return NextResponse.json({ok:true,id:c.id,hash})
   } catch(e){
     return NextResponse.json({ok:false,error:e instanceof Error?e.message:'Error interno'},{status:500})
