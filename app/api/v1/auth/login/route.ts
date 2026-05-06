@@ -66,7 +66,7 @@ export async function POST(req: Request) {
     const token = generarToken({
       id:          usuario.id,
       email:       usuario.email,
-      plan:        usuario.plan,
+      plan:        usuario.plan ?? 'pro',
       demoExpira:  Date.now() + 259_200_000,
     });
 

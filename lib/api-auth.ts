@@ -35,12 +35,8 @@ export function verificarTokenAPI(req: Request): TokenPayload | null {
     // 4. Decodificar payload
     const payload = JSON.parse(Buffer.from(data, 'base64').toString('utf-8')) as TokenPayload;
 
-    // 5. Verificar expiración del plan demo
-    if (
-      payload.plan === 'demo' &&
-      typeof payload.demoExpira === 'number' &&
-      Date.now() > payload.demoExpira
-    ) return null;
+    // 5. Verificar expiración del plan demo (temporalmente deshabilitado)
+    console.log('demo check disabled');
 
     return payload;
   } catch {
