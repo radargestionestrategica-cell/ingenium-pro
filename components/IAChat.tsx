@@ -96,7 +96,8 @@ export default function IAChat({ datos }: Props) {
 
     try {
       const res = await fetch('/api/chat', {
-        method:  'POST',
+        method:      'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json', ...ipAuthHeader() },
         body: JSON.stringify({ messages: cola, contexto: construirContexto() }),
       });

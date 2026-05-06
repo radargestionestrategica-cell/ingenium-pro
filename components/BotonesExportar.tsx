@@ -56,7 +56,8 @@ export default function BotonesExportar({ datos, visible }: Props) {
     try {
       const usr = (() => { try { return JSON.parse(localStorage.getItem('ip_usuario') || '{}'); } catch { return {}; } })();
       const res = await fetch('/api/calculos/guardar', {
-        method:  'POST',
+        method:      'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json', ...ipAuthHeader() },
         body: JSON.stringify({
           tipo:         datos.tipo,
@@ -94,7 +95,7 @@ export default function BotonesExportar({ datos, visible }: Props) {
     const id = await guardar();
     if (!id) { setExportando(null); return; }
     try {
-      const res = await fetch(`/api/calculos/exportar?id=${id}&tipo=pdf`, { headers: ipAuthHeader() });
+      const res = await fetch(`/api/calculos/exportar?id=${id}&tipo=pdf`, { credentials: 'include', headers: ipAuthHeader() });
       if (!res.ok) { setMsgErr('Error al generar PDF'); return; }
       const blob = await res.blob();
       const url  = URL.createObjectURL(blob);
@@ -121,7 +122,7 @@ export default function BotonesExportar({ datos, visible }: Props) {
     const id = await guardar();
     if (!id) { setExportando(null); return; }
     try {
-      const res = await fetch(`/api/calculos/exportar?id=${id}&tipo=excel`, { headers: ipAuthHeader() });
+      const res = await fetch(`/api/calculos/exportar?id=${id}&tipo=excel`, { credentials: 'include', headers: ipAuthHeader() });
       if (!res.ok) { setMsgErr('Error al generar Excel'); return; }
       const blob = await res.blob();
       const url  = URL.createObjectURL(blob);
