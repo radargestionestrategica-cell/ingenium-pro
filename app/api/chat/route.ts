@@ -457,7 +457,7 @@ Respondé en el idioma del ingeniero. Técnico y directo.`;
       method: 'POST',
       headers: {
         'Content-Type':      'application/json',
-        'x-api-key':         process.env.ANTHROPIC_API_KEY ?? process.env.CLAVE_API_ANTRÓPICA ?? '',
+        'x-api-key':         process.env.ANTHROPIC_API_KEY!,
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
