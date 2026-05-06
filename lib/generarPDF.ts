@@ -171,9 +171,9 @@ export async function generarPDF(datos: DatosPDF): Promise<Buffer> {
 
       const filaInfo = (label: string, valor: string, yPos: number) => {
         doc.fillColor(COLOR_GRIS).fontSize(8).font('Helvetica')
-          .text(label.toUpperCase(), 50, yPos);
+          .text(label.toUpperCase(), 50, yPos, { width: 120, lineBreak: false });
         doc.fillColor(COLOR_TEXTO).fontSize(10).font('Helvetica-Bold')
-          .text(valor, 180, yPos);
+          .text(valor || '—', 180, yPos, { width: doc.page.width - 230, lineBreak: false });
       };
 
       // Fecha con zona horaria correcta según el país del usuario registrado
@@ -228,9 +228,9 @@ export async function generarPDF(datos: DatosPDF): Promise<Buffer> {
         const py  = y + row * 18;
 
         doc.fillColor(COLOR_GRIS).fontSize(7).font('Helvetica')
-          .text(k, px, py);
+          .text(k, px, py, { width: 85, lineBreak: false, ellipsis: true });
         doc.fillColor(COLOR_TEXTO).fontSize(9).font('Helvetica-Bold')
-          .text(String(v), px + 90, py, { width: colW - 95, ellipsis: true });
+          .text(String(v), px + 90, py, { width: colW - 95, lineBreak: false, ellipsis: true });
       });
 
       y += Math.ceil(entradas.length / 2) * 18 + 12;
@@ -252,9 +252,9 @@ export async function generarPDF(datos: DatosPDF): Promise<Buffer> {
         const py  = y + row * 18;
 
         doc.fillColor(COLOR_GRIS).fontSize(7).font('Helvetica')
-          .text(k, px, py);
+          .text(k, px, py, { width: 85, lineBreak: false, ellipsis: true });
         doc.fillColor(COLOR_VERDE).fontSize(9).font('Helvetica-Bold')
-          .text(String(v), px + 90, py, { width: colW - 95, ellipsis: true });
+          .text(String(v), px + 90, py, { width: colW - 95, lineBreak: false, ellipsis: true });
       });
 
       y += Math.ceil(resultados.length / 2) * 18 + 16;
