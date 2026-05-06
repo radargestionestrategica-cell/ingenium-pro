@@ -55,6 +55,7 @@ export default function LoginPage() {
   };
 
   const handleSubmit = async () => {
+    if (!aceptoTerminos || !aceptoCookies) return;
     setLoading(true); setError(''); setExito('');
     try {
       const url = modo === 'login' ? '/api/v1/auth/login' : '/api/v1/auth/signup';
