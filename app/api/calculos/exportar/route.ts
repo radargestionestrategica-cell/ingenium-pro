@@ -21,6 +21,7 @@ type SolicitudExportacion = {
   proyectoId?: string;
   tipo?: string;
   formato?: FormatoExportacion;
+  fallbackUserId?: string;
 };
 
 type CalcConRel = {
@@ -207,12 +208,20 @@ async function generarRespuestaExportacion(solicitud: SolicitudExportacion): Pro
 
   const primero = calculos[0];
 
-  const ingeniero  = primero.user?.nombre ?? primero.usuario ?? 'Ingeniero';
-  const email      = primero.user?.email ?? '';
-  const empresa    = primero.user?.empresa ?? 'INGENIUM PRO';
-  const pais       = primero.user?.pais ?? '';
-  const matricula  = primero.user?.matricula ?? '';
-  const dni        = primero.user?.dni ?? '';
+  const userFallback = (!primero.user && solicitud.fallbackUserId)
+    ? await prisma.usuario.findUnique({
+        where:  { id: solicitud.fallbackUserId },
+        select: { nombre: true, email: true, empresa: true, pais: true, matricula: true, dni: true },
+      })
+    : null;
+
+  const usr        = primero.user ?? userFallback;
+  const ingeniero  = usr?.nombre    ?? primero.usuario ?? 'Ingeniero';
+  const email      = usr?.email     ?? '';
+  const empresa    = usr?.empresa   ?? 'INGENIUM PRO';
+  const pais       = usr?.pais      ?? '';
+  const matricula  = usr?.matricula ?? '';
+  const dni        = usr?.dni       ?? '';
   const proyecto = primero.proyecto?.nombre ?? 'Sin proyecto';
   const industria = primero.proyecto?.industria ?? 'Ingeniería';
 
@@ -326,7 +335,8 @@ async function generarRespuestaExportacion(solicitud: SolicitudExportacion): Pro
 }
 
 export async function POST(req: NextRequest): Promise<Response> {
-  if (!verificarTokenAPI(req)) return respuestaNoAutorizado();
+  const payload = verificarTokenAPI(req);
+  if (!payload) return respuestaNoAutorizado();
   try {
     const body = await req.json() as SolicitudExportacion;
 
@@ -336,6 +346,7 @@ export async function POST(req: NextRequest): Promise<Response> {
       proyectoId: limpiarTexto(body.proyectoId),
       tipo: limpiarTexto(body.tipo),
       formato: normalizarFormato(body.formato),
+      fallbackUserId: payload.id,
     });
   } catch (error) {
     console.error('[API calculos/exportar][POST]', error);
@@ -344,7 +355,8 @@ export async function POST(req: NextRequest): Promise<Response> {
 }
 
 export async function GET(req: NextRequest): Promise<Response> {
-  if (!verificarTokenAPI(req)) return respuestaNoAutorizado();
+  const payload = verificarTokenAPI(req);
+  if (!payload) return respuestaNoAutorizado();
   try {
     const { searchParams } = new URL(req.url);
 
@@ -361,6 +373,7 @@ export async function GET(req: NextRequest): Promise<Response> {
       proyectoId,
       tipo:    tipoEsFormato ? undefined : tipoParam,
       formato: normalizarFormato(formatoParam ?? (tipoEsFormato ? tipoParam : undefined)),
+      fallbackUserId: payload.id,
     });
   } catch (error) {
     console.error('[API calculos/exportar][GET]', error);
