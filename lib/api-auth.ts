@@ -18,7 +18,11 @@ export function verificarTokenAPI(req: Request): TokenPayload | null {
     const authHeader   = req.headers.get('authorization') ?? '';
     const bearerToken  = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
 
-    const token = cookieMatch?.[1] ?? bearerToken;
+    const rawCookie   = cookieMatch?.[1] ?? null;
+    const cookieToken = rawCookie
+      ? (() => { try { return decodeURIComponent(rawCookie); } catch { return rawCookie; } })()
+      : null;
+    const token = cookieToken ?? bearerToken;
     if (!token) return null;
 
     // 2. Verificar estructura
