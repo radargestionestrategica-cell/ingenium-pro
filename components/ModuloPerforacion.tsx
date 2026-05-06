@@ -1,7 +1,6 @@
 ﻿'use client';
 import { publicarResultado } from '@/components/ResultadoContexto';
 import BotonesExportar, { DatosExportar } from '@/components/BotonesExportar';
-import IAChat from '@/components/IAChat';
 import { useState } from 'react';
 
 type RiskLevel = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
@@ -173,7 +172,6 @@ export default function ModuloPerforacion() {
           </div>
         )}
         {datos && <BotonesExportar visible={true} datos={datos} />}
-        {datos && <IAChat datos={datos} />}
       </div>
     </div>
   );

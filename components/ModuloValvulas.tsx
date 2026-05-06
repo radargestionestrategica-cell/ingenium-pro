@@ -2,7 +2,6 @@
 import { useState } from 'react';
 import { publicarResultado } from '@/components/ResultadoContexto';
 import BotonesExportar, { DatosExportar } from '@/components/BotonesExportar';
-import IAChat from '@/components/IAChat';
 
 // ═══════════════════════════════════════════════════════════════
 //  MÓDULO VÁLVULAS INDUSTRIALES — INGENIUM PRO v8.0
@@ -1499,7 +1498,6 @@ export default function ModuloValvulas() {
         </div>
       )}
       {datosActivo && <BotonesExportar visible={true} datos={datosActivo} />}
-      {datosActivo && <IAChat datos={datosActivo} />}
 
       {/* ══ TIPO DE VÁLVULA ══ */}
       {sub === 'tipo' && (

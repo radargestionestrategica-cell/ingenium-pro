@@ -1,7 +1,6 @@
 ﻿'use client';
 import { publicarResultado } from '@/components/ResultadoContexto';
 import BotonesExportar, { DatosExportar } from '@/components/BotonesExportar';
-import IAChat from '@/components/IAChat';
 import { useState } from 'react';
 
 // DATOS 100% REALES VERIFICADOS POR PAÍS
@@ -989,7 +988,6 @@ const calcMortero = () => {
         </div>
       )}
       {datosActivo && <BotonesExportar visible={true} datos={datosActivo} />}
-      {datosActivo && <IAChat datos={datosActivo} />}
     </div>
   );
 }
