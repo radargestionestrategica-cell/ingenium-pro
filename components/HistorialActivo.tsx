@@ -72,7 +72,7 @@ export default function HistorialActivo({ usuarioId, proyectoId, activoNombre, m
       if (activoNombre) params.set('activoNombre', activoNombre);
       if (moduloId)     params.set('moduloId',     moduloId);
 
-      const res = await fetch(`/api/calculos/historial?${params.toString()}`);
+      const res = await fetch(`/api/calculos/historial?${params.toString()}`, { credentials: 'include', headers: ipAuthHeader() });
       if (!res.ok) throw new Error(`Error ${res.status}`);
       const json = await res.json() as RespuestaHistorial;
       setDatos(json);
