@@ -77,10 +77,12 @@ const industrias = [
 ];
 
 const planes = [
-  { nombre:'Demo',       precio:'Gratis',  periodo:'3 días', color: GRAY,  bajada:'Conocer la plataforma sin compromiso.',  features:['Acceso de prueba completo','Módulos principales','PDF y Excel de muestra','Sin tarjeta de crédito'], href:'/Login',  cta:'Comenzar demo gratuito', destacado:false },
-  { nombre:'Senior',     precio:'ARS $350.000', periodo:'mes',    color: GOLD,  bajada:'Para el profesional que necesita velocidad y trazabilidad.',   features:['1 usuario profesional','Todos los módulos técnicos','Historial de proyectos','PDF · Excel · DXF · QR','Auditoría IA'], href:'https://www.mercadopago.com.ar/subscriptions/checkout?preapproval_plan_id=7977d5695fec4f99be5cc3e56c7b9428', target:'_blank', cta:'Activar Senior',        destacado:true  },
-  { nombre:'Team',       precio:'ARS $1.000.000', periodo:'mes',    color: GREEN, bajada:'Para equipos técnicos, consultoras e ingeniería interna.',      features:['3 usuarios activos','Proyectos compartidos','Dashboard de equipo','Gestión de activos','Soporte prioritario'],           href:'https://www.mercadopago.com.ar/subscriptions/checkout?preapproval_plan_id=a82fae7648024090a3b6dc195d136ccd', target:'_blank', cta:'Activar Team',          destacado:false },
-  { nombre:'Enterprise', precio:'A medida',periodo:'empresa',color: CYAN,  bajada:'Configuración por sector, usuarios ilimitados y soporte dedicado.', features:['Usuarios ilimitados','Módulos configurables','API de integración','Soporte dedicado 24/7','Capacitación inicial'],  href:'mailto:radargestionestrategica@gmail.com?subject=Consulta Enterprise INGENIUM PRO', target:'_blank', cta:'Solicitar cotización', destacado:false },
+  { nombre:'Demo',          precio:'Gratis',          periodo:'3 días',   color: GRAY,  bajada:'Conocer la plataforma sin compromiso.',                       features:['Acceso completo de prueba','Todos los módulos','PDF · Excel · DXF','Sin tarjeta de crédito'],                                                     href:'/Login',  cta:'Comenzar demo gratuito',  destacado:false },
+  { nombre:'Módulo único',  precio:'ARS $45.000',     periodo:'/mes',     color: CYAN,  bajada:'1 módulo a elección. Ideal para uso puntual.',                 features:['1 módulo a elección','Usuario único','PDF · Excel · DXF · QR','Soporte por email'],                                                             href:'mailto:radargestionestrategica@gmail.com?subject=Plan Módulo único INGENIUM PRO', cta:'Contratar',               destacado:false },
+  { nombre:'Dúo',           precio:'ARS $80.000',     periodo:'/mes',     color: GREEN, bajada:'2 módulos a elección. Más versatilidad a mejor precio.',       features:['2 módulos a elección','Usuario único','PDF · Excel · DXF · QR','Soporte por email'],                                                             href:'mailto:radargestionestrategica@gmail.com?subject=Plan Dúo INGENIUM PRO',          cta:'Contratar',               destacado:false },
+  { nombre:'Pro',           precio:'ARS $350.000',    periodo:'/mes',     color: GOLD,  bajada:'Todos los módulos para el profesional independiente.',          features:['1 usuario','Todos los módulos técnicos','Historial ilimitado','PDF · Excel · DXF · QR','Auditoría IA','Verificación SHA-256'],                    href:'mailto:radargestionestrategica@gmail.com?subject=Plan Pro INGENIUM PRO',           cta:'Activar Pro',             destacado:true  },
+  { nombre:'Team',          precio:'ARS $1.000.000',  periodo:'/mes',     color: CYAN,  bajada:'Hasta 3 usuarios. Proyectos compartidos y trazabilidad.',       features:['Hasta 3 usuarios','Todos los módulos','Proyectos compartidos','Dashboard de equipo','Soporte prioritario'],                                      href:'mailto:radargestionestrategica@gmail.com?subject=Plan Team INGENIUM PRO',          cta:'Activar Team',            destacado:false },
+  { nombre:'Enterprise',    precio:'Solicitar',       periodo:'cotización',color: GRAY, bajada:'Usuarios ilimitados, módulos personalizados e integración API.', features:['Usuarios ilimitados','Módulos configurables','API de integración','Soporte dedicado 24/7','Capacitación inicial','Contrato con factura'],          href:'mailto:radargestionestrategica@gmail.com?subject=Plan Enterprise INGENIUM PRO',    cta:'Solicitar cotización',    destacado:false },
 ];
 
 const faqs = [
@@ -737,7 +739,7 @@ export default function LandingPage() {
                     </li>
                   ))}
                 </ul>
-                <a className={`plan-cta${p.destacado ? ' featured' : ''}`} href={p.href} {...(p.target ? { target: p.target, rel: 'noopener noreferrer' } : {})}>{p.cta}</a>
+                <a className={`plan-cta${p.destacado ? ' featured' : ''}`} href={p.href}>{p.cta}</a>
               </article>
             ))}
           </div>
