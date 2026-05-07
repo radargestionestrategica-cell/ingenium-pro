@@ -233,6 +233,8 @@ export interface ParamsTuberias {
       ' 70', '4',
       '  9', '$LTSCALE',
       ' 40', '1.0',
+      '  9', '$DWGCODEPAGE',
+      '  3', 'UTF-8',
       '  0', 'ENDSEC',
       '  0', 'SECTION',
       '  2', 'TABLES',
@@ -403,7 +405,7 @@ export interface ParamsTuberias {
   * @param nombre     Nombre del archivo sin extensión (se agrega .dxf automático)
   */
   export function descargarDXF(contenido: string, nombre: string): void {
-    const blob = new Blob([contenido], { type: 'application/dxf' });
+    const blob = new Blob([contenido], { type: 'application/dxf;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
