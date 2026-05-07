@@ -63,7 +63,7 @@ const COLOR_ROJO      = '#ef4444';
 const COLOR_GRIS      = '#64748b';
 const COLOR_FONDO     = '#0f172a';
 const COLOR_TEXTO     = '#f1f5f9'; // solo para fondos oscuros (header)
-const COLOR_VALOR     = '#000000'; // valores sobre fondo blanco del cuerpo
+const COLOR_VALOR     = '#1a1a1a'; // valores sobre fondo blanco del cuerpo
 
 export async function generarPDF(datos: DatosPDF): Promise<Buffer> {
   return new Promise(async (resolve, reject) => {
@@ -254,7 +254,7 @@ export async function generarPDF(datos: DatosPDF): Promise<Buffer> {
 
         doc.fillColor(COLOR_GRIS).fontSize(7).font('Helvetica')
           .text(k, px, py, { width: 85, lineBreak: false, ellipsis: true });
-        doc.fillColor(COLOR_VERDE).fontSize(9).font('Helvetica-Bold')
+        doc.fillColor('#1a1a1a').fontSize(9).font('Helvetica-Bold')
           .text(String(v), px + 90, py, { width: colW - 95, lineBreak: false, ellipsis: true });
       });
 
