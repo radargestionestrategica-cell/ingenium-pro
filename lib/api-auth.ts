@@ -39,8 +39,14 @@ export function verificarTokenAPI(req: Request): TokenPayload | null {
     // 4. Decodificar payload
     const payload = JSON.parse(Buffer.from(data, 'base64').toString('utf-8')) as TokenPayload;
 
-    // 5. Verificar expiración del plan demo (temporalmente deshabilitado)
-    console.log('demo check disabled');
+    // 5. Verificar expiración del plan demo
+    if (
+      payload.plan === 'demo' &&
+      typeof payload.demoExpira === 'number' &&
+      Date.now() > payload.demoExpira
+    ) {
+      return null;
+    }
 
     return payload;
   } catch {
@@ -52,5 +58,12 @@ export function respuestaNoAutorizado(): Response {
   return new Response(
     JSON.stringify({ error: 'No autorizado' }),
     { status: 401, headers: { 'Content-Type': 'application/json' } },
+  );
+}
+
+export function respuestaDemoExpirado(): Response {
+  return new Response(
+    JSON.stringify({ error: 'Demo expirado. Actualizá tu plan en /planes.' }),
+    { status: 403, headers: { 'Content-Type': 'application/json' } },
   );
 }

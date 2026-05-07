@@ -63,11 +63,12 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Cuenta desactivada' }, { status: 403 });
     }
 
+    const planFinal = usuario.plan ?? 'pro';
     const token = generarToken({
-      id:          usuario.id,
-      email:       usuario.email,
-      plan:        usuario.plan ?? 'pro',
-      demoExpira:  Date.now() + 259_200_000,
+      id:         usuario.id,
+      email:      usuario.email,
+      plan:       planFinal,
+      ...(planFinal === 'demo' ? { demoExpira: Date.now() + 259_200_000 } : {}),
     });
 
     const response = NextResponse.json({
