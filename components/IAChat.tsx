@@ -113,6 +113,7 @@ export default function IAChat({ datos }: Props) {
       if (data.derivados?.nivel_riesgo) setNivelRiesgo(data.derivados.nivel_riesgo);
 
       setMensajes(prev => [...prev, { role: 'assistant', content: respuesta }]);
+      try { localStorage.setItem('ip_ia_analisis', respuesta); } catch { /* noop */ }
       setAnalizado(true);
     } catch {
       setMensajes(prev => [...prev, {

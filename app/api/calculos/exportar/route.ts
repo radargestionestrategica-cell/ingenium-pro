@@ -22,6 +22,7 @@ type SolicitudExportacion = {
   tipo?: string;
   formato?: FormatoExportacion;
   fallbackUserId?: string;
+  analisisIA?: string;
 };
 
 type CalcConRel = {
@@ -266,6 +267,7 @@ async function generarRespuestaExportacion(solicitud: SolicitudExportacion): Pro
       resultado,
       alerta: calc.alerta,
       alertaMsg: calc.alertaMsg ?? undefined,
+      analisisIA: solicitud.analisisIA,
     });
 
     const uint8 = new Uint8Array(buffer);
@@ -347,6 +349,7 @@ export async function POST(req: NextRequest): Promise<Response> {
       tipo: limpiarTexto(body.tipo),
       formato: normalizarFormato(body.formato),
       fallbackUserId: payload.id,
+      analisisIA: limpiarTexto(body.analisisIA),
     });
   } catch (error) {
     console.error('[API calculos/exportar][POST]', error);

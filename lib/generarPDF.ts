@@ -54,6 +54,7 @@ export interface DatosPDF {
   resultado:    Record<string, unknown>;
   alerta:       boolean;
   alertaMsg?:   string;
+  analisisIA?:  string;
 }
 
 // Colores corporativos INGENIUM PRO
@@ -259,6 +260,31 @@ export async function generarPDF(datos: DatosPDF): Promise<Buffer> {
       });
 
       y += Math.ceil(resultados.length / 2) * 18 + 16;
+
+      // ── ANÁLISIS DE IA ────────────────────────────────────────
+      if (datos.analisisIA) {
+        if (y > 580) { doc.addPage(); y = 50; }
+
+        doc.moveTo(50, y).lineTo(doc.page.width - 50, y).stroke(COLOR_PRIMARIO);
+        y += 14;
+
+        doc.fillColor(COLOR_PRIMARIO).fontSize(10).font('Helvetica-Bold')
+          .text('ANÁLISIS DE IA — INGENIUM PRO', 50, y);
+        y += 16;
+
+        const textoIA = datos.analisisIA
+          .replace(/\*\*(.+?)\*\*/g, '$1')
+          .replace(/\*(.+?)\*/g, '$1')
+          .replace(/^#{1,6}\s+/gm, '')
+          .replace(/^[-*]\s/gm, '• ')
+          .replace(/`([^`]+)`/g, '$1')
+          .trim();
+
+        doc.fillColor(COLOR_VALOR).fontSize(9).font('Helvetica')
+          .text(textoIA, 50, y, { width: doc.page.width - 100, lineBreak: true });
+
+        y = doc.y + 16;
+      }
 
       // ── QR + HASH ─────────────────────────────────────────────
       // Si no hay espacio en la página, agregar nueva

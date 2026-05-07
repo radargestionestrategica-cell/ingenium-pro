@@ -95,7 +95,13 @@ export default function BotonesExportar({ datos, visible }: Props) {
     const id = await guardar();
     if (!id) { setExportando(null); return; }
     try {
-      const res = await fetch(`/api/calculos/exportar?id=${id}&tipo=pdf`, { credentials: 'include', headers: ipAuthHeader() });
+      const analisisIA = (() => { try { return localStorage.getItem('ip_ia_analisis') || undefined; } catch { return undefined; } })();
+      const res = await fetch('/api/calculos/exportar', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json', ...ipAuthHeader() },
+        body: JSON.stringify({ calculoId: id, formato: 'pdf', analisisIA }),
+      });
       if (!res.ok) { setMsgErr('Error al generar PDF'); return; }
       const blob = await res.blob();
       const url  = URL.createObjectURL(blob);
