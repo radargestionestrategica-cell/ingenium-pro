@@ -35,6 +35,46 @@ function obtenerTimezone(pais: string): string {
   return TIMEZONES[pais.toLowerCase().trim()] ?? 'America/Argentina/Buenos_Aires';
 }
 
+function limpiarTextoIA(raw: string): string {
+  return raw
+    .replace(/\r\n/g, '\n').replace(/\r/g, '\n')
+    // Separadores horizontales --- / *** / ___
+    .replace(/^[-_*]{3,}\s*$/gm, '')
+    // Headers: ## Título → Título
+    .replace(/^#{1,6}\s+/gm, '')
+    // Bold: **texto** o __texto__ → texto (incluye multilínea)
+    .replace(/\*\*([\s\S]*?)\*\*/g, '$1')
+    .replace(/__([\s\S]*?)__/g, '$1')
+    // Italic: *texto* o _texto_ → texto
+    .replace(/\*([^\n*]+)\*/g, '$1')
+    .replace(/_([^\n_]+)_/g, '$1')
+    // Código inline
+    .replace(/`([^`]+)`/g, '$1')
+    // Listas
+    .replace(/^[-*+]\s+/gm, '- ')
+    // Tipografía tipográfica → ASCII
+    .replace(/–/g, '-').replace(/—/g, '-')
+    .replace(/“/g, '"').replace(/”/g, '"')
+    .replace(/‘/g, "'").replace(/’/g, "'")
+    .replace(/…/g, '...')
+    // Flechas y operadores matemáticos → ASCII
+    .replace(/→/g, '->').replace(/←/g, '<-')
+    .replace(/↑/g, '^').replace(/↓/g, 'v')
+    .replace(/≥/g, '>=').replace(/≤/g, '<=')
+    .replace(/≠/g, '!=').replace(/±/g, '+/-')
+    .replace(/×/g, 'x').replace(/÷/g, '/')
+    .replace(/•/g, '-')
+    // Emojis (surrogate pairs — SMP)
+    .replace(/[\uD800-\uDFFF]/g, '')
+    // Cualquier carácter fuera de Latin-1 (Helvetica solo soporta U+0000–U+00FF)
+    .replace(/[^\x00-\xFF]/g, '')
+    // Guiones múltiples sobrantes
+    .replace(/--+/g, '-')
+    // Líneas en blanco excesivas
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
 export interface DatosPDF {
   hash:         string;
   moduloNombre: string;
@@ -272,13 +312,7 @@ export async function generarPDF(datos: DatosPDF): Promise<Buffer> {
           .text('ANÁLISIS DE IA — INGENIUM PRO', 50, y);
         y += 16;
 
-        const textoIA = datos.analisisIA
-          .replace(/\*\*(.+?)\*\*/g, '$1')
-          .replace(/\*(.+?)\*/g, '$1')
-          .replace(/^#{1,6}\s+/gm, '')
-          .replace(/^[-*]\s/gm, '• ')
-          .replace(/`([^`]+)`/g, '$1')
-          .trim();
+        const textoIA = limpiarTextoIA(datos.analisisIA);
 
         doc.fillColor(COLOR_VALOR).fontSize(9).font('Helvetica')
           .text(textoIA, 50, y, { width: doc.page.width - 100, lineBreak: true });
