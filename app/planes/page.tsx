@@ -28,7 +28,7 @@ const PLANES = [
       'Sin tarjeta de crédito',
     ],
     cta:     'Probar gratis',
-    ctaHref: '/Login',
+    ctaHref: '/register',
     ctaMail: false,
   },
   {
@@ -50,8 +50,8 @@ const PLANES = [
       'Soporte por email',
     ],
     cta:     'Contratar',
-    ctaHref: `mailto:${MAIL}?subject=Plan Módulo único INGENIUM PRO&body=Hola, quiero contratar el Plan Módulo único (ARS $45.000/mes).`,
-    ctaMail: true,
+    ctaHref: '/planes/modulo-unico',
+    ctaMail: false,
   },
   {
     id:        'duo',
@@ -72,8 +72,8 @@ const PLANES = [
       'Soporte por email',
     ],
     cta:     'Contratar',
-    ctaHref: `mailto:${MAIL}?subject=Plan Dúo INGENIUM PRO&body=Hola, quiero contratar el Plan Dúo (ARS $80.000/mes).`,
-    ctaMail: true,
+    ctaHref: '/planes/duo',
+    ctaMail: false,
   },
   {
     id:        'pro',
@@ -95,8 +95,9 @@ const PLANES = [
       'Soporte prioritario por email',
     ],
     cta:     'Activar Pro',
-    ctaHref: `mailto:${MAIL}?subject=Plan Pro INGENIUM PRO&body=Hola, quiero activar el Plan Pro (ARS $350.000/mes).`,
-    ctaMail: true,
+    ctaHref: 'https://www.mercadopago.com.ar/subscriptions/checkout?preapproval_plan_id=7977d5695fec4f99be5cc3e56c7b9428',
+    ctaTarget: '_blank',
+    ctaMail: false,
   },
   {
     id:        'team',
@@ -118,8 +119,9 @@ const PLANES = [
       'Factura electrónica',
     ],
     cta:     'Activar Team',
-    ctaHref: `mailto:${MAIL}?subject=Plan Team INGENIUM PRO&body=Hola, quiero activar el Plan Team (ARS $1.000.000/mes).`,
-    ctaMail: true,
+    ctaHref: 'https://www.mercadopago.com.ar/subscriptions/checkout?preapproval_plan_id=a82fae7648024090a3b6dc195d136ccd',
+    ctaTarget: '_blank',
+    ctaMail: false,
   },
   {
     id:        'enterprise',
@@ -141,7 +143,7 @@ const PLANES = [
       'Contrato con factura A',
     ],
     cta:     'Solicitar cotización',
-    ctaHref: `mailto:${MAIL}?subject=Plan Enterprise INGENIUM PRO&body=Hola, quiero consultar el Plan Enterprise.`,
+    ctaHref: `mailto:${MAIL}?subject=Consulta Plan Enterprise INGENIUM PRO`,
     ctaMail: true,
   },
 ];
@@ -256,6 +258,7 @@ export default function PlanesPage() {
               {/* CTA */}
               <a
                 href={plan.ctaHref}
+                {...('ctaTarget' in plan ? { target: (plan as {ctaTarget:string}).ctaTarget, rel: 'noopener noreferrer' } : {})}
                 style={{
                   marginTop: 'auto',
                   display: 'block',
