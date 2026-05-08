@@ -1,6 +1,15 @@
-// app/terminos/page.tsx
-// INGENIUM PRO v8.1 — Protocolo de Exención de Responsabilidad
-// Página pública — sin login requerido
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  title: 'Términos y Condiciones — INGENIUM PRO',
+  description:
+    'Términos de uso, condiciones generales y protocolo de exención de responsabilidad de INGENIUM PRO. ' +
+    'Todo resultado técnico debe ser validado por un profesional responsable.',
+  alternates: {
+    canonical: 'https://ingeniumpro.store/terminos',
+  },
+  robots: { index: true, follow: false },
+}
 
 const BG    = '#020609';
 const PANEL = '#0a0f1e';

@@ -1,6 +1,0 @@
-User-agent: *
-Allow: /
-Disallow: /dashboard
-Disallow: /api
-Disallow: /verify
-Sitemap: https://ingeniumpro.store/sitemap.xml
