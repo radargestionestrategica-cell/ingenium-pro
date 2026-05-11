@@ -1,5 +1,7 @@
 'use client';
 
+import { useState } from 'react'
+
 const BG    = '#020609';
 const GOLD  = '#E8A020';
 const GREEN = '#22c55e';
@@ -7,6 +9,13 @@ const PANEL = '#0a0f1e';
 const INDIGO = '#6366f1';
 const BORD  = 'rgba(99,102,241,0.15)';
 const MAIL  = 'radargestionestrategica@gmail.com';
+
+const STRIPE_PRECIOS: Record<string, string> = {
+  modulo: 'USD 25/mes',
+  duo:    'USD 44/mes',
+  pro:    'USD 195/mes',
+  team:   'USD 555/mes',
+}
 
 const PLANES = [
   {
@@ -149,6 +158,26 @@ const PLANES = [
 ];
 
 export default function PlanesPage() {
+  const [stripeLoading, setStripeLoading] = useState<string | null>(null)
+
+  async function handleStripe(planId: string) {
+    setStripeLoading(planId)
+    try {
+      const res  = await fetch('/api/stripe/checkout', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ planId }),
+      })
+      const data = await res.json()
+      if (data.url) window.location.href = data.url
+      else console.error('[stripe] Sin URL de checkout:', data)
+    } catch (e) {
+      console.error('[stripe]', e)
+    } finally {
+      setStripeLoading(null)
+    }
+  }
+
   return (
     <div style={{ minHeight: '100vh', background: BG, color: '#f1f5f9', fontFamily: 'Inter,sans-serif' }}>
 
@@ -282,6 +311,30 @@ export default function PlanesPage() {
               >
                 {plan.cta}
               </a>
+
+              {(['modulo', 'duo', 'pro', 'team'] as string[]).includes(plan.id) && (
+                <button
+                  type="button"
+                  onClick={() => handleStripe(plan.id)}
+                  disabled={stripeLoading === plan.id}
+                  style={{
+                    marginTop: 8,
+                    display: 'block',
+                    width: '100%',
+                    padding: '11px 20px',
+                    borderRadius: 12,
+                    fontWeight: 700,
+                    fontSize: 13,
+                    cursor: stripeLoading === plan.id ? 'wait' : 'pointer',
+                    background: 'rgba(99,102,241,0.06)',
+                    border: '1px solid rgba(99,102,241,0.2)',
+                    color: '#818cf8',
+                    transition: 'opacity .2s',
+                  }}
+                >
+                  {stripeLoading === plan.id ? 'Redirigiendo...' : 'Pagar con Stripe (USD)'}
+                </button>
+              )}
 
               {plan.ctaMail && (
                 <div style={{ marginTop: 10, textAlign: 'center', fontSize: 10, color: '#334155' }}>
