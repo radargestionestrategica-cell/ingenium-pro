@@ -159,9 +159,11 @@ const PLANES = [
 
 export default function PlanesPage() {
   const [stripeLoading, setStripeLoading] = useState<string | null>(null)
+  const [stripeError,   setStripeError]   = useState<string | null>(null)
 
   async function handleStripe(planId: string) {
     setStripeLoading(planId)
+    setStripeError(null)
     try {
       const res  = await fetch('/api/stripe/checkout', {
         method:  'POST',
@@ -169,10 +171,15 @@ export default function PlanesPage() {
         body:    JSON.stringify({ planId }),
       })
       const data = await res.json()
-      if (data.url) window.location.href = data.url
-      else console.error('[stripe] Sin URL de checkout:', data)
+      if (data.url) {
+        window.location.href = data.url
+      } else {
+        console.error('[stripe] Sin URL de checkout:', data)
+        setStripeError(planId)
+      }
     } catch (e) {
       console.error('[stripe]', e)
+      setStripeError(planId)
     } finally {
       setStripeLoading(null)
     }
@@ -287,7 +294,6 @@ export default function PlanesPage() {
               {/* CTA */}
               <a
                 href={plan.ctaHref}
-                {...('ctaTarget' in plan ? { target: (plan as {ctaTarget:string}).ctaTarget, rel: 'noopener noreferrer' } : {})}
                 style={{
                   marginTop: 'auto',
                   display: 'block',
@@ -334,6 +340,12 @@ export default function PlanesPage() {
                 >
                   {stripeLoading === plan.id ? 'Redirigiendo...' : 'Pagar con Stripe (USD)'}
                 </button>
+              )}
+
+              {stripeError === plan.id && (
+                <div style={{ marginTop: 6, textAlign: 'center', fontSize: 11, color: '#f87171' }}>
+                  Error al conectar con Stripe. Verificá la configuración o contactá soporte.
+                </div>
               )}
 
               {plan.ctaMail && (
