@@ -146,8 +146,6 @@ export default function ModuloUnicoPage() {
         {/* BOTÓN CTA */}
         <a
           href={seleccionado ? MP_URL : undefined}
-          target="_blank"
-          rel="noopener noreferrer"
           onClick={!seleccionado ? (e) => e.preventDefault() : undefined}
           style={{
             display: 'block',

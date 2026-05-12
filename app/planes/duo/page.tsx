@@ -182,8 +182,6 @@ export default function DuoPage() {
         {/* BOTÓN CTA */}
         <a
           href={listoParaPagar ? MP_URL : undefined}
-          target="_blank"
-          rel="noopener noreferrer"
           onClick={!listoParaPagar ? (e) => e.preventDefault() : undefined}
           style={{
             display: 'block',
