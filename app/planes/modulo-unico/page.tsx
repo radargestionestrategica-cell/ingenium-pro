@@ -30,6 +30,30 @@ const MODULOS = [
 
 export default function ModuloUnicoPage() {
   const [seleccionado, setSeleccionado] = useState<string | null>(null);
+  const [stripeLoading, setStripeLoading] = useState(false);
+  const [stripeError,   setStripeError]   = useState(false);
+
+  async function handleStripe() {
+    setStripeLoading(true);
+    setStripeError(false);
+    try {
+      const res  = await fetch('/api/stripe/checkout', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ planId: 'modulo' }),
+      });
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        setStripeError(true);
+      }
+    } catch {
+      setStripeError(true);
+    } finally {
+      setStripeLoading(false);
+    }
+  }
 
   return (
     <div style={{ minHeight: '100vh', background: BG, color: '#f1f5f9', fontFamily: 'Inter,sans-serif' }}>
@@ -74,6 +98,7 @@ export default function ModuloUnicoPage() {
             return (
               <button
                 key={m.id}
+                type="button"
                 onClick={() => setSeleccionado(activo ? null : m.id)}
                 style={{
                   background: activo
@@ -143,33 +168,66 @@ export default function ModuloUnicoPage() {
           </div>
         </div>
 
-        {/* BOTÓN CTA */}
-        <a
-          href={seleccionado ? MP_URL : undefined}
-          onClick={!seleccionado ? (e) => e.preventDefault() : undefined}
+        {/* BOTÓN CTA — ARS → MercadoPago */}
+        <button
+          type="button"
+          onClick={() => { if (seleccionado) window.location.href = MP_URL; }}
+          disabled={!seleccionado}
           style={{
             display: 'block',
+            width: '100%',
             textAlign: 'center',
             padding: '15px 24px',
             borderRadius: 14,
             fontWeight: 800,
             fontSize: 15,
-            textDecoration: 'none',
+            cursor: seleccionado ? 'pointer' : 'not-allowed',
             transition: 'opacity .2s',
             background: seleccionado
               ? `linear-gradient(135deg,${GOLD},#c47a10)`
               : 'rgba(99,102,241,0.08)',
             border: seleccionado ? 'none' : `1px solid ${BORD}`,
             color: seleccionado ? BG : '#334155',
-            cursor: seleccionado ? 'pointer' : 'not-allowed',
             opacity: seleccionado ? 1 : 0.5,
           }}
         >
-          {seleccionado ? 'Continuar al pago →' : 'Seleccioná un módulo para continuar'}
-        </a>
+          {seleccionado ? 'Pagar con MercadoPago (ARS) →' : 'Seleccioná un módulo para continuar'}
+        </button>
+
+        {/* BOTÓN USD → Stripe */}
+        {seleccionado && (
+          <button
+            type="button"
+            onClick={handleStripe}
+            disabled={stripeLoading}
+            style={{
+              marginTop: 10,
+              display: 'block',
+              width: '100%',
+              textAlign: 'center',
+              padding: '13px 24px',
+              borderRadius: 14,
+              fontWeight: 700,
+              fontSize: 14,
+              cursor: stripeLoading ? 'wait' : 'pointer',
+              background: 'rgba(99,102,241,0.06)',
+              border: '1px solid rgba(99,102,241,0.2)',
+              color: '#818cf8',
+              transition: 'opacity .2s',
+            }}
+          >
+            {stripeLoading ? 'Redirigiendo...' : 'Pagar con Stripe (USD 25/mes)'}
+          </button>
+        )}
+
+        {stripeError && (
+          <div style={{ marginTop: 6, textAlign: 'center', fontSize: 11, color: '#f87171' }}>
+            Error al conectar con Stripe. Verificá la configuración o contactá soporte.
+          </div>
+        )}
 
         <div style={{ marginTop: 16, textAlign: 'center', fontSize: 11, color: '#334155', lineHeight: 1.6 }}>
-          Al continuar serás redirigido a MercadoPago para completar la suscripción.{' '}
+          Pagos procesados de forma segura a través de MercadoPago o Stripe.{' '}
           Podés cancelar en cualquier momento.
         </div>
       </div>
