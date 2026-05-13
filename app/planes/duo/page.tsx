@@ -8,7 +8,6 @@ const GREEN = '#22c55e';
 const PANEL = '#0a0f1e';
 const INDIGO = '#6366f1';
 const BORD  = 'rgba(99,102,241,0.15)';
-const MP_URL = 'https://www.mercadopago.com.ar/subscriptions/checkout?preapproval_plan_id=87cce369f7fb45a3a08d9abad3660184';
 
 const MODULOS = [
   { id: 'petroleo',     label: 'Petróleo / MAOP',  icon: '🛢️' },
@@ -30,6 +29,8 @@ const MODULOS = [
 
 export default function DuoPage() {
   const [seleccionados, setSeleccionados] = useState<string[]>([]);
+  const [mpLoading,     setMpLoading]     = useState(false);
+  const [mpError,       setMpError]       = useState(false);
   const [stripeLoading, setStripeLoading] = useState(false);
   const [stripeError,   setStripeError]   = useState(false);
 
@@ -42,6 +43,28 @@ export default function DuoPage() {
   };
 
   const listoParaPagar = seleccionados.length === 2;
+
+  async function handleMP() {
+    setMpLoading(true);
+    setMpError(false);
+    try {
+      const res  = await fetch('/api/pagos/checkout', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ planId: 'duo' }),
+      });
+      const data = await res.json();
+      if (data.init_point) {
+        window.location.href = data.init_point;
+      } else {
+        setMpError(true);
+      }
+    } catch {
+      setMpError(true);
+    } finally {
+      setMpLoading(false);
+    }
+  }
 
   async function handleStripe() {
     setStripeLoading(true);
@@ -207,8 +230,8 @@ export default function DuoPage() {
         {/* BOTÓN CTA — ARS → MercadoPago */}
         <button
           type="button"
-          onClick={() => { if (listoParaPagar) window.location.href = MP_URL; }}
-          disabled={!listoParaPagar}
+          onClick={() => { if (listoParaPagar) handleMP(); }}
+          disabled={!listoParaPagar || mpLoading}
           style={{
             display: 'block',
             width: '100%',
@@ -217,7 +240,7 @@ export default function DuoPage() {
             borderRadius: 14,
             fontWeight: 800,
             fontSize: 15,
-            cursor: listoParaPagar ? 'pointer' : 'not-allowed',
+            cursor: (listoParaPagar && !mpLoading) ? 'pointer' : 'not-allowed',
             transition: 'opacity .2s',
             background: listoParaPagar
               ? `linear-gradient(135deg,${GOLD},#c47a10)`
@@ -227,10 +250,18 @@ export default function DuoPage() {
             opacity: listoParaPagar ? 1 : 0.5,
           }}
         >
-          {listoParaPagar
-            ? 'Pagar con MercadoPago (ARS) →'
-            : `Seleccioná ${2 - seleccionados.length} módulo${2 - seleccionados.length !== 1 ? 's' : ''} más para continuar`}
+          {mpLoading
+            ? 'Redirigiendo...'
+            : listoParaPagar
+              ? 'Pagar con MercadoPago (ARS) →'
+              : `Seleccioná ${2 - seleccionados.length} módulo${2 - seleccionados.length !== 1 ? 's' : ''} más para continuar`}
         </button>
+
+        {mpError && (
+          <div style={{ marginTop: 6, textAlign: 'center', fontSize: 11, color: '#f87171' }}>
+            Error al conectar con MercadoPago. Intentá de nuevo o contactá soporte.
+          </div>
+        )}
 
         {/* BOTÓN USD → Stripe */}
         {listoParaPagar && (
