@@ -46,7 +46,7 @@ export async function middleware(request: NextRequest) {
     typeof payload.demoExpira === 'number' &&
     Date.now() > payload.demoExpira
   ) {
-    return NextResponse.redirect(new URL('/planes', request.url));
+    return NextResponse.redirect(new URL('/planes?demo=expired', request.url));
   }
 
   return NextResponse.next();

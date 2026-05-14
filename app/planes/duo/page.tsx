@@ -8,6 +8,7 @@ const GREEN = '#22c55e';
 const PANEL = '#0a0f1e';
 const INDIGO = '#6366f1';
 const BORD  = 'rgba(99,102,241,0.15)';
+const PAYPAL_URL = 'https://www.paypal.me/ingeniumpro/44';
 
 const MODULOS = [
   { id: 'petroleo',     label: 'Petróleo / MAOP',  icon: '🛢️' },
@@ -29,10 +30,6 @@ const MODULOS = [
 
 export default function DuoPage() {
   const [seleccionados, setSeleccionados] = useState<string[]>([]);
-  const [mpLoading,     setMpLoading]     = useState(false);
-  const [mpError,       setMpError]       = useState(false);
-  const [stripeLoading, setStripeLoading] = useState(false);
-  const [stripeError,   setStripeError]   = useState(false);
 
   const toggle = (id: string) => {
     setSeleccionados(prev => {
@@ -43,50 +40,6 @@ export default function DuoPage() {
   };
 
   const listoParaPagar = seleccionados.length === 2;
-
-  async function handleMP() {
-    setMpLoading(true);
-    setMpError(false);
-    try {
-      const res  = await fetch('/api/pagos/checkout', {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ planId: 'duo' }),
-      });
-      const data = await res.json();
-      if (data.init_point) {
-        window.location.href = data.init_point;
-      } else {
-        setMpError(true);
-      }
-    } catch {
-      setMpError(true);
-    } finally {
-      setMpLoading(false);
-    }
-  }
-
-  async function handleStripe() {
-    setStripeLoading(true);
-    setStripeError(false);
-    try {
-      const res  = await fetch('/api/stripe/checkout', {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ planId: 'duo' }),
-      });
-      const data = await res.json();
-      if (data.url) {
-        window.location.href = data.url;
-      } else {
-        setStripeError(true);
-      }
-    } catch {
-      setStripeError(true);
-    } finally {
-      setStripeLoading(false);
-    }
-  }
 
   return (
     <div style={{ minHeight: '100vh', background: BG, color: '#f1f5f9', fontFamily: 'Inter,sans-serif' }}>
@@ -109,7 +62,7 @@ export default function DuoPage() {
         {/* TÍTULO */}
         <div style={{ textAlign: 'center', marginBottom: 48 }}>
           <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: 3, color: INDIGO, marginBottom: 12, textTransform: 'uppercase' }}>
-            Plan Dúo — ARS $80.000/mes
+            Plan Dúo — USD 44/mes
           </div>
           <h1 style={{ fontSize: 36, fontWeight: 900, color: '#f1f5f9', margin: '0 0 14px', lineHeight: 1.1 }}>
             Elegí tus 2 módulos
@@ -120,9 +73,7 @@ export default function DuoPage() {
         </div>
 
         {/* CONTADOR */}
-        <div style={{
-          display: 'flex', justifyContent: 'center', marginBottom: 28,
-        }}>
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 28 }}>
           <div style={{
             background: PANEL, border: `1px solid ${BORD}`,
             borderRadius: 40, padding: '6px 20px',
@@ -223,15 +174,15 @@ export default function DuoPage() {
           </div>
           <div style={{ textAlign: 'right' }}>
             <div style={{ fontSize: 12, color: '#64748b', marginBottom: 2 }}>Precio</div>
-            <div style={{ fontSize: 22, fontWeight: 900, color: GOLD }}>ARS $80.000<span style={{ fontSize: 12, fontWeight: 400, color: '#64748b' }}>/mes</span></div>
+            <div style={{ fontSize: 22, fontWeight: 900, color: GOLD }}>USD 44<span style={{ fontSize: 12, fontWeight: 400, color: '#64748b' }}>/mes</span></div>
           </div>
         </div>
 
-        {/* BOTÓN CTA — ARS → MercadoPago */}
+        {/* BOTÓN CTA — PayPal */}
         <button
           type="button"
-          onClick={() => { if (listoParaPagar) handleMP(); }}
-          disabled={!listoParaPagar || mpLoading}
+          onClick={() => { if (listoParaPagar) window.location.href = PAYPAL_URL; }}
+          disabled={!listoParaPagar}
           style={{
             display: 'block',
             width: '100%',
@@ -240,7 +191,7 @@ export default function DuoPage() {
             borderRadius: 14,
             fontWeight: 800,
             fontSize: 15,
-            cursor: (listoParaPagar && !mpLoading) ? 'pointer' : 'not-allowed',
+            cursor: listoParaPagar ? 'pointer' : 'not-allowed',
             transition: 'opacity .2s',
             background: listoParaPagar
               ? `linear-gradient(135deg,${GOLD},#c47a10)`
@@ -250,53 +201,13 @@ export default function DuoPage() {
             opacity: listoParaPagar ? 1 : 0.5,
           }}
         >
-          {mpLoading
-            ? 'Redirigiendo...'
-            : listoParaPagar
-              ? 'Pagar con MercadoPago (ARS) →'
-              : `Seleccioná ${2 - seleccionados.length} módulo${2 - seleccionados.length !== 1 ? 's' : ''} más para continuar`}
+          {listoParaPagar
+            ? 'Pagar con PayPal (USD 44/mes) →'
+            : `Seleccioná ${2 - seleccionados.length} módulo${2 - seleccionados.length !== 1 ? 's' : ''} más para continuar`}
         </button>
 
-        {mpError && (
-          <div style={{ marginTop: 6, textAlign: 'center', fontSize: 11, color: '#f87171' }}>
-            Error al conectar con MercadoPago. Intentá de nuevo o contactá soporte.
-          </div>
-        )}
-
-        {/* BOTÓN USD → Stripe */}
-        {listoParaPagar && (
-          <button
-            type="button"
-            onClick={handleStripe}
-            disabled={stripeLoading}
-            style={{
-              marginTop: 10,
-              display: 'block',
-              width: '100%',
-              textAlign: 'center',
-              padding: '13px 24px',
-              borderRadius: 14,
-              fontWeight: 700,
-              fontSize: 14,
-              cursor: stripeLoading ? 'wait' : 'pointer',
-              background: 'rgba(99,102,241,0.06)',
-              border: '1px solid rgba(99,102,241,0.2)',
-              color: '#818cf8',
-              transition: 'opacity .2s',
-            }}
-          >
-            {stripeLoading ? 'Redirigiendo...' : 'Pagar con Stripe (USD 44/mes)'}
-          </button>
-        )}
-
-        {stripeError && (
-          <div style={{ marginTop: 6, textAlign: 'center', fontSize: 11, color: '#f87171' }}>
-            Error al conectar con Stripe. Verificá la configuración o contactá soporte.
-          </div>
-        )}
-
         <div style={{ marginTop: 16, textAlign: 'center', fontSize: 11, color: '#334155', lineHeight: 1.6 }}>
-          Pagos procesados de forma segura a través de MercadoPago o Stripe.{' '}
+          Pagos procesados de forma segura a través de PayPal.{' '}
           Podés cancelar en cualquier momento.
         </div>
       </div>

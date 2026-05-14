@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 const BG    = '#020609';
 const GOLD  = '#E8A020';
@@ -9,11 +9,9 @@ const PANEL = '#0a0f1e';
 const INDIGO = '#6366f1';
 const BORD  = 'rgba(99,102,241,0.15)';
 
-const STRIPE_PRECIOS: Record<string, string> = {
-  modulo: 'USD 25/mes',
-  duo:    'USD 44/mes',
-  pro:    'USD 195/mes',
-  team:   'USD 555/mes',
+const PAYPAL_URLS: Record<string, string> = {
+  pro:  'https://www.paypal.me/ingeniumpro/195',
+  team: 'https://www.paypal.me/ingeniumpro/555',
 }
 
 const PLANES = [
@@ -151,32 +149,11 @@ const PLANES = [
 ];
 
 export default function PlanesPage() {
-  const [stripeLoading, setStripeLoading] = useState<string | null>(null)
-  const [stripeError,   setStripeError]   = useState<string | null>(null)
+  const [demoExpirado, setDemoExpirado] = useState(false)
 
-  async function handleStripe(planId: string) {
-    setStripeLoading(planId)
-    setStripeError(null)
-    try {
-      const res  = await fetch('/api/stripe/checkout', {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ planId }),
-      })
-      const data = await res.json()
-      if (data.url) {
-        window.location.href = data.url
-      } else {
-        console.error('[stripe] Sin URL de checkout:', data)
-        setStripeError(planId)
-      }
-    } catch (e) {
-      console.error('[stripe]', e)
-      setStripeError(planId)
-    } finally {
-      setStripeLoading(null)
-    }
-  }
+  useEffect(() => {
+    setDemoExpirado(new URLSearchParams(window.location.search).get('demo') === 'expired')
+  }, [])
 
   return (
     <div style={{ minHeight: '100vh', background: BG, color: '#f1f5f9', fontFamily: 'Inter,sans-serif' }}>
@@ -314,11 +291,10 @@ export default function PlanesPage() {
                 {plan.cta}
               </button>
 
-              {(['modulo', 'duo', 'pro', 'team'] as string[]).includes(plan.id) && (
+              {(['pro', 'team'] as string[]).includes(plan.id) && (
                 <button
                   type="button"
-                  onClick={() => handleStripe(plan.id)}
-                  disabled={stripeLoading === plan.id}
+                  onClick={() => { window.location.href = PAYPAL_URLS[plan.id] }}
                   style={{
                     marginTop: 8,
                     display: 'block',
@@ -327,54 +303,37 @@ export default function PlanesPage() {
                     borderRadius: 12,
                     fontWeight: 700,
                     fontSize: 13,
-                    cursor: stripeLoading === plan.id ? 'wait' : 'pointer',
+                    cursor: 'pointer',
                     background: 'rgba(99,102,241,0.06)',
                     border: '1px solid rgba(99,102,241,0.2)',
                     color: '#818cf8',
                     transition: 'opacity .2s',
                   }}
                 >
-                  {stripeLoading === plan.id ? 'Redirigiendo...' : 'Pagar con Stripe (USD)'}
+                  Pagar con PayPal (USD {plan.id === 'pro' ? '195' : '555'}/mes)
                 </button>
-              )}
-
-              {stripeError === plan.id && (
-                <div style={{ marginTop: 6, textAlign: 'center', fontSize: 11, color: '#f87171' }}>
-                  Error al conectar con Stripe. Verificá la configuración o contactá soporte.
-                </div>
               )}
 
             </div>
           ))}
         </div>
 
-        {/* BANNER DEMO EXPIRADO */}
-        <div style={{
-          marginTop: 48, padding: '20px 28px',
-          background: 'rgba(239,68,68,0.05)',
-          border: '1px solid rgba(239,68,68,0.2)',
-          borderRadius: 16,
-          display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap',
-        }}>
-          <div style={{ flex: 1, minWidth: 200 }}>
+        {/* BANNER DEMO EXPIRADO — solo si ?demo=expired */}
+        {demoExpirado && (
+          <div style={{
+            marginTop: 48, padding: '20px 28px',
+            background: 'rgba(239,68,68,0.05)',
+            border: '1px solid rgba(239,68,68,0.2)',
+            borderRadius: 16,
+          }}>
             <div style={{ fontSize: 13, fontWeight: 800, color: '#f87171', marginBottom: 4 }}>
-              ¿Tu demo expiró?
+              Tu demo ha expirado
             </div>
             <div style={{ fontSize: 12, color: '#64748b', lineHeight: 1.5 }}>
               Tu período de prueba gratuita de 3 días ha finalizado. Contratá un plan para seguir usando INGENIUM PRO.
             </div>
           </div>
-          <span style={{
-              padding: '10px 20px', borderRadius: 10,
-              background: 'rgba(239,68,68,0.1)',
-              border: '1px solid rgba(239,68,68,0.3)',
-              color: '#f87171', fontWeight: 800, fontSize: 13,
-              whiteSpace: 'nowrap',
-            }}
-          >
-            radargestionestrategica@gmail.com
-          </span>
-        </div>
+        )}
 
         {/* CONTACTO */}
         <div style={{
@@ -393,7 +352,7 @@ export default function PlanesPage() {
         {/* FOOTER */}
         <div style={{ marginTop: 28, textAlign: 'center', fontSize: 11, color: '#1e3a5f', lineHeight: 1.7 }}>
           Los precios están expresados en dólares estadounidenses (USD).
-          Los pagos se procesan de forma segura a través de MercadoPago o Stripe.{' '}
+          Los pagos se procesan de forma segura a través de MercadoPago (ARS) o PayPal (USD).{' '}
           <a href="/terminos" style={{ color: '#334155', textDecoration: 'none' }}>Términos y condiciones</a>
         </div>
       </div>
