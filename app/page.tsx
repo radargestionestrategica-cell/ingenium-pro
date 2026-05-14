@@ -80,8 +80,8 @@ const planes = [
   { nombre:'Demo',          precio:'Gratis',          periodo:'3 días',   color: GRAY,  bajada:'Conocer la plataforma sin compromiso.',                       features:['Acceso completo de prueba','Todos los módulos','PDF · Excel · DXF','Sin tarjeta de crédito'],                                                     href:'/Login',  cta:'Comenzar demo gratuito',  destacado:false },
   { nombre:'Módulo único',  precio:'ARS $45.000',     periodo:'/mes',     color: CYAN,  bajada:'1 módulo a elección. Ideal para uso puntual.',                 features:['1 módulo a elección','Usuario único','PDF · Excel · DXF · QR','Soporte por email'],                                                             href:'/planes/modulo-unico',                                                                                                                              cta:'Contratar',               destacado:false },
   { nombre:'Dúo',           precio:'ARS $80.000',     periodo:'/mes',     color: GREEN, bajada:'2 módulos a elección. Más versatilidad a mejor precio.',       features:['2 módulos a elección','Usuario único','PDF · Excel · DXF · QR','Soporte por email'],                                                             href:'/planes/duo',                                                                                                                                       cta:'Contratar',               destacado:false },
-  { nombre:'Pro',           precio:'ARS $350.000',    periodo:'/mes',     color: GOLD,  bajada:'Todos los módulos para el profesional independiente.',          features:['1 usuario','Todos los módulos técnicos','Historial ilimitado','PDF · Excel · DXF · QR','Auditoría IA','Verificación SHA-256'],                    href:'https://www.mercadopago.com.ar/subscriptions/checkout?preapproval_plan_id=7977d5695fec4f99be5cc3e56c7b9428',                                         cta:'Activar Pro',             destacado:true  },
-  { nombre:'Team',          precio:'ARS $1.000.000',  periodo:'/mes',     color: CYAN,  bajada:'Hasta 3 usuarios. Proyectos compartidos y trazabilidad.',       features:['Hasta 3 usuarios','Todos los módulos','Proyectos compartidos','Dashboard de equipo','Soporte prioritario'],                                      href:'https://www.mercadopago.com.ar/subscriptions/checkout?preapproval_plan_id=a82fae7648024090a3b6dc195d136ccd',                                         cta:'Activar Team',            destacado:false },
+  { nombre:'Pro',           precio:'ARS $350.000',    periodo:'/mes',     color: GOLD,  bajada:'Todos los módulos para el profesional independiente.',          features:['1 usuario','Todos los módulos técnicos','Historial ilimitado','PDF · Excel · DXF · QR','Auditoría IA','Verificación SHA-256'],                    href:'https://www.mercadopago.com.ar/subscriptions/checkout?preapproval_plan_id=7977d5695fec4f99be5cc3e56c7b9428',                                         cta:'Activar Pro',             destacado:true,  paypalHref:'https://www.paypal.me/ingeniumpro/255' },
+  { nombre:'Team',          precio:'ARS $1.000.000',  periodo:'/mes',     color: CYAN,  bajada:'Hasta 3 usuarios. Proyectos compartidos y trazabilidad.',       features:['Hasta 3 usuarios','Todos los módulos','Proyectos compartidos','Dashboard de equipo','Soporte prioritario'],                                      href:'https://www.mercadopago.com.ar/subscriptions/checkout?preapproval_plan_id=a82fae7648024090a3b6dc195d136ccd',                                         cta:'Activar Team',            destacado:false, paypalHref:'https://www.paypal.me/ingeniumpro/750' },
   { nombre:'Enterprise',    precio:'Solicitar',       periodo:'cotización',color: GRAY, bajada:'Usuarios ilimitados, módulos personalizados e integración API.', features:['Usuarios ilimitados','Módulos configurables','API de integración','Soporte dedicado 24/7','Capacitación inicial','Contrato con factura'],          href:'',                                                                                                                                                  cta:'Solicitar cotización',    destacado:false },
 ];
 
@@ -284,6 +284,8 @@ export default function LandingPage() {
         .plan-cta{display:block;text-align:center;padding:14px 12px;border-radius:13px;background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.1);color:${WHITE};font-weight:850;font-size:13px;text-decoration:none;letter-spacing:.3px;transition:background .2s}
         .plan-cta.featured{background:linear-gradient(135deg,${GOLD},${GOLD2});border:none;color:${BG};box-shadow:0 4px 24px rgba(232,160,32,.3)}
         .plan-cta:not(.featured):hover{background:rgba(255,255,255,.1)}
+        .plan-cta-paypal{display:block;text-align:center;padding:12px 12px;margin-top:8px;border-radius:13px;background:#003087;border:none;color:#fff;font-weight:800;font-size:13px;text-decoration:none;letter-spacing:.3px;transition:opacity .2s}
+        .plan-cta-paypal:hover{opacity:.85}
 
         /* ── FAQ ── */
         .faq-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
@@ -740,6 +742,11 @@ export default function LandingPage() {
                   ))}
                 </ul>
                 <a className={`plan-cta${p.destacado ? ' featured' : ''}`} href={p.href}>{p.cta}</a>
+                {'paypalHref' in p && p.paypalHref && (
+                  <a className="plan-cta-paypal" href={p.paypalHref} target="_blank" rel="noopener noreferrer">
+                    Pagar con PayPal (USD)
+                  </a>
+                )}
               </article>
             ))}
           </div>
