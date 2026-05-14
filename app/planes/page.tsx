@@ -262,34 +262,60 @@ export default function PlanesPage() {
               </ul>
 
               {/* CTA */}
-              <button
-                type="button"
-                onClick={() => { if (plan.ctaHref) window.location.href = plan.ctaHref }}
-                style={{
-                  marginTop: 'auto',
-                  display: 'block',
-                  width: '100%',
-                  textAlign: 'center',
-                  padding: '13px 20px',
-                  borderRadius: 12,
-                  fontWeight: 800,
-                  fontSize: 14,
-                  cursor: plan.ctaHref ? 'pointer' : 'default',
-                  transition: 'opacity .2s',
-                  background: plan.destacado
-                    ? `linear-gradient(135deg,${GOLD},#c47a10)`
-                    : plan.id === 'demo'
-                      ? `linear-gradient(135deg,${GREEN},#16a34a)`
-                      : 'rgba(99,102,241,0.1)',
-                  border: plan.destacado || plan.id === 'demo'
-                    ? 'none'
-                    : '1px solid rgba(99,102,241,0.25)',
-                  color: plan.destacado || plan.id === 'demo' ? BG : '#a5b4fc',
-                  opacity: plan.ctaHref ? 1 : 0.5,
-                }}
-              >
-                {plan.cta}
-              </button>
+              {plan.id === 'enterprise' ? (
+                <a
+                  href="mailto:radargestionestrategica@gmail.com?subject=Solicitud%20de%20cotización%20INGENIUM%20PRO%20Enterprise"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    marginTop: 'auto',
+                    display: 'block',
+                    width: '100%',
+                    textAlign: 'center',
+                    padding: '13px 20px',
+                    borderRadius: 12,
+                    fontWeight: 800,
+                    fontSize: 14,
+                    cursor: 'pointer',
+                    transition: 'opacity .2s',
+                    background: 'rgba(99,102,241,0.1)',
+                    border: '1px solid rgba(99,102,241,0.25)',
+                    color: '#a5b4fc',
+                    textDecoration: 'none',
+                  }}
+                >
+                  {plan.cta}
+                </a>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => { if (plan.ctaHref) window.location.href = plan.ctaHref }}
+                  style={{
+                    marginTop: 'auto',
+                    display: 'block',
+                    width: '100%',
+                    textAlign: 'center',
+                    padding: '13px 20px',
+                    borderRadius: 12,
+                    fontWeight: 800,
+                    fontSize: 14,
+                    cursor: plan.ctaHref ? 'pointer' : 'default',
+                    transition: 'opacity .2s',
+                    background: plan.destacado
+                      ? `linear-gradient(135deg,${GOLD},#c47a10)`
+                      : plan.id === 'demo'
+                        ? `linear-gradient(135deg,${GREEN},#16a34a)`
+                        : 'rgba(99,102,241,0.1)',
+                    border: plan.destacado || plan.id === 'demo'
+                      ? 'none'
+                      : '1px solid rgba(99,102,241,0.25)',
+                    color: plan.destacado || plan.id === 'demo' ? BG : '#a5b4fc',
+                    opacity: plan.ctaHref ? 1 : 0.5,
+                  }}
+                >
+                  {plan.cta}
+                </button>
+              )}
 
               {(['pro', 'team'] as string[]).includes(plan.id) && (
                 <button
