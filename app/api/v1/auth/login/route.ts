@@ -68,7 +68,7 @@ export async function POST(req: Request) {
       id:         usuario.id,
       email:      usuario.email,
       plan:       planFinal,
-      ...(planFinal === 'demo' ? { demoExpira: Date.now() + 259_200_000 } : {}),
+      ...(planFinal === 'demo' ? { demoExpira: usuario.createdAt.getTime() + 259_200_000 } : {}),
     });
 
     const response = NextResponse.json({
