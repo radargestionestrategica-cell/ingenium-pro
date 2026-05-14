@@ -8,7 +8,6 @@ const GREEN = '#22c55e';
 const PANEL = '#0a0f1e';
 const INDIGO = '#6366f1';
 const BORD  = 'rgba(99,102,241,0.15)';
-const MAIL  = 'radargestionestrategica@gmail.com';
 
 const STRIPE_PRECIOS: Record<string, string> = {
   modulo: 'USD 25/mes',
@@ -38,7 +37,6 @@ const PLANES = [
     ],
     cta:     'Probar gratis',
     ctaHref: '/register',
-    ctaMail: false,
   },
   {
     id:        'modulo',
@@ -60,7 +58,6 @@ const PLANES = [
     ],
     cta:     'Contratar',
     ctaHref: '/planes/modulo-unico',
-    ctaMail: false,
   },
   {
     id:        'duo',
@@ -82,7 +79,6 @@ const PLANES = [
     ],
     cta:     'Contratar',
     ctaHref: '/planes/duo',
-    ctaMail: false,
   },
   {
     id:        'pro',
@@ -106,7 +102,6 @@ const PLANES = [
     cta:     'Activar Pro',
     ctaHref: 'https://www.mercadopago.com.ar/subscriptions/checkout?preapproval_plan_id=7977d5695fec4f99be5cc3e56c7b9428',
     ctaTarget: '_blank',
-    ctaMail: false,
   },
   {
     id:        'team',
@@ -130,7 +125,6 @@ const PLANES = [
     cta:     'Activar Team',
     ctaHref: 'https://www.mercadopago.com.ar/subscriptions/checkout?preapproval_plan_id=a82fae7648024090a3b6dc195d136ccd',
     ctaTarget: '_blank',
-    ctaMail: false,
   },
   {
     id:        'enterprise',
@@ -152,8 +146,7 @@ const PLANES = [
       'Contrato con factura A',
     ],
     cta:     'Solicitar cotización',
-    ctaHref: `mailto:${MAIL}?subject=Consulta Plan Enterprise INGENIUM PRO`,
-    ctaMail: true,
+    ctaHref: '',
   },
 ];
 
@@ -292,17 +285,19 @@ export default function PlanesPage() {
               </ul>
 
               {/* CTA */}
-              <a
-                href={plan.ctaHref}
+              <button
+                type="button"
+                onClick={() => { if (plan.ctaHref) window.location.href = plan.ctaHref }}
                 style={{
                   marginTop: 'auto',
                   display: 'block',
+                  width: '100%',
                   textAlign: 'center',
                   padding: '13px 20px',
                   borderRadius: 12,
                   fontWeight: 800,
                   fontSize: 14,
-                  textDecoration: 'none',
+                  cursor: plan.ctaHref ? 'pointer' : 'default',
                   transition: 'opacity .2s',
                   background: plan.destacado
                     ? `linear-gradient(135deg,${GOLD},#c47a10)`
@@ -313,10 +308,11 @@ export default function PlanesPage() {
                     ? 'none'
                     : '1px solid rgba(99,102,241,0.25)',
                   color: plan.destacado || plan.id === 'demo' ? BG : '#a5b4fc',
+                  opacity: plan.ctaHref ? 1 : 0.5,
                 }}
               >
                 {plan.cta}
-              </a>
+              </button>
 
               {(['modulo', 'duo', 'pro', 'team'] as string[]).includes(plan.id) && (
                 <button
@@ -348,11 +344,6 @@ export default function PlanesPage() {
                 </div>
               )}
 
-              {plan.ctaMail && (
-                <div style={{ marginTop: 10, textAlign: 'center', fontSize: 10, color: '#334155' }}>
-                  Se abrirá tu cliente de email
-                </div>
-              )}
             </div>
           ))}
         </div>
@@ -373,18 +364,16 @@ export default function PlanesPage() {
               Tu período de prueba gratuita de 3 días ha finalizado. Contratá un plan para seguir usando INGENIUM PRO.
             </div>
           </div>
-          <a
-            href={`mailto:${MAIL}?subject=Quiero contratar INGENIUM PRO`}
-            style={{
+          <span style={{
               padding: '10px 20px', borderRadius: 10,
               background: 'rgba(239,68,68,0.1)',
               border: '1px solid rgba(239,68,68,0.3)',
               color: '#f87171', fontWeight: 800, fontSize: 13,
-              textDecoration: 'none', whiteSpace: 'nowrap',
+              whiteSpace: 'nowrap',
             }}
           >
-            Contactar ahora →
-          </a>
+            radargestionestrategica@gmail.com
+          </span>
         </div>
 
         {/* CONTACTO */}
@@ -396,18 +385,15 @@ export default function PlanesPage() {
           <div style={{ fontSize: 13, color: '#64748b', marginBottom: 8 }}>
             ¿Necesitás una solución personalizada o tenés dudas sobre los planes?
           </div>
-          <a
-            href={`mailto:${MAIL}`}
-            style={{ color: GOLD, fontWeight: 700, fontSize: 15, textDecoration: 'none' }}
-          >
-            {MAIL}
-          </a>
+          <span style={{ color: GOLD, fontWeight: 700, fontSize: 15 }}>
+            radargestionestrategica@gmail.com
+          </span>
         </div>
 
         {/* FOOTER */}
         <div style={{ marginTop: 28, textAlign: 'center', fontSize: 11, color: '#1e3a5f', lineHeight: 1.7 }}>
           Los precios están expresados en dólares estadounidenses (USD).
-          Los pagos se gestionan por email con factura electrónica.{' '}
+          Los pagos se procesan de forma segura a través de MercadoPago o Stripe.{' '}
           <a href="/terminos" style={{ color: '#334155', textDecoration: 'none' }}>Términos y condiciones</a>
         </div>
       </div>
