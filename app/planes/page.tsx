@@ -10,8 +10,8 @@ const INDIGO = '#6366f1';
 const BORD  = 'rgba(99,102,241,0.15)';
 
 const PAYPAL_URLS: Record<string, string> = {
-  pro:  'https://www.paypal.me/ingeniumpro/195',
-  team: 'https://www.paypal.me/ingeniumpro/555',
+  pro:  'https://www.paypal.me/ingeniumpro/255',
+  team: 'https://www.paypal.me/ingeniumpro/750',
 }
 
 const PLANES = [
@@ -310,7 +310,7 @@ export default function PlanesPage() {
                     transition: 'opacity .2s',
                   }}
                 >
-                  Pagar con PayPal (USD {plan.id === 'pro' ? '195' : '555'}/mes)
+                  Pagar con PayPal (USD {plan.id === 'pro' ? '255' : '750'}/mes)
                 </button>
               )}
 

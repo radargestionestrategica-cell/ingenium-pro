@@ -7,7 +7,7 @@ const GOLD  = '#E8A020';
 const PANEL = '#0a0f1e';
 const INDIGO = '#6366f1';
 const BORD  = 'rgba(99,102,241,0.15)';
-const PAYPAL_URL = 'https://www.paypal.me/ingeniumpro/25';
+const PAYPAL_URL = 'https://www.paypal.me/ingeniumpro/35';
 
 const MODULOS = [
   { id: 'petroleo',     label: 'Petróleo / MAOP',  icon: '🛢️' },
@@ -51,7 +51,7 @@ export default function ModuloUnicoPage() {
         {/* TÍTULO */}
         <div style={{ textAlign: 'center', marginBottom: 48 }}>
           <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: 3, color: INDIGO, marginBottom: 12, textTransform: 'uppercase' }}>
-            Plan Módulo único — USD 25/mes
+            Plan Módulo único — USD 35/mes
           </div>
           <h1 style={{ fontSize: 36, fontWeight: 900, color: '#f1f5f9', margin: '0 0 14px', lineHeight: 1.1 }}>
             Elegí tu módulo
@@ -139,7 +139,7 @@ export default function ModuloUnicoPage() {
           </div>
           <div style={{ textAlign: 'right' }}>
             <div style={{ fontSize: 12, color: '#64748b', marginBottom: 2 }}>Precio</div>
-            <div style={{ fontSize: 22, fontWeight: 900, color: GOLD }}>USD 25<span style={{ fontSize: 12, fontWeight: 400, color: '#64748b' }}>/mes</span></div>
+            <div style={{ fontSize: 22, fontWeight: 900, color: GOLD }}>USD 35<span style={{ fontSize: 12, fontWeight: 400, color: '#64748b' }}>/mes</span></div>
           </div>
         </div>
 
@@ -166,7 +166,7 @@ export default function ModuloUnicoPage() {
             opacity: seleccionado ? 1 : 0.5,
           }}
         >
-          {seleccionado ? 'Pagar con PayPal (USD 25/mes) →' : 'Seleccioná un módulo para continuar'}
+          {seleccionado ? 'Pagar con PayPal (USD 35/mes) →' : 'Seleccioná un módulo para continuar'}
         </button>
 
         <div style={{ marginTop: 16, textAlign: 'center', fontSize: 11, color: '#334155', lineHeight: 1.6 }}>

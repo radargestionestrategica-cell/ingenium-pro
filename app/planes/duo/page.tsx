@@ -8,7 +8,7 @@ const GREEN = '#22c55e';
 const PANEL = '#0a0f1e';
 const INDIGO = '#6366f1';
 const BORD  = 'rgba(99,102,241,0.15)';
-const PAYPAL_URL = 'https://www.paypal.me/ingeniumpro/44';
+const PAYPAL_URL = 'https://www.paypal.me/ingeniumpro/75';
 
 const MODULOS = [
   { id: 'petroleo',     label: 'Petróleo / MAOP',  icon: '🛢️' },
@@ -62,7 +62,7 @@ export default function DuoPage() {
         {/* TÍTULO */}
         <div style={{ textAlign: 'center', marginBottom: 48 }}>
           <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: 3, color: INDIGO, marginBottom: 12, textTransform: 'uppercase' }}>
-            Plan Dúo — USD 44/mes
+            Plan Dúo — USD 75/mes
           </div>
           <h1 style={{ fontSize: 36, fontWeight: 900, color: '#f1f5f9', margin: '0 0 14px', lineHeight: 1.1 }}>
             Elegí tus 2 módulos
@@ -174,7 +174,7 @@ export default function DuoPage() {
           </div>
           <div style={{ textAlign: 'right' }}>
             <div style={{ fontSize: 12, color: '#64748b', marginBottom: 2 }}>Precio</div>
-            <div style={{ fontSize: 22, fontWeight: 900, color: GOLD }}>USD 44<span style={{ fontSize: 12, fontWeight: 400, color: '#64748b' }}>/mes</span></div>
+            <div style={{ fontSize: 22, fontWeight: 900, color: GOLD }}>USD 75<span style={{ fontSize: 12, fontWeight: 400, color: '#64748b' }}>/mes</span></div>
           </div>
         </div>
 
@@ -202,7 +202,7 @@ export default function DuoPage() {
           }}
         >
           {listoParaPagar
-            ? 'Pagar con PayPal (USD 44/mes) →'
+            ? 'Pagar con PayPal (USD 75/mes) →'
             : `Seleccioná ${2 - seleccionados.length} módulo${2 - seleccionados.length !== 1 ? 's' : ''} más para continuar`}
         </button>
 
