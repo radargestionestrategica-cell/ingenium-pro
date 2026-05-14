@@ -355,9 +355,19 @@ export default function PlanesPage() {
             <div style={{ fontSize: 13, fontWeight: 800, color: '#f87171', marginBottom: 4 }}>
               Tu demo ha expirado
             </div>
-            <div style={{ fontSize: 12, color: '#64748b', lineHeight: 1.5 }}>
+            <div style={{ fontSize: 12, color: '#64748b', lineHeight: 1.5, marginBottom: 12 }}>
               Tu período de prueba gratuita de 3 días ha finalizado. Contratá un plan para seguir usando INGENIUM PRO.
             </div>
+            <a
+              href="/Login"
+              style={{
+                display: 'inline-block', fontSize: 12, fontWeight: 700,
+                color: '#f87171', border: '1px solid rgba(239,68,68,0.35)',
+                borderRadius: 8, padding: '7px 16px', textDecoration: 'none',
+              }}
+            >
+              ¿Ya tenés un plan activo? Volvé a ingresar →
+            </a>
           </div>
         )}
 
