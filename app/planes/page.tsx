@@ -34,7 +34,7 @@ const PLANES = [
       'Sin tarjeta de crédito',
     ],
     cta:     'Probar gratis',
-    ctaHref: '/register',
+    ctaHref: '/Login?modo=signup',
   },
   {
     id:        'modulo',

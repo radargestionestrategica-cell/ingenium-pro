@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
 const PAISES = [
@@ -48,6 +48,12 @@ export default function LoginPage() {
   const [verPass, setVerPass] = useState(false);
   const [aceptoTerminos, setAceptoTerminos] = useState(false);
   const [aceptoCookies, setAceptoCookies]   = useState(false);
+
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('modo') === 'signup') {
+      setModo('signup');
+    }
+  }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
