@@ -77,7 +77,7 @@ const industrias = [
 ];
 
 const planes = [
-  { nombre:'Demo',          precio:'Gratis',          periodo:'3 días',   color: GRAY,  bajada:'Conocer la plataforma sin compromiso.',                       features:['Acceso completo de prueba','Todos los módulos','PDF · Excel · DXF','Sin tarjeta de crédito'],                                                     href:'/Login',  cta:'Comenzar demo gratuito',  destacado:false },
+  { nombre:'Demo',          precio:'Gratis',          periodo:'3 días',   color: GRAY,  bajada:'Conocer la plataforma sin compromiso.',                       features:['Acceso completo de prueba','Todos los módulos','PDF · Excel · DXF','Sin tarjeta de crédito'],                                                     href:'/register',  cta:'Comenzar demo gratuito',  destacado:false },
   { nombre:'Módulo único',  precio:'ARS $45.000',     periodo:'/mes',     color: CYAN,  bajada:'1 módulo a elección. Ideal para uso puntual.',                 features:['1 módulo a elección','Usuario único','PDF · Excel · DXF · QR','Soporte por email'],                                                             href:'/planes/modulo-unico',                                                                                                                              cta:'Contratar',               destacado:false },
   { nombre:'Dúo',           precio:'ARS $80.000',     periodo:'/mes',     color: GREEN, bajada:'2 módulos a elección. Más versatilidad a mejor precio.',       features:['2 módulos a elección','Usuario único','PDF · Excel · DXF · QR','Soporte por email'],                                                             href:'/planes/duo',                                                                                                                                       cta:'Contratar',               destacado:false },
   { nombre:'Pro',           precio:'ARS $350.000',    periodo:'/mes',     color: GOLD,  bajada:'Todos los módulos para el profesional independiente.',          features:['1 usuario','Todos los módulos técnicos','Historial ilimitado','PDF · Excel · DXF · QR','Auditoría IA','Verificación SHA-256'],                    href:'https://www.mercadopago.com.ar/subscriptions/checkout?preapproval_plan_id=7977d5695fec4f99be5cc3e56c7b9428',                                         cta:'Activar Pro',             destacado:true,  paypalHref:'https://www.paypal.me/ingeniumpro/255' },
@@ -409,7 +409,7 @@ export default function LandingPage() {
           </p>
 
           <div className="actions">
-            <a href="/Login" className="btn-primary">Probar demo profesional →</a>
+            <a href="/register" className="btn-primary">Probar demo profesional →</a>
             <a href="#modulos" className="btn-secondary">Ver módulos técnicos</a>
           </div>
 
@@ -796,7 +796,7 @@ export default function LandingPage() {
             Sin tarjeta de crédito. Sin compromiso.
           </p>
           <div className="actions" style={{ marginBottom:0 }}>
-            <a href="/Login" className="btn-primary">Crear cuenta demo gratuita →</a>
+            <a href="/register" className="btn-primary">Crear cuenta demo gratuita →</a>
             <a className="btn-secondary">Contactar ventas</a>
           </div>
         </div>
