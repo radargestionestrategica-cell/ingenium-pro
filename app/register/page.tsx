@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 export default function RegisterPage() {
   const router = useRouter();
   useEffect(() => {
-    router.replace('/Login?modo=signup');
+    router.replace('/Login');
   }, [router]);
   return null;
 }
