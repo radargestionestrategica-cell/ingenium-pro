@@ -16,7 +16,7 @@ function verifySignature(req: NextRequest, dataId: string): boolean {
     if (process.env.NODE_ENV === 'production') {
       console.error('[webhook/mp] MP_WEBHOOK_SECRET no configurado en producción')
     }
-    return true
+    return false
   }
   const xSig   = req.headers.get('x-signature') ?? ''
   const xReqId = req.headers.get('x-request-id') ?? ''

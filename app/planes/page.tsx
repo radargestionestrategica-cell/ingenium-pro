@@ -377,8 +377,8 @@ export default function PlanesPage() {
 
         {/* FOOTER */}
         <div style={{ marginTop: 28, textAlign: 'center', fontSize: 11, color: '#1e3a5f', lineHeight: 1.7 }}>
-          Los precios están expresados en dólares estadounidenses (USD).
-          Los pagos se procesan de forma segura a través de MercadoPago (ARS) o PayPal (USD).{' '}
+          Los precios en ARS se procesan por MercadoPago.
+          Los precios en USD se procesan por PayPal.{' '}
           <a href="/terminos" style={{ color: '#334155', textDecoration: 'none' }}>Términos y condiciones</a>
         </div>
       </div>
