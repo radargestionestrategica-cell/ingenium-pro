@@ -78,11 +78,11 @@ const industrias = [
 
 const planes = [
   { nombre:'Demo',          precio:'Gratis',          periodo:'3 días',   color: GRAY,  bajada:'Conocer la plataforma sin compromiso.',                       features:['Acceso completo de prueba','Todos los módulos','PDF · Excel · DXF','Sin tarjeta de crédito'],                                                     href:'/Login',  cta:'Comenzar demo gratuito',  destacado:false },
-  { nombre:'Módulo único',  precio:'ARS $45.000',     periodo:'/mes',     color: CYAN,  bajada:'1 módulo a elección. Ideal para uso puntual.',                 features:['1 módulo a elección','Usuario único','PDF · Excel · DXF · QR','Soporte por email'],                                                             href:'mailto:radargestionestrategica@gmail.com?subject=Plan Módulo único INGENIUM PRO', cta:'Contratar',               destacado:false },
-  { nombre:'Dúo',           precio:'ARS $80.000',     periodo:'/mes',     color: GREEN, bajada:'2 módulos a elección. Más versatilidad a mejor precio.',       features:['2 módulos a elección','Usuario único','PDF · Excel · DXF · QR','Soporte por email'],                                                             href:'mailto:radargestionestrategica@gmail.com?subject=Plan Dúo INGENIUM PRO',          cta:'Contratar',               destacado:false },
-  { nombre:'Pro',           precio:'ARS $350.000',    periodo:'/mes',     color: GOLD,  bajada:'Todos los módulos para el profesional independiente.',          features:['1 usuario','Todos los módulos técnicos','Historial ilimitado','PDF · Excel · DXF · QR','Auditoría IA','Verificación SHA-256'],                    href:'mailto:radargestionestrategica@gmail.com?subject=Plan Pro INGENIUM PRO',           cta:'Activar Pro',             destacado:true  },
-  { nombre:'Team',          precio:'ARS $1.000.000',  periodo:'/mes',     color: CYAN,  bajada:'Hasta 3 usuarios. Proyectos compartidos y trazabilidad.',       features:['Hasta 3 usuarios','Todos los módulos','Proyectos compartidos','Dashboard de equipo','Soporte prioritario'],                                      href:'mailto:radargestionestrategica@gmail.com?subject=Plan Team INGENIUM PRO',          cta:'Activar Team',            destacado:false },
-  { nombre:'Enterprise',    precio:'Solicitar',       periodo:'cotización',color: GRAY, bajada:'Usuarios ilimitados, módulos personalizados e integración API.', features:['Usuarios ilimitados','Módulos configurables','API de integración','Soporte dedicado 24/7','Capacitación inicial','Contrato con factura'],          href:'mailto:radargestionestrategica@gmail.com?subject=Plan Enterprise INGENIUM PRO',    cta:'Solicitar cotización',    destacado:false },
+  { nombre:'Módulo único',  precio:'ARS $45.000',     periodo:'/mes',     color: CYAN,  bajada:'1 módulo a elección. Ideal para uso puntual.',                 features:['1 módulo a elección','Usuario único','PDF · Excel · DXF · QR','Soporte por email'],                                                             href:'/planes/modulo-unico',                                                                                                                              cta:'Contratar',               destacado:false },
+  { nombre:'Dúo',           precio:'ARS $80.000',     periodo:'/mes',     color: GREEN, bajada:'2 módulos a elección. Más versatilidad a mejor precio.',       features:['2 módulos a elección','Usuario único','PDF · Excel · DXF · QR','Soporte por email'],                                                             href:'/planes/duo',                                                                                                                                       cta:'Contratar',               destacado:false },
+  { nombre:'Pro',           precio:'ARS $350.000',    periodo:'/mes',     color: GOLD,  bajada:'Todos los módulos para el profesional independiente.',          features:['1 usuario','Todos los módulos técnicos','Historial ilimitado','PDF · Excel · DXF · QR','Auditoría IA','Verificación SHA-256'],                    href:'https://www.mercadopago.com.ar/subscriptions/checkout?preapproval_plan_id=7977d5695fec4f99be5cc3e56c7b9428',                                         cta:'Activar Pro',             destacado:true  },
+  { nombre:'Team',          precio:'ARS $1.000.000',  periodo:'/mes',     color: CYAN,  bajada:'Hasta 3 usuarios. Proyectos compartidos y trazabilidad.',       features:['Hasta 3 usuarios','Todos los módulos','Proyectos compartidos','Dashboard de equipo','Soporte prioritario'],                                      href:'https://www.mercadopago.com.ar/subscriptions/checkout?preapproval_plan_id=a82fae7648024090a3b6dc195d136ccd',                                         cta:'Activar Team',            destacado:false },
+  { nombre:'Enterprise',    precio:'Solicitar',       periodo:'cotización',color: GRAY, bajada:'Usuarios ilimitados, módulos personalizados e integración API.', features:['Usuarios ilimitados','Módulos configurables','API de integración','Soporte dedicado 24/7','Capacitación inicial','Contrato con factura'],          href:'',                                                                                                                                                  cta:'Solicitar cotización',    destacado:false },
 ];
 
 const faqs = [
@@ -790,7 +790,7 @@ export default function LandingPage() {
           </p>
           <div className="actions" style={{ marginBottom:0 }}>
             <a href="/Login" className="btn-primary">Crear cuenta demo gratuita →</a>
-            <a href="mailto:radargestionestrategica@gmail.com?subject=Consulta%20INGENIUM%20Pro" className="btn-secondary">Contactar ventas</a>
+            <a className="btn-secondary">Contactar ventas</a>
           </div>
         </div>
       </section>
@@ -817,7 +817,7 @@ export default function LandingPage() {
             <a href="#normas">Normativas</a>
             <a href="/terminos">Términos de uso</a>
             <a href="/verify/demo">Verificación QR</a>
-            <a href="mailto:radargestionestrategica@gmail.com" className="gold">radargestionestrategica@gmail.com</a>
+            <span className="gold">radargestionestrategica@gmail.com</span>
           </div>
         </div>
       </footer>

@@ -8,6 +8,7 @@ const GREEN = '#22c55e';
 const PANEL = '#0a0f1e';
 const INDIGO = '#6366f1';
 const BORD  = 'rgba(99,102,241,0.15)';
+const MP_URL     = 'https://www.mercadopago.com.ar/subscriptions/checkout?preapproval_plan_id=87cce369f7fb45a3a08d9abad3660184';
 const PAYPAL_URL = 'https://www.paypal.me/ingeniumpro/75';
 
 const MODULOS = [
@@ -178,10 +179,10 @@ export default function DuoPage() {
           </div>
         </div>
 
-        {/* BOTÓN CTA — PayPal */}
+        {/* BOTÓN CTA — MercadoPago ARS */}
         <button
           type="button"
-          onClick={() => { if (listoParaPagar) window.open(PAYPAL_URL, '_blank'); }}
+          onClick={() => { if (listoParaPagar) window.open(MP_URL, '_blank'); }}
           disabled={!listoParaPagar}
           style={{
             display: 'block',
@@ -193,19 +194,44 @@ export default function DuoPage() {
             fontSize: 15,
             cursor: listoParaPagar ? 'pointer' : 'not-allowed',
             transition: 'opacity .2s',
-            background: listoParaPagar ? '#003087' : 'rgba(99,102,241,0.08)',
-            border: listoParaPagar ? 'none' : `1px solid ${BORD}`,
-            color: listoParaPagar ? '#fff' : '#334155',
+            background: listoParaPagar ? 'rgba(99,102,241,0.2)' : 'rgba(99,102,241,0.06)',
+            border: listoParaPagar ? '1px solid rgba(99,102,241,0.5)' : `1px solid ${BORD}`,
+            color: listoParaPagar ? '#a5b4fc' : '#334155',
             opacity: listoParaPagar ? 1 : 0.5,
           }}
         >
           {listoParaPagar
-            ? 'Pagar con PayPal (USD)'
+            ? 'Pagar con MercadoPago (ARS $80.000/mes)'
             : `Seleccioná ${2 - seleccionados.length} módulo${2 - seleccionados.length !== 1 ? 's' : ''} más para continuar`}
         </button>
 
+        {/* BOTÓN CTA — PayPal USD */}
+        <button
+          type="button"
+          onClick={() => { if (listoParaPagar) window.open(PAYPAL_URL, '_blank'); }}
+          disabled={!listoParaPagar}
+          style={{
+            display: 'block',
+            width: '100%',
+            textAlign: 'center',
+            padding: '13px 24px',
+            borderRadius: 14,
+            fontWeight: 700,
+            fontSize: 14,
+            cursor: listoParaPagar ? 'pointer' : 'not-allowed',
+            transition: 'opacity .2s',
+            marginTop: 10,
+            background: listoParaPagar ? '#003087' : 'rgba(99,102,241,0.06)',
+            border: listoParaPagar ? 'none' : `1px solid ${BORD}`,
+            color: listoParaPagar ? '#fff' : '#334155',
+            opacity: listoParaPagar ? 1 : 0.4,
+          }}
+        >
+          Pagar con PayPal (USD)
+        </button>
+
         <div style={{ marginTop: 16, textAlign: 'center', fontSize: 11, color: '#334155', lineHeight: 1.6 }}>
-          Pagos procesados de forma segura a través de PayPal.{' '}
+          Pagos procesados de forma segura a través de MercadoPago (ARS) o PayPal (USD).{' '}
           Podés cancelar en cualquier momento.
         </div>
       </div>

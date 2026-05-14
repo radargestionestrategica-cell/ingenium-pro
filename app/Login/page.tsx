@@ -224,7 +224,7 @@ export default function LoginPage() {
         <div style={{ marginTop:20, textAlign:'center', fontSize:11, color:'#334155' }}>
           <a href="/terminos" style={{ color:'#475569', textDecoration:'none' }}>Términos</a>
           {' · '}
-          <a href="mailto:radargestionestrategica@gmail.com" style={{ color:'#475569', textDecoration:'none' }}>Soporte</a>
+          <span style={{ color:'#475569' }}>Soporte</span>
         </div>
       </div>
     </div>

@@ -7,6 +7,7 @@ const GOLD  = '#E8A020';
 const PANEL = '#0a0f1e';
 const INDIGO = '#6366f1';
 const BORD  = 'rgba(99,102,241,0.15)';
+const MP_URL     = 'https://www.mercadopago.com.ar/subscriptions/checkout?preapproval_plan_id=e13b7ec1809545f0965ff3ac21b06291';
 const PAYPAL_URL = 'https://www.paypal.me/ingeniumpro/35';
 
 const MODULOS = [
@@ -143,10 +144,10 @@ export default function ModuloUnicoPage() {
           </div>
         </div>
 
-        {/* BOTÓN CTA — PayPal */}
+        {/* BOTÓN CTA — MercadoPago ARS */}
         <button
           type="button"
-          onClick={() => { if (seleccionado) window.open(PAYPAL_URL, '_blank'); }}
+          onClick={() => { if (seleccionado) window.open(MP_URL, '_blank'); }}
           disabled={!seleccionado}
           style={{
             display: 'block',
@@ -158,17 +159,42 @@ export default function ModuloUnicoPage() {
             fontSize: 15,
             cursor: seleccionado ? 'pointer' : 'not-allowed',
             transition: 'opacity .2s',
-            background: seleccionado ? '#003087' : 'rgba(99,102,241,0.08)',
-            border: seleccionado ? 'none' : `1px solid ${BORD}`,
-            color: seleccionado ? '#fff' : '#334155',
+            background: seleccionado ? 'rgba(99,102,241,0.2)' : 'rgba(99,102,241,0.06)',
+            border: seleccionado ? '1px solid rgba(99,102,241,0.5)' : `1px solid ${BORD}`,
+            color: seleccionado ? '#a5b4fc' : '#334155',
             opacity: seleccionado ? 1 : 0.5,
           }}
         >
-          {seleccionado ? 'Pagar con PayPal (USD)' : 'Seleccioná un módulo para continuar'}
+          {seleccionado ? 'Pagar con MercadoPago (ARS $45.000/mes)' : 'Seleccioná un módulo para continuar'}
+        </button>
+
+        {/* BOTÓN CTA — PayPal USD */}
+        <button
+          type="button"
+          onClick={() => { if (seleccionado) window.open(PAYPAL_URL, '_blank'); }}
+          disabled={!seleccionado}
+          style={{
+            display: 'block',
+            width: '100%',
+            textAlign: 'center',
+            padding: '13px 24px',
+            borderRadius: 14,
+            fontWeight: 700,
+            fontSize: 14,
+            cursor: seleccionado ? 'pointer' : 'not-allowed',
+            transition: 'opacity .2s',
+            marginTop: 10,
+            background: seleccionado ? '#003087' : 'rgba(99,102,241,0.06)',
+            border: seleccionado ? 'none' : `1px solid ${BORD}`,
+            color: seleccionado ? '#fff' : '#334155',
+            opacity: seleccionado ? 1 : 0.4,
+          }}
+        >
+          Pagar con PayPal (USD)
         </button>
 
         <div style={{ marginTop: 16, textAlign: 'center', fontSize: 11, color: '#334155', lineHeight: 1.6 }}>
-          Pagos procesados de forma segura a través de PayPal.{' '}
+          Pagos procesados de forma segura a través de MercadoPago (ARS) o PayPal (USD).{' '}
           Podés cancelar en cualquier momento.
         </div>
       </div>
