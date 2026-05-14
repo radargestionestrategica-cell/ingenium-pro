@@ -42,7 +42,7 @@ export async function middleware(request: NextRequest) {
 
   // Demo expirado → redirigir a planes
   if (
-    payload.plan === 'demo' &&
+    (payload.plan === 'demo' || payload.plan === 'trial') &&
     typeof payload.demoExpira === 'number' &&
     Date.now() > payload.demoExpira
   ) {

@@ -19,8 +19,13 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
       if (!token) { router.replace('/Login'); return; }
 
       const pl = decodePayload(token);
-      if (pl && pl.plan === 'demo' && typeof pl.demoExpira === 'number' && Date.now() > pl.demoExpira) {
-        router.replace('/planes'); return;
+      if (
+        pl &&
+        (pl.plan === 'demo' || pl.plan === 'trial') &&
+        typeof pl.demoExpira === 'number' &&
+        Date.now() > pl.demoExpira
+      ) {
+        router.replace('/planes?demo=expired'); return;
       }
 
       if (localStorage.getItem('ip_terminos_aceptados') !== '1') {

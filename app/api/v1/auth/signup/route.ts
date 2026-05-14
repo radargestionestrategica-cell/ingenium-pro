@@ -36,6 +36,7 @@ export async function POST(req: Request) {
         pais:      pais       || 'Argentina',
         matricula: matricula  || '',
         dni:       dni        || '',
+        plan:      'demo',
       },
     });
 
