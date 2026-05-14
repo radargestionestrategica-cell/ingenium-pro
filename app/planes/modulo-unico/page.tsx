@@ -146,7 +146,7 @@ export default function ModuloUnicoPage() {
         {/* BOTÓN CTA — PayPal */}
         <button
           type="button"
-          onClick={() => { if (seleccionado) window.location.href = PAYPAL_URL; }}
+          onClick={() => { if (seleccionado) window.open(PAYPAL_URL, '_blank'); }}
           disabled={!seleccionado}
           style={{
             display: 'block',
@@ -158,15 +158,13 @@ export default function ModuloUnicoPage() {
             fontSize: 15,
             cursor: seleccionado ? 'pointer' : 'not-allowed',
             transition: 'opacity .2s',
-            background: seleccionado
-              ? `linear-gradient(135deg,${GOLD},#c47a10)`
-              : 'rgba(99,102,241,0.08)',
+            background: seleccionado ? '#003087' : 'rgba(99,102,241,0.08)',
             border: seleccionado ? 'none' : `1px solid ${BORD}`,
-            color: seleccionado ? BG : '#334155',
+            color: seleccionado ? '#fff' : '#334155',
             opacity: seleccionado ? 1 : 0.5,
           }}
         >
-          {seleccionado ? 'Pagar con PayPal (USD 35/mes) →' : 'Seleccioná un módulo para continuar'}
+          {seleccionado ? 'Pagar con PayPal (USD)' : 'Seleccioná un módulo para continuar'}
         </button>
 
         <div style={{ marginTop: 16, textAlign: 'center', fontSize: 11, color: '#334155', lineHeight: 1.6 }}>

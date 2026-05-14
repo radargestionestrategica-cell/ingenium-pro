@@ -181,7 +181,7 @@ export default function DuoPage() {
         {/* BOTÓN CTA — PayPal */}
         <button
           type="button"
-          onClick={() => { if (listoParaPagar) window.location.href = PAYPAL_URL; }}
+          onClick={() => { if (listoParaPagar) window.open(PAYPAL_URL, '_blank'); }}
           disabled={!listoParaPagar}
           style={{
             display: 'block',
@@ -193,16 +193,14 @@ export default function DuoPage() {
             fontSize: 15,
             cursor: listoParaPagar ? 'pointer' : 'not-allowed',
             transition: 'opacity .2s',
-            background: listoParaPagar
-              ? `linear-gradient(135deg,${GOLD},#c47a10)`
-              : 'rgba(99,102,241,0.08)',
+            background: listoParaPagar ? '#003087' : 'rgba(99,102,241,0.08)',
             border: listoParaPagar ? 'none' : `1px solid ${BORD}`,
-            color: listoParaPagar ? BG : '#334155',
+            color: listoParaPagar ? '#fff' : '#334155',
             opacity: listoParaPagar ? 1 : 0.5,
           }}
         >
           {listoParaPagar
-            ? 'Pagar con PayPal (USD 75/mes) →'
+            ? 'Pagar con PayPal (USD)'
             : `Seleccioná ${2 - seleccionados.length} módulo${2 - seleccionados.length !== 1 ? 's' : ''} más para continuar`}
         </button>
 

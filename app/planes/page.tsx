@@ -294,7 +294,7 @@ export default function PlanesPage() {
               {(['pro', 'team'] as string[]).includes(plan.id) && (
                 <button
                   type="button"
-                  onClick={() => { window.location.href = PAYPAL_URLS[plan.id] }}
+                  onClick={() => { window.open(PAYPAL_URLS[plan.id], '_blank') }}
                   style={{
                     marginTop: 8,
                     display: 'block',
@@ -304,13 +304,13 @@ export default function PlanesPage() {
                     fontWeight: 700,
                     fontSize: 13,
                     cursor: 'pointer',
-                    background: 'rgba(99,102,241,0.06)',
-                    border: '1px solid rgba(99,102,241,0.2)',
-                    color: '#818cf8',
+                    background: '#003087',
+                    border: 'none',
+                    color: '#fff',
                     transition: 'opacity .2s',
                   }}
                 >
-                  Pagar con PayPal (USD {plan.id === 'pro' ? '255' : '750'}/mes)
+                  Pagar con PayPal (USD)
                 </button>
               )}
 
