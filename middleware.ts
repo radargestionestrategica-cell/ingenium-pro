@@ -29,33 +29,25 @@ async function verifyToken(token: string): Promise<Payload | null> {
   }
 }
 
-// Consulta el plan y estado activo reales desde Neon vía HTTP query API.
-// Si falla (red, timeout, etc.) devuelve null → el middleware usa el plan del token.
-async function getDBPlan(userId: string): Promise<{ plan: string; activo: boolean } | null> {
-  const databaseUrl = process.env.DATABASE_URL;
-  if (!databaseUrl) return null;
+// Consulta el plan y estado activo reales llamando al endpoint interno /api/v1/auth/plan.
+// Ese endpoint corre en Node.js runtime y usa Prisma — funciona en Vercel producción.
+// Si falla (timeout, error de red) devuelve null → el middleware usa el plan del token.
+async function getDBPlan(
+  userId: string,
+  requestUrl: string,
+): Promise<{ plan: string; activo: boolean } | null> {
   try {
-    const hostMatch = databaseUrl.match(/^postgres(?:ql)?:\/\/[^@]+@([^/?]+)/);
-    if (!hostMatch) return null;
-    const host = hostMatch[1];
-    const connString = databaseUrl.split('?')[0];
+    const url = new URL('/api/v1/auth/plan', requestUrl);
+    url.searchParams.set('id', userId);
+    const secret = process.env.JWT_SECRET ?? 'ingenium_jwt_2026';
 
-    const res = await fetch(`https://${host}/v1/query`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Neon-Connection-String': connString,
-      },
-      body: JSON.stringify({
-        query: 'SELECT plan, activo FROM "Usuario" WHERE id = $1 LIMIT 1',
-        params: [userId],
-      }),
+    const res = await fetch(url.toString(), {
+      headers: { Authorization: `Bearer ${secret}` },
+      signal: AbortSignal.timeout(5000),
     });
     if (!res.ok) return null;
     const json = await res.json();
-    const row = json.rows?.[0];
-    if (!row) return null;
-    return { plan: String(row.plan ?? 'trial'), activo: row.activo !== false };
+    return { plan: String(json.plan ?? 'trial'), activo: json.activo !== false };
   } catch {
     return null;
   }
@@ -77,7 +69,7 @@ export async function middleware(request: NextRequest) {
   let activo = true;
 
   if (payload.id) {
-    const db = await getDBPlan(payload.id);
+    const db = await getDBPlan(payload.id, request.url);
     if (db) {
       plan = db.plan;
       activo = db.activo;
