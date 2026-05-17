@@ -31,11 +31,13 @@ async function verifyToken(token: string): Promise<Payload | null> {
 
 // Consulta el plan y estado activo reales llamando al endpoint interno /api/v1/auth/plan.
 // Ese endpoint corre en Node.js runtime y usa Prisma — funciona en Vercel producción.
-// Si falla (timeout, error de red) devuelve null → el middleware usa el plan del token.
+// AbortController en lugar de AbortSignal.timeout() — compatible con Edge Runtime (V8).
 async function getDBPlan(
   userId: string,
   requestUrl: string,
 ): Promise<{ plan: string; activo: boolean } | null> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 5000);
   try {
     const url = new URL('/api/v1/auth/plan', requestUrl);
     url.searchParams.set('id', userId);
@@ -43,12 +45,14 @@ async function getDBPlan(
 
     const res = await fetch(url.toString(), {
       headers: { Authorization: `Bearer ${secret}` },
-      signal: AbortSignal.timeout(5000),
+      signal: controller.signal,
     });
+    clearTimeout(timer);
     if (!res.ok) return null;
     const json = await res.json();
     return { plan: String(json.plan ?? 'trial'), activo: json.activo !== false };
   } catch {
+    clearTimeout(timer);
     return null;
   }
 }
@@ -64,20 +68,22 @@ export async function middleware(request: NextRequest) {
   const payload = await verifyToken(token);
   if (!payload) return NextResponse.redirect(loginUrl);
 
-  // Plan real desde la BD; si falla, se usa el del token como respaldo
+  // Plan real desde la BD; dbOk indica si la consulta llegó a la BD o no
   let plan = payload.plan;
   let activo = true;
+  let dbOk = false;
 
   if (payload.id) {
     const db = await getDBPlan(payload.id, request.url);
     if (db) {
-      plan = db.plan;
-      activo = db.activo;
+      plan    = db.plan;
+      activo  = db.activo;
+      dbOk    = true;
     }
   }
 
-  // Cuenta desactivada → fuera
-  if (!activo) {
+  // Cuenta desactivada (solo si la BD lo confirmó)
+  if (dbOk && !activo) {
     return NextResponse.redirect(new URL('/planes', request.url));
   }
 
@@ -92,7 +98,10 @@ export async function middleware(request: NextRequest) {
     typeof payload.demoExpira === 'number' &&
     Date.now() > payload.demoExpira
   ) {
-    return NextResponse.redirect(new URL('/planes?demo=expired', request.url));
+    // BD confirmó que sigue en demo/trial → mostrar página de upgrade
+    if (dbOk) return NextResponse.redirect(new URL('/planes?demo=expired', request.url));
+    // BD no respondió → el token puede ser obsoleto → forzar re-login para obtener token fresco
+    return NextResponse.redirect(loginUrl);
   }
 
   return NextResponse.next();
