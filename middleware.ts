@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-type Payload = { id?: string; plan?: string; demoExpira?: number };
+type Payload = { id?: string; email?: string; plan?: string; demoExpira?: number };
 
 async function verifyToken(token: string): Promise<Payload | null> {
   const parts = token.split('.');
@@ -67,6 +67,9 @@ export async function middleware(request: NextRequest) {
 
   const payload = await verifyToken(token);
   if (!payload) return NextResponse.redirect(loginUrl);
+
+  // Bypass administrador — acceso irrestricto sin verificar plan ni demoExpira
+  if (payload.email === 'colombosilvanabelen@gmail.com') return NextResponse.next();
 
   // Plan real desde la BD; dbOk indica si la consulta llegó a la BD o no
   let plan = payload.plan;
