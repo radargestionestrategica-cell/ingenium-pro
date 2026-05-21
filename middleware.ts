@@ -69,7 +69,7 @@ export async function middleware(request: NextRequest) {
   if (!payload) return NextResponse.redirect(loginUrl);
 
   // Bypass administrador — acceso irrestricto sin verificar plan ni demoExpira
-  if (payload.email === 'colombosilvanabelen@gmail.com') return NextResponse.next();
+  if (payload.email?.toLowerCase() === 'colombosilvanabelen@gmail.com') return NextResponse.next();
 
   // Plan real desde la BD; dbOk indica si la consulta llegó a la BD o no
   let plan = payload.plan;
