@@ -14,11 +14,26 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
   const [estado, setEstado] = useState<Estado>('loading');
 
   useEffect(() => {
-    const check = () => {
-      const token = localStorage.getItem('ip_token');
-      if (!token) { router.replace('/Login'); return; }
+    const check = async () => {
+      let token = localStorage.getItem('ip_token');
 
-      const pl = decodePayload(token);
+      // Fallback: si localStorage fue limpiado pero el cookie ip_auth sigue válido,
+      // recuperar el token desde el servidor y re-sincronizar localStorage.
+      if (!token) {
+        try {
+          const res = await fetch('/api/v1/auth/session');
+          if (!res.ok) { router.replace('/Login'); return; }
+          const data = await res.json();
+          if (!data.token) { router.replace('/Login'); return; }
+          localStorage.setItem('ip_token', data.token);
+          localStorage.setItem('ip_terminos_aceptados', '1');
+          token = data.token;
+        } catch {
+          router.replace('/Login'); return;
+        }
+      }
+
+      const pl = decodePayload(token!);
 
       // Bypass administrador — acceso irrestricto independiente del plan
       if (pl?.email?.toLowerCase() === 'colombosilvanabelen@gmail.com') {
