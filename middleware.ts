@@ -35,7 +35,7 @@ async function verifyToken(token: string): Promise<Payload | null> {
 async function getDBPlan(
   userId: string,
   requestUrl: string,
-): Promise<{ plan: string; activo: boolean } | null> {
+): Promise<{ plan: string; activo: boolean; createdAt?: number } | null> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 5000);
   try {
@@ -50,7 +50,11 @@ async function getDBPlan(
     clearTimeout(timer);
     if (!res.ok) return null;
     const json = await res.json();
-    return { plan: String(json.plan ?? 'trial'), activo: json.activo !== false };
+    return {
+      plan:      String(json.plan ?? 'trial'),
+      activo:    json.activo !== false,
+      createdAt: json.createdAt ? new Date(json.createdAt).getTime() : undefined,
+    };
   } catch {
     clearTimeout(timer);
     return null;
@@ -75,13 +79,15 @@ export async function middleware(request: NextRequest) {
   let plan = payload.plan;
   let activo = true;
   let dbOk = false;
+  let dbCreatedAt: number | undefined;
 
   if (payload.id) {
     const db = await getDBPlan(payload.id, request.url);
     if (db) {
-      plan    = db.plan;
-      activo  = db.activo;
-      dbOk    = true;
+      plan        = db.plan;
+      activo      = db.activo;
+      dbCreatedAt = db.createdAt;
+      dbOk        = true;
     }
   }
 
@@ -95,16 +101,17 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Demo / trial: verificar expiración
-  if (
-    (plan === 'demo' || plan === 'trial') &&
-    typeof payload.demoExpira === 'number' &&
-    Date.now() > payload.demoExpira
-  ) {
-    // BD confirmó que sigue en demo/trial → mostrar página de upgrade
-    if (dbOk) return NextResponse.redirect(new URL('/planes?demo=expired', request.url));
-    // BD no respondió → el token puede ser obsoleto → forzar re-login para obtener token fresco
-    return NextResponse.redirect(loginUrl);
+  // Demo / trial: verificar expiración.
+  // Usa createdAt real de la BD cuando disponible — robusto contra tokens viejos sin demoExpira.
+  if (plan === 'demo' || plan === 'trial') {
+    const expira = (dbOk && typeof dbCreatedAt === 'number')
+      ? dbCreatedAt + 259_200_000
+      : payload.demoExpira;
+
+    if (typeof expira === 'number' && Date.now() > expira) {
+      if (dbOk) return NextResponse.redirect(new URL('/planes?demo=expired', request.url));
+      return NextResponse.redirect(loginUrl);
+    }
   }
 
   return NextResponse.next();

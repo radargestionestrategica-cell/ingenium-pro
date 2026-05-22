@@ -18,12 +18,12 @@ export async function GET(req: Request) {
   try {
     const usuario = await prisma.usuario.findUnique({
       where: { id },
-      select: { plan: true, activo: true },
+      select: { plan: true, activo: true, createdAt: true },
     });
     if (!usuario) {
       return NextResponse.json({ error: 'Not found' }, { status: 404 });
     }
-    return NextResponse.json({ plan: usuario.plan, activo: usuario.activo });
+    return NextResponse.json({ plan: usuario.plan, activo: usuario.activo, createdAt: usuario.createdAt });
   } catch {
     return NextResponse.json({ error: 'DB error' }, { status: 500 });
   }
