@@ -19,6 +19,12 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
       if (!token) { router.replace('/Login'); return; }
 
       const pl = decodePayload(token);
+
+      // Bypass administrador — acceso irrestricto independiente del plan
+      if (pl?.email?.toLowerCase() === 'colombosilvanabelen@gmail.com') {
+        setEstado('ok'); return;
+      }
+
       if (
         pl &&
         (pl.plan === 'demo' || pl.plan === 'trial') &&
