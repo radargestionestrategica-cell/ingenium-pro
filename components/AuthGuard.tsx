@@ -15,46 +15,41 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const check = async () => {
-      let token = localStorage.getItem('ip_token');
+      // Siempre consulta BD vía session endpoint — nunca confiar en token local
+      // que puede tener plan=demo viejo aunque la BD tenga plan pagado.
+      try {
+        const res = await fetch('/api/v1/auth/session');
+        if (!res.ok) { router.replace('/Login'); return; }
+        const data = await res.json();
+        if (!data.token) { router.replace('/Login'); return; }
 
-      // Fallback: si localStorage fue limpiado pero el cookie ip_auth sigue válido,
-      // recuperar el token desde el servidor y re-sincronizar localStorage.
-      if (!token) {
-        try {
-          const res = await fetch('/api/v1/auth/session');
-          if (!res.ok) { router.replace('/Login'); return; }
-          const data = await res.json();
-          if (!data.token) { router.replace('/Login'); return; }
-          localStorage.setItem('ip_token', data.token);
-          localStorage.setItem('ip_terminos_aceptados', '1');
-          token = data.token;
-        } catch {
-          router.replace('/Login'); return;
+        localStorage.setItem('ip_token', data.token);
+
+        const pl = decodePayload(data.token);
+
+        // Bypass administrador — acceso irrestricto independiente del plan
+        if (pl?.email?.toLowerCase() === 'colombosilvanabelen@gmail.com') {
+          setEstado('ok'); return;
         }
+
+        if (
+          pl &&
+          (pl.plan === 'demo' || pl.plan === 'trial') &&
+          typeof pl.demoExpira === 'number' &&
+          Date.now() > pl.demoExpira
+        ) {
+          router.replace('/planes?demo=expired'); return;
+        }
+
+        if (localStorage.getItem('ip_terminos_aceptados') !== '1') {
+          setEstado('noterms');
+          return;
+        }
+
+        setEstado('ok');
+      } catch {
+        router.replace('/Login');
       }
-
-      const pl = decodePayload(token!);
-
-      // Bypass administrador — acceso irrestricto independiente del plan
-      if (pl?.email?.toLowerCase() === 'colombosilvanabelen@gmail.com') {
-        setEstado('ok'); return;
-      }
-
-      if (
-        pl &&
-        (pl.plan === 'demo' || pl.plan === 'trial') &&
-        typeof pl.demoExpira === 'number' &&
-        Date.now() > pl.demoExpira
-      ) {
-        router.replace('/planes?demo=expired'); return;
-      }
-
-      if (localStorage.getItem('ip_terminos_aceptados') !== '1') {
-        setEstado('noterms');
-        return;
-      }
-
-      setEstado('ok');
     };
 
     check();
