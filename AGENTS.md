@@ -14,14 +14,20 @@ This version has breaking changes — APIs, conventions, and file structure may 
 |---|---|
 | Producción | `https://ingeniumpro.store` (Vercel) |
 | Rama activa | `main` — push directo despliega en Vercel |
-| Último deploy | `dpl_EryTeqjAYfSzDFor7MNU57vSqyHh` (23/05/2026) |
-| Último commit | `038fd60` — fix: AuthGuard siempre session BD sin localStorage |
+| Último commit | `a976a23` — feat: agregar favicon dinámico con símbolo Omega |
 | Build | `npm run build` = `prisma generate && next build` |
 | Tests | `npm test` (Vitest 4) |
+| Working tree | Limpio — sin cambios sin commitear |
 
-**Cambios sin commitear en working tree:**
-- `lib/generarPDF.ts` — fix fecha PDF (`new Date()` en lugar de `datos.fecha`) desplegado en Vercel pero NO commiteado a git
-- `AGENTS.md` — este archivo
+### Commits del 23/05/2026
+
+| Commit | Descripción |
+|---|---|
+| `a976a23` | feat: favicon dinámico `app/icon.tsx` — Ω dorado 64×64 (Edge Runtime) |
+| `2772c73` | feat: SEO meta tags — `openGraph.images`, `twitter.images`, `themeColor`, `colorScheme`, `authors`, JSON-LD Organization |
+| `f46f3bf` | feat: `public/sitemap.xml` (8 URLs) + `public/robots.txt` |
+| `eadfb48` | fix: PDF fecha usa `new Date()` al momento de generación |
+| `038fd60` | fix: AuthGuard siempre consulta session BD, nunca localStorage |
 
 ---
 
@@ -88,6 +94,10 @@ This version has breaking changes — APIs, conventions, and file structure may 
 | `/privacidad` | `app/privacidad/page.tsx` |
 | `/terminos` | `app/terminos/page.tsx` |
 | `/verify/[hash]` | `app/verify/[hash]/page.tsx` — verificación pública de cálculos QR |
+| `/sitemap.xml` | `public/sitemap.xml` — 8 URLs públicas indexables |
+| `/robots.txt` | `public/robots.txt` — bloquea `/dashboard/`, `/api/`, `/verify/` |
+| `/icon` | `app/icon.tsx` — favicon Ω 64×64 generado dinámicamente (Edge Runtime) |
+| `/opengraph-image` | `app/opengraph-image.tsx` — imagen OG 1200×630 generada dinámicamente (Edge Runtime) |
 
 ### Módulos técnicos (15 componentes en `components/`)
 
@@ -189,14 +199,28 @@ UPSTASH_REDIS_REST_URL (opcional), UPSTASH_REDIS_REST_TOKEN (opcional)
 
 ---
 
-## 6. Próximos pasos pendientes
+## 6. SEO — estado actual
+
+| Elemento | Estado |
+|---|---|
+| `public/sitemap.xml` | ✅ Live — 8 URLs |
+| `public/robots.txt` | ✅ Live — bloquea dashboard, api, verify |
+| `app/layout.tsx` metadata | ✅ title, description, keywords, OG, Twitter, robots, canonical |
+| `openGraph.images` | ✅ Apunta a `/opengraph-image` |
+| `twitter.images` | ✅ Apunta a `/opengraph-image` |
+| `themeColor` | ✅ `#E8A020` |
+| JSON-LD `SoftwareApplication` | ✅ |
+| JSON-LD `Organization` | ✅ RADAR Gestión Estratégica |
+| Favicon | ✅ `app/icon.tsx` — Ω dorado 64×64 |
+| Google Search Console | ⚠️ Pendiente enviar sitemap manualmente |
+
+## 7. Próximos pasos pendientes
 
 | # | Tarea | Archivo | Prioridad |
 |---|---|---|---|
-| 1 | Commitear fix de fecha PDF | `lib/generarPDF.ts` | Alta — cambio desplegado sin commit |
-| 2 | Commitear AGENTS.md actualizado | `AGENTS.md` | Media |
-| 3 | Verificar página `/verify/[hash]` funcional | `app/verify/[hash]/page.tsx` | Media |
-| 4 | Limpiar dependencias sin uso confirmado | `package.json` | Baja — @clerk, @stripe, @supabase, jsonwebtoken, next-auth |
+| 1 | Verificar página `/verify/[hash]` funcional | `app/verify/[hash]/page.tsx` | Media |
+| 2 | Enviar sitemap en Google Search Console | — | Media |
+| 3 | Limpiar dependencias sin uso confirmado | `package.json` | Baja — @clerk, @stripe, @supabase, jsonwebtoken, next-auth |
 
 ---
 
