@@ -1,7 +1,12 @@
 import './globals.css';
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 
 const BASE_URL = 'https://ingeniumpro.store';
+
+export const viewport: Viewport = {
+  themeColor: '#E8A020',
+  colorScheme: 'dark',
+};
 
 export const metadata: Metadata = {
   metadataBase: new URL(BASE_URL),
@@ -13,8 +18,6 @@ export const metadata: Metadata = {
     'PDF con QR verificable, Excel con fórmulas reales y DXF para fabricación.',
   keywords: 'ingeniería industrial, cálculo MAOP, ASME B31.8, API 6D, válvulas industriales, DXF CAD ingeniería, plataforma ingeniería online',
   authors: [{ name: 'RADAR Gestión Estratégica', url: BASE_URL }],
-  colorScheme: 'dark',
-  themeColor: '#E8A020',
   openGraph: {
     type: 'website',
     url: BASE_URL,
