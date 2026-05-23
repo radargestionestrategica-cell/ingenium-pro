@@ -14,7 +14,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 |---|---|
 | Producción | `https://ingeniumpro.store` (Vercel) |
 | Rama activa | `main` — push directo despliega en Vercel |
-| Último commit | `a976a23` — feat: agregar favicon dinámico con símbolo Omega |
+| Último commit | `edac48c` — fix: mover themeColor y colorScheme a viewport export |
 | Build | `npm run build` = `prisma generate && next build` |
 | Tests | `npm test` (Vitest 4) |
 | Working tree | Limpio — sin cambios sin commitear |
@@ -23,6 +23,9 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 | Commit | Descripción |
 |---|---|
+| `edac48c` | fix: `themeColor`/`colorScheme` movidos a `viewport` export (Next.js 16 requiere separación) |
+| `c71c5c8` | fix: eliminar `lib/auth.ts`, `lib/jwt.ts`, `lib/audit.ts` — código muerto que rompía build en Vercel |
+| `dea9574` | chore: eliminar dependencias sin uso — `@clerk/nextjs`, `@stripe/stripe-js`, `@supabase/supabase-js`, `jsonwebtoken`, `next-auth`, `g` |
 | `a976a23` | feat: favicon dinámico `app/icon.tsx` — Ω dorado 64×64 (Edge Runtime) |
 | `2772c73` | feat: SEO meta tags — `openGraph.images`, `twitter.images`, `themeColor`, `colorScheme`, `authors`, JSON-LD Organization |
 | `f46f3bf` | feat: `public/sitemap.xml` (8 URLs) + `public/robots.txt` |
@@ -52,9 +55,9 @@ This version has breaking changes — APIs, conventions, and file structure may 
 | `react-markdown` | ^10.1.0 | Render markdown en IAChat |
 | `katex` / `rehype-katex` / `remark-math` / `remark-gfm` | varios | Fórmulas matemáticas en chat IA |
 
-### Dependencias en package.json pero SIN uso confirmado en código propio
+### Dependencias eliminadas el 23/05/2026 (eran código muerto)
 
-`@clerk/nextjs`, `@stripe/stripe-js`, `@supabase/supabase-js`, `jsonwebtoken`, `next-auth` — instaladas pero el proyecto usa auth custom HMAC. No tocar.
+`@clerk/nextjs`, `@stripe/stripe-js`, `@supabase/supabase-js`, `jsonwebtoken`, `next-auth`, `g` — removidas. El proyecto usa auth custom HMAC, nunca las necesitó.
 
 ---
 
@@ -127,10 +130,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 | `exportarDXF.ts` | DXF en cliente — usa `_usrData` y `_bloqueTitle` |
 | `rate-limit.ts` | `rateLimit()` in-memory + `rateLimitAsync()` Upstash Redis con fallback |
 | `calculos.ts` | Fórmulas técnicas compartidas entre módulos |
-| `jwt.ts` | Helpers JWT custom HMAC-SHA256 |
-| `auth.ts` | Helpers auth server-side |
 | `cripto.ts` | Hash SHA-256 para cálculos |
-| `audit.ts` | Registro auditoría de acciones |
 | `validators.ts` | Validadores de entrada para APIs |
 | `proyecto.ts` | Helpers gestión proyectos |
 | `i18n.ts` | Internacionalización |
@@ -208,7 +208,7 @@ UPSTASH_REDIS_REST_URL (opcional), UPSTASH_REDIS_REST_TOKEN (opcional)
 | `app/layout.tsx` metadata | ✅ title, description, keywords, OG, Twitter, robots, canonical |
 | `openGraph.images` | ✅ Apunta a `/opengraph-image` |
 | `twitter.images` | ✅ Apunta a `/opengraph-image` |
-| `themeColor` | ✅ `#E8A020` |
+| `themeColor` + `colorScheme` | ✅ En `viewport` export separado (`app/layout.tsx`) |
 | JSON-LD `SoftwareApplication` | ✅ |
 | JSON-LD `Organization` | ✅ RADAR Gestión Estratégica |
 | Favicon | ✅ `app/icon.tsx` — Ω dorado 64×64 |
@@ -216,10 +216,9 @@ UPSTASH_REDIS_REST_URL (opcional), UPSTASH_REDIS_REST_TOKEN (opcional)
 
 ## 7. Próximos pasos pendientes
 
-| # | Tarea | Archivo | Prioridad |
-|---|---|---|---|
-| 1 | Enviar sitemap en Google Search Console | — | Media |
-| 2 | Limpiar dependencias sin uso confirmado | `package.json` | Baja — @clerk, @stripe, @supabase, jsonwebtoken, next-auth |
+| # | Tarea | Prioridad |
+|---|---|---|
+| 1 | Enviar sitemap en Google Search Console (`search.google.com/search-console`) | Media |
 
 ---
 
