@@ -93,7 +93,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 | `/planes/modulo-unico` | `app/planes/modulo-unico/page.tsx` |
 | `/privacidad` | `app/privacidad/page.tsx` |
 | `/terminos` | `app/terminos/page.tsx` |
-| `/verify/[hash]` | `app/verify/[hash]/page.tsx` — verificación pública de cálculos QR |
+| `/verify/[hash]` | `app/verify/[hash]/page.tsx` — verificación pública de cálculos QR ✅ verificado en producción |
 | `/sitemap.xml` | `public/sitemap.xml` — 8 URLs públicas indexables |
 | `/robots.txt` | `public/robots.txt` — bloquea `/dashboard/`, `/api/`, `/verify/` |
 | `/icon` | `app/icon.tsx` — favicon Ω 64×64 generado dinámicamente (Edge Runtime) |
@@ -218,9 +218,8 @@ UPSTASH_REDIS_REST_URL (opcional), UPSTASH_REDIS_REST_TOKEN (opcional)
 
 | # | Tarea | Archivo | Prioridad |
 |---|---|---|---|
-| 1 | Verificar página `/verify/[hash]` funcional | `app/verify/[hash]/page.tsx` | Media |
-| 2 | Enviar sitemap en Google Search Console | — | Media |
-| 3 | Limpiar dependencias sin uso confirmado | `package.json` | Baja — @clerk, @stripe, @supabase, jsonwebtoken, next-auth |
+| 1 | Enviar sitemap en Google Search Console | — | Media |
+| 2 | Limpiar dependencias sin uso confirmado | `package.json` | Baja — @clerk, @stripe, @supabase, jsonwebtoken, next-auth |
 
 ---
 
