@@ -224,7 +224,7 @@ export async function generarPDF(datos: DatosPDF): Promise<Buffer> {
         timeZone: tz,
         day: '2-digit', month: 'long', year: 'numeric',
         hour: '2-digit', minute: '2-digit',
-      }).format(datos.fecha);
+      }).format(new Date());
 
       filaInfo('Proyecto',      datos.proyectoNombre || '—',   y);
       filaInfo('Activo físico', datos.activoNombre   || '—',   y + 18);
