@@ -58,15 +58,7 @@ export async function GET(req: Request) {
       ...(usuario.email === 'colombosilvanabelen@gmail.com' ? { isOwner: true } : {}),
     });
 
-    const response = NextResponse.json({ token: freshToken });
-    response.cookies.set('ip_auth', freshToken, {
-      httpOnly: true,
-      secure:   true,
-      sameSite: 'lax',
-      maxAge:   60 * 60 * 24 * 7,
-      path:     '/',
-    });
-    return response;
+    return NextResponse.json({ token: freshToken });
   } catch {
     // Error de BD — devolver el token original verificado como fallback
     return NextResponse.json({ token: rawToken });
