@@ -55,6 +55,7 @@ export async function GET(req: Request) {
       ...((planFinal === 'demo' || planFinal === 'trial')
         ? { demoExpira: usuario.createdAt.getTime() + 259_200_000 }
         : {}),
+      ...(usuario.email === 'colombosilvanabelen@gmail.com' ? { isOwner: true } : {}),
     });
 
     const response = NextResponse.json({ token: freshToken });

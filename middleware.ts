@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-type Payload = { id?: string; email?: string; plan?: string; demoExpira?: number };
+type Payload = { id?: string; email?: string; plan?: string; demoExpira?: number; isOwner?: boolean };
 
 async function verifyToken(token: string): Promise<Payload | null> {
   const parts = token.split('.');
@@ -72,8 +72,10 @@ export async function middleware(request: NextRequest) {
   const payload = await verifyToken(token);
   if (!payload) return NextResponse.redirect(loginUrl);
 
-  // Bypass administrador — acceso irrestricto sin verificar plan ni demoExpira
-  if (payload.email?.toLowerCase() === 'colombosilvanabelen@gmail.com') return NextResponse.next();
+  // Bypass owner — acceso irrestricto: por flag isOwner en token o por email hardcodeado
+  if (payload.isOwner === true || payload.email?.toLowerCase() === 'colombosilvanabelen@gmail.com') {
+    return NextResponse.next();
+  }
 
   // Plan real desde la BD; dbOk indica si la consulta llegó a la BD o no
   let plan = payload.plan;
@@ -93,7 +95,7 @@ export async function middleware(request: NextRequest) {
 
   // Cuenta desactivada (solo si la BD lo confirmó)
   if (dbOk && !activo) {
-    return NextResponse.redirect(new URL('/planes', request.url));
+    return NextResponse.redirect(new URL('/precios', request.url));
   }
 
   // Planes pagos: siempre pasan, sin chequeo de demo
@@ -109,12 +111,14 @@ export async function middleware(request: NextRequest) {
       : payload.demoExpira;
 
     if (typeof expira === 'number' && Date.now() > expira) {
-      if (dbOk) return NextResponse.redirect(new URL('/planes?demo=expired', request.url));
-      return NextResponse.redirect(loginUrl);
+      return NextResponse.redirect(new URL('/precios', request.url));
     }
+
+    return NextResponse.next();
   }
 
-  return NextResponse.next();
+  // Plan vacío, desconocido o ausente → bloquear
+  return NextResponse.redirect(new URL('/precios', request.url));
 }
 
 export const config = {
