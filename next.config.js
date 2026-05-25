@@ -17,6 +17,12 @@ const nextConfig = {
 
     return [
       {
+        source: '/api/:path*',
+        headers: [
+          { key: 'Cache-Control', value: 'no-store, no-cache' },
+        ],
+      },
+      {
         source: '/(.*)',
         headers: [
           { key: 'X-Frame-Options',                      value: 'DENY' },
