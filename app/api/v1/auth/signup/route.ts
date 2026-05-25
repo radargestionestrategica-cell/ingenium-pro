@@ -75,7 +75,7 @@ export async function POST(req: Request) {
 
     response.cookies.set('ip_auth', token, {
       httpOnly: true,
-      secure:   process.env.NODE_ENV === 'production',
+      secure:   true,
       sameSite: 'lax',
       maxAge:   259_200,
       path:     '/',
