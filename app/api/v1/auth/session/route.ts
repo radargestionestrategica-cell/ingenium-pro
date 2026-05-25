@@ -61,9 +61,9 @@ export async function GET(req: Request) {
     const response = NextResponse.json({ token: freshToken });
     response.cookies.set('ip_auth', freshToken, {
       httpOnly: true,
-      secure:   process.env.NODE_ENV === 'production',
+      secure:   true,
       sameSite: 'lax',
-      maxAge:   259_200,
+      maxAge:   60 * 60 * 24 * 7,
       path:     '/',
     });
     return response;
