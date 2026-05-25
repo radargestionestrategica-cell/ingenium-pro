@@ -1,7 +1,15 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import * as crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 import { rateLimit } from '@/lib/rate-limit';
+
+function generarToken(payload: object): string {
+  const secret = process.env.JWT_SECRET ?? 'ingenium_jwt_2026';
+  const data = Buffer.from(JSON.stringify(payload)).toString('base64');
+  const sig = crypto.createHmac('sha256', secret).update(data).digest('hex');
+  return `${data}.${sig}`;
+}
 
 export async function POST(req: Request) {
   const ip = req.headers.get('x-forwarded-for') ?? req.headers.get('x-real-ip') ?? 'unknown';
@@ -33,14 +41,47 @@ export async function POST(req: Request) {
         password: passwordHash,
         nombre,
         empresa,
-        pais:      pais       || 'Argentina',
-        matricula: matricula  || '',
-        dni:       dni        || '',
+        pais:      pais      || 'Argentina',
+        matricula: matricula || '',
+        dni:       dni       || '',
         plan:      'demo',
       },
     });
 
-    return NextResponse.json({ success: true, id: usuario.id, nombre: usuario.nombre });
+    const token = generarToken({
+      id:         usuario.id,
+      email:      usuario.email,
+      plan:       'demo',
+      demoExpira: usuario.createdAt.getTime() + 259_200_000,
+    });
+
+    const response = NextResponse.json({
+      success:  true,
+      token,
+      redirect: '/dashboard',
+      usuario: {
+        id:        usuario.id,
+        email:     usuario.email,
+        nombre:    usuario.nombre,
+        empresa:   usuario.empresa,
+        pais:      usuario.pais,
+        matricula: usuario.matricula ?? '',
+        dni:       usuario.dni ?? '',
+        plan:      usuario.plan,
+        activo:    usuario.activo,
+        createdAt: usuario.createdAt,
+      },
+    });
+
+    response.cookies.set('ip_auth', token, {
+      httpOnly: true,
+      secure:   process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge:   259_200,
+      path:     '/',
+    });
+
+    return response;
   } catch (err) {
     console.error('Signup error:', err);
     return NextResponse.json({ error: 'Error al registrar usuario' }, { status: 500 });
