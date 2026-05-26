@@ -1,8 +1,8 @@
 'use client';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import AuthGuard from '@/components/AuthGuard';
 import ErrorBoundary from '@/components/ErrorBoundary';
+import TerminosModalWrapper from '@/components/TerminosModalWrapper';
 import { ResultadoProvider, useResultado } from '@/components/ResultadoContexto';
 import IAChat from '@/components/IAChat';
 import SelectorIdioma from '@/components/SelectorIdioma';
@@ -80,6 +80,7 @@ function Dashboard() {
     <div style={{ minHeight: '100vh', background: BG, color: '#f1f5f9', fontFamily: 'Inter,sans-serif', display: 'flex', flexDirection: 'column' }}>
 
       <BienvenidaModal />
+      <TerminosModalWrapper />
 
       {/* HEADER */}
       <header style={{ height: 56, background: PANEL, borderBottom: `1px solid ${BORD}`, display: 'flex', alignItems: 'center', padding: '0 20px', gap: 16, flexShrink: 0, position: 'sticky', top: 0, zIndex: 40 }}>
@@ -169,10 +170,8 @@ function Dashboard() {
 
 export default function DashboardPage() {
   return (
-    <AuthGuard>
-      <ResultadoProvider>
-        <Dashboard />
-      </ResultadoProvider>
-    </AuthGuard>
+    <ResultadoProvider>
+      <Dashboard />
+    </ResultadoProvider>
   );
 } 
