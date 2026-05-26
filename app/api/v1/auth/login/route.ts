@@ -1,17 +1,15 @@
+export const dynamic = 'force-dynamic';
+
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
 import * as crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 import { rateLimit } from '@/lib/rate-limit';
 
-// Verifica la contraseña contra bcrypt (nuevo) o SHA-256 (legacy).
-// Si el hash es legacy, lo migra a bcrypt automáticamente.
 async function verificarPassword(
   password: string,
   stored: string,
   usuarioId: string,
 ): Promise<boolean> {
-  // Hash bcrypt — formato $2b$ o $2a$
   if (stored.startsWith('$2')) {
     return bcrypt.compare(password, stored);
   }
@@ -21,12 +19,12 @@ async function verificarPassword(
   const legacy = crypto.createHash('sha256').update(password + salt).digest('hex');
   if (legacy !== stored) return false;
 
-  // Migración silenciosa a bcrypt (costo 12)
   const nuevoHash = await bcrypt.hash(password, 12);
+  const { prisma } = await import('@/lib/prisma');
   await prisma.usuario.update({
-    where:  { id: usuarioId },
-    data:   { password: nuevoHash },
-  }).catch(() => {/* no bloquear el login si la migración falla */});
+    where: { id: usuarioId },
+    data:  { password: nuevoHash },
+  }).catch(() => {});
 
   return true;
 }
@@ -45,7 +43,6 @@ export async function POST(req: Request) {
 
   try {
     const body = await req.json();
-
     const email    = typeof body.email    === 'string' ? body.email.trim().toLowerCase() : '';
     const password = typeof body.password === 'string' ? body.password : '';
 
@@ -53,6 +50,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Email y contraseña requeridos' }, { status: 400 });
     }
 
+    const { prisma } = await import('@/lib/prisma');
     const usuario = await prisma.usuario.findUnique({ where: { email } });
 
     if (!usuario || !(await verificarPassword(password, usuario.password, usuario.id))) {
@@ -68,7 +66,9 @@ export async function POST(req: Request) {
       id:         usuario.id,
       email:      usuario.email,
       plan:       planFinal,
-      ...((planFinal === 'demo' || planFinal === 'trial') ? { demoExpira: usuario.createdAt.getTime() + 259_200_000 } : {}),
+      ...((planFinal === 'demo' || planFinal === 'trial')
+        ? { demoExpira: usuario.createdAt.getTime() + 259_200_000 }
+        : {}),
     });
 
     const response = NextResponse.json({

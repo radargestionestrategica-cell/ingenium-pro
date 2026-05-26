@@ -2,6 +2,15 @@ import { NextRequest, NextResponse } from 'next/server';
 
 type Payload = { id?: string; email?: string; plan?: string; demoExpira?: number; isOwner?: boolean };
 
+// Rutas de API que no requieren cookie — deben pasar siempre
+const PUBLIC_API = [
+  '/api/v1/auth/login',
+  '/api/v1/auth/signup',
+  '/api/v1/auth/plan',    // llamado internamente por este middleware
+  '/api/v1/auth/logout',
+  '/api/pagos/webhook',
+];
+
 async function verifyToken(token: string): Promise<Payload | null> {
   const parts = token.split('.');
   if (parts.length !== 2) return null;
@@ -29,9 +38,7 @@ async function verifyToken(token: string): Promise<Payload | null> {
   }
 }
 
-// Consulta el plan y estado activo reales llamando al endpoint interno /api/v1/auth/plan.
-// Ese endpoint corre en Node.js runtime y usa Prisma — funciona en Vercel producción.
-// AbortController en lugar de AbortSignal.timeout() — compatible con Edge Runtime (V8).
+// AbortController en lugar de AbortSignal.timeout() — compatible con Edge Runtime (V8)
 async function getDBPlan(
   userId: string,
   requestUrl: string,
@@ -45,7 +52,7 @@ async function getDBPlan(
 
     const res = await fetch(url.toString(), {
       headers: { Authorization: `Bearer ${secret}` },
-      signal: controller.signal,
+      signal:  controller.signal,
     });
     clearTimeout(timer);
     if (!res.ok) return null;
@@ -62,22 +69,35 @@ async function getDBPlan(
 }
 
 export async function middleware(request: NextRequest) {
-  const token = request.cookies.get('ip_auth')?.value;
+  const { pathname } = request.nextUrl;
+  const isApiRoute   = pathname.startsWith('/api/');
 
+  // Bypass rutas de API públicas
+  if (PUBLIC_API.some(p => pathname === p || pathname.startsWith(p + '/'))) {
+    return NextResponse.next();
+  }
+
+  const token    = request.cookies.get('ip_auth')?.value;
   const loginUrl = new URL('/Login', request.url);
-  loginUrl.searchParams.set('redirect', request.nextUrl.pathname);
+  loginUrl.searchParams.set('redirect', pathname);
 
-  if (!token) return NextResponse.redirect(loginUrl);
+  if (!token) {
+    if (isApiRoute) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    return NextResponse.redirect(loginUrl);
+  }
 
   const payload = await verifyToken(token);
-  if (!payload) return NextResponse.redirect(loginUrl);
+  if (!payload) {
+    if (isApiRoute) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    return NextResponse.redirect(loginUrl);
+  }
 
-  // Bypass owner — acceso irrestricto: por flag isOwner en token o por email hardcodeado
+  // Bypass owner — acceso irrestricto
   if (payload.isOwner === true || payload.email?.toLowerCase() === 'colombosilvanabelen@gmail.com') {
     return NextResponse.next();
   }
 
-  // Plan real desde la BD; dbOk indica si la consulta llegó a la BD o no
+  // Plan real desde la BD
   let plan = payload.plan;
   let activo = true;
   let dbOk = false;
@@ -93,34 +113,36 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // Cuenta desactivada (solo si la BD lo confirmó)
+  // Cuenta desactivada
   if (dbOk && !activo) {
+    if (isApiRoute) return NextResponse.json({ error: 'Cuenta desactivada' }, { status: 403 });
     return NextResponse.redirect(new URL('/precios', request.url));
   }
 
-  // Planes pagos: siempre pasan, sin chequeo de demo
+  // Planes pagos: siempre pasan
   if (plan === 'enterprise' || plan === 'pro' || plan === 'team' || plan === 'duo' || plan === 'modulo') {
     return NextResponse.next();
   }
 
-  // Demo / trial: verificar expiración.
-  // Usa createdAt real de la BD cuando disponible — robusto contra tokens viejos sin demoExpira.
+  // Demo / trial: verificar expiración
   if (plan === 'demo' || plan === 'trial') {
     const expira = (dbOk && typeof dbCreatedAt === 'number')
       ? dbCreatedAt + 259_200_000
       : payload.demoExpira;
 
     if (typeof expira === 'number' && Date.now() > expira) {
+      if (isApiRoute) return NextResponse.json({ error: 'Demo expirada' }, { status: 403 });
       return NextResponse.redirect(new URL('/precios', request.url));
     }
 
     return NextResponse.next();
   }
 
-  // Plan vacío, desconocido o ausente → bloquear
+  // Plan vacío o desconocido
+  if (isApiRoute) return NextResponse.json({ error: 'Plan inválido' }, { status: 403 });
   return NextResponse.redirect(new URL('/precios', request.url));
 }
 
 export const config = {
-  matcher: ['/dashboard/:path*'],
+  matcher: ['/dashboard/:path*', '/api/:path*'],
 };

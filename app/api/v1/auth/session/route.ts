@@ -1,6 +1,7 @@
+export const dynamic = 'force-dynamic';
+
 import { NextResponse } from 'next/server';
 import * as crypto from 'crypto';
-import { prisma } from '@/lib/prisma';
 
 function verifyAndDecode(token: string): { id?: string; email?: string; plan?: string } | null {
   const parts = token.split('.');
@@ -24,9 +25,6 @@ function generarToken(payload: object): string {
   return `${data}.${sig}`;
 }
 
-// Verifica el cookie ip_auth, consulta la BD para obtener el plan real,
-// genera un token fresco y actualiza el cookie. Usado por AuthGuard como
-// fallback cuando localStorage fue limpiado.
 export async function GET(req: Request) {
   const cookieHeader = req.headers.get('cookie') ?? '';
   const match = cookieHeader.match(/(?:^|;\s*)ip_auth=([^;]+)/);
@@ -38,8 +36,9 @@ export async function GET(req: Request) {
   }
 
   try {
+    const { prisma } = await import('@/lib/prisma');
     const usuario = await prisma.usuario.findUnique({
-      where: { id: payload.id },
+      where:  { id: payload.id },
       select: { id: true, email: true, plan: true, activo: true, createdAt: true },
     });
 
@@ -60,7 +59,6 @@ export async function GET(req: Request) {
 
     return NextResponse.json({ token: freshToken });
   } catch {
-    // Error de BD — devolver el token original verificado como fallback
     return NextResponse.json({ token: rawToken });
   }
 }

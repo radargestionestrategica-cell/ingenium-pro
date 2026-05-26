@@ -1,5 +1,6 @@
+export const dynamic = 'force-dynamic';
+
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
 import * as crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 import { rateLimit } from '@/lib/rate-limit';
@@ -27,12 +28,13 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'La contraseña debe tener al menos 8 caracteres' }, { status: 400 });
     }
 
+    const { prisma } = await import('@/lib/prisma');
+
     const existe = await prisma.usuario.findUnique({ where: { email } });
     if (existe) {
       return NextResponse.json({ error: 'El email ya está registrado' }, { status: 409 });
     }
 
-    // bcrypt costo 12 — ~250ms en servidor moderno, resistente a GPU
     const passwordHash = await bcrypt.hash(password, 12);
 
     const usuario = await prisma.usuario.create({
