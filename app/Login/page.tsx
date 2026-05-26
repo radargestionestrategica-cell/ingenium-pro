@@ -51,10 +51,10 @@ export default function LoginPage() {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
-    setError('');
   };
 
   const handleSubmit = async () => {
+    if (loading) return;
     if (!aceptoTerminos || !aceptoCookies) return;
     setLoading(true); setError(''); setExito('');
     try {
