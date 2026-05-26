@@ -80,7 +80,7 @@ export default function LoginPage() {
         localStorage.setItem('ip_token', data.token);
         localStorage.setItem('ip_usuario', JSON.stringify(data.usuario));
         localStorage.setItem('ip_terminos_aceptados', '1');
-        router.replace('/dashboard');
+        window.location.href = '/dashboard';
       } else {
         setExito('Cuenta creada. Podés iniciar sesión ahora.');
         setModo('login');
