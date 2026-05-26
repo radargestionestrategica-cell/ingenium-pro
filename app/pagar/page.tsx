@@ -7,10 +7,6 @@ const PANEL = '#0a0f1e';
 const BORD  = 'rgba(99,102,241,0.15)';
 const RED   = '#ef4444';
 
-// Reemplazá estas URLs con tus links reales de Payoneer
-const PAYONEER_PRO_URL  = 'https://payoneer.com';
-const PAYONEER_TEAM_URL = 'https://payoneer.com';
-
 const PLANES = [
   {
     id:         'pro',
@@ -29,7 +25,6 @@ const PLANES = [
       'Historial ilimitado de cálculos',
       'Soporte prioritario por email',
     ],
-    payoneerUrl: PAYONEER_PRO_URL,
   },
   {
     id:         'team',
@@ -48,7 +43,6 @@ const PLANES = [
       'Exportación masiva de informes',
       'Factura electrónica',
     ],
-    payoneerUrl: PAYONEER_TEAM_URL,
   },
   {
     id:         'enterprise',
@@ -67,11 +61,15 @@ const PLANES = [
       'Capacitación in-company',
       'Soporte técnico 24/7',
     ],
-    payoneerUrl: '',
   },
 ];
 
 export default function PagarPage() {
+  const payoneerUrls: Record<string, string | undefined> = {
+    pro:  process.env.NEXT_PUBLIC_PAYONEER_PRO_URL,
+    team: process.env.NEXT_PUBLIC_PAYONEER_TEAM_URL,
+  };
+
   return (
     <div style={{ minHeight: '100vh', background: BG, color: '#f1f5f9', fontFamily: 'Inter,sans-serif' }}>
 
@@ -199,9 +197,9 @@ export default function PagarPage() {
                 >
                   Solicitar cotización
                 </a>
-              ) : (
+              ) : payoneerUrls[plan.id] ? (
                 <a
-                  href={plan.payoneerUrl}
+                  href={payoneerUrls[plan.id]}
                   target="_blank"
                   rel="noopener noreferrer"
                   style={{
@@ -218,6 +216,20 @@ export default function PagarPage() {
                 >
                   Pagar con Payoneer
                 </a>
+              ) : (
+                <button
+                  disabled
+                  style={{
+                    marginTop: 'auto', display: 'block', width: '100%',
+                    textAlign: 'center', padding: '13px 20px', borderRadius: 12,
+                    fontWeight: 800, fontSize: 14, cursor: 'default',
+                    background: 'rgba(99,102,241,0.05)',
+                    border: '1px solid rgba(99,102,241,0.15)',
+                    color: '#334155', opacity: 0.5, boxSizing: 'border-box',
+                  }}
+                >
+                  Disponible próximamente
+                </button>
               )}
             </div>
           ))}
