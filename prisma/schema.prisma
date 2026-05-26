@@ -18,9 +18,10 @@ model Usuario {
   pais      String     @default("Argentina")
   matricula String?    @default("")
   dni       String?    @default("")
-  plan      String     @default("trial")
-  activo    Boolean    @default(true)
-  createdAt DateTime   @default(now())
+  plan        String     @default("demo")
+  demoStartAt DateTime?
+  activo      Boolean    @default(true)
+  createdAt   DateTime   @default(now())
   calculos  Calculo[]
   proyectos Proyecto[]
 }

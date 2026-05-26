@@ -19,6 +19,17 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
       // que puede tener plan=demo viejo aunque la BD tenga plan pagado.
       try {
         const res = await fetch('/api/v1/auth/session');
+
+        if (res.status === 403) {
+          const data = await res.json();
+          if (data.razon === 'DEMO_EXPIRADA') {
+            router.replace(data.redirigir ?? '/pagar');
+          } else {
+            router.replace('/Login');
+          }
+          return;
+        }
+
         if (!res.ok) { router.replace('/Login'); return; }
         const data = await res.json();
         if (!data.token) { router.replace('/Login'); return; }
@@ -30,15 +41,6 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
         // Bypass administrador — acceso irrestricto independiente del plan
         if (pl?.email?.toLowerCase() === 'colombosilvanabelen@gmail.com') {
           setEstado('ok'); return;
-        }
-
-        if (
-          pl &&
-          (pl.plan === 'demo' || pl.plan === 'trial') &&
-          typeof pl.demoExpira === 'number' &&
-          Date.now() > pl.demoExpira
-        ) {
-          router.replace('/planes?demo=expired'); return;
         }
 
         if (localStorage.getItem('ip_terminos_aceptados') !== '1') {
