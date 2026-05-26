@@ -5,28 +5,8 @@ import * as crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 import { rateLimit } from '@/lib/rate-limit';
 
-async function verificarPassword(
-  password: string,
-  stored: string,
-  usuarioId: string,
-): Promise<boolean> {
-  if (stored.startsWith('$2')) {
-    return bcrypt.compare(password, stored);
-  }
-
-  // Hash legacy SHA-256 — migrar en el acto
-  const salt = process.env.JWT_SALT ?? 'ingenium_salt_2026';
-  const legacy = crypto.createHash('sha256').update(password + salt).digest('hex');
-  if (legacy !== stored) return false;
-
-  const nuevoHash = await bcrypt.hash(password, 12);
-  const { prisma } = await import('@/lib/prisma');
-  await prisma.usuario.update({
-    where: { id: usuarioId },
-    data:  { password: nuevoHash },
-  }).catch(() => {});
-
-  return true;
+async function verificarPassword(password: string, stored: string): Promise<boolean> {
+  return bcrypt.compare(password, stored);
 }
 
 function generarToken(payload: object): string {
@@ -53,7 +33,7 @@ export async function POST(req: Request) {
     const { prisma } = await import('@/lib/prisma');
     const usuario = await prisma.usuario.findUnique({ where: { email } });
 
-    if (!usuario || !(await verificarPassword(password, usuario.password, usuario.id))) {
+    if (!usuario || !(await verificarPassword(password, usuario.password))) {
       return NextResponse.json({ error: 'Credenciales incorrectas' }, { status: 401 });
     }
 
