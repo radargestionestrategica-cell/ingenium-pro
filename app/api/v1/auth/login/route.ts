@@ -1,19 +1,12 @@
 export const dynamic = 'force-dynamic';
 
 import { NextResponse } from 'next/server';
-import * as crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 import { rateLimit } from '@/lib/rate-limit';
+import { generarToken } from '@/lib/auth-token';
 
 async function verificarPassword(password: string, stored: string): Promise<boolean> {
   return bcrypt.compare(password, stored);
-}
-
-function generarToken(payload: object): string {
-  const secret = process.env.JWT_SECRET ?? 'ingenium_jwt_2026';
-  const data = Buffer.from(JSON.stringify(payload)).toString('base64');
-  const sig = crypto.createHmac('sha256', secret).update(data).digest('hex');
-  return `${data}.${sig}`;
 }
 
 export async function POST(req: Request) {
