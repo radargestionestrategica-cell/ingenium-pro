@@ -2,13 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 
 type Payload = { id?: string; email?: string; plan?: string; demoExpira?: number; isOwner?: boolean };
 
-// Rutas de API que no requieren cookie — deben pasar siempre
+// Rutas públicas — no requieren cookie, deben pasar siempre
 const PUBLIC_API = [
   '/api/v1/auth/login',
   '/api/v1/auth/signup',
   '/api/v1/auth/plan',    // llamado internamente por este middleware
   '/api/v1/auth/logout',
   '/api/pagos/webhook',
+  '/planes',
 ];
 
 async function verifyToken(token: string): Promise<Payload | null> {

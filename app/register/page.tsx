@@ -65,7 +65,7 @@ export default function RegisterPage() {
       if (!res.ok) { setError(data.error || 'Error al crear la cuenta'); return; }
       if (data.token) localStorage.setItem('ip_token', data.token);
       localStorage.setItem('ip_terminos_aceptados', '1');
-      router.replace(data.redirect ?? '/dashboard');
+      router.replace(data.redirect ?? '/planes');
     } catch {
       setError('Error de conexión. Verificá tu internet.');
     } finally {
