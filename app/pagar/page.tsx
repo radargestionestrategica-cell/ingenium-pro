@@ -12,8 +12,8 @@ const PLANES = [
     id:         'pro',
     nombre:     'Pro',
     icon:       '⚡',
-    precio:     '$49',
-    periodo:    '/mes USD',
+    precio:     'USD 79',
+    periodo:    '/mes',
     badge:      'MÁS POPULAR',
     badgeColor: GOLD,
     destacado:  true,
@@ -30,8 +30,8 @@ const PLANES = [
     id:         'team',
     nombre:     'Team',
     icon:       '👥',
-    precio:     '$99',
-    periodo:    '/mes USD',
+    precio:     'USD 199',
+    periodo:    '/mes',
     badge:      'HASTA 3 USUARIOS',
     badgeColor: '#6366f1',
     destacado:  false,
@@ -185,7 +185,7 @@ export default function PagarPage() {
               {/* BOTÓN PAYONEER */}
               {plan.id === 'enterprise' ? (
                 <a
-                  href="mailto:radargestionestrategica@gmail.com?subject=Solicitud%20Enterprise%20INGENIUM%20PRO"
+                  href="mailto:contacto@ingeniumpro.store?subject=Solicitud%20Enterprise%20INGENIUM%20PRO"
                   style={{
                     marginTop: 'auto', display: 'block', width: '100%',
                     textAlign: 'center', padding: '13px 20px', borderRadius: 12,
@@ -246,7 +246,7 @@ export default function PagarPage() {
           </div>
           <div style={{ fontSize: 12, color: '#334155' }}>
             Una vez confirmado el pago, activamos tu plan manualmente en el horario de atención.
-            Contacto: <span style={{ color: GOLD }}>radargestionestrategica@gmail.com</span>
+            Contacto: <span style={{ color: GOLD }}>contacto@ingeniumpro.store</span>
           </div>
         </div>
 

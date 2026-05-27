@@ -20,6 +20,7 @@ model Usuario {
   dni       String?    @default("")
   plan        String     @default("demo")
   demoStartAt DateTime?
+  planElegido Boolean    @default(false)
   activo      Boolean    @default(true)
   createdAt   DateTime   @default(now())
   calculos  Calculo[]

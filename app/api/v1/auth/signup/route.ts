@@ -43,10 +43,12 @@ export async function POST(req: Request) {
         password: passwordHash,
         nombre,
         empresa,
-        pais:      pais      || 'Argentina',
-        matricula: matricula || '',
-        dni:       dni       || '',
-        plan:      'demo',
+        pais:        pais      || 'Argentina',
+        matricula:   matricula || '',
+        dni:         dni       || '',
+        plan:        'demo',
+        demoStartAt: new Date(),
+        planElegido: false,
       },
     });
 
