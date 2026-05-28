@@ -10,6 +10,7 @@ const PUBLIC_API = [
   '/api/v1/auth/logout',
   '/api/pagos/webhook',
   '/planes',
+  '/api/planes/elegir',
 ];
 
 async function verifyToken(token: string): Promise<Payload | null> {

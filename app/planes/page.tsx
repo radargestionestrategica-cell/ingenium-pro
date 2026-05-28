@@ -162,9 +162,10 @@ export default function PlanesPage() {
     setLoadingDemo(true)
     try {
       const res = await fetch('/api/planes/elegir', {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ plan: 'demo' }),
+        method:      'POST',
+        credentials: 'include',
+        headers:     { 'Content-Type': 'application/json' },
+        body:        JSON.stringify({ plan: 'demo' }),
       })
       if (res.ok) {
         router.push('/dashboard')
