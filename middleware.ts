@@ -155,7 +155,7 @@ export async function middleware(request: NextRequest) {
 
     if (typeof expira === 'number' && Date.now() > expira) {
       if (isApiRoute) return NextResponse.json({ error: 'Demo expirada' }, { status: 403 });
-      return NextResponse.redirect(new URL('/precios', request.url));
+      return NextResponse.redirect(new URL('/planes', request.url));
     }
 
     return NextResponse.next();
@@ -163,7 +163,7 @@ export async function middleware(request: NextRequest) {
 
   // Plan vacío o desconocido
   if (isApiRoute) return NextResponse.json({ error: 'Plan inválido' }, { status: 403 });
-  return NextResponse.redirect(new URL('/precios', request.url));
+  return NextResponse.redirect(new URL('/planes', request.url));
 }
 
 export const config = {
