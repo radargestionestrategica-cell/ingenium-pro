@@ -1,7 +1,7 @@
 export const dynamic = 'force-dynamic';
 
 import { NextResponse } from 'next/server';
-import { verificarToken } from '@/lib/auth-token';
+import { verificarToken, generarToken } from '@/lib/auth-token';
 
 const OWNER_EMAIL = 'colombosilvanabelen@gmail.com';
 
@@ -32,10 +32,12 @@ export async function POST(req: Request) {
   try {
     const { prisma } = await import('@/lib/prisma');
 
+    const now = new Date();
+
     if (plan === 'demo') {
       await prisma.usuario.update({
         where: { id: payload.id },
-        data:  { planElegido: true, demoStartAt: new Date() },
+        data:  { planElegido: true, demoStartAt: now },
       });
     } else {
       await prisma.usuario.update({
@@ -44,7 +46,26 @@ export async function POST(req: Request) {
       });
     }
 
-    return NextResponse.json({ ok: true });
+    const token = generarToken({
+      id:    payload.id,
+      email: payload.email ?? '',
+      plan,
+      ...((plan === 'demo' || plan === 'trial')
+        ? { demoExpira: now.getTime() + 259_200_000 }
+        : {}),
+    });
+
+    const response = NextResponse.json({ ok: true, token });
+
+    response.cookies.set('ip_auth', token, {
+      httpOnly: true,
+      secure:   true,
+      sameSite: 'lax',
+      maxAge:   60 * 60 * 24 * 7,
+      path:     '/',
+    });
+
+    return response;
   } catch {
     return NextResponse.json({ error: 'Error al actualizar plan' }, { status: 500 });
   }

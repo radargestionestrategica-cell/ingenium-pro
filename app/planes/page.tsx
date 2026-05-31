@@ -168,6 +168,8 @@ export default function PlanesPage() {
         body:        JSON.stringify({ plan: 'demo' }),
       })
       if (res.ok) {
+        const data = await res.json().catch(() => ({}))
+        if (data.token) localStorage.setItem('ip_token', data.token)
         router.push('/dashboard')
       } else {
         window.location.href = '/Login'
