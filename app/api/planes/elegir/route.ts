@@ -47,9 +47,10 @@ export async function POST(req: Request) {
     }
 
     const token = generarToken({
-      id:    payload.id,
-      email: payload.email ?? '',
+      id:          payload.id,
+      email:       payload.email ?? '',
       plan,
+      planElegido: true,
       ...((plan === 'demo' || plan === 'trial')
         ? { demoExpira: now.getTime() + 259_200_000 }
         : {}),
