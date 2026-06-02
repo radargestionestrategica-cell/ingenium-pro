@@ -44,7 +44,7 @@ async function verifyToken(token: string): Promise<Payload | null> {
 async function getDBPlan(
   userId: string,
   requestUrl: string,
-): Promise<{ plan: string; activo: boolean; createdAt?: number; planElegido?: boolean; demoStartAt?: number } | null> {
+): Promise<{ plan: string; activo: boolean; createdAt?: number; demoStartAt?: number } | null> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 5000);
   try {
@@ -63,7 +63,6 @@ async function getDBPlan(
       plan:        String(json.plan ?? 'trial'),
       activo:      json.activo !== false,
       createdAt:   json.createdAt   ? new Date(json.createdAt).getTime()   : undefined,
-      planElegido: typeof json.planElegido === 'boolean' ? json.planElegido : undefined,
       demoStartAt: json.demoStartAt ? new Date(json.demoStartAt).getTime() : undefined,
     };
   } catch {
@@ -105,9 +104,8 @@ export async function middleware(request: NextRequest) {
   let plan = payload.plan;
   let activo = true;
   let dbOk = false;
-  let dbCreatedAt:  number | undefined;
-  let planElegido:  boolean | undefined;
-  let dbDemoStart:  number | undefined;
+  let dbCreatedAt: number | undefined;
+  let dbDemoStart: number | undefined;
 
   if (payload.id) {
     const db = await getDBPlan(payload.id, request.url);
@@ -115,7 +113,6 @@ export async function middleware(request: NextRequest) {
       plan        = db.plan;
       activo      = db.activo;
       dbCreatedAt = db.createdAt;
-      planElegido = db.planElegido;
       dbDemoStart = db.demoStartAt;
       dbOk        = true;
     }
@@ -125,12 +122,6 @@ export async function middleware(request: NextRequest) {
   if (dbOk && !activo) {
     if (isApiRoute) return NextResponse.json({ error: 'Cuenta desactivada' }, { status: 403 });
     return NextResponse.redirect(new URL('/precios', request.url));
-  }
-
-  // REGLA 6: planElegido=false → /planes
-  if (dbOk && planElegido === false) {
-    if (isApiRoute) return NextResponse.json({ error: 'Plan no elegido' }, { status: 403 });
-    return NextResponse.redirect(new URL('/planes', request.url));
   }
 
   // REGLA 4: demo y demoStartAt > 3 días → /planes
