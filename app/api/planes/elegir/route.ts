@@ -6,10 +6,15 @@ import { verificarToken, generarToken } from '@/lib/auth-token';
 const OWNER_EMAIL = 'colombosilvanabelen@gmail.com';
 
 export async function POST(req: Request) {
-  // Leer cookie ip_auth — mismo patrón que session/route.ts
+  // Bearer primero, cookie ip_auth como fallback
+  const authHeader  = req.headers.get('authorization') ?? '';
+  const bearerToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : null;
+
   const cookieHeader = req.headers.get('cookie') ?? '';
-  const match        = cookieHeader.match(/(?:^|;\s*)ip_auth=([^;]+)/);
-  const rawToken     = match?.[1];
+  const cookieMatch  = cookieHeader.match(/(?:^|;\s*)ip_auth=([^;]+)/);
+  const cookieToken  = cookieMatch?.[1] ?? null;
+
+  const rawToken = bearerToken ?? cookieToken;
 
   const payload = rawToken ? verificarToken(rawToken) : null;
   if (!payload?.id) {
