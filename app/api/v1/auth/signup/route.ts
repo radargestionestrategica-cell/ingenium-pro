@@ -53,10 +53,11 @@ export async function POST(req: Request) {
     });
 
     const token = generarToken({
-      id:         usuario.id,
-      email:      usuario.email,
-      plan:       'demo',
-      demoExpira: usuario.createdAt.getTime() + 259_200_000,
+      id:          usuario.id,
+      email:       usuario.email,
+      plan:        'demo',
+      planElegido: false,
+      demoExpira:  usuario.createdAt.getTime() + 259_200_000,
     });
 
     const response = NextResponse.json({
