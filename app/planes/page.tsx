@@ -161,11 +161,14 @@ export default function PlanesPage() {
   const comenzarDemo = async () => {
     setLoadingDemo(true)
     try {
+      const ipToken = typeof window !== 'undefined' ? localStorage.getItem('ip_token') : null
       const res = await fetch('/api/planes/elegir', {
-        method:      'POST',
-        credentials: 'include',
-        headers:     { 'Content-Type': 'application/json' },
-        body:        JSON.stringify({ plan: 'demo' }),
+        method:  'POST',
+        headers: {
+          'Content-Type':  'application/json',
+          ...(ipToken ? { 'Authorization': `Bearer ${ipToken}` } : {}),
+        },
+        body: JSON.stringify({ plan: 'demo' }),
       })
       if (res.ok) {
         const data = await res.json().catch(() => ({}))
