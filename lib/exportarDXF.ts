@@ -2297,3 +2297,925 @@ export function exportarDXFTapon(p: Record<string, unknown>): string {
 
   return [header, ...ents, '  0','ENDSEC','  0','EOF'].join('\n');
 }
+
+// ═══════════════════════════════════════════════════════════
+//  MÓDULO CIVIL — VIGA ACERO AISC / COLUMNA HORMIGÓN ACI
+//  tipo:'viga'    → sección perfil I + alzado + deflexión
+//  tipo:'columna' → sección rectangular armada + alzado
+// ═══════════════════════════════════════════════════════════
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function exportarDXFCivil(p: Record<string, any>): string {
+  const tipo  = String(p.tipo ?? 'viga');
+  const ents: string[] = [];
+  const fecha = p.fecha || new Date().toLocaleDateString('es-AR');
+
+  if (tipo === 'viga') {
+    const perfil = String(p.perfil     ?? 'W-perfil');
+    const L_m    = Number(p.L_m        ?? 6);
+    const Mu     = Number(p.Mu_kNm     ?? 0);
+    const Vu     = Number(p.Vu_kN      ?? 0);
+    const phi_Mn = Number(p.phi_Mn     ?? 0);
+    const phi_Vn = Number(p.phi_Vn     ?? 0);
+    const util_M = Number(p.util_M_pct ?? 0);
+    const util_V = Number(p.util_V_pct ?? 0);
+    const delta  = Number(p.delta_mm   ?? 0);
+    const dlim   = Number(p.delta_limite_mm ?? 0);
+    const ok_M   = p.ok_M !== false;
+    const ok_D   = p.ok_D !== false;
+    const riesgo = String(p.riesgo ?? 'LOW');
+
+    // ── Sección transversal perfil W ──────────────────────────────
+    const cx = 65, cy = 75, bf = 26, hw = 22, tf = 5, tw = 3;
+    ents.push(_linea(cx-bf, cy+hw+tf, cx+bf, cy+hw+tf, 'GEOMETRIA', 4));
+    ents.push(_linea(cx-bf, cy+hw+tf, cx-bf, cy+hw,    'GEOMETRIA', 4));
+    ents.push(_linea(cx+bf, cy+hw+tf, cx+bf, cy+hw,    'GEOMETRIA', 4));
+    ents.push(_linea(cx-bf, cy+hw, cx-tw, cy+hw,       'GEOMETRIA', 4));
+    ents.push(_linea(cx+bf, cy+hw, cx+tw, cy+hw,       'GEOMETRIA', 4));
+    ents.push(_linea(cx-tw, cy+hw, cx-tw, cy-hw,       'GEOMETRIA', 4));
+    ents.push(_linea(cx+tw, cy+hw, cx+tw, cy-hw,       'GEOMETRIA', 4));
+    ents.push(_linea(cx-tw, cy-hw, cx-bf, cy-hw,       'GEOMETRIA', 4));
+    ents.push(_linea(cx+tw, cy-hw, cx+bf, cy-hw,       'GEOMETRIA', 4));
+    ents.push(_linea(cx-bf, cy-hw,    cx-bf, cy-hw-tf, 'GEOMETRIA', 4));
+    ents.push(_linea(cx+bf, cy-hw,    cx+bf, cy-hw-tf, 'GEOMETRIA', 4));
+    ents.push(_linea(cx-bf, cy-hw-tf, cx+bf, cy-hw-tf, 'GEOMETRIA', 4));
+    ents.push(_linea(cx-bf-8, cy, cx+bf+8, cy,         'CENTRO', 1));
+    ents.push(_linea(cx, cy-hw-tf-8, cx, cy+hw+tf+8,   'CENTRO', 1));
+    ents.push(_cotaHoriz(cx-bf, cy+hw+tf+2, cx+bf, cy+hw+tf+2, `bf = ${bf*2} mm`, 8));
+    ents.push(_cotaVert(cx+bf+4, cy-hw-tf, cy+hw+tf, `d = ${(hw+tf)*2} mm`, 10));
+
+    // ── Alzado + diagrama de deflexión ────────────────────────────
+    const lx0 = 140, lx1 = lx0 + Math.min(L_m*14, 110), ly = 68, dh = 10;
+    ents.push(_linea(lx0, ly+dh, lx1, ly+dh, 'GEOMETRIA', 4));
+    ents.push(_linea(lx0, ly-dh, lx1, ly-dh, 'GEOMETRIA', 4));
+    ents.push(_linea(lx0, ly-dh, lx0, ly+dh, 'GEOMETRIA', 4));
+    ents.push(_linea(lx1, ly-dh, lx1, ly+dh, 'GEOMETRIA', 4));
+    ents.push(_linea(lx0-6, ly-dh-6, lx0, ly-dh, 'GEOMETRIA', 3));
+    ents.push(_linea(lx0+6, ly-dh-6, lx0, ly-dh, 'GEOMETRIA', 3));
+    ents.push(_linea(lx1-6, ly-dh-6, lx1, ly-dh, 'GEOMETRIA', 3));
+    ents.push(_linea(lx1+6, ly-dh-6, lx1, ly-dh, 'GEOMETRIA', 3));
+    const cargaY = ly + dh + 12;
+    ents.push(_linea(lx0, cargaY, lx1, cargaY, 'DATOS', 1));
+    for (let xi = lx0+5; xi < lx1; xi += 10) {
+      ents.push(_linea(xi, cargaY, xi, ly+dh+2, 'DATOS', 1));
+      ents.push(_linea(xi, ly+dh+2, xi-3, ly+dh+5, 'DATOS', 1));
+    }
+    ents.push(_texto((lx0+lx1)/2-15, cargaY+4, 3.5, `Mu=${Mu.toFixed(0)} kN.m`, 'DATOS', 1));
+    if (delta > 0) {
+      const ds = Math.min(delta*0.2, 8);
+      for (let i = 0; i < 8; i++) {
+        const xa = lx0+(lx1-lx0)*i/8,     ya  = ly-ds*Math.sin(Math.PI*i/8);
+        const xb = lx0+(lx1-lx0)*(i+1)/8, yb  = ly-ds*Math.sin(Math.PI*(i+1)/8);
+        ents.push(_linea(xa, ya, xb, yb, 'COTAS', 2));
+      }
+      ents.push(_texto(lx1+3, ly-ds/2, 3, `delta=${delta.toFixed(1)}mm`, 'COTAS', 2));
+    }
+    ents.push(_cotaHoriz(lx0, ly-dh-8, lx1, ly-dh-8, `L = ${L_m} m`, -12));
+
+    const rCol = riesgo === 'CRITICAL' ? 1 : 3;
+    const datos = [
+      `MODULO: CIVIL — VIGA ACERO ${perfil} — AISC 360-16 LRFD`,
+      `Perfil ${perfil} | L=${L_m} m | Acero A36 Fy=250 MPa`,
+      `Mu=${Mu.toFixed(0)} kN.m -> phi.Mn=${phi_Mn.toFixed(0)} kN.m | Util.flex=${util_M.toFixed(1)}%`,
+      `Vu=${Vu.toFixed(0)} kN -> phi.Vn=${phi_Vn.toFixed(0)} kN | Util.cort=${util_V.toFixed(1)}%`,
+      `Deflexion=${delta.toFixed(1)}mm | Limite L/360=${dlim.toFixed(1)}mm`,
+      `Flexion: ${ok_M?'OK':'FALLA'} | Servicio: ${ok_D?'OK':'EXCEDE L/360'}`,
+      `ESTADO: ${riesgo==='CRITICAL'?'FALLA ESTRUCTURAL':riesgo==='HIGH'?'NO APTO':riesgo==='MEDIUM'?'REVISAR':'APTO'}`,
+    ];
+    datos.forEach((d, i) => {
+      ents.push(_texto(0, 20-i*6, 3.5, d, 'DATOS', i===0?2:(i===6?rCol:3)));
+    });
+    ents.push(_bloqueTitle(`VIGA ${perfil} — SECCION I / ALZADO / DEFLEXION`, 'AISC 360-16 LRFD / ASCE 7-22',
+      p.proyecto||'', p.ingeniero||'', fecha, 0, -60, _usrData(p)));
+
+  } else {
+    // ── Columna de hormigón armado ────────────────────────────────
+    const b_mm   = Number(p.b_mm      ?? 300);
+    const h_mm   = Number(p.h_mm      ?? 300);
+    const As     = Number(p.As_mm2    ?? 1800);
+    const fc     = Number(p.fc_MPa    ?? 25);
+    const fy     = Number(p.fy_MPa    ?? 420);
+    const Pu     = Number(p.Pu_kN     ?? 0);
+    const phi_Pn = Number(p.phi_Pn    ?? 0);
+    const util_P = Number(p.util_P_pct ?? 0);
+    const rho    = Number(p.rho_pct   ?? 0);
+    const ok_P     = p.ok_P     !== false;
+    const acero_ok = p.acero_ok !== false;
+    const riesgo   = String(p.riesgo  ?? 'LOW');
+
+    const sc = 0.14, cx = 75, cy = 70;
+    const bW = Math.max(Math.min(b_mm*sc/2, 32), 12);
+    const hH = Math.max(Math.min(h_mm*sc/2, 32), 12);
+    const cov = 3, barR = Math.max(1.2, Math.min(As/2500, 3));
+
+    ents.push(_linea(cx-bW, cy-hH, cx+bW, cy-hH, 'GEOMETRIA', 4));
+    ents.push(_linea(cx+bW, cy-hH, cx+bW, cy+hH, 'GEOMETRIA', 4));
+    ents.push(_linea(cx+bW, cy+hH, cx-bW, cy+hH, 'GEOMETRIA', 4));
+    ents.push(_linea(cx-bW, cy+hH, cx-bW, cy-hH, 'GEOMETRIA', 4));
+    ents.push(_linea(cx-bW+cov, cy-hH+cov, cx+bW-cov, cy-hH+cov, 'COTAS', 7));
+    ents.push(_linea(cx+bW-cov, cy-hH+cov, cx+bW-cov, cy+hH-cov, 'COTAS', 7));
+    ents.push(_linea(cx+bW-cov, cy+hH-cov, cx-bW+cov, cy+hH-cov, 'COTAS', 7));
+    ents.push(_linea(cx-bW+cov, cy+hH-cov, cx-bW+cov, cy-hH+cov, 'COTAS', 7));
+    const bpos: [number,number][] = [
+      [cx-bW+cov+barR, cy-hH+cov+barR], [cx, cy-hH+cov+barR],
+      [cx+bW-cov-barR, cy-hH+cov+barR], [cx+bW-cov-barR, cy],
+      [cx+bW-cov-barR, cy+hH-cov-barR], [cx, cy+hH-cov-barR],
+      [cx-bW+cov+barR, cy+hH-cov-barR], [cx-bW+cov+barR, cy],
+    ];
+    bpos.forEach(bp => ents.push(_circulo(bp[0], bp[1], barR, 'GEOMETRIA', 2)));
+    const ew = bW-cov-barR, eh = hH-cov-barR;
+    ents.push(_linea(cx-ew, cy-eh, cx+ew, cy-eh, 'GEOMETRIA', 3));
+    ents.push(_linea(cx+ew, cy-eh, cx+ew, cy+eh, 'GEOMETRIA', 3));
+    ents.push(_linea(cx+ew, cy+eh, cx-ew, cy+eh, 'GEOMETRIA', 3));
+    ents.push(_linea(cx-ew, cy+eh, cx-ew, cy-eh, 'GEOMETRIA', 3));
+    ents.push(_linea(cx-bW-8, cy, cx+bW+8, cy, 'CENTRO', 1));
+    ents.push(_linea(cx, cy-hH-8, cx, cy+hH+8, 'CENTRO', 1));
+    ents.push(_cotaHoriz(cx-bW, cy+hH+3, cx+bW, cy+hH+3, `b = ${b_mm} mm`, 8));
+    ents.push(_cotaVert(cx+bW+5, cy-hH, cy+hH, `h = ${h_mm} mm`, 12));
+
+    const elx = 165, ely0 = 35, elH = 70, elW = bW*0.55;
+    ents.push(_linea(elx-elW, ely0,     elx+elW, ely0,     'GEOMETRIA', 4));
+    ents.push(_linea(elx-elW, ely0,     elx-elW, ely0+elH, 'GEOMETRIA', 4));
+    ents.push(_linea(elx+elW, ely0,     elx+elW, ely0+elH, 'GEOMETRIA', 4));
+    ents.push(_linea(elx-elW, ely0+elH, elx+elW, ely0+elH, 'GEOMETRIA', 4));
+    ents.push(_linea(elx-elW+cov+barR, ely0+3, elx-elW+cov+barR, ely0+elH-3, 'GEOMETRIA', 2));
+    ents.push(_linea(elx+elW-cov-barR, ely0+3, elx+elW-cov-barR, ely0+elH-3, 'GEOMETRIA', 2));
+    for (let yi = ely0+10; yi < ely0+elH; yi += 12) {
+      ents.push(_linea(elx-elW+2, yi, elx+elW-2, yi, 'GEOMETRIA', 3));
+    }
+    ents.push(_linea(elx, ely0-16, elx, ely0-2, 'DATOS', 1));
+    ents.push(_linea(elx-4, ely0-6, elx, ely0-2, 'DATOS', 1));
+    ents.push(_linea(elx+4, ely0-6, elx, ely0-2, 'DATOS', 1));
+    ents.push(_texto(elx+4, ely0-14, 3.5, `Pu=${Pu.toFixed(0)} kN`, 'DATOS', 1));
+
+    const rCol = riesgo === 'CRITICAL' ? 1 : 3;
+    const datos = [
+      `MODULO: CIVIL — COLUMNA H.A. ${b_mm}x${h_mm} mm — ACI 318-19`,
+      `Seccion ${b_mm}x${h_mm} mm | H${fc} MPa | fy=${fy} MPa`,
+      `As=${As} mm2 | rho=${rho.toFixed(2)}% (limite ACI: 1% a 8%)`,
+      `Pu=${Pu.toFixed(0)} kN -> phi.Pn=${phi_Pn.toFixed(0)} kN | Util.=${util_P.toFixed(1)}%`,
+      `Cuantia: ${acero_ok?'Dentro limites ACI 318-19':'FUERA limites ACI 318-19'}`,
+      `ESTADO: ${ok_P?(riesgo==='CRITICAL'?'UTIL>100%':riesgo==='MEDIUM'?'REVISAR':'APTA'):'FALLA — Pu > phi.Pn'}`,
+    ];
+    datos.forEach((d, i) => {
+      ents.push(_texto(0, 20-i*6, 3.5, d, 'DATOS', i===0?2:(i===5?rCol:3)));
+    });
+    ents.push(_bloqueTitle(`COLUMNA H.A. ${b_mm}x${h_mm}mm — SECCION / ALZADO`, 'ACI 318-19 Cap.22 / CIRSOC 201',
+      p.proyecto||'', p.ingeniero||'', fecha, 0, -60, _usrData(p)));
+  }
+
+  return [_cabecera(), ...ents, _pie()].join('\n');
+}
+
+// ═══════════════════════════════════════════════════════════
+//  MÓDULO VIALIDAD — PAVIMENTO AASHTO 93 / DRENAJE HEC-22
+//  tipo:'pavimento' → sección 3 capas acotadas AASHTO
+//  tipo:'drenaje'   → cuneta trapezoidal con lámina de agua
+// ═══════════════════════════════════════════════════════════
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function exportarDXFVialidad(p: Record<string, any>): string {
+  const tipo  = String(p.tipo ?? 'pavimento');
+  const ents: string[] = [];
+  const fecha = p.fecha || new Date().toLocaleDateString('es-AR');
+
+  if (tipo === 'pavimento') {
+    const SN  = Number(p.SN     ?? 0);
+    const D1  = Number(p.D1_cm  ?? 0);
+    const D2  = Number(p.D2_cm  ?? 0);
+    const D3  = Number(p.D3_cm  ?? 0);
+    const W18 = Number(p.W18    ?? 0);
+    const MR  = Number(p.MR_psi ?? 0);
+    const a1  = Number(p.a1     ?? 0.44);
+    const a2  = Number(p.a2     ?? 0.14);
+    const a3  = Number(p.a3     ?? 0.11);
+    const riesgo = String(p.riesgo ?? 'LOW');
+    const total  = D1 + D2 + D3;
+
+    // ── Sección estructural 3 capas acotadas ─────────────────────
+    const x0 = 30, x1 = 230, yTop = 112;
+    const sc = total > 0 ? Math.min(80/total, 4) : 2;
+    const d1H = Math.max(D1*sc, 5), d2H = Math.max(D2*sc, 5), d3H = Math.max(D3*sc, 5);
+
+    const y1b = yTop - d1H;
+    ents.push(_linea(x0, yTop, x1, yTop, 'GEOMETRIA', 4));
+    ents.push(_linea(x0, y1b,  x1, y1b,  'GEOMETRIA', 4));
+    ents.push(_linea(x0, yTop, x0, y1b,  'GEOMETRIA', 4));
+    ents.push(_linea(x1, yTop, x1, y1b,  'GEOMETRIA', 4));
+    for (let xi = x0+6; xi < x1-6; xi += 13) {
+      ents.push(_linea(xi, yTop-1, xi+9, y1b+1, 'GEOMETRIA', 7));
+    }
+    ents.push(_texto(x0+6, (yTop+y1b)/2-1, 3.5, `CARPETA ASFALTICA — D1=${D1.toFixed(1)} cm`, 'DATOS', 2));
+    ents.push(_cotaVert(x0-3, y1b, yTop, `${D1.toFixed(1)}`, -8));
+
+    const y2b = y1b - d2H;
+    ents.push(_linea(x0, y2b, x1, y2b, 'GEOMETRIA', 3));
+    ents.push(_linea(x0, y1b, x0, y2b, 'GEOMETRIA', 3));
+    ents.push(_linea(x1, y1b, x1, y2b, 'GEOMETRIA', 3));
+    ents.push(_texto(x0+6, (y1b+y2b)/2-1, 3.5, `BASE GRANULAR — D2=${D2.toFixed(1)} cm`, 'DATOS', 3));
+    ents.push(_cotaVert(x0-3, y2b, y1b, `${D2.toFixed(1)}`, -8));
+
+    const y3b = y2b - d3H;
+    ents.push(_linea(x0, y3b, x1, y3b, 'GEOMETRIA', 7));
+    ents.push(_linea(x0, y2b, x0, y3b, 'GEOMETRIA', 7));
+    ents.push(_linea(x1, y2b, x1, y3b, 'GEOMETRIA', 7));
+    ents.push(_texto(x0+6, (y2b+y3b)/2-1, 3.5, `SUBBASE — D3=${D3.toFixed(1)} cm`, 'DATOS', 7));
+    ents.push(_cotaVert(x0-3, y3b, y2b, `${D3.toFixed(1)}`, -8));
+
+    ents.push(_linea(x0-10, y3b, x1+10, y3b, 'GEOMETRIA', 1));
+    ents.push(_texto(x0+6, y3b-6, 3, `SUBRASANTE — MR=${MR.toFixed(0)} psi`, 'DATOS', 1));
+    ents.push(_cotaVert(x1+5, y3b, yTop, `Total=${total.toFixed(1)} cm`, 14));
+    const cxR = (x0+x1)/2;
+    ents.push(_linea(x0, yTop+4, cxR, yTop+8, 'COTAS', 2));
+    ents.push(_linea(cxR, yTop+8, x1, yTop+4, 'COTAS', 2));
+    ents.push(_texto(cxR-20, yTop+11, 3, 'BOMBEO 2%  CALZADA TIPO', 'COTAS', 2));
+
+    const rCol = (riesgo==='CRITICAL'||riesgo==='HIGH') ? 1 : 3;
+    const datos = [
+      `MODULO: VIALIDAD — PAVIMENTO FLEXIBLE AASHTO 93`,
+      `Numero estructural SN = ${SN.toFixed(3)}`,
+      `D1=${D1.toFixed(1)}cm | D2=${D2.toFixed(1)}cm | D3=${D3.toFixed(1)}cm | Total=${total.toFixed(1)}cm`,
+      `W18=${(W18/1e6).toFixed(2)}x10^6 ESAL | MR=${MR.toFixed(0)} psi`,
+      `Coef. capas: a1=${a1.toFixed(2)} | a2=${a2.toFixed(2)} | a3=${a3.toFixed(2)}`,
+      `SN = a1.D1 + a2.m2.D2 + a3.m3.D3 = ${SN.toFixed(3)}`,
+      `ESTADO: ${riesgo==='CRITICAL'?'INSUFICIENTE':riesgo==='HIGH'?'REFORZAR':riesgo==='MEDIUM'?'REVISAR':'APTO — AASHTO 93'}`,
+    ];
+    datos.forEach((d, i) => {
+      ents.push(_texto(0, 20-i*6, 3.5, d, 'DATOS', i===0?2:(i===6?rCol:3)));
+    });
+    ents.push(_bloqueTitle('PAVIMENTO FLEXIBLE — SECCION ESTRUCTURAL 3 CAPAS', 'AASHTO Guide for Design of Pavement Structures 1993',
+      p.proyecto||'', p.ingeniero||'', fecha, 0, -60, _usrData(p)));
+
+  } else {
+    // ── Cuneta trapezoidal con lámina de agua ─────────────────────
+    const Q    = Number(p.Q_m3s    ?? 0);
+    const Qlps = Number(p.Q_lps    ?? Q*1000);
+    const y_m  = Number(p.y_m      ?? 0);
+    const V    = Number(p.V_cuneta ?? 0);
+    const T    = Number(p.T_superficie ?? 0);
+    const Z1   = Number(p.Z1       ?? 2);
+    const Z2   = Number(p.Z2       ?? 4);
+    const S    = Number(p.S        ?? 0.01);
+    const ok   = p.ok_velocidad !== false;
+    const riesgo = String(p.riesgo ?? 'LOW');
+
+    const cx = 130, yBase = 92;
+    const ysc   = Math.max(Math.min(y_m*55, 40), 6);
+    const bHalf = Math.max(ysc*0.3, 3);
+    const tHalf = T > 0 ? Math.min(T*18/2, 48) : Math.max(ysc*(Z1+Z2)*0.3, 14);
+
+    ents.push(_linea(cx-tHalf, yBase, cx-bHalf, yBase-ysc, 'GEOMETRIA', 4));
+    ents.push(_linea(cx-bHalf, yBase-ysc, cx+bHalf, yBase-ysc, 'GEOMETRIA', 4));
+    ents.push(_linea(cx+bHalf, yBase-ysc, cx+tHalf, yBase, 'GEOMETRIA', 4));
+    ents.push(_linea(cx-tHalf-18, yBase, cx+tHalf+18, yBase, 'GEOMETRIA', 3));
+    const wf = 0.85;
+    ents.push(_linea(cx-tHalf*wf, yBase, cx-bHalf*wf, yBase-ysc*wf, 'DATOS', 4));
+    ents.push(_linea(cx-bHalf*wf, yBase-ysc*wf, cx+bHalf*wf, yBase-ysc*wf, 'DATOS', 4));
+    ents.push(_linea(cx+bHalf*wf, yBase-ysc*wf, cx+tHalf*wf, yBase, 'DATOS', 4));
+    ents.push(_texto(cx+tHalf*wf+4, yBase-ysc*wf, 3.5, `y=${y_m.toFixed(3)}m`, 'COTAS', 4));
+    ents.push(_linea(cx-16, yBase-ysc*0.5, cx+16, yBase-ysc*0.5, 'DATOS', 2));
+    ents.push(_linea(cx+16, yBase-ysc*0.5, cx+10, yBase-ysc*0.5+4, 'DATOS', 2));
+    ents.push(_linea(cx+16, yBase-ysc*0.5, cx+10, yBase-ysc*0.5-4, 'DATOS', 2));
+    ents.push(_texto(cx+20, yBase-ysc*0.5+2, 3.5, `V=${V.toFixed(2)}m/s`, 'DATOS', 2));
+    ents.push(_texto(cx-tHalf-14, yBase+7, 3, `S=${(S*100).toFixed(2)}% | n=${Number(p.n_manning??0.016)}`, 'COTAS', 3));
+    ents.push(_texto(cx-tHalf+4, yBase-ysc*0.55, 3, `Z1=${Z1}`, 'COTAS', 7));
+    ents.push(_texto(cx+tHalf-12, yBase-ysc*0.55, 3, `Z2=${Z2}`, 'COTAS', 7));
+    ents.push(_cotaHoriz(cx-tHalf, yBase+3, cx+tHalf, yBase+3, `T = ${T.toFixed(2)} m`, 8));
+
+    const rCol = (!ok||riesgo==='CRITICAL'||riesgo==='HIGH') ? 1 : 3;
+    const datos = [
+      `MODULO: VIALIDAD — DRENAJE HEC-22 / METODO RACIONAL`,
+      `Q diseno=${Q.toFixed(4)} m3/s = ${Qlps.toFixed(1)} L/s`,
+      `Tirante y=${y_m.toFixed(3)} m | Ancho superficial T=${T.toFixed(2)} m`,
+      `V=${V.toFixed(3)} m/s | S=${(S*100).toFixed(2)}% | Z1=${Z1} Z2=${Z2}`,
+      `Velocidad dentro limite FHWA HEC-22: ${ok?'SI':'NO — riesgo erosion'}`,
+      `ESTADO: ${riesgo==='CRITICAL'?'CRITICO':riesgo==='HIGH'?'REVISAR EROSION':'CUNETA APTA HEC-22'}`,
+    ];
+    datos.forEach((d, i) => {
+      ents.push(_texto(0, 20-i*6, 3.5, d, 'DATOS', i===0?2:(i===5?rCol:3)));
+    });
+    ents.push(_bloqueTitle('DRENAJE VIAL — CUNETA TRAPEZOIDAL / HEC-22', 'FHWA HEC-22 3rd Ed. / Metodo Racional / Manning',
+      p.proyecto||'', p.ingeniero||'', fecha, 0, -60, _usrData(p)));
+  }
+
+  return [_cabecera(), ...ents, _pie()].join('\n');
+}
+
+// ═══════════════════════════════════════════════════════════
+//  MÓDULO REPRESAS — VERTEDERO ICOLD/USACE / FILTRACIÓN DARCY
+//  tipo:'vertedero'  → perfil presa + lámina vertiente
+//  tipo:'filtracion' → presa tierra + línea freática
+// ═══════════════════════════════════════════════════════════
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function exportarDXFRepresas(p: Record<string, any>): string {
+  const tipo  = String(p.tipo ?? 'vertedero');
+  const ents: string[] = [];
+  const fecha = p.fecha || new Date().toLocaleDateString('es-AR');
+
+  if (tipo === 'vertedero') {
+    const Lv  = Number(p.L_vert  ?? 10);
+    const H   = Number(p.H_carga ?? 2);
+    const Cd  = Number(p.Cd      ?? 1.84);
+    const Q   = Number(p.Q_m3s   ?? 0);
+    const v   = Number(p.v_ms    ?? 0);
+    const Fr  = Number(p.Fr      ?? 0);
+    const reg = String(p.regimen ?? (Fr < 1 ? 'SUBCRITICO' : 'SUPERCRITICO'));
+
+    // ── Perfil presa + vertedero + lámina de agua ─────────────────
+    const bx0 = 42, byBase = 20, damH = 65, damW = 28;
+    const crestY = byBase + damH;
+    ents.push(_linea(bx0,      byBase, bx0+damW*2+12, byBase,  'GEOMETRIA', 7));
+    ents.push(_linea(bx0,      byBase, bx0+8,          crestY,  'GEOMETRIA', 7));
+    ents.push(_linea(bx0+8,    crestY, bx0+damW,       crestY,  'GEOMETRIA', 7));
+    ents.push(_linea(bx0+damW, crestY, bx0+damW*2+12, byBase,  'GEOMETRIA', 7));
+    for (let yi = byBase+8; yi < crestY-4; yi += 10) {
+      ents.push(_linea(bx0+(yi-byBase)/damH*8, yi, bx0+(yi-byBase)/damH*8+8, yi, 'GEOMETRIA', 7));
+    }
+    const Hsc = Math.max(Math.min(H*12, 34), 7);
+    const waterY = crestY + Hsc;
+    ents.push(_linea(bx0-18, waterY, bx0+damW, waterY, 'DATOS', 4));
+    for (let yi = crestY+4; yi < waterY; yi += 5) {
+      ents.push(_linea(bx0-16, yi, bx0+damW-2, yi, 'GEOMETRIA', 4));
+    }
+    ents.push(_texto(bx0-16, waterY+3, 3.5, 'N.A.P.', 'DADOS', 4));
+    const downX = bx0 + damW;
+    ents.push(_arco(downX, crestY,   13, 0, 65, 'COTAS', 2));
+    ents.push(_arco(downX, crestY+3, 8,  0, 65, 'COTAS', 2));
+    ents.push(_linea(downX+11, crestY+7, downX+38, byBase+7, 'COTAS', 2));
+    ents.push(_texto(downX+15, crestY-5, 3.5, `Q=${Q.toFixed(3)} m3/s`, 'DADOS', 2));
+    ents.push(_texto(downX+15, crestY-12, 3, `V=${v.toFixed(2)} m/s  Fr=${Fr.toFixed(3)}`, 'DADOS', 3));
+    ents.push(_linea(downX, byBase, downX+40, byBase, 'GEOMETRIA', 3));
+    ents.push(_linea(downX+38, byBase, downX+38, byBase+10, 'GEOMETRIA', 3));
+    ents.push(_linea(downX+38, byBase+10, downX+50, byBase+10, 'GEOMETRIA', 3));
+    ents.push(_texto(downX+20, byBase+5, 3, 'DISIPADOR', 'COTAS', 3));
+    ents.push(_cotaVert(bx0-10, crestY, waterY, `H=${H.toFixed(2)}m`, -8));
+    ents.push(_cotaHoriz(bx0+8, crestY+3, bx0+damW, crestY+3, `L=${Lv.toFixed(1)}m`, 8));
+    ents.push(_cotaVert(bx0+damW*2+16, byBase, crestY, `Altura presa`, 10));
+
+    const rCol = Fr > 1.5 ? 1 : Fr > 1 ? 2 : 3;
+    const datos = [
+      `MODULO: REPRESAS — VERTEDERO FRONTAL — USACE / ICOLD`,
+      `L vertedero=${Lv.toFixed(2)} m | Carga H=${H.toFixed(2)} m | Cd=${Cd.toFixed(3)}`,
+      `Q = Cd x L x H^(3/2) = ${Q.toFixed(4)} m3/s`,
+      `Velocidad de vertido v=${v.toFixed(3)} m/s`,
+      `Numero de Froude Fr=${Fr.toFixed(3)} — Regimen: ${reg}`,
+      `${Fr>1.5?'SUPERCRITICO — verificar disipador':Fr>1?'SUPERCRITICO — revisar erosion':'SUBCRITICO — regimen estable'}`,
+    ];
+    datos.forEach((d, i) => {
+      ents.push(_texto(0, 20-i*6, 3.5, d, 'DATOS', i===0?2:(i===5?rCol:3)));
+    });
+    ents.push(_bloqueTitle('VERTEDERO — PERFIL HIDRAULICO / LAMINA DE AGUA', 'USACE EM 1110-2-1603 / ICOLD Bulletin 58',
+      p.proyecto||'', p.ingeniero||'', fecha, 0, -60, _usrData(p)));
+
+  } else {
+    // ── Filtración Darcy — presa tierra + línea freática ─────────
+    const H    = Number(p.H_fil     ?? 5);
+    const k    = Number(p.k_ms      ?? 0.0001);
+    const Lf   = Number(p.L_fil     ?? 20);
+    const dv   = Number(p.d_m       ?? 1);
+    const q    = Number(p.q_m2s     ?? 0);
+    const grad = Number(p.gradiente ?? 0);
+    const seg  = p.seguro !== false;
+
+    const bx0 = 18, byBase = 20, damH = 60;
+    const crestY = byBase + damH;
+    const crestX = bx0 + damH * 0.45;
+    const baseW  = damH * 2.4;
+    ents.push(_linea(bx0,       byBase, bx0+baseW,  byBase,  'GEOMETRIA', 7));
+    ents.push(_linea(bx0,       byBase, crestX-8,   crestY,  'GEOMETRIA', 7));
+    ents.push(_linea(crestX-8,  crestY, crestX+12,  crestY,  'GEOMETRIA', 7));
+    ents.push(_linea(crestX+12, crestY, bx0+baseW,  byBase,  'GEOMETRIA', 7));
+    for (let xi = bx0+8; xi < crestX+5; xi += 10) {
+      ents.push(_linea(xi, byBase+4, xi-5, Math.min(crestY-4, byBase+damH*0.72), 'GEOMETRIA', 7));
+    }
+    const wH = Math.min(H*9, damH-8);
+    ents.push(_linea(bx0-18, byBase+wH, crestX-10, byBase+wH, 'DATOS', 4));
+    for (let yi = byBase+4; yi < byBase+wH; yi += 5) {
+      ents.push(_linea(bx0-16, yi, crestX-12, yi, 'GEOMETRIA', 4));
+    }
+    ents.push(_texto(bx0-16, byBase+wH+3, 3, `H=${H.toFixed(1)}m`, 'DATOS', 4));
+    const xFS = crestX - damH*0.25, xFE = crestX + damH*1.1;
+    const nS = 9;
+    for (let i = 0; i < nS-1; i++) {
+      const t  = i/(nS-1), t2 = (i+1)/(nS-1);
+      const xi  = xFS+(xFE-xFS)*t,   xi2 = xFS+(xFE-xFS)*t2;
+      const yi  = byBase+wH*(1-t*t), yi2 = byBase+wH*(1-t2*t2);
+      ents.push(_linea(xi, yi, xi2, yi2, grad>0.5?'DATOS':'COTAS', grad>0.5?1:2));
+    }
+    ents.push(_texto(xFS+10, byBase+wH*0.55, 3, 'LINEA FREATICA', 'COTAS', 2));
+    const fx = crestX + damH*0.9;
+    ents.push(_linea(fx,    byBase,    fx+18, byBase,    'GEOMETRIA', 3));
+    ents.push(_linea(fx,    byBase,    fx,    byBase+16, 'GEOMETRIA', 3));
+    ents.push(_linea(fx,    byBase+16, fx+18, byBase+16, 'GEOMETRIA', 3));
+    ents.push(_linea(fx+18, byBase,    fx+18, byBase+16, 'GEOMETRIA', 3));
+    ents.push(_texto(fx+2, byBase+8, 3, 'FILTRO', 'COTAS', 3));
+    ents.push(_texto(crestX+10, byBase+damH*0.35, 3.5, `i=${grad.toFixed(4)}`, 'DATOS', grad>0.5?1:3));
+    ents.push(_cotaHoriz(xFS, byBase-5, xFE, byBase-5, `L fil.=${Lf.toFixed(1)} m`, -8));
+
+    const rCol = !seg ? 1 : grad > 0.3 ? 2 : 3;
+    const datos = [
+      `MODULO: REPRESAS — FILTRACION DARCY — USACE / TERZAGHI`,
+      `H=${H.toFixed(2)}m | L=${Lf.toFixed(2)}m | k=${k.toExponential(2)} m/s | d=${dv.toFixed(2)}m`,
+      `q = k x i x d = ${q.toExponential(3)} m2/s`,
+      `Gradiente i = H/L = ${grad.toFixed(4)} | Limite Terzaghi ic = 0.5`,
+      `Sifonamiento: ${seg?'SEGURO — i < 0.5 (Terzaghi)':'PELIGRO — i supera limite critico'}`,
+      `ICOLD Bulletin 95: i_filtro <= 0.15 | USACE EM 1110-2-1901`,
+    ];
+    datos.forEach((d, i) => {
+      ents.push(_texto(0, 20-i*6, 3.5, d, 'DATOS', i===0?2:(i===4?rCol:3)));
+    });
+    ents.push(_bloqueTitle('FILTRACION DARCY — PRESA TIERRA / LINEA FREATICA', 'Ley de Darcy / Terzaghi / USACE EM 1110-2-1901',
+      p.proyecto||'', p.ingeniero||'', fecha, 0, -60, _usrData(p)));
+  }
+
+  return [_cabecera(), ...ents, _pie()].join('\n');
+}
+
+// ═══════════════════════════════════════════════════════════
+//  MÓDULO MMO — CUANTIFICACIÓN DE MATERIALES (params reales)
+//  Gráfico de barras con cantidades reales por tipo de tarea
+//  Normativa: CIRSOC 201 / ACI 318 / ISO 45001:2018
+// ═══════════════════════════════════════════════════════════
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function exportarDXFMMOReal(p: Record<string, any>): string {
+  const tipo  = String(p.tipo ?? 'hormigon');
+  const ents: string[] = [];
+  const fecha = p.fecha || new Date().toLocaleDateString('es-AR');
+
+  const tipoLabel: Record<string, string> = {
+    hormigon:'HORMIGON', hierro:'HIERRO ADN', mamposteria:'MAMPOSTERIA',
+    losa:'LOSA H.A.', revoque:'REVOQUE', ceramico:'CERAMICO',
+    contrapiso:'CONTRAPISO', zapata:'ZAPATA', excavacion:'EXCAVACION',
+    mortero:'MORTERO', rendimiento:'RENDIMIENTO',
+  };
+  const lbl = tipoLabel[tipo] ?? tipo.toUpperCase();
+
+  type BarItem = { label: string; val: number; unit: string; color: number };
+  const bars: BarItem[] = [];
+  let subtitulo = '';
+
+  if (tipo === 'hormigon') {
+    const vol = Number(p.vol_m3 ?? 0);
+    bars.push({ label:'Cemento', val: Number(p.cemento_bolsas??0), unit:'bolsas', color: 7 });
+    bars.push({ label:'Arena',   val: Number(p.arena_m3??0),        unit:'m3',     color: 3 });
+    bars.push({ label:'Piedra',  val: Number(p.piedra_m3??0),       unit:'m3',     color: 7 });
+    bars.push({ label:'Agua',    val: +(Number(p.agua_L??0)/100).toFixed(2), unit:'x100L', color: 4 });
+    subtitulo = `${String(p.subtipo??'')} | Volumen: ${vol} m3`;
+
+  } else if (tipo === 'hierro') {
+    bars.push({ label:'Kg total', val: Number(p.kg_total??0), unit:'kg', color: 2 });
+    bars.push({ label:'Metros',   val: Number(p.metros_totales??0), unit:'m', color: 3 });
+    subtitulo = `ADN O${Number(p.diam_mm??0)}mm | kg/barra: ${Number(p.kg_barra??0).toFixed(3)}`;
+
+  } else if (tipo === 'mamposteria') {
+    bars.push({ label:'Uds+desp', val: Number(p.con_desperdicio??0), unit:'uds', color: 3 });
+    bars.push({ label:'Mortero',  val: Number(p.mortero_m3??0),      unit:'m3',  color: 7 });
+    subtitulo = `${String(p.subtipo??'')} | ${Number(p.unidades??0)} uds netas`;
+
+  } else if (tipo === 'losa') {
+    bars.push({ label:'Hormigon', val: Number(p.hormigon_total_m3??0), unit:'m3 H25', color: 7 });
+    bars.push({ label:'Hierro',   val: Number(p.hierro_total_kg??0),   unit:'kg',     color: 2 });
+    subtitulo = `${String(p.subtipo??'')} L=${Number(p.luz_m??0)}m e=${Number(p.espesor_m??0)}m ${Number(p.m2??0)}m2`;
+
+  } else if (tipo === 'revoque') {
+    bars.push({ label:'Cemento', val: Number(p.cemento_kg??0)/50, unit:'x50kg', color: 7 });
+    bars.push({ label:'Arena',   val: Number(p.arena_m3??0)*10,   unit:'x0.1m3',color: 3 });
+    subtitulo = `${String(p.subtipo??'')} | ${Number(p.m2??0)} m2`;
+
+  } else if (tipo === 'ceramico') {
+    bars.push({ label:'Ceramico+desp', val: Number(p.m2_con_desp??0), unit:'m2',    color: 4 });
+    bars.push({ label:'Pegamento',     val: Number(p.peg_bolsas??0),  unit:'bolsas',color: 3 });
+    bars.push({ label:'Pastina',       val: Number(p.pastina_kg??0),  unit:'kg',    color: 2 });
+    subtitulo = `${String(p.subtipo??'')} | ${Number(p.m2_base??0)} m2 netos`;
+
+  } else if (tipo === 'contrapiso') {
+    bars.push({ label:'Cemento', val: Number(p.cemento_bolsas??0), unit:'bolsas', color: 7 });
+    bars.push({ label:'Arena',   val: Number(p.arena_m3??0),       unit:'m3',     color: 3 });
+    bars.push({ label:'Cascote', val: Number(p.cascote_m3??0),     unit:'m3',     color: 7 });
+    subtitulo = `${Number(p.espesor_cm??0)}cm | ${Number(p.vol_m3??0)} m3`;
+
+  } else if (tipo === 'zapata') {
+    const ld = Number(p.lado_m??0), es = Number(p.espesor_m??0);
+    bars.push({ label:'Hormigon H25', val: Number(p.hormigon_m3??0), unit:'m3', color: 7 });
+    subtitulo = `${ld.toFixed(2)}x${ld.toFixed(2)}m | e=${es.toFixed(2)}m`;
+    // Diagrama zapata
+    const zcx = 185, zcy = 78, zW = Math.min(ld*18, 38), zH = Math.min(es*25, 18);
+    ents.push(_linea(zcx-zW, zcy, zcx+zW, zcy, 'GEOMETRIA', 4));
+    ents.push(_linea(zcx-zW, zcy, zcx-zW, zcy-zH, 'GEOMETRIA', 4));
+    ents.push(_linea(zcx+zW, zcy, zcx+zW, zcy-zH, 'GEOMETRIA', 4));
+    ents.push(_linea(zcx-zW, zcy-zH, zcx+zW, zcy-zH, 'GEOMETRIA', 4));
+    for (let xi = zcx-zW+6; xi < zcx+zW-2; xi += 9) {
+      ents.push(_linea(xi, zcy-1, xi, zcy-zH+1, 'GEOMETRIA', 2));
+    }
+    ents.push(_cotaHoriz(zcx-zW, zcy+4, zcx+zW, zcy+4, `${(ld*2).toFixed(2)}m`, 7));
+    ents.push(_cotaVert(zcx+zW+3, zcy-zH, zcy, `${es.toFixed(2)}m`, 8));
+
+  } else if (tipo === 'excavacion') {
+    const lm = Number(p.largo_m??0), am = Number(p.ancho_m??0), pm = Number(p.prof_m??0);
+    bars.push({ label:'Vol.banco',    val: Number(p.vol_natural_m3??0),   unit:'m3', color: 7 });
+    bars.push({ label:'Vol.esponj.',  val: Number(p.vol_esponjado_m3??0), unit:'m3', color: 3 });
+    bars.push({ label:'Camiones 6m3', val: Number(p.camiones??0),         unit:'ud', color: 1 });
+    subtitulo = `${lm}x${am}x${pm}m | ${String(p.tipo_suelo??'')} esponj.${Number(p.esponj_pct??0)}%`;
+    const exc = 175, eyB = 85, eW = Math.min(lm*7, 48), eD = Math.min(pm*8, 32);
+    ents.push(_linea(exc-eW, eyB, exc+eW, eyB, 'GEOMETRIA', 3));
+    ents.push(_linea(exc-eW, eyB, exc-eW, eyB-eD, 'GEOMETRIA', 4));
+    ents.push(_linea(exc+eW, eyB, exc+eW, eyB-eD, 'GEOMETRIA', 4));
+    ents.push(_linea(exc-eW, eyB-eD, exc+eW, eyB-eD, 'GEOMETRIA', 4));
+    ents.push(_cotaVert(exc+eW+3, eyB-eD, eyB, `${pm}m`, 8));
+    ents.push(_cotaHoriz(exc-eW, eyB+4, exc+eW, eyB+4, `${lm}m`, 7));
+
+  } else if (tipo === 'mortero') {
+    bars.push({ label:'Cemento', val: Number(p.cemento_bolsas??0), unit:'bolsas', color: 7 });
+    bars.push({ label:'Arena',   val: Number(p.arena_m3??0),       unit:'m3',     color: 3 });
+    subtitulo = `${String(p.proporcion??'')} | ${Number(p.vol_m3??0)} m3`;
+
+  } else {
+    // rendimiento
+    bars.push({ label:'Horas totales', val: Number(p.horas??0), unit:'h',    color: 2 });
+    bars.push({ label:'Dias (8h)',      val: Number(p.dias??0),  unit:'dias', color: 3 });
+    subtitulo = `${String(p.tarea??'')} | ${Number(p.cuadrilla??1)} pers.`;
+  }
+
+  // Gráfico de barras horizontales
+  const bx0 = 38, bxMax = 190, byBase = 100, barH = 9, barGap = 5;
+  const maxVal = Math.max(...bars.map(b => b.val), 1);
+  bars.forEach((b, i) => {
+    const y  = byBase - i * (barH + barGap);
+    const bW = Math.max((b.val / maxVal) * (bxMax - bx0), 2);
+    ents.push(_linea(bx0, y, bx0+bW, y, 'GEOMETRIA', b.color));
+    ents.push(_linea(bx0, y-barH, bx0+bW, y-barH, 'GEOMETRIA', b.color));
+    ents.push(_linea(bx0, y, bx0, y-barH, 'GEOMETRIA', b.color));
+    ents.push(_linea(bx0+bW, y, bx0+bW, y-barH, 'GEOMETRIA', b.color));
+    ents.push(_texto(bx0+bW+4, y-barH+2, 3.5, `${b.val.toFixed(2)} ${b.unit}`, 'DATOS', b.color));
+    ents.push(_texto(bx0-2, y-barH+2, 3, b.label, 'COTAS', 7));
+  });
+  ents.push(_linea(bx0, byBase+3, bx0, byBase-bars.length*(barH+barGap), 'COTAS', 7));
+  ents.push(_texto(bx0, byBase+14, 4.5, `CUANTIFICACION: ${lbl}`, 'DATOS', 2));
+  if (subtitulo) ents.push(_texto(bx0, byBase+7, 3.5, subtitulo, 'DATOS', 3));
+
+  ents.push(_bloqueTitle(`MMO — ${lbl} / CUANTIFICACION MATERIALES`, 'CIRSOC 201 / ACI 318-19 / ISO 45001:2018',
+    p.proyecto||'', p.ingeniero||'', fecha, 0, -60, _usrData(p)));
+
+  return [_cabecera(), ...ents, _pie()].join('\n');
+}
+
+// ═══════════════════════════════════════════════════════════
+//  MÓDULO MINERÍA — RMR BIENIAWSKI / VENTILACIÓN SUBTERRÁNEA
+//  tipo:'rmr'        → perfil galería + sostenimiento real
+//  tipo:'ventilacion'→ sección galería + flujo de aire
+// ═══════════════════════════════════════════════════════════
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function exportarDXFMineria(p: Record<string, any>): string {
+  const tipo  = String(p.tipo ?? 'rmr');
+  const ents: string[] = [];
+  const fecha = p.fecha || new Date().toLocaleDateString('es-AR');
+
+  if (tipo === 'rmr') {
+    const ucs    = Number(p.ucs_mpa    ?? 50);
+    const rqd    = Number(p.rqd_pct    ?? 60);
+    const esp    = Number(p.espaciado_mm ?? 300);
+    const rmr    = Number(p.rmr        ?? 40);
+    const clase  = String(p.clase      ?? 'III');
+    const desc   = String(p.descripcion ?? '');
+    const soporte= String(p.soporte    ?? '');
+    const riesgo = String(p.riesgo     ?? 'MEDIUM');
+    const rColor = rmr < 21 ? 1 : rmr < 41 ? 3 : rmr < 61 ? 2 : 4;
+
+    // Perfil galería/túnel con bóveda
+    const cx = 130, cy = 75, tunR = 28, tunH = 20;
+    ents.push(_linea(cx-tunR, cy, cx-tunR, cy-tunH, 'GEOMETRIA', 4));
+    ents.push(_linea(cx+tunR, cy, cx+tunR, cy-tunH, 'GEOMETRIA', 4));
+    ents.push(_linea(cx-tunR-12, cy, cx+tunR+12, cy, 'GEOMETRIA', 3));
+    ents.push(_arco(cx, cy, tunR, 0, 180, 'GEOMETRIA', 4));
+    // Macizo rocoso (sobre bóveda)
+    ents.push(_linea(cx-tunR-20, cy+tunR+6, cx+tunR+20, cy+tunR+6, 'GEOMETRIA', 7));
+    for (let xi = cx-tunR-20; xi < cx+tunR+20; xi += 10) {
+      ents.push(_linea(xi, cy+tunR+6, xi+6, cy+tunR+14, 'GEOMETRIA', 7));
+    }
+    // Sostenimiento según RMR
+    if (rmr < 61) {
+      // Pernos de anclaje en bóveda
+      const boltLen = Math.max(8, Math.min(30-rmr/4, 22));
+      for (let ang = 25; ang <= 155; ang += 32) {
+        const rad = ang * Math.PI / 180;
+        const bx1 = cx + tunR * Math.cos(rad);
+        const by1 = cy + tunR * Math.sin(rad);
+        const bx2 = cx + (tunR + boltLen) * Math.cos(rad);
+        const by2 = cy + (tunR + boltLen) * Math.sin(rad);
+        ents.push(_linea(bx1, by1, bx2, by2, 'GEOMETRIA', rColor));
+        ents.push(_circulo(bx2, by2, 2, 'GEOMETRIA', rColor));
+      }
+      ents.push(_texto(cx-10, cy+tunR+2, 3, `PERNOS L=${boltLen.toFixed(0)}mm`, 'COTAS', rColor));
+    }
+    if (rmr < 41) {
+      // Shotcrete
+      ents.push(_arco(cx, cy, tunR-5, 0, 180, 'GEOMETRIA', 3));
+      ents.push(_texto(cx-16, cy-tunR+8, 3, 'SHOTCRETE 50-100mm', 'COTAS', 3));
+    }
+    if (rmr < 21) {
+      // Cerchas metálicas
+      ents.push(_arco(cx, cy, tunR-9, 0, 180, 'GEOMETRIA', 1));
+      ents.push(_linea(cx-tunR+9, cy, cx-tunR+9, cy-tunH, 'GEOMETRIA', 1));
+      ents.push(_linea(cx+tunR-9, cy, cx+tunR-9, cy-tunH, 'GEOMETRIA', 1));
+      ents.push(_texto(cx-8, cy-5, 3, 'CERCHA', 'COTAS', 1));
+    }
+    // Cota ancho galería
+    ents.push(_cotaHoriz(cx-tunR, cy+5, cx+tunR, cy+5, `Ancho=${tunR*2} mm equiv.`, 8));
+
+    // Barra de escala RMR 0-100
+    const bx0 = 22, brmrY = 122, brmrW = 196;
+    ents.push(_linea(bx0, brmrY, bx0+brmrW, brmrY, 'COTAS', 7));
+    ents.push(_linea(bx0, brmrY+4, bx0, brmrY-4, 'COTAS', 7));
+    ents.push(_linea(bx0+brmrW, brmrY+4, bx0+brmrW, brmrY-4, 'COTAS', 7));
+    const rmrX = bx0 + (rmr / 100) * brmrW;
+    ents.push(_linea(rmrX, brmrY+8, rmrX, brmrY-8, 'DADOS', rColor));
+    ents.push(_texto(rmrX-4, brmrY+10, 4, `RMR=${rmr}`, 'DADOS', rColor));
+    // Etiquetas clases
+    const zonas = [[bx0, 'V<21', 1], [bx0+42, 'IV', 3], [bx0+82, 'III', 2], [bx0+122, 'II', 4], [bx0+162, 'I', 3]];
+    zonas.forEach(z => {
+      ents.push(_texto(Number(z[0])+2, brmrY-5, 2.5, String(z[1]), 'COTAS', Number(z[2])));
+    });
+    ents.push(_texto(bx0-2, brmrY-8, 3, '0', 'COTAS', 7));
+    ents.push(_texto(bx0+brmrW-6, brmrY-8, 3, '100', 'COTAS', 7));
+
+    const datos = [
+      `MODULO: MINERIA — RMR BIENIAWSKI 1989`,
+      `UCS=${ucs} MPa | RQD=${rqd}% | Espaciado=${esp} mm`,
+      `RMR=${rmr}/100 — Clase ${clase}: ${desc}`,
+      `Sostenimiento: ${soporte.substring(0, 55)}`,
+      `Estado: ${riesgo}`,
+    ];
+    datos.forEach((d, i) => {
+      ents.push(_texto(0, 20-i*6, 3.5, d, 'DATOS', i===0?2:(i===2?rColor:3)));
+    });
+    ents.push(_bloqueTitle(`RMR BIENIAWSKI — GALERIA CLASE ${clase} / SOSTENIMIENTO`, 'Bieniawski 1989 / ISRM / MSHA 30 CFR §57',
+      p.proyecto||'', p.ingeniero||'', fecha, 0, -60, _usrData(p)));
+
+  } else {
+    // Ventilación subterránea
+    const trab = Number(p.trabajadores  ?? 0);
+    const dkW  = Number(p.diesel_kW     ?? 0);
+    const lon  = Number(p.longitud_m    ?? 0);
+    const sec  = Number(p.seccion_m2    ?? 0);
+    const co   = Number(p.co_ppm        ?? 0);
+    const Q    = Number(p.Q_requerido   ?? 0);
+    const V    = Number(p.V_galeria     ?? 0);
+    const tren = Number(p.t_renovacion  ?? 0);
+    const coOk = p.co_ok !== false;
+    const riesgo = String(p.riesgo ?? 'LOW');
+    const rColor = riesgo === 'CRITICAL' ? 1 : riesgo === 'HIGH' ? 3 : 3;
+
+    // Sección transversal galería (rectanguluar)
+    const cx = 120, cy = 78;
+    const galW = Math.max(Math.min(Math.sqrt(Math.max(sec,1)) * 16, 44), 14);
+    const galH = Math.max(Math.min(sec / Math.max(Math.sqrt(sec),0.1) * 12, 36), 12);
+    ents.push(_linea(cx-galW, cy, cx+galW, cy, 'GEOMETRIA', 4));
+    ents.push(_linea(cx-galW, cy, cx-galW, cy-galH, 'GEOMETRIA', 4));
+    ents.push(_linea(cx+galW, cy, cx+galW, cy-galH, 'GEOMETRIA', 4));
+    ents.push(_linea(cx-galW, cy-galH, cx+galW, cy-galH, 'GEOMETRIA', 4));
+    // Macizo rocoso
+    ents.push(_linea(cx-galW-14, cy-galH, cx+galW+14, cy-galH, 'GEOMETRIA', 7));
+    for (let xi = cx-galW-14; xi < cx+galW+14; xi += 10) {
+      ents.push(_linea(xi, cy-galH, xi+6, cy-galH-8, 'GEOMETRIA', 7));
+    }
+    // Flechas de flujo de aire
+    const arrowY = cy - galH * 0.5;
+    const aColor = coOk ? 4 : 1;
+    for (let i = 0; i < 3; i++) {
+      const ax = cx - galW*0.5 + i * galW * 0.5;
+      ents.push(_linea(ax-8, arrowY, ax+8, arrowY, 'DADOS', aColor));
+      ents.push(_linea(ax+8, arrowY, ax+3, arrowY+3, 'DADOS', aColor));
+      ents.push(_linea(ax+8, arrowY, ax+3, arrowY-3, 'DADOS', aColor));
+    }
+    ents.push(_texto(cx-14, arrowY+6, 3.5, `Q=${Q.toFixed(2)} m3/s`, 'DATOS', aColor));
+    ents.push(_texto(cx-14, arrowY-8, 3.5, `V=${V.toFixed(2)} m/s`, 'COTAS', 4));
+    // Trabajadores (siluetas)
+    for (let i = 0; i < Math.min(trab, 4); i++) {
+      const px = cx - galW*0.55 + i * (galW * 0.28);
+      ents.push(_circulo(px, cy-4, 3, 'GEOMETRIA', 3));
+      ents.push(_linea(px, cy-1, px, cy-12, 'GEOMETRIA', 3));
+    }
+    // Indicador CO
+    ents.push(_texto(cx+galW+4, cy-galH*0.4, 3.5, `CO=${co} ppm`, 'DATOS', coOk?3:1));
+    ents.push(_texto(cx+galW+4, cy-galH*0.4-7, 3, coOk?'< LIMITE OK':'> LIMITE', 'DATOS', coOk?3:1));
+    // Cotas
+    ents.push(_cotaHoriz(cx-galW, cy+4, cx+galW, cy+4, `~${sec.toFixed(1)}m2`, 7));
+    ents.push(_cotaVert(cx+galW+5, cy-galH, cy, `${(galH/12*Math.sqrt(sec)).toFixed(1)}m`, 12));
+
+    const datos = [
+      `MODULO: MINERIA — VENTILACION SUBTERRANEA NIOSH / MSHA`,
+      `Trabajadores=${trab} | Diesel=${dkW} kW | L galeria=${lon} m | Sec.=${sec} m2`,
+      `Q requerido=${Q.toFixed(3)} m3/s | V galeria=${V.toFixed(3)} m/s`,
+      `Tiempo renovacion aire: ${tren.toFixed(1)} min`,
+      `CO=${co} ppm (limite TWA 25 ppm): ${coOk?'DENTRO LIMITE':'SUPERA LIMITE — EVACUAR'}`,
+      `ESTADO: ${riesgo}`,
+    ];
+    datos.forEach((d, i) => {
+      ents.push(_texto(0, 20-i*6, 3.5, d, 'DATOS', i===0?2:(i===5?rColor:3)));
+    });
+    ents.push(_bloqueTitle('VENTILACION SUBTERRANEA — GALERIA / FLUJO DE AIRE', 'NIOSH 2010 / MSHA 30 CFR Part 57 / IRAM 2568',
+      p.proyecto||'', p.ingeniero||'', fecha, 0, -60, _usrData(p)));
+  }
+
+  return [_cabecera(), ...ents, _pie()].join('\n');
+}
+
+// ═══════════════════════════════════════════════════════════
+//  MÓDULO ARQUITECTURA — VIENTO / ILUMINACIÓN / SISMO
+//  tipo:'viento'      → alzado edificio + flechas presión
+//  tipo:'iluminacion' → sección local + FLD + ventilación
+//  tipo:'sismo'       → alzado + distribución fuerza lateral
+// ═══════════════════════════════════════════════════════════
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function exportarDXFArquitectura(p: Record<string, any>): string {
+  const tipo  = String(p.tipo ?? 'viento');
+  const ents: string[] = [];
+  const fecha = p.fecha || new Date().toLocaleDateString('es-AR');
+
+  if (tipo === 'viento') {
+    const V_mph = Number(p.V_mph ?? 115);
+    const V_kmh = Number(p.V_kmh ?? 185);
+    const h_m   = Number(p.h_m   ?? 10);
+    const expo  = String(p.expo  ?? 'C');
+    const Kz    = Number(p.Kz    ?? 0);
+    const qz    = Number(p.qz_kPa ?? 0);
+    const pBar  = Number(p.p_barlovento ?? 0);
+    const pSot  = Number(p.p_sotavento  ?? 0);
+    const pTot  = Number(p.p_total      ?? 0);
+    const riesgo= String(p.riesgo       ?? 'LOW');
+    const rColor= riesgo === 'HIGH' ? 1 : riesgo === 'MEDIUM' ? 2 : 3;
+
+    // Alzado edificio
+    const bx0 = 85, bxW = 60, byBase = 28;
+    const hSc = Math.min(h_m * 6, 90), byTop = byBase + hSc;
+    ents.push(_linea(bx0, byBase, bx0+bxW, byBase, 'GEOMETRIA', 4));
+    ents.push(_linea(bx0, byBase, bx0, byTop, 'GEOMETRIA', 4));
+    ents.push(_linea(bx0+bxW, byBase, bx0+bxW, byTop, 'GEOMETRIA', 4));
+    ents.push(_linea(bx0, byTop, bx0+bxW, byTop, 'GEOMETRIA', 4));
+    // Tejado
+    ents.push(_linea(bx0, byTop, bx0+bxW/2, byTop+11, 'GEOMETRIA', 4));
+    ents.push(_linea(bx0+bxW/2, byTop+11, bx0+bxW, byTop, 'GEOMETRIA', 4));
+    // Suelo
+    ents.push(_linea(bx0-18, byBase, bx0+bxW+18, byBase, 'GEOMETRIA', 3));
+    // Ventanas esquemáticas
+    for (let yi = byBase+8; yi < byTop-5; yi += 18) {
+      ents.push(_linea(bx0+8, yi, bx0+22, yi, 'GEOMETRIA', 7));
+      ents.push(_linea(bx0+8, yi, bx0+8, yi+10, 'GEOMETRIA', 7));
+      ents.push(_linea(bx0+22, yi, bx0+22, yi+10, 'GEOMETRIA', 7));
+      ents.push(_linea(bx0+8, yi+10, bx0+22, yi+10, 'GEOMETRIA', 7));
+    }
+
+    // Flechas barlovento (izquierda → fachada)
+    const nF = 4;
+    for (let i = 0; i < nF; i++) {
+      const fy = byBase + (hSc * (i + 0.5)) / nF;
+      ents.push(_linea(bx0-35, fy, bx0-3, fy, 'DADOS', rColor));
+      ents.push(_linea(bx0-3, fy, bx0-10, fy+4, 'DADOS', rColor));
+      ents.push(_linea(bx0-3, fy, bx0-10, fy-4, 'DADOS', rColor));
+    }
+    ents.push(_texto(bx0-52, byBase+hSc/2, 3.5, `+${pBar.toFixed(2)} kPa`, 'DADOS', rColor));
+    ents.push(_texto(bx0-55, byBase+hSc/2-8, 3, 'BARLOVENTO', 'COTAS', rColor));
+
+    // Flechas sotavento (saliendo de fachada posterior)
+    for (let i = 0; i < nF; i++) {
+      const fy = byBase + (hSc * (i + 0.5)) / nF;
+      ents.push(_linea(bx0+bxW+3, fy, bx0+bxW+35, fy, 'DADOS', 2));
+      ents.push(_linea(bx0+bxW+35, fy, bx0+bxW+28, fy+4, 'DADOS', 2));
+      ents.push(_linea(bx0+bxW+35, fy, bx0+bxW+28, fy-4, 'DADOS', 2));
+    }
+    ents.push(_texto(bx0+bxW+38, byBase+hSc/2, 3.5, `${pSot.toFixed(2)} kPa`, 'DADOS', 2));
+    ents.push(_texto(bx0+bxW+38, byBase+hSc/2-8, 3, 'SOTAVENTO', 'COTAS', 2));
+
+    // Cota altura + indicador dirección
+    ents.push(_cotaVert(bx0-12, byBase, byTop, `h=${h_m} m`, -10));
+    ents.push(_texto(bx0-68, byBase+hSc*0.85, 3, `VIENTO`, 'COTAS', 4));
+
+    const datos = [
+      `MODULO: ARQUITECTURA — CARGA DE VIENTO ASCE 7-22 / CIRSOC 102`,
+      `V=${V_mph} mph (${V_kmh.toFixed(0)} km/h) | Cat. expo: ${expo} | Kz=${Kz.toFixed(3)}`,
+      `Presion velocidad qz=${qz.toFixed(3)} kPa`,
+      `P barlovento=${pBar.toFixed(3)} kPa | P sotavento=${pSot.toFixed(3)} kPa`,
+      `P total diseno=${pTot.toFixed(3)} kPa`,
+      `ESTADO: ${riesgo}`,
+    ];
+    datos.forEach((d, i) => {
+      ents.push(_texto(0, 20-i*6, 3.5, d, 'DATOS', i===0?2:(i===5?rColor:3)));
+    });
+    ents.push(_bloqueTitle('CARGA VIENTO — ALZADO EDIFICIO / PRESIONES ASCE 7', 'ASCE 7-22 Cap.27 / CIRSOC 102:2005 / NSR-10 Tit.B',
+      p.proyecto||'', p.ingeniero||'', fecha, 0, -60, _usrData(p)));
+
+  } else if (tipo === 'iluminacion') {
+    const ancho = Number(p.ancho_m   ?? 5);
+    const largo = Number(p.largo_m   ?? 8);
+    const alto  = Number(p.alto_m    ?? 2.7);
+    const Avent = Number(p.A_vent_m2 ?? 4);
+    const FLD   = Number(p.FLD       ?? 0);
+    const FLDr  = Number(p.FLD_req   ?? 2);
+    const RVP   = Number(p.RVP       ?? 0);
+    const Qvent = Number(p.Q_ventilacion ?? 0);
+    const renov = Number(p.renovaciones_h ?? 0);
+    const okFLD = p.ok_fld !== false;
+    const riesgo= String(p.riesgo ?? 'LOW');
+    const lColor= okFLD ? 2 : 1;
+
+    // Corte transversal del local
+    const bx0 = 60, bxW = Math.min(ancho*20, 100), byBase = 28, byH = Math.min(alto*22, 65);
+    const byTop = byBase + byH;
+    ents.push(_linea(bx0, byBase, bx0+bxW, byBase, 'GEOMETRIA', 4));
+    ents.push(_linea(bx0, byBase, bx0, byTop, 'GEOMETRIA', 4));
+    ents.push(_linea(bx0+bxW, byBase, bx0+bxW, byTop, 'GEOMETRIA', 4));
+    ents.push(_linea(bx0, byTop, bx0+bxW, byTop, 'GEOMETRIA', 4));
+    // Ventana izquierda (A_vent)
+    const ventH = Math.min(Avent * 6, byH * 0.6);
+    const ventY = byBase + (byH - ventH) * 0.45;
+    ents.push(_linea(bx0-2, ventY, bx0+4, ventY, 'GEOMETRIA', 4));
+    ents.push(_linea(bx0-2, ventY+ventH, bx0+4, ventY+ventH, 'GEOMETRIA', 4));
+    ents.push(_linea(bx0-2, ventY, bx0-2, ventY+ventH, 'GEOMETRIA', 4));
+    ents.push(_texto(bx0-16, ventY+ventH/2, 3, `Av=${Avent}m2`, 'COTAS', 4));
+    // Rayos de luz (FLD)
+    for (let i = 1; i <= 4; i++) {
+      const lxEnd = bx0 + bxW * i / 5;
+      ents.push(_linea(bx0+3, ventY+ventH*0.5, lxEnd, byBase+byH*0.88, 'COTAS', lColor));
+    }
+    ents.push(_texto(bx0+bxW/2-12, byBase+byH*0.5, 4, `FLD=${FLD.toFixed(1)}%`, 'DATOS', lColor));
+    ents.push(_texto(bx0+bxW/2-12, byBase+byH*0.5-8, 3.5, `req.${FLDr.toFixed(0)}%`, 'COTAS', 7));
+    // Flechas ventilación
+    ents.push(_linea(bx0-18, byBase+byH*0.3, bx0, byBase+byH*0.3, 'DADOS', 4));
+    ents.push(_linea(bx0-3, byBase+byH*0.3, bx0-10, byBase+byH*0.3+3, 'DADOS', 4));
+    ents.push(_linea(bx0-3, byBase+byH*0.3, bx0-10, byBase+byH*0.3-3, 'DADOS', 4));
+    ents.push(_texto(bx0-26, byBase+byH*0.3+3, 3, `${renov.toFixed(1)}/h`, 'DADOS', 4));
+    // Cotas
+    ents.push(_cotaHoriz(bx0, byBase-5, bx0+bxW, byBase-5, `b=${ancho}m`, -8));
+    ents.push(_cotaVert(bx0+bxW+3, byBase, byTop, `h=${alto}m`, 8));
+
+    const rCol = okFLD ? 3 : 1;
+    const datos = [
+      `MODULO: ARQUITECTURA — ILUMINACION / VENTILACION IRAM 11601`,
+      `Local ${ancho}x${largo}x${alto}m | Av ventanas=${Avent} m2`,
+      `FLD calculado=${FLD.toFixed(2)}% | Requerido=${FLDr.toFixed(0)}% | ${okFLD?'CUMPLE':'NO CUMPLE'}`,
+      `RVP=${RVP.toFixed(1)}% (optimo 15-40%) | Q=${Qvent.toFixed(1)} m3/h`,
+      `Renovaciones aire=${renov.toFixed(2)}/h`,
+    ];
+    datos.forEach((d, i) => {
+      ents.push(_texto(0, 20-i*6, 3.5, d, 'DATOS', i===0?2:(i===2?rCol:3)));
+    });
+    ents.push(_bloqueTitle('ILUMINACION/VENTILACION — SECCION LOCAL / FLD', 'IRAM 11601:2002 / ASHRAE 62.1-2022 / ASHRAE 90.1',
+      p.proyecto||'', p.ingeniero||'', fecha, 0, -60, _usrData(p)));
+
+  } else {
+    // Sismo
+    const W     = Number(p.W_kN   ?? 0);
+    const hn    = Number(p.hn_m   ?? 0);
+    const zona  = String(p.zona   ?? '');
+    const suelo = String(p.suelo_tipo ?? '');
+    const Cs    = Number(p.Cs     ?? 0);
+    const V_kN  = Number(p.V_kN   ?? 0);
+    const T     = Number(p.T      ?? 0);
+    const Sa    = Number(p.Sa     ?? 0);
+    const R     = Number(p.R      ?? 6);
+    const riesgo= String(p.riesgo ?? 'LOW');
+    const rColor= riesgo === 'HIGH' ? 1 : riesgo === 'MEDIUM' ? 2 : 3;
+
+    // Alzado edificio con pisos
+    const bx0 = 92, bxW = 52, byBase = 25;
+    const hSc = Math.min(hn * 5, 85), byTop = byBase + hSc;
+    const nPisos = Math.max(Math.round(hn / 3), 2);
+    const pisoH  = hSc / nPisos;
+    for (let i = 0; i <= nPisos; i++) {
+      const py = byBase + i * pisoH;
+      ents.push(_linea(bx0, py, bx0+bxW, py, 'GEOMETRIA', i===0?3:4));
+    }
+    ents.push(_linea(bx0, byBase, bx0, byTop, 'GEOMETRIA', 4));
+    ents.push(_linea(bx0+bxW, byBase, bx0+bxW, byTop, 'GEOMETRIA', 4));
+    ents.push(_linea(bx0-10, byBase, bx0+bxW+10, byBase, 'GEOMETRIA', 3));
+
+    // Fuerzas laterales (distribución triangular)
+    for (let i = 0; i < nPisos; i++) {
+      const fy   = byBase + (nPisos - i) * pisoH;
+      const frac = (i + 1) / nPisos;
+      const fLen = Math.max(frac * 38, 5);
+      ents.push(_linea(bx0+bxW+3, fy, bx0+bxW+3+fLen, fy, 'DADOS', rColor));
+      ents.push(_linea(bx0+bxW+3+fLen, fy, bx0+bxW+3+fLen-5, fy+3, 'DADOS', rColor));
+      ents.push(_linea(bx0+bxW+3+fLen, fy, bx0+bxW+3+fLen-5, fy-3, 'DADOS', rColor));
+    }
+    ents.push(_texto(bx0+bxW+44, byBase+hSc*0.55, 3.5, `V=${V_kN.toFixed(0)} kN`, 'DADOS', rColor));
+    ents.push(_texto(bx0+bxW+44, byBase+hSc*0.55-8, 3, `Cs=${Cs.toFixed(3)}`, 'COTAS', 7));
+
+    // Peso y altura
+    ents.push(_cotaVert(bx0-8, byBase, byTop, `hn=${hn}m`, -8));
+    ents.push(_texto(bx0+4, byTop+12, 3.5, `W=${W.toFixed(0)} kN`, 'DADOS', 7));
+
+    const datos = [
+      `MODULO: ARQUITECTURA — CARGA SISMICA CIRSOC 103:2013`,
+      `W=${W.toFixed(0)} kN | hn=${hn}m | Zona=${zona} | Suelo ${suelo}`,
+      `T=${T.toFixed(3)}s | Sa=${Sa.toFixed(3)}g | Cs=${Cs.toFixed(4)} | R=${R}`,
+      `Cortante basal V = Cs x W = ${V_kN.toFixed(1)} kN`,
+      `ESTADO: ${riesgo}`,
+    ];
+    datos.forEach((d, i) => {
+      ents.push(_texto(0, 20-i*6, 3.5, d, 'DATOS', i===0?2:(i===4?rColor:3)));
+    });
+    ents.push(_bloqueTitle('CARGA SISMICA — ALZADO / CORTANTE BASAL CIRSOC 103', 'CIRSOC 103:2013 / ASCE 7-22 §12.8 / NSR-10 Tit.A',
+      p.proyecto||'', p.ingeniero||'', fecha, 0, -60, _usrData(p)));
+  }
+
+  return [_cabecera(), ...ents, _pie()].join('\n');
+}

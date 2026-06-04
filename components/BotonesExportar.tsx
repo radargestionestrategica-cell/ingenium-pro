@@ -205,17 +205,17 @@ export default function BotonesExportar({ datos, visible }: Props) {
         CONSUMO_ELECTRODOS:          mod.exportarDXFSoldadura,
         PRECALENTAMIENTO:            mod.exportarDXFSoldadura,
         // MMO
-        HORMIGON_MMO:                mod.exportarDXFMMO,
-        HIERRO_MMO:                  mod.exportarDXFMMO,
-        MAMPOSTERIA_MMO:             mod.exportarDXFMMO,
-        LOSA_MMO:                    mod.exportarDXFMMO,
-        REVOQUE_MMO:                 mod.exportarDXFMMO,
-        CERAMICO_MMO:                mod.exportarDXFMMO,
-        CONTRAPISO_MMO:              mod.exportarDXFMMO,
-        ZAPATA_MMO:                  mod.exportarDXFMMO,
-        EXCAVACION_MMO:              mod.exportarDXFMMO,
-        MORTERO_MMO:                 mod.exportarDXFMMO,
-        RENDIMIENTO_MMO:             mod.exportarDXFMMO,
+        HORMIGON_MMO:                mod.exportarDXFMMOReal,
+        HIERRO_MMO:                  mod.exportarDXFMMOReal,
+        MAMPOSTERIA_MMO:             mod.exportarDXFMMOReal,
+        LOSA_MMO:                    mod.exportarDXFMMOReal,
+        REVOQUE_MMO:                 mod.exportarDXFMMOReal,
+        CERAMICO_MMO:                mod.exportarDXFMMOReal,
+        CONTRAPISO_MMO:              mod.exportarDXFMMOReal,
+        ZAPATA_MMO:                  mod.exportarDXFMMOReal,
+        EXCAVACION_MMO:              mod.exportarDXFMMOReal,
+        MORTERO_MMO:                 mod.exportarDXFMMOReal,
+        RENDIMIENTO_MMO:             mod.exportarDXFMMOReal,
         // Válvulas
         VALVULAS_CLASE_B16_34:       mod.exportarDXFValvulas,
         VALVULAS_MATERIAL_NACE:      mod.exportarDXFValvulas,
@@ -227,24 +227,24 @@ export default function BotonesExportar({ datos, visible }: Props) {
         VALVULAS_DISENO_GLOBO:       mod.exportarDXFValvulas,
         VALVULAS_COEFICIENTE_CV:     mod.exportarDXFValvulas,
         // Civil
-        VIGA_ACERO_AISC:             mod.exportarDXFCanerias,
-        COLUMNA_HORMIGON_ACI:        mod.exportarDXFCanerias,
+        VIGA_ACERO_AISC:             mod.exportarDXFCivil,
+        COLUMNA_HORMIGON_ACI:        mod.exportarDXFCivil,
         // Vialidad
-        PAVIMENTO_AASHTO93:          mod.exportarDXFGeotecnia,
-        DRENAJE_VIAL_HEC22:          mod.exportarDXFHidrologia,
+        PAVIMENTO_AASHTO93:          mod.exportarDXFVialidad,
+        DRENAJE_VIAL_HEC22:          mod.exportarDXFVialidad,
         // Represas
-        VERTEDERO_FRANCIS:           mod.exportarDXFHidrologia,
-        FILTRACION_DARCY:            mod.exportarDXFHidrologia,
+        VERTEDERO_FRANCIS:           mod.exportarDXFRepresas,
+        FILTRACION_DARCY:            mod.exportarDXFRepresas,
         // Minería
-        RMR_BIENIAWSKI:              mod.exportarDXFGeotecnia,
-        VENTILACION_SUBTERRANEA:     mod.exportarDXFMMO,
+        RMR_BIENIAWSKI:              mod.exportarDXFMineria,
+        VENTILACION_SUBTERRANEA:     mod.exportarDXFMineria,
         // Térmica
         DILATACION_TERMICA:          mod.exportarDXFDilatacion,
         INTERCAMBIADOR_LMTD:         mod.exportarDXFDilatacion,
         // Arquitectura
-        ARQUITECTURA_VIENTO:         mod.exportarDXFGeotecnia,
-        ARQUITECTURA_SISMO:          mod.exportarDXFGeotecnia,
-        ARQUITECTURA_ILUMINACION:    mod.exportarDXFElectricidad,
+        ARQUITECTURA_VIENTO:         mod.exportarDXFArquitectura,
+        ARQUITECTURA_SISMO:          mod.exportarDXFArquitectura,
+        ARQUITECTURA_ILUMINACION:    mod.exportarDXFArquitectura,
       };
       const fn = DXF_MAP[key];
       contenido = fn ? fn(p) : '';

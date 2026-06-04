@@ -205,15 +205,11 @@ export default function ModuloMineria() {
         'Estado': r.riesgo,
       },
       dxfParams: {
-        B: parseFloat(espaciado) / 1000,
-        L_cim: parseFloat(espaciado) / 500,
-        Df: parseFloat(ucs) / 1000,
-        phi: 30 + r.rmr * 0.2,
-        c: parseFloat(ucs) * 0.01,
-        gamma: 25,
-        qu: parseFloat(ucs),
-        FS: r.rmr / 20,
-        qa: parseFloat(ucs) / 3,
+        tipo: 'rmr',
+        ucs_mpa: parseFloat(ucs), rqd_pct: parseFloat(rqd),
+        espaciado_mm: parseFloat(espaciado),
+        rmr: r.rmr, clase: r.clase, descripcion: r.descripcion,
+        soporte: r.soporte, riesgo: r.riesgo,
       },
     };
     setDatosRMR(payload);
@@ -249,13 +245,12 @@ export default function ModuloMineria() {
         'Estado': r.riesgo,
       },
       dxfParams: {
-        equipo: 'Ventilador galeria',
-        tag: 'VENT-001',
-        tipo_mto: 'Preventivo',
-        intervalo: 90,
-        horas_op: r.Q_requerido * 10,
-        costo_mto: r.Q_requerido * 100,
-        disponibilidad: 95,
+        tipo: 'ventilacion',
+        trabajadores: parseFloat(trabajadores), diesel_kW: parseFloat(diesel_kW),
+        longitud_m: parseFloat(longitud), seccion_m2: parseFloat(seccion),
+        co_ppm: parseFloat(co_ppm),
+        Q_requerido: r.Q_requerido, V_galeria: r.V_galeria,
+        t_renovacion: r.t_renovacion, co_ok: r.co_ok, riesgo: r.riesgo,
       },
     };
     setDatosVent(payload);
