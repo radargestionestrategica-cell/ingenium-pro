@@ -1,4 +1,5 @@
 import * as crypto from 'crypto';
+import { getJwtSecret } from '@/lib/jwt-secret';
 
 export type TokenPayload = {
   id?:         string;
@@ -9,7 +10,7 @@ export type TokenPayload = {
   [key: string]: unknown;
 };
 
-const secret = () => process.env.JWT_SECRET ?? 'ingenium_jwt_2026';
+const secret = () => getJwtSecret();
 
 export function generarToken(payload: object): string {
   const data = Buffer.from(JSON.stringify(payload)).toString('base64');

@@ -18,7 +18,8 @@
       "Bash(Test-Path *)",
       "Bash(npx tsc *)",
       "Bash(npm install *)",
-      "Bash(./node_modules/.bin/vitest run *)"
+      "Bash(./node_modules/.bin/vitest run *)",
+      "Bash(node -e 'const {PrismaClient}=require\\('\\\\''@prisma/client'\\\\''\\);const p=new PrismaClient\\(\\);p.usuario.findUnique\\({where:{email:'\\\\''radargestionestrategica@gmail.com'\\\\''},select:{id:true,email:true,plan:true,activo:true,createdAt:true}}\\).then\\(u=>console.log\\(JSON.stringify\\(u,null,2\\)\\)\\).finally\\(\\(\\)=>p.$disconnect\\(\\)\\)')"
     ]
   }
 }

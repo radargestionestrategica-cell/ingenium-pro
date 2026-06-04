@@ -1,4 +1,5 @@
 import * as crypto from 'crypto';
+import { getJwtSecret } from '@/lib/jwt-secret';
 
 type TokenPayload = {
   id:          string;
@@ -32,7 +33,7 @@ export function verificarTokenAPI(req: Request): TokenPayload | null {
     if (!data || !sig) return null;
 
     // 3. Verificar firma HMAC-SHA256
-    const secret   = process.env.JWT_SECRET ?? 'ingenium_jwt_2026';
+    const secret   = getJwtSecret();
     const expected = crypto.createHmac('sha256', secret).update(data).digest('hex');
     if (sig !== expected) return null;
 

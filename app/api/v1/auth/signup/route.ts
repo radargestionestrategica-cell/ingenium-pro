@@ -4,9 +4,10 @@ import { NextResponse } from 'next/server';
 import * as crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 import { rateLimit } from '@/lib/rate-limit';
+import { getJwtSecret } from '@/lib/jwt-secret';
 
 function generarToken(payload: object): string {
-  const secret = process.env.JWT_SECRET ?? 'ingenium_jwt_2026';
+  const secret = getJwtSecret();
   const data = Buffer.from(JSON.stringify(payload)).toString('base64');
   const sig = crypto.createHmac('sha256', secret).update(data).digest('hex');
   return `${data}.${sig}`;

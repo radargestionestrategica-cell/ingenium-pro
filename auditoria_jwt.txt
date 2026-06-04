@@ -1,0 +1,434 @@
+================================================================================
+AUDITORÍA JWT — INGENIUM PRO
+Generado: lectura read-only de 6 archivos críticos de autenticación
+================================================================================
+
+================================================================================
+ARCHIVO: middleware.ts
+================================================================================
+import { NextRequest, NextResponse } from 'next/server';
+
+type Payload = { id?: string; email?: string; plan?: string; demoExpira?: number; isOwner?: boolean };
+
+// Rutas públicas — no requieren cookie, deben pasar siempre
+const PUBLIC_API = [
+  '/api/v1/auth/login',
+  '/api/v1/auth/signup',
+  '/api/v1/auth/plan',    // llamado internamente por este middleware
+  '/api/v1/auth/logout',
+  '/api/pagos/webhook',
+  '/planes',
+  '/api/planes/elegir',
+];
+
+async function verifyToken(token: string): Promise<Payload | null> {
+  const parts = token.split('.');
+  if (parts.length !== 2) return null;
+  const [data, sig] = parts;
+  if (!data || !sig) return null;
+
+  const secret  = process.env.JWT_SECRET ?? 'ingenium_jwt_2026';
+  const encoder = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    'raw', encoder.encode(secret),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false, ['sign'],
+  );
+  const buf = await crypto.subtle.sign('HMAC', key, encoder.encode(data));
+  const expected = Array.from(new Uint8Array(buf))
+    .map(b => b.toString(16).padStart(2, '0'))
+    .join('');
+
+  if (sig !== expected) return null;
+
+  try {
+    return JSON.parse(atob(data)) as Payload;
+  } catch {
+    return null;
+  }
+}
+
+// AbortController en lugar de AbortSignal.timeout() — compatible con Edge Runtime (V8)
+async function getDBPlan(
+  userId: string,
+  requestUrl: string,
+): Promise<{ plan: string; activo: boolean; createdAt?: number; demoStartAt?: number } | null> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 5000);
+  try {
+    const url = new URL('/api/v1/auth/plan', requestUrl);
+    url.searchParams.set('id', userId);
+    const secret = process.env.JWT_SECRET ?? 'ingenium_jwt_2026';
+
+    const res = await fetch(url.toString(), {
+      headers: { Authorization: `Bearer ${secret}` },
+      signal:  controller.signal,
+    });
+    clearTimeout(timer);
+    if (!res.ok) return null;
+    const json = await res.json();
+    return {
+      plan:        String(json.plan ?? 'trial'),
+      activo:      json.activo !== false,
+      createdAt:   json.createdAt   ? new Date(json.createdAt).getTime()   : undefined,
+      demoStartAt: json.demoStartAt ? new Date(json.demoStartAt).getTime() : undefined,
+    };
+  } catch {
+    clearTimeout(timer);
+    return null;
+  }
+}
+
+export async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+  const isApiRoute   = pathname.startsWith('/api/');
+
+  // Bypass rutas de API públicas
+  if (PUBLIC_API.some(p => pathname === p || pathname.startsWith(p + '/'))) {
+    return NextResponse.next();
+  }
+
+  const token    = request.cookies.get('ip_auth')?.value;
+  const loginUrl = new URL('/Login', request.url);
+  loginUrl.searchParams.set('redirect', pathname);
+
+  if (!token) {
+    if (isApiRoute) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    return NextResponse.redirect(loginUrl);
+  }
+
+  const payload = await verifyToken(token);
+  if (!payload) {
+    if (isApiRoute) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    return NextResponse.redirect(loginUrl);
+  }
+
+  // Bypass owner — acceso irrestricto
+  if (payload.isOwner === true || payload.email?.toLowerCase() === 'colombosilvanabelen@gmail.com') {
+    return NextResponse.next();
+  }
+
+  // Plan real desde la BD
+  let plan = payload.plan;
+  let activo = true;
+  let dbOk = false;
+  let dbCreatedAt: number | undefined;
+  let dbDemoStart: number | undefined;
+
+  if (payload.id) {
+    const db = await getDBPlan(payload.id, request.url);
+    if (db) {
+      plan        = db.plan;
+      activo      = db.activo;
+      dbCreatedAt = db.createdAt;
+      dbDemoStart = db.demoStartAt;
+      dbOk        = true;
+    }
+  }
+
+  // Cuenta desactivada
+  if (dbOk && !activo) {
+    if (isApiRoute) return NextResponse.json({ error: 'Cuenta desactivada' }, { status: 403 });
+    return NextResponse.redirect(new URL('/precios', request.url));
+  }
+
+  // REGLA 4: demo y demoStartAt > 3 días → /planes
+  if (dbOk && (plan === 'demo' || plan === 'trial')) {
+    const base = dbDemoStart ?? dbCreatedAt;
+    if (typeof base === 'number' && Date.now() - base > 259_200_000) {
+      if (isApiRoute) return NextResponse.json({ error: 'Demo expirada' }, { status: 403 });
+      return NextResponse.redirect(new URL('/planes', request.url));
+    }
+  }
+
+  // Planes pagos: siempre pasan
+  if (plan === 'enterprise' || plan === 'pro' || plan === 'team' || plan === 'duo' || plan === 'modulo') {
+    return NextResponse.next();
+  }
+
+  // Demo / trial: verificar expiración
+  if (plan === 'demo' || plan === 'trial') {
+    const expira = (dbOk && typeof dbCreatedAt === 'number')
+      ? dbCreatedAt + 259_200_000
+      : payload.demoExpira;
+
+    if (typeof expira === 'number' && Date.now() > expira) {
+      if (isApiRoute) return NextResponse.json({ error: 'Demo expirada' }, { status: 403 });
+      return NextResponse.redirect(new URL('/planes', request.url));
+    }
+
+    return NextResponse.next();
+  }
+
+  // Plan vacío o desconocido
+  if (isApiRoute) return NextResponse.json({ error: 'Plan inválido' }, { status: 403 });
+  return NextResponse.redirect(new URL('/planes', request.url));
+}
+
+export const config = {
+  matcher: ['/dashboard/:path*', '/api/:path*'],
+};
+
+================================================================================
+ARCHIVO: lib/auth-token.ts
+================================================================================
+import * as crypto from 'crypto';
+
+export type TokenPayload = {
+  id?:         string;
+  email?:      string;
+  plan?:       string;
+  demoExpira?: number;
+  isOwner?:    boolean;
+  [key: string]: unknown;
+};
+
+const secret = () => process.env.JWT_SECRET ?? 'ingenium_jwt_2026';
+
+export function generarToken(payload: object): string {
+  const data = Buffer.from(JSON.stringify(payload)).toString('base64');
+  const sig  = crypto.createHmac('sha256', secret()).update(data).digest('hex');
+  return `${data}.${sig}`;
+}
+
+export function verificarToken(token: string): TokenPayload | null {
+  const parts = token.split('.');
+  if (parts.length !== 2) return null;
+  const [data, sig] = parts;
+  if (!data || !sig) return null;
+  const expected = crypto.createHmac('sha256', secret()).update(data).digest('hex');
+  if (sig !== expected) return null;
+  try {
+    return JSON.parse(Buffer.from(data, 'base64').toString('utf-8')) as TokenPayload;
+  } catch {
+    return null;
+  }
+}
+
+================================================================================
+ARCHIVO: lib/api-auth.ts
+================================================================================
+import * as crypto from 'crypto';
+
+type TokenPayload = {
+  id:          string;
+  email:       string;
+  plan:        string;
+  demoExpira?: number;
+};
+
+// Verifica HMAC-SHA256 y extrae el payload del token.
+// Acepta el token desde el cookie ip_auth o el header Authorization: Bearer.
+// Retorna null si el token es inválido, fue alterado o el demo expiró.
+export function verificarTokenAPI(req: Request): TokenPayload | null {
+  try {
+    // 1. Buscar token: primero cookie, luego Authorization header
+    const cookieHeader = req.headers.get('cookie') ?? '';
+    const cookieMatch  = cookieHeader.match(/(?:^|;\s*)ip_auth=([^;]+)/);
+    const authHeader   = req.headers.get('authorization') ?? '';
+    const bearerToken  = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
+
+    const rawCookie   = cookieMatch?.[1] ?? null;
+    const cookieToken = rawCookie
+      ? (() => { try { return decodeURIComponent(rawCookie); } catch { return rawCookie; } })()
+      : null;
+    const token = cookieToken ?? bearerToken;
+    if (!token) return null;
+
+    // 2. Verificar estructura
+    const parts = token.split('.');
+    if (parts.length !== 2) return null;
+    const [data, sig] = parts;
+    if (!data || !sig) return null;
+
+    // 3. Verificar firma HMAC-SHA256
+    const secret   = process.env.JWT_SECRET ?? 'ingenium_jwt_2026';
+    const expected = crypto.createHmac('sha256', secret).update(data).digest('hex');
+    if (sig !== expected) return null;
+
+    // 4. Decodificar payload
+    const payload = JSON.parse(Buffer.from(data, 'base64').toString('utf-8')) as TokenPayload;
+
+    // 5. Verificar expiración del plan demo
+    if (
+      payload.plan === 'demo' &&
+      typeof payload.demoExpira === 'number' &&
+      Date.now() > payload.demoExpira
+    ) {
+      return null;
+    }
+
+    return payload;
+  } catch {
+    return null;
+  }
+}
+
+export function respuestaNoAutorizado(): Response {
+  return new Response(
+    JSON.stringify({ error: 'No autorizado' }),
+    { status: 401, headers: { 'Content-Type': 'application/json' } },
+  );
+}
+
+export function respuestaDemoExpirado(): Response {
+  return new Response(
+    JSON.stringify({ error: 'Demo expirado. Actualizá tu plan en /planes.' }),
+    { status: 403, headers: { 'Content-Type': 'application/json' } },
+  );
+}
+
+================================================================================
+ARCHIVO: app/api/v1/auth/signup/route.ts
+================================================================================
+export const dynamic = 'force-dynamic';
+
+import { NextResponse } from 'next/server';
+import * as crypto from 'crypto';
+import bcrypt from 'bcryptjs';
+import { rateLimit } from '@/lib/rate-limit';
+
+function generarToken(payload: object): string {
+  const secret = process.env.JWT_SECRET ?? 'ingenium_jwt_2026';
+  const data = Buffer.from(JSON.stringify(payload)).toString('base64');
+  const sig = crypto.createHmac('sha256', secret).update(data).digest('hex');
+  return `${data}.${sig}`;
+}
+
+export async function POST(req: Request) {
+  const ip = req.headers.get('x-forwarded-for') ?? req.headers.get('x-real-ip') ?? 'unknown';
+  const limited = rateLimit(`signup:${ip}`, 5, 60_000);
+  if (limited) return limited;
+
+  try {
+    const { email, password, nombre, empresa, pais, matricula, dni } = await req.json();
+
+    if (!email || !password || !nombre || !empresa) {
+      return NextResponse.json({ error: 'Todos los campos son requeridos' }, { status: 400 });
+    }
+
+    if (typeof password !== 'string' || password.length < 8) {
+      return NextResponse.json({ error: 'La contraseña debe tener al menos 8 caracteres' }, { status: 400 });
+    }
+
+    const { prisma } = await import('@/lib/prisma');
+
+    const existe = await prisma.usuario.findUnique({ where: { email } });
+    if (existe) {
+      return NextResponse.json({ error: 'El email ya está registrado' }, { status: 409 });
+    }
+
+    const passwordHash = await bcrypt.hash(password, 12);
+
+    const usuario = await prisma.usuario.create({
+      data: {
+        email,
+        password: passwordHash,
+        nombre,
+        empresa,
+        pais:        pais      || 'Argentina',
+        matricula:   matricula || '',
+        dni:         dni       || '',
+        plan:        'demo',
+        demoStartAt: new Date(),
+        planElegido: false,
+      },
+    });
+
+    const token = generarToken({
+      id:          usuario.id,
+      email:       usuario.email,
+      plan:        'demo',
+      planElegido: false,
+      demoExpira:  usuario.createdAt.getTime() + 259_200_000,
+    });
+
+    const response = NextResponse.json({
+      success:  true,
+      token,
+      redirect: '/dashboard',
+      usuario: {
+        id:        usuario.id,
+        email:     usuario.email,
+        nombre:    usuario.nombre,
+        empresa:   usuario.empresa,
+        pais:      usuario.pais,
+        matricula: usuario.matricula ?? '',
+        dni:       usuario.dni ?? '',
+        plan:      usuario.plan,
+        activo:    usuario.activo,
+        createdAt: usuario.createdAt,
+      },
+    });
+
+    response.cookies.set('ip_auth', token, {
+      httpOnly: true,
+      secure:   true,
+      sameSite: 'lax',
+      maxAge:   60 * 60 * 24 * 7,
+      path:     '/',
+    });
+
+    return response;
+  } catch (err) {
+    console.error('Signup error:', err);
+    return NextResponse.json({ error: 'Error al registrar usuario' }, { status: 500 });
+  }
+}
+
+================================================================================
+ARCHIVO: app/api/v1/auth/plan/route.ts
+================================================================================
+import { NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
+
+// Endpoint interno: solo accesible desde el middleware via Authorization Bearer JWT_SECRET.
+// Devuelve { plan, activo } real desde la BD para un userId dado.
+export async function GET(req: Request) {
+  const auth = req.headers.get('authorization') ?? '';
+  const expected = `Bearer ${process.env.JWT_SECRET ?? 'ingenium_jwt_2026'}`;
+  if (auth !== expected) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const id = new URL(req.url).searchParams.get('id');
+  if (!id) {
+    return NextResponse.json({ error: 'Missing id' }, { status: 400 });
+  }
+
+  try {
+    const usuario = await prisma.usuario.findUnique({
+      where: { id },
+      select: { plan: true, activo: true, createdAt: true, planElegido: true, demoStartAt: true },
+    });
+    if (!usuario) {
+      return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    }
+    return NextResponse.json({
+      plan:        usuario.plan,
+      activo:      usuario.activo,
+      createdAt:   usuario.createdAt,
+      planElegido: usuario.planElegido,
+      demoStartAt: usuario.demoStartAt,
+    });
+  } catch {
+    return NextResponse.json({ error: 'DB error' }, { status: 500 });
+  }
+}
+
+================================================================================
+ARCHIVO: lib/db.ts
+================================================================================
+import { PrismaClient } from '@prisma/client';
+
+const globalForPrisma = globalThis as unknown as { prisma: PrismaClient };
+
+export const db = globalForPrisma.prisma ?? new PrismaClient({
+  datasources: { db: { url: process.env.DATABASE_URL } }
+});
+
+if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = db;
+
+================================================================================
+FIN DE AUDITORÍA
+================================================================================

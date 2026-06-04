@@ -1,11 +1,12 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { getJwtSecret } from '@/lib/jwt-secret';
 
 // Endpoint interno: solo accesible desde el middleware via Authorization Bearer JWT_SECRET.
 // Devuelve { plan, activo } real desde la BD para un userId dado.
 export async function GET(req: Request) {
   const auth = req.headers.get('authorization') ?? '';
-  const expected = `Bearer ${process.env.JWT_SECRET ?? 'ingenium_jwt_2026'}`;
+  const expected = `Bearer ${getJwtSecret()}`;
   if (auth !== expected) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }

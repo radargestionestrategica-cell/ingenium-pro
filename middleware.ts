@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getJwtSecret } from '@/lib/jwt-secret';
 
 type Payload = { id?: string; email?: string; plan?: string; demoExpira?: number; isOwner?: boolean };
 
@@ -19,7 +20,7 @@ async function verifyToken(token: string): Promise<Payload | null> {
   const [data, sig] = parts;
   if (!data || !sig) return null;
 
-  const secret  = process.env.JWT_SECRET ?? 'ingenium_jwt_2026';
+  const secret  = getJwtSecret();
   const encoder = new TextEncoder();
   const key = await crypto.subtle.importKey(
     'raw', encoder.encode(secret),
@@ -50,7 +51,7 @@ async function getDBPlan(
   try {
     const url = new URL('/api/v1/auth/plan', requestUrl);
     url.searchParams.set('id', userId);
-    const secret = process.env.JWT_SECRET ?? 'ingenium_jwt_2026';
+    const secret = getJwtSecret();
 
     const res = await fetch(url.toString(), {
       headers: { Authorization: `Bearer ${secret}` },
