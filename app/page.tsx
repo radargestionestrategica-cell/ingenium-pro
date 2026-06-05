@@ -823,6 +823,7 @@ export default function LandingPage() {
             <a href="#modulos">Módulos</a>
             <a href="#normas">Normativas</a>
             <a href="/terminos">Términos de uso</a>
+            <a href="/privacidad">Privacidad</a>
             <a href="/verify/demo">Verificación QR</a>
             <span className="gold">radargestionestrategica@gmail.com</span>
           </div>
