@@ -7,8 +7,10 @@ type Payload = { id?: string; email?: string; plan?: string; demoExpira?: number
 const PUBLIC_API = [
   '/api/v1/auth/login',
   '/api/v1/auth/signup',
-  '/api/v1/auth/plan',    // llamado internamente por este middleware
+  '/api/v1/auth/plan',       // llamado internamente por este middleware
   '/api/v1/auth/logout',
+  '/api/v1/auth/recuperar',  // pública — usuario sin sesión solicita reset
+  '/api/v1/auth/reset',      // pública — usuario sin sesión confirma nueva password
   '/api/pagos/webhook',
   '/planes',
   '/api/planes/elegir',
