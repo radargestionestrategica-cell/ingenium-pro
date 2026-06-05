@@ -20,7 +20,7 @@ const SLIDES: SlideData[] = [
   {
     id: 'pdf', color: '#FF4560', icon: '📄', label: 'PDF',
     titulo:    'PDF con QR verificable',
-    subtitulo: 'Resultado firmado digitalmente. Escaneable 3 años después.',
+    subtitulo: 'Resultado con verificación criptográfica SHA-256. Escaneable 3 años después.',
     badge:     'ASME B16.34 · ISA 75.01.01',
   },
   {
