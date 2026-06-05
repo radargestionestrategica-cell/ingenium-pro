@@ -21,8 +21,10 @@ model Usuario {
   plan        String     @default("demo")
   demoStartAt DateTime?
   planElegido Boolean    @default(false)
-  activo      Boolean    @default(true)
-  createdAt   DateTime   @default(now())
+  activo           Boolean    @default(true)
+  createdAt        DateTime   @default(now())
+  resetToken       String?    @unique
+  resetTokenExpira DateTime?
   calculos  Calculo[]
   proyectos Proyecto[]
 }
