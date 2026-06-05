@@ -6,19 +6,24 @@ export default function RecuperarPage() {
   const [email, setEmail]     = useState('');
   const [loading, setLoading] = useState(false);
   const [enviado, setEnviado] = useState(false);
+  const [error, setError]     = useState('');
 
   async function handleEnviar() {
     if (!email.trim() || loading) return;
     setLoading(true);
     try {
-      await fetch('/api/v1/auth/recuperar', {
+      const res = await fetch('/api/v1/auth/recuperar', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
         body:    JSON.stringify({ email: email.trim() }),
       });
+      if (res.status >= 500) {
+        setError('Ocurrió un error. Intentá de nuevo en unos minutos.');
+        return;
+      }
+      setEnviado(true);
     } finally {
       setLoading(false);
-      setEnviado(true);
     }
   }
 
@@ -133,6 +138,12 @@ export default function RecuperarPage() {
             >
               {loading ? 'Enviando...' : 'Enviar enlace de recuperación'}
             </button>
+
+            {error && (
+              <p style={{ margin: '16px 0 0', fontSize: '13px', color: '#fca5a5', lineHeight: '1.5' }}>
+                {error}
+              </p>
+            )}
           </>
         )}
 
