@@ -381,6 +381,7 @@ export default function LandingPage() {
             <a href="#modulos"      className="nav-link">Módulos</a>
             <a href="#normas"       className="nav-link">Normativas</a>
             <a href="#diferenciales"className="nav-link">Diferenciales</a>
+            <a href="#cruce"        className="nav-link">Cruce IA</a>
             <a href="#planes"       className="nav-link">Planes</a>
             <a className="nav-link login-btn" href="/Login">Ingresar →</a>
           </nav>
