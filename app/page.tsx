@@ -287,6 +287,22 @@ export default function LandingPage() {
         .plan-cta-paypal{display:block;text-align:center;padding:12px 12px;margin-top:8px;border-radius:13px;background:#003087;border:none;color:#fff;font-weight:800;font-size:13px;text-decoration:none;letter-spacing:.3px;transition:opacity .2s}
         .plan-cta-paypal:hover{opacity:.85}
 
+        /* ── INTELIGENCIA CRUZADA ── */
+        .cruce-flow{display:grid;grid-template-columns:1fr 40px 1fr 40px 1fr;align-items:center;gap:0;margin-top:40px}
+        .cruce-arrow{display:flex;align-items:center;justify-content:center;color:rgba(232,160,32,.5);font-size:22px;font-weight:300}
+        .cruce-card{background:${PANEL};border:1px solid rgba(255,255,255,.07);border-radius:18px;padding:24px 20px;position:relative;overflow:hidden;transition:transform .2s,box-shadow .2s}
+        .cruce-card:hover{transform:translateY(-3px);box-shadow:0 10px 36px rgba(0,0,0,.4)}
+        .cruce-top-bar{position:absolute;top:0;left:0;right:0;height:3px;border-radius:18px 18px 0 0}
+        .cruce-module{font-size:9px;font-weight:900;letter-spacing:2.5px;text-transform:uppercase;margin-bottom:10px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+        .cruce-calc{font-size:15px;font-weight:900;color:${WHITE};margin-bottom:8px;line-height:1.3}
+        .cruce-result{font-size:22px;font-weight:950;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;line-height:1;margin-bottom:6px}
+        .cruce-norm{font-size:10px;color:${GRAY};font-family:ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.3px}
+        .cruce-ia-box{margin-top:36px;background:linear-gradient(135deg,rgba(232,160,32,.07),rgba(34,197,94,.05));border:1px solid rgba(232,160,32,.25);border-radius:16px;padding:24px 28px;display:flex;gap:20px;align-items:flex-start}
+        .cruce-ia-icon{width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,${GOLD},#c47a10);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:950;color:${BG};flex-shrink:0;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+        .cruce-ia-title{font-size:13px;font-weight:800;color:${GOLD};margin-bottom:6px;letter-spacing:.3px}
+        .cruce-ia-text{font-size:13px;color:#94a3b8;line-height:1.7}
+        @media(max-width:640px){.cruce-flow{grid-template-columns:1fr;gap:0}.cruce-arrow{transform:rotate(90deg);height:32px}}
+
         /* ── FAQ ── */
         .faq-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
         .faq-card{background:${PANEL};border:1px solid rgba(255,255,255,.055);border-radius:18px;padding:26px}
@@ -704,6 +720,66 @@ export default function LandingPage() {
               <div className="trust-item">
                 <strong>Exportación útil</strong>
                 PDF para informe, Excel para continuidad de análisis y DXF para documentación técnica CAD-compatible.
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══ INTELIGENCIA CRUZADA ══════════════════════════════ */}
+      <section id="cruce" className="section section-alt">
+        <div className="wrap">
+          <div className="section-head">
+            <div className="eyebrow green">Diferenciador único de mercado</div>
+            <h2>Inteligencia Cruzada entre módulos</h2>
+            <p className="section-sub">
+              La IA no analiza cada módulo por separado. Cruza los resultados de distintos módulos para detectar
+              riesgos encadenados que un cálculo aislado nunca puede ver. Ninguna otra plataforma del mercado hace esto.
+            </p>
+          </div>
+
+          <div className="cruce-flow">
+            {/* Paso 1 — Válvulas */}
+            <article className="cruce-card">
+              <div className="cruce-top-bar" style={{ background:'linear-gradient(90deg,#E8A020,transparent)' }} />
+              <div className="cruce-module" style={{ color:'#E8A020' }}>Módulo Válvulas</div>
+              <div className="cruce-calc">Cierre de válvula de bloqueo</div>
+              <div className="cruce-result" style={{ color:'#E8A020' }}>3 s</div>
+              <div className="cruce-norm">ASME B16.34 · ISA 75.01</div>
+            </article>
+
+            <div className="cruce-arrow" aria-hidden="true">→</div>
+
+            {/* Paso 2 — Hidráulica */}
+            <article className="cruce-card">
+              <div className="cruce-top-bar" style={{ background:'linear-gradient(90deg,#38bdf8,transparent)' }} />
+              <div className="cruce-module" style={{ color:'#38bdf8' }}>Módulo Hidráulica</div>
+              <div className="cruce-calc">Golpe de ariete (Joukowsky)</div>
+              <div className="cruce-result" style={{ color:'#38bdf8' }}>+47 bar</div>
+              <div className="cruce-norm">AWWA M11 · ASME B31.3</div>
+            </article>
+
+            <div className="cruce-arrow" aria-hidden="true">→</div>
+
+            {/* Paso 3 — Cañerías */}
+            <article className="cruce-card">
+              <div className="cruce-top-bar" style={{ background:'linear-gradient(90deg,#ef4444,transparent)' }} />
+              <div className="cruce-module" style={{ color:'#ef4444' }}>Módulo Cañerías</div>
+              <div className="cruce-calc">Riesgo de sobrepresión</div>
+              <div className="cruce-result" style={{ color:'#ef4444' }}>CRÍTICO</div>
+              <div className="cruce-norm">ASME B31.8 · API 579</div>
+            </article>
+          </div>
+
+          <div className="cruce-ia-box">
+            <div className="cruce-ia-icon">IA</div>
+            <div>
+              <div className="cruce-ia-title">Diagnóstico IA cruzado</div>
+              <div className="cruce-ia-text">
+                El cierre en 3 s genera una sobrepresión transitoria de 47 bar por golpe de ariete (Joukowsky).
+                Ese valor supera la presión máxima admisible calculada en el módulo de Cañerías para este diámetro y
+                espesor bajo ASME B31.8. Riesgo de falla estructural en el tramo aguas arriba de la válvula.
+                Ninguno de los tres módulos, tomado en forma aislada, hubiera detectado este escenario.
               </div>
             </div>
           </div>
