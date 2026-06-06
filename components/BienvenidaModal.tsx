@@ -40,21 +40,30 @@ export default function BienvenidaModal() {
             <div className="flex items-center justify-center w-8 h-8 shrink-0 rounded-full bg-[#E8A020] text-[#020609] font-bold text-lg">
               1
             </div>
-            <p className="text-gray-200 font-medium text-lg">Consultá la IA primero</p>
+            <div>
+              <p className="text-gray-200 font-medium text-lg">Elegí un módulo</p>
+              <p className="text-gray-400 text-sm mt-1">Seleccioná un módulo del panel izquierdo: Petróleo/MAOP, Hidráulica, Cañerías, Soldadura y más.</p>
+            </div>
           </div>
          
           <div className="flex items-center gap-4 bg-white/5 p-4 rounded-lg border border-white/10 transition-colors hover:border-[#E8A020]/30">
             <div className="flex items-center justify-center w-8 h-8 shrink-0 rounded-full bg-[#E8A020] text-[#020609] font-bold text-lg">
               2
             </div>
-            <p className="text-gray-200 font-medium text-lg">Calculá con los módulos</p>
+            <div>
+              <p className="text-gray-200 font-medium text-lg">Cargá tus datos y calculá</p>
+              <p className="text-gray-400 text-sm mt-1">Ingresá los parámetros técnicos y obtené el resultado con semáforo de riesgo y la normativa aplicada.</p>
+            </div>
           </div>
 
           <div className="flex items-center gap-4 bg-white/5 p-4 rounded-lg border border-white/10 transition-colors hover:border-[#E8A020]/30">
             <div className="flex items-center justify-center w-8 h-8 shrink-0 rounded-full bg-[#E8A020] text-[#020609] font-bold text-lg">
               3
             </div>
-            <p className="text-gray-200 font-medium text-lg">Exportá PDF/DXF/Excel</p>
+            <div>
+              <p className="text-gray-200 font-medium text-lg">Exportá y verificá</p>
+              <p className="text-gray-400 text-sm mt-1">Generá PDF con QR, Excel o DXF. La auditoría IA cruza módulos y detecta riesgos que un cálculo aislado no ve.</p>
+            </div>
           </div>
         </div>
 
