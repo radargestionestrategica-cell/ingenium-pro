@@ -53,8 +53,6 @@ export async function POST(req: Request) {
         nombre:    usuario.nombre,
         empresa:   usuario.empresa,
         pais:      usuario.pais,
-        matricula: usuario.matricula ?? '',
-        dni:       usuario.dni ?? '',
         plan:      usuario.plan,
         activo:    usuario.activo,
         createdAt: usuario.createdAt,
