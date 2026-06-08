@@ -101,7 +101,7 @@ export default function ModuloHidraulica() {
     setResDW(r);
     const payload: DatosExportar = {
       tipo: 'DARCY_WEISBACH',
-      normativa: 'AWWA M11 | Darcy-Weisbach | Colebrook-White',
+      normativa: 'AWWA M11 | Darcy-Weisbach | Swamee-Jain (aproximación explícita de Colebrook-White)',
       parametros: {
         'Caudal Q (L/s)': Q,
         'Diametro interno D (mm)': D,
@@ -217,7 +217,7 @@ export default function ModuloHidraulica() {
             </div>
           </div>
           <div style={{ background: '#0f172a', borderRadius: 8, padding: '10px 14px', fontSize: 12, color: '#64748b' }}>
-            Normativa: AWWA M11 | Darcy-Weisbach | Colebrook-White | Joukowsky 1898 | ASME B31.3
+            Normativa: AWWA M11 | Darcy-Weisbach | Swamee-Jain (aprox. explícita de Colebrook-White) | Joukowsky 1898 | ASME B31.3
           </div>
         </div>
 
@@ -365,7 +365,7 @@ export default function ModuloHidraulica() {
               <div style={{ marginTop: 4, color: '#475569' }}>
                 f={resDW.f} | V={resDW.V} m/s | Re={resDW.Re} | {resDW.regimen}
               </div>
-              <div style={{ marginTop: 4, color: '#475569' }}>AWWA M11 | Colebrook-White | {new Date().toLocaleDateString('es-AR')}</div>
+              <div style={{ marginTop: 4, color: '#475569' }}>AWWA M11 | Swamee-Jain (aprox. explícita de Colebrook-White) | {new Date().toLocaleDateString('es-AR')}</div>
             </div>
           </div>
         )}
