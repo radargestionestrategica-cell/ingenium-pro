@@ -5,13 +5,14 @@ import { useState } from 'react';
 
 function calcMAOP(OD: number, t: number, SMYS: number, F = 0.72, E = 1.0, T_op = 20) {
   if (OD <= 0 || t <= 0 || SMYS <= 0 || t >= OD / 2) return null;
+  // Factor T — Tabla 841.1.18-1 de ASME B31.8 (valores: ≤120°C=1.0, ≤150°C=0.967, ≤175°C=0.933, ≤200°C=0.900, >200°C=0.867)
   const T_factor = T_op <= 120 ? 1.0 : T_op <= 150 ? 0.967 : T_op <= 175 ? 0.933 : T_op <= 200 ? 0.900 : 0.867;
   const ratio = t / OD;
   const ro = OD / 2, ri = ro - t;
   const Pb = (2 * SMYS * t * F * E * T_factor) / OD;
   const Pl = SMYS * F * E * T_factor * (ro ** 2 - ri ** 2) / (ro ** 2 + ri ** 2);
   const P  = ratio > 0.15 ? Pl : ratio > 0.10 ? Pb * (1 - (ratio - 0.10) / 0.05) + Pl * (ratio - 0.10) / 0.05 : Pb;
-  const reg = ratio > 0.15 ? 'PARED GRUESA — Lamé' : ratio > 0.10 ? 'TRANSICIÓN' : 'PARED DELGADA — Barlow';
+  const reg = ratio > 0.15 ? 'PARED GRUESA — Lamé (criterio conservador adicional, fuera de B31.8)' : ratio > 0.10 ? 'TRANSICIÓN' : 'PARED DELGADA — Barlow';
   const risk = P > 10 ? 'CRITICAL' : P > 7 ? 'HIGH' : P > 4 ? 'MEDIUM' : 'LOW';
 
   // Fórmula que refleja el régimen real aplicado
@@ -106,7 +107,7 @@ export default function ModuloPetroleo() {
         'MAOP (psi)':              r.psi,
         'Relación t/OD (%)':       r.ratio,
         'Régimen de cálculo':      r.reg,
-        'Factor T temperatura':    r.T_factor,
+        'Factor T (Tabla 841.1.18-1 ASME B31.8)': r.T_factor,
         'Estado':                  riskLabel[r.risk],
       },
       dxfParams: {
@@ -136,7 +137,7 @@ export default function ModuloPetroleo() {
             </div>
           </div>
           <div style={{ background: '#1e293b', borderRadius: 8, padding: '10px 14px', fontSize: 12, color: '#64748b' }}>
-            Normativa: ASME B31.8 Sec. 841.11 | Fórmula de Barlow modificada + Lamé para pared gruesa | Factores F, E, T reales
+            Normativa: ASME B31.8 Sec. 841.11 | Fórmula de Barlow modificada + Lamé para pared gruesa (conservador, fuera de B31.8) | Factor T — Tabla 841.1.18-1 de ASME B31.8
           </div>
         </div>
 
