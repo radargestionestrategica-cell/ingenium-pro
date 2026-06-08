@@ -543,6 +543,7 @@ export default function ModuloValvulas() {
   const [disClase, setDisClase] = useState('300');
   const [disNPS, setDisNPS] = useState('4');
   const [disProyecto, setDisProyecto] = useState('');
+  const [disMaterial, setDisMaterial] = useState('A216 WCB');
   const [disEstilo, setDisEstilo] = useState('Wafer');
   const [disSubtipo, setDisSubtipo] = useState('Swing');
   const [disPatron, setDisPatron] = useState('Regular');
@@ -831,7 +832,7 @@ export default function ModuloValvulas() {
         P_op:     pMaxMPa * 0.7,
         norma:    normativa,
         f2f_mm:   f2f_mm ?? undefined,
-        material: 'ASTM A216 WCB (default — verificar con material tab)',
+        material: `ASTM ${disMaterial}`,
         proyecto: disProyecto || undefined,
       },
     };
@@ -1214,6 +1215,19 @@ export default function ModuloValvulas() {
             <div><label style={lbl}>Nombre proyecto (para DXF)</label>
               <input value={disProyecto} onChange={e => setDisProyecto(e.target.value)} style={inp} placeholder="Ej: Planta GNL Norte" />
             </div>
+          </div>
+
+          {/* Material del cuerpo */}
+          <div style={{ marginBottom: 16 }}>
+            <label style={lbl}>Material del cuerpo (ASTM)</label>
+            <select value={disMaterial} onChange={e => setDisMaterial(e.target.value)} style={inp}>
+              <option value="A216 WCB"  style={{ background: '#0a0f1e' }}>A216 WCB — Acero carbono (estándar, -29°C a 425°C)</option>
+              <option value="A216 WCC"  style={{ background: '#0a0f1e' }}>A216 WCC — Acero carbono alta resist. (-29°C a 425°C)</option>
+              <option value="A352 LCC"  style={{ background: '#0a0f1e' }}>A352 LCC — Baja temperatura (-46°C a 345°C)</option>
+              <option value="A352 LCB"  style={{ background: '#0a0f1e' }}>A352 LCB — Baja temperatura (-46°C a 345°C)</option>
+              <option value="A351 CF8"  style={{ background: '#0a0f1e' }}>A351 CF8 — Inox 304 (-196°C a 425°C)</option>
+              <option value="A351 CF8M" style={{ background: '#0a0f1e' }}>A351 CF8M — Inox 316 (-196°C a 450°C)</option>
+            </select>
           </div>
 
           {/* Estilo — solo para válvula mariposa */}
