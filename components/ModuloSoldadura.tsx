@@ -236,7 +236,8 @@ export default function ModuloSoldadura() {
   const [prSi, setPrSi] = useState('0.25'); const [prCr, setPrCr] = useState('0');
   const [prNi, setPrNi] = useState('0'); const [prMo, setPrMo] = useState('0');
   const [prEsp, setPrEsp] = useState('20');
-  const [resPre, setResPre] = useState<null | { CE: number; Tp: number; cat: string; rec: string }>(null);
+  const [prFormula, setPrFormula] = useState<'IIW' | 'D1.1'>('IIW');
+  const [resPre, setResPre] = useState<null | { CE: number; Tp: number; cat: string; rec: string; formula: string }>(null);
 
   const [datosSel,  setDatosSel]  = useState<DatosExportar | null>(null);
   const [datosHI,   setDatosHI]   = useState<DatosExportar | null>(null);
@@ -432,8 +433,14 @@ export default function ModuloSoldadura() {
     const Cr = parseFloat(prCr); const Ni = parseFloat(prNi); const Mo = parseFloat(prMo);
     const t = parseFloat(prEsp);
     if ([C2, Mn, Si, Cr, Ni, Mo, t].some(isNaN)) { setErr('Valores inválidos'); return; }
-    // CE = C + Mn/6 + (Cr+Mo+V)/5 + (Ni+Cu)/15 — Fórmula IIW verificada
-    const CE = Math.round((C2 + Mn / 6 + (Cr + Mo) / 5 + Ni / 15) * 1000) / 1000;
+    // IIW:     CE = C + Mn/6 + (Cr+Mo+V)/5 + (Ni+Cu)/15
+    // AWS D1.1: CE = C + (Mn+Si)/6 + (Cr+Mo+V)/5 + (Ni+Cu)/15
+    const CE = prFormula === 'IIW'
+      ? Math.round((C2 + Mn / 6 + (Cr + Mo) / 5 + Ni / 15) * 1000) / 1000
+      : Math.round((C2 + (Mn + Si) / 6 + (Cr + Mo) / 5 + Ni / 15) * 1000) / 1000;
+    const formulaLabel = prFormula === 'IIW'
+      ? 'IIW: C + Mn/6 + (Cr+Mo+V)/5 + (Ni+Cu)/15'
+      : 'AWS D1.1: C + (Mn+Si)/6 + (Cr+Mo+V)/5 + (Ni+Cu)/15';
     let Tp = 0; let cat = ''; let rec = '';
     if (CE <= 0.35) { Tp = 0; cat = 'Grupo I — Bajo CE (≤0.35)'; rec = t > 19 ? 'Precalentar a 20°C mínimo para t > 19mm.' : 'Sin precalentamiento requerido.'; }
     else if (CE <= 0.40) { Tp = t > 19 ? 65 : 0; cat = 'Grupo II — CE moderado (0.35-0.40)'; rec = t > 19 ? 'Precalentar a 65°C. Entre pasadas: 65-230°C.' : 'Sin precalentamiento para t ≤ 19mm.'; }
@@ -441,12 +448,13 @@ export default function ModuloSoldadura() {
     else if (CE <= 0.55) { Tp = 150; cat = 'Grupo IV — CE muy alto (0.45-0.55)'; rec = 'Precalentar 150-200°C. OBLIGATORIO E7018/E7016. Tratamiento post-soldadura recomendado. ASME Sec. IX.'; }
     else { Tp = 200; cat = 'Grupo V — Alta aleación (>0.55)'; rec = 'Precalentar 200-315°C. WPS específico obligatorio. Calificación de procedimiento ASME Sec. IX.'; }
     if (t > 38 && Tp < 65) Tp = 65;
-    const r = { CE, Tp, cat, rec };
+    const r = { CE, Tp, cat, rec, formula: formulaLabel };
     setResPre(r);
     const payload: DatosExportar = {
       tipo: 'PRECALENTAMIENTO',
-      normativa: 'CE IIW | AWS D1.1 | ASME Sec. IX',
+      normativa: prFormula === 'IIW' ? 'CE IIW | AWS D1.1 | ASME Sec. IX' : 'CE AWS D1.1 | ASME Sec. IX',
       parametros: {
+        'Formula CE': formulaLabel,
         '% Carbono C': prC,
         '% Manganeso Mn': prMn,
         '% Silicio Si': prSi,
@@ -456,7 +464,7 @@ export default function ModuloSoldadura() {
         'Espesor material (mm)': prEsp,
       },
       resultado: {
-        'Carbono Equivalente CE (IIW)': CE,
+        [`Carbono Equivalente CE (${prFormula})`]: CE,
         'Temperatura minima Tp (C)': Tp === 0 ? 'No requerido' : Tp,
         'Categoria AWS D1.1': cat,
         'Recomendacion': rec,
@@ -744,7 +752,7 @@ export default function ModuloSoldadura() {
               <Card label="Metal depositado" val={`${resCons.kgDeposito} kg`} sub="Acero depositado en la junta" />
               <Card label="Electrodo a consumir" val={`${resCons.kgElectrodo} kg`} sub={`Incl. eficiencia ${ELECTRODOS[cEl].depositoEficiencia}%`} />
               <Card label="Varillas estimadas" val={`${resCons.cantVarillas} varillas`} sub={`Ø${cDiam}mm`} />
-              <Card label="Pasadas estimadas" val={`${resCons.pasadas} pasadas`} sub="Incluye raíz + relleno" />
+              <Card label="Pasadas estimadas" val={`${resCons.pasadas} pasadas`} sub="Estimación: 1 pasada cada 3 mm (regla práctica)" />
             </div>
             <Warn text="⚠️ Estimación de referencia. El consumo real varía según diseño de junta, técnica del soldador y condiciones de obra. Agregar 15-20% de desperdicio al pedir materiales." />
           </ResBox>}
@@ -774,12 +782,22 @@ export default function ModuloSoldadura() {
             <label style={lbl}>Espesor del material (mm)</label>
             <input value={prEsp} onChange={e => setPrEsp(e.target.value)} style={inp} type="number" min="1" step="1" />
           </div>
-          <Info text="CE (IIW) = C + Mn/6 + (Cr+Mo+V)/5 + (Ni+Cu)/15 · Grupos AWS D1.1 Tabla 4.2" />
+          <div style={{ marginBottom: 16 }}>
+            <label style={lbl}>Fórmula de carbono equivalente</label>
+            <select value={prFormula} onChange={e => { setPrFormula(e.target.value as 'IIW' | 'D1.1'); setResPre(null); }} style={inp}>
+              <option value="IIW"  style={{ background: '#0a0f1e' }}>IIW — C + Mn/6 + (Cr+Mo+V)/5 + (Ni+Cu)/15  (default · más usada)</option>
+              <option value="D1.1" style={{ background: '#0a0f1e' }}>AWS D1.1 — C + (Mn+Si)/6 + (Cr+Mo+V)/5 + (Ni+Cu)/15  (incluye Si)</option>
+            </select>
+          </div>
+          <Info text="Grupos de precalentamiento según AWS D1.1 Tabla 4.2. AWS D1.1 incluye Si en el segundo término, dando CE ligeramente mayor para aceros con >0.3% Si." />
           <Btn onClick={calcPrecalentamiento} text="Calcular precalentamiento" />
           {resPre && <ResBox>
             <div style={{ fontSize: 12, color: C, fontWeight: 700, marginBottom: 14 }}>RESULTADO — PRECALENTAMIENTO</div>
+            <div style={{ fontSize: 11, color: '#64748b', marginBottom: 12, padding: '6px 12px', background: '#0a0f1e', borderRadius: 8 }}>
+              Fórmula usada: <span style={{ color: '#f1f5f9', fontWeight: 600 }}>{resPre.formula}</span>
+            </div>
             <div style={g3}>
-              <Card label="Carbono Equiv. CE (IIW)" val={`${resPre.CE}`} />
+              <Card label={`Carbono Equiv. CE (${prFormula})`} val={`${resPre.CE}`} />
               <Card label="Temperatura mínima Tp" val={resPre.Tp === 0 ? 'No requerido' : `${resPre.Tp} °C`} color={resPre.Tp === 0 ? '#4ade80' : resPre.Tp >= 150 ? '#ef4444' : C} />
               <Card label="Categoría AWS D1.1" val={resPre.cat} />
             </div>
