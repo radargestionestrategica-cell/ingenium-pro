@@ -24,13 +24,28 @@ function calcMudWeight(porePresGrad: number, safetyFactor = 0.5) {
   return { mudWeight: +mudWeight.toFixed(2), risk };
 }
 
-// API RP 13D — Bingham Plastic: PV, YP, velocidad anular, pérdida anular, ECD real
-function calcHidraulica(Q: number, Dh: number, Dt: number, R600: number, R300: number, mw: number) {
-  const PV = R600 - R300;                                                          // cP
-  const YP = R300 - PV;                                                            // lbf/100 ft²
-  const Va = (24.51 * Q) / (Dh * Dh - Dt * Dt);                                  // ft/min
-  const Pa = (PV * Va) / (60000 * (Dh - Dt)) + YP / (200 * (Dh - Dt));          // psi/ft
-  const ecd = mw + Pa / 0.052;                                                     // ppg
+// API RP 13D — Bingham Plastic y Power Law
+function calcHidraulica(
+  Q: number, Dh: number, Dt: number,
+  R600: number, R300: number, mw: number,
+  R3: number, modelo: string
+): { Va: number; Pa: number; ecd: number; PV?: number; YP?: number; na?: number; ka?: number } {
+  const Va = (24.51 * Q) / (Dh * Dh - Dt * Dt);                                   // ft/min — común a ambos modelos
+
+  if (modelo === 'powerlaw') {
+    const na    = 0.5 * Math.log10(R300 / R3);                                     // índice de flujo anular
+    const ka    = 5.11 * R300 / Math.pow(511, na);                                 // factor de consistencia anular
+    const shear = 144 * Va / (Dh - Dt);                                             // tasa de corte anular (1/s)
+    const Pa    = ka * Math.pow(shear, na) / (144000 * (Dh - Dt));                 // psi/ft
+    const ecd   = mw + Pa / 0.052;                                                  // ppg
+    return { Va: +Va.toFixed(1), Pa: +Pa.toFixed(4), ecd: +ecd.toFixed(2), na: +na.toFixed(4), ka: +ka.toFixed(4) };
+  }
+
+  // Bingham Plastic (default)
+  const PV = R600 - R300;                                                           // cP
+  const YP = R300 - PV;                                                             // lbf/100 ft²
+  const Pa = (PV * Va) / (60000 * (Dh - Dt)) + YP / (200 * (Dh - Dt));           // psi/ft
+  const ecd = mw + Pa / 0.052;                                                      // ppg
   return { PV: +PV.toFixed(1), YP: +YP.toFixed(1), Va: +Va.toFixed(1), Pa: +Pa.toFixed(4), ecd: +ecd.toFixed(2) };
 }
 
@@ -71,15 +86,19 @@ export default function ModuloPerforacion() {
     const Dt  = parseFloat(diamTuberia);
     const R6  = parseFloat(r600);
     const R3  = parseFloat(r300);
-    if ([tvd, mw, ob, pg, Q, Dh, Dt, R6, R3].some(isNaN)) return;
+    const R3v = parseFloat(r3);
+    if ([tvd, mw, ob, pg, Q, Dh, Dt, R6, R3, R3v].some(isNaN)) return;
     const mudCalc = calcMudWeight(pg);
     const r = {
       bhp:  calcBHP(tvd, mw),
       frac: calcFractureGradient(tvd, ob),
       mud:  mudCalc,
-      hid:  calcHidraulica(Q, Dh, Dt, R6, R3, mw),
+      hid:  calcHidraulica(Q, Dh, Dt, R6, R3, mw, R3v, modeloReologico),
     };
     setRes(r);
+    const hidParams = r.hid.PV !== undefined
+      ? { 'VP - Viscosidad Plástica (cP)': r.hid.PV, 'YP - Punto de Cedencia (lbf/100ft²)': r.hid.YP ?? 0 }
+      : { 'n - Índice de flujo': r.hid.na ?? 0, 'k - Factor de consistencia': r.hid.ka ?? 0 };
     const payload: DatosExportar = {
       tipo: 'PERFORACION',
       normativa: 'API RP 13D | API RP 7G',
@@ -93,6 +112,8 @@ export default function ModuloPerforacion() {
         'Diámetro exterior tubería (pulg)':  diamTuberia,
         'Viscosímetro 600 rpm (R600)':       r600,
         'Viscosímetro 300 rpm (R300)':       r300,
+        'Viscosímetro 3 rpm (R3)':           r3,
+        'Modelo reológico':                  modeloReologico,
       },
       resultado: {
         'BHP (psi)':                         r.bhp.bhp,
@@ -100,8 +121,7 @@ export default function ModuloPerforacion() {
         'Gradiente de fractura (psi/ft)':    r.frac.fracGrad,
         'Presion de fractura (psi)':         r.frac.fracPressure,
         'Peso lodo recomendado (ppg)':       r.mud.mudWeight,
-        'VP - Viscosidad Plástica (cP)':     r.hid.PV,
-        'YP - Punto de Cedencia (lbf/100ft²)': r.hid.YP,
+        ...hidParams,
         'Velocidad anular (ft/min)':         r.hid.Va,
         'Pérdida presión anular (psi/ft)':   r.hid.Pa,
         'ECD (ppg)':                         r.hid.ecd,
@@ -210,14 +230,29 @@ export default function ModuloPerforacion() {
                 <div style={{ color: '#64748b', fontSize: 11 }}>ECD Hidráulico (API RP 13D)</div>
                 <div style={{ color: '#f59e0b', fontWeight: 700 }}>{res.hid.ecd} ppg</div>
               </div>
-              <div style={{ background: '#0f172a', borderRadius: 8, padding: 12 }}>
-                <div style={{ color: '#64748b', fontSize: 11 }}>VP — Viscosidad Plástica</div>
-                <div style={{ color: '#f8fafc', fontWeight: 700 }}>{res.hid.PV} cP</div>
-              </div>
-              <div style={{ background: '#0f172a', borderRadius: 8, padding: 12 }}>
-                <div style={{ color: '#64748b', fontSize: 11 }}>YP — Punto de Cedencia</div>
-                <div style={{ color: '#f8fafc', fontWeight: 700 }}>{res.hid.YP} lbf/100ft²</div>
-              </div>
+              {res.hid.PV !== undefined ? (
+                <>
+                  <div style={{ background: '#0f172a', borderRadius: 8, padding: 12 }}>
+                    <div style={{ color: '#64748b', fontSize: 11 }}>VP — Viscosidad Plástica</div>
+                    <div style={{ color: '#f8fafc', fontWeight: 700 }}>{res.hid.PV} cP</div>
+                  </div>
+                  <div style={{ background: '#0f172a', borderRadius: 8, padding: 12 }}>
+                    <div style={{ color: '#64748b', fontSize: 11 }}>YP — Punto de Cedencia</div>
+                    <div style={{ color: '#f8fafc', fontWeight: 700 }}>{res.hid.YP} lbf/100ft²</div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div style={{ background: '#0f172a', borderRadius: 8, padding: 12 }}>
+                    <div style={{ color: '#64748b', fontSize: 11 }}>n — Índice de flujo</div>
+                    <div style={{ color: '#f8fafc', fontWeight: 700 }}>{res.hid.na}</div>
+                  </div>
+                  <div style={{ background: '#0f172a', borderRadius: 8, padding: 12 }}>
+                    <div style={{ color: '#64748b', fontSize: 11 }}>k — Factor de consistencia</div>
+                    <div style={{ color: '#f8fafc', fontWeight: 700 }}>{res.hid.ka}</div>
+                  </div>
+                </>
+              )}
               <div style={{ background: '#0f172a', borderRadius: 8, padding: 12 }}>
                 <div style={{ color: '#64748b', fontSize: 11 }}>Velocidad anular</div>
                 <div style={{ color: '#f8fafc', fontWeight: 700 }}>{res.hid.Va} ft/min</div>
@@ -230,9 +265,10 @@ export default function ModuloPerforacion() {
 
             <div style={{ marginTop: 4, background: '#0f172a', borderRadius: 8, padding: 14, fontSize: 12, color: '#94a3b8', fontFamily: 'monospace' }}>
               <div style={{ color: '#a78bfa', marginBottom: 4, fontWeight: 700 }}>NORMATIVA APLICADA:</div>
-              API RP 13D — Bingham Plastic | VP = R600 − R300 | YP = R300 − VP
-              <div style={{ marginTop: 2 }}>Va = 24.51 × Q / (Dh² − Dt²) | ΔPa = VP·Va/(60000·ΔD) + YP/(200·ΔD)</div>
-              <div style={{ marginTop: 2 }}>ECD = MW + ΔPa / 0.052</div>
+              {res.hid.PV !== undefined
+                ? 'API RP 13D — Bingham Plastic | VP = R600 − R300 | YP = R300 − VP'
+                : 'API RP 13D — Power Law | n = 0.5·log₁₀(R300/R3) | k = 5.11·R300 / 511ⁿ'}
+              <div style={{ marginTop: 2 }}>Va = 24.51 × Q / (Dh² − Dt²) | ECD = MW + ΔPa / 0.052</div>
               <div style={{ marginTop: 4, color: '#475569' }}>API RP 7G — Sarta de perforacion | {new Date().toLocaleDateString('es-AR')}</div>
             </div>
           </div>
