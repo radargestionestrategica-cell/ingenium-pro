@@ -51,6 +51,7 @@ export default function ModuloPerforacion() {
   const [diamTuberia, setDiamTuberia] = useState('5');
   const [r600, setR600] = useState('60');
   const [r300, setR300] = useState('40');
+  const [modeloReologico, setModeloReologico] = useState('bingham');
   const [res, setRes] = useState<null | {
     bhp: ReturnType<typeof calcBHP>;
     frac: ReturnType<typeof calcFractureGradient>;
@@ -138,6 +139,15 @@ export default function ModuloPerforacion() {
 
         <div style={{ background: '#1e293b', border: '1px solid #334155', borderRadius: 12, padding: 24, marginBottom: 20 }}>
           <div style={{ color: '#a78bfa', fontWeight: 700, fontSize: 14, marginBottom: 16, textTransform: 'uppercase' }}>Parametros de Perforacion</div>
+
+          <div style={{ marginBottom: 16 }}>
+            <label style={{ color: '#94a3b8', fontSize: 12, display: 'block', marginBottom: 6 }}>Modelo reológico</label>
+            <select value={modeloReologico} onChange={e => setModeloReologico(e.target.value)}
+              style={{ width: '100%', background: '#0f172a', border: '1px solid #475569', borderRadius: 8, padding: '10px 12px', color: '#f8fafc', fontSize: 15, boxSizing: 'border-box' as const }}>
+              <option value="bingham">Bingham Plastic</option>
+              <option value="powerlaw">Power Law</option>
+            </select>
+          </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 20 }}>
             {[
