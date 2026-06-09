@@ -51,6 +51,7 @@ export default function ModuloPerforacion() {
   const [diamTuberia, setDiamTuberia] = useState('5');
   const [r600, setR600] = useState('60');
   const [r300, setR300] = useState('40');
+  const [r3,   setR3]   = useState('5');
   const [modeloReologico, setModeloReologico] = useState('bingham');
   const [res, setRes] = useState<null | {
     bhp: ReturnType<typeof calcBHP>;
@@ -160,6 +161,7 @@ export default function ModuloPerforacion() {
               { label: 'Diámetro exterior tubería (pulg)', val: diamTuberia, set: setDiamTuberia, ph: '5' },
               { label: 'Viscosímetro 600 rpm (R600)', val: r600, set: setR600, ph: '60' },
               { label: 'Viscosímetro 300 rpm (R300)', val: r300, set: setR300, ph: '40' },
+              { label: 'Viscosímetro 3 rpm (R3)',     val: r3,   set: setR3,   ph: '5'  },
             ].map((f, i) => (
               <div key={i}>
                 <label style={{ color: '#94a3b8', fontSize: 12, display: 'block', marginBottom: 6 }}>{f.label}</label>
