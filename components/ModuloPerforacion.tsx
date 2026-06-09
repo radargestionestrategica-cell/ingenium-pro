@@ -37,6 +37,11 @@ export default function ModuloPerforacion() {
   const [mudWeight, setMudWeight] = useState('10.5');
   const [overburden, setOverburden] = useState('1.0');
   const [poreGrad, setPoreGrad] = useState('0.433');
+  const [caudal, setCaudal] = useState('350');
+  const [diamPozo, setDiamPozo] = useState('8.5');
+  const [diamTuberia, setDiamTuberia] = useState('5');
+  const [r600, setR600] = useState('60');
+  const [r300, setR300] = useState('40');
   const [res, setRes] = useState<null | {
     bhp: ReturnType<typeof calcBHP>;
     frac: ReturnType<typeof calcFractureGradient>;
@@ -114,6 +119,11 @@ export default function ModuloPerforacion() {
               { label: 'Peso de lodo (ppg)', val: mudWeight, set: setMudWeight, ph: '10.5' },
               { label: 'Gradiente sobrecarga (psi/ft)', val: overburden, set: setOverburden, ph: '1.0' },
               { label: 'Gradiente poros (psi/ft)', val: poreGrad, set: setPoreGrad, ph: '0.433' },
+              { label: 'Caudal de bombeo (gpm)', val: caudal, set: setCaudal, ph: '350' },
+              { label: 'Diámetro del pozo (pulg)', val: diamPozo, set: setDiamPozo, ph: '8.5' },
+              { label: 'Diámetro exterior tubería (pulg)', val: diamTuberia, set: setDiamTuberia, ph: '5' },
+              { label: 'Viscosímetro 600 rpm (R600)', val: r600, set: setR600, ph: '60' },
+              { label: 'Viscosímetro 300 rpm (R300)', val: r300, set: setR300, ph: '40' },
             ].map((f, i) => (
               <div key={i}>
                 <label style={{ color: '#94a3b8', fontSize: 12, display: 'block', marginBottom: 6 }}>{f.label}</label>
