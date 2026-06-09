@@ -65,29 +65,37 @@ function calcEstabilidadTalud(
   const beta = beta_deg * Math.PI / 180;
 
   // Radio del circulo critico aproximado
-  const R    = H / Math.sin(beta) * 0.8;
+  const R     = H / Math.sin(beta) * 0.8;
   const n_dov = 8;
-  let sum_num = 0;
-  let sum_den = 0;
 
+  // Pre-calcular geometría y fuerzas de cada dovela — no cambian entre iteraciones
+  const dovelas: { alpha: number; b_dov: number; W: number; u: number }[] = [];
   for (let i = 0; i < n_dov; i++) {
     const x     = (i + 0.5) * H * Math.cos(beta) / n_dov;
-    const alpha  = Math.asin(Math.min(x / R, 0.99));
-    const h_dov  = H - x * Math.tan(beta);
-    const b_dov  = H * Math.cos(beta) / n_dov;
-    const W      = (gamma / 1000) * h_dov * b_dov;
-
+    const alpha = Math.asin(Math.min(x / R, 0.99));
+    const h_dov = H - x * Math.tan(beta);
+    const b_dov = H * Math.cos(beta) / n_dov;
+    const W     = (gamma / 1000) * h_dov * b_dov;
     // Presion de poro (simplificada)
-    const u = Dw < h_dov ? 9.81 * (h_dov - Dw) * 0.3 : 0;
-
-    const m_alpha = Math.cos(alpha) + Math.sin(alpha) * Math.tan(phi) / 1.3;
-    const safe_m  = Math.max(m_alpha, 0.1);
-
-    sum_num += (c * b_dov + (W - u * b_dov) * Math.tan(phi)) / safe_m;
-    sum_den += W * Math.sin(alpha);
+    const u     = Dw < h_dov ? 9.81 * (h_dov - Dw) * 0.3 : 0;
+    dovelas.push({ alpha, b_dov, W, u });
   }
 
-  const FS     = sum_den > 0 ? sum_num / sum_den : 999;
+  // Bishop Simplificado iterativo — semilla FS=1.0, tolerancia 0.001, máx 100 iter
+  let FS = 1.0;
+  for (let iter = 0; iter < 100; iter++) {
+    let sum_num = 0;
+    let sum_den = 0;
+    for (const d of dovelas) {
+      const m_alpha = Math.cos(d.alpha) + Math.sin(d.alpha) * Math.tan(phi) / FS;
+      const safe_m  = Math.max(m_alpha, 0.1);
+      sum_num += (c * d.b_dov + (d.W - d.u * d.b_dov) * Math.tan(phi)) / safe_m;
+      sum_den += d.W * Math.sin(d.alpha);
+    }
+    const FS_new = sum_den > 0 ? sum_num / sum_den : 999;
+    if (Math.abs(FS_new - FS) < 0.001) { FS = FS_new; break; }
+    FS = FS_new;
+  }
   const riesgo = FS < 1.0 ? 'CRITICAL' : FS < 1.3 ? 'HIGH' : FS < 1.5 ? 'MEDIUM' : 'LOW';
   const estado = FS >= 1.5
     ? 'ESTABLE'
