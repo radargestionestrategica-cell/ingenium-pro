@@ -235,6 +235,7 @@ export default function ModuloSoldadura() {
   const [prC, setPrC] = useState('0.20'); const [prMn, setPrMn] = useState('1.00');
   const [prSi, setPrSi] = useState('0.25'); const [prCr, setPrCr] = useState('0');
   const [prNi, setPrNi] = useState('0'); const [prMo, setPrMo] = useState('0');
+  const [prV, setPrV]   = useState('0');  const [prCu, setPrCu] = useState('0');
   const [prEsp, setPrEsp] = useState('20');
   const [prFormula, setPrFormula] = useState<'IIW' | 'D1.1'>('IIW');
   const [resPre, setResPre] = useState<null | { CE: number; Tp: number; cat: string; rec: string; formula: string }>(null);
@@ -431,13 +432,14 @@ export default function ModuloSoldadura() {
     setErr(''); setResPre(null);
     const C2 = parseFloat(prC); const Mn = parseFloat(prMn); const Si = parseFloat(prSi);
     const Cr = parseFloat(prCr); const Ni = parseFloat(prNi); const Mo = parseFloat(prMo);
+    const V  = parseFloat(prV);  const Cu = parseFloat(prCu);
     const t = parseFloat(prEsp);
-    if ([C2, Mn, Si, Cr, Ni, Mo, t].some(isNaN)) { setErr('Valores inválidos'); return; }
+    if ([C2, Mn, Si, Cr, Ni, Mo, V, Cu, t].some(isNaN)) { setErr('Valores inválidos'); return; }
     // IIW:     CE = C + Mn/6 + (Cr+Mo+V)/5 + (Ni+Cu)/15
     // AWS D1.1: CE = C + (Mn+Si)/6 + (Cr+Mo+V)/5 + (Ni+Cu)/15
     const CE = prFormula === 'IIW'
-      ? Math.round((C2 + Mn / 6 + (Cr + Mo) / 5 + Ni / 15) * 1000) / 1000
-      : Math.round((C2 + (Mn + Si) / 6 + (Cr + Mo) / 5 + Ni / 15) * 1000) / 1000;
+      ? Math.round((C2 + Mn / 6 + (Cr + Mo + V) / 5 + (Ni + Cu) / 15) * 1000) / 1000
+      : Math.round((C2 + (Mn + Si) / 6 + (Cr + Mo + V) / 5 + (Ni + Cu) / 15) * 1000) / 1000;
     const formulaLabel = prFormula === 'IIW'
       ? 'IIW: C + Mn/6 + (Cr+Mo+V)/5 + (Ni+Cu)/15'
       : 'AWS D1.1: C + (Mn+Si)/6 + (Cr+Mo+V)/5 + (Ni+Cu)/15';
@@ -772,6 +774,8 @@ export default function ModuloSoldadura() {
               { l: '% Cromo (Cr)', v: prCr, s: setPrCr },
               { l: '% Níquel (Ni)', v: prNi, s: setPrNi },
               { l: '% Molibdeno (Mo)', v: prMo, s: setPrMo },
+              { l: '% Vanadio (V)', v: prV, s: setPrV },
+              { l: '% Cobre (Cu)', v: prCu, s: setPrCu },
             ].map((f, i) => (
               <div key={i}><label style={lbl}>{f.l}</label>
                 <input value={f.v} onChange={e => f.s(e.target.value)} style={inp} type="number" min="0" step="0.01" />
