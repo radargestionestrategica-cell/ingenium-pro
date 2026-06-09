@@ -75,7 +75,7 @@ export default function ModuloPerforacion() {
       bhp:  calcBHP(tvd, mw),
       frac: calcFractureGradient(tvd, ob),
       mud:  mudCalc,
-      hid:  calcHidraulica(Q, Dh, Dt, R6, R3, mudCalc.mudWeight),
+      hid:  calcHidraulica(Q, Dh, Dt, R6, R3, mw),
     };
     setRes(r);
     const payload: DatosExportar = {
