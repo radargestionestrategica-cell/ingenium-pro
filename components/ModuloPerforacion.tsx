@@ -54,7 +54,7 @@ function calcHidraulica(
   // Bingham Plastic (default)
   const PV = R600 - R300;                                                           // cP
   const YP = R300 - PV;                                                             // lbf/100 ft²
-  const Pa = (PV * Va) / (60000 * (Dh - Dt)) + YP / (200 * (Dh - Dt));           // psi/ft
+  const Pa = (PV * Va) / (60000 * (Dh - Dt) * (Dh - Dt)) + YP / (200 * (Dh - Dt)); // psi/ft
   const ecd = mw + Pa / 0.052;                                                      // ppg
   return { PV: +PV.toFixed(1), YP: +YP.toFixed(1), Va: +Va.toFixed(1), Pa: +Pa.toFixed(4), ecd: +ecd.toFixed(2) };
 }
