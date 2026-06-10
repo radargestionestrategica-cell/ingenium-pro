@@ -24,13 +24,23 @@ function calcMudWeight(porePresGrad: number, safetyFactor = 0.5) {
   return { mudWeight: +mudWeight.toFixed(2), risk };
 }
 
-// API RP 13D — Bingham Plastic y Power Law
+// API RP 13D — Bingham Plastic, Power Law y Herschel-Bulkley
 function calcHidraulica(
   Q: number, Dh: number, Dt: number,
   R600: number, R300: number, mw: number,
-  R3: number, modelo: string
-): { Va: number; Pa: number; ecd: number; PV?: number; YP?: number; na?: number; ka?: number } {
-  const Va = (24.51 * Q) / (Dh * Dh - Dt * Dt);                                   // ft/min — común a ambos modelos
+  R3: number, R6: number, modelo: string
+): { Va: number; Pa: number; ecd: number; PV?: number; YP?: number; na?: number; ka?: number; ty?: number } {
+  const Va = (24.51 * Q) / (Dh * Dh - Dt * Dt);                                   // ft/min — común a todos los modelos
+
+  if (modelo === 'herschelbulkley') {
+    const ty    = Math.min(Math.max(2 * R3 - R6, 0), 0.999 * R300);               // esfuerzo de cedencia (lbf/100 ft²) — acotado para mantener R300 − τy > 0
+    const na    = 3.32 * Math.log10((R600 - ty) / (R300 - ty));                   // índice de flujo
+    const ka    = (R300 - ty) / Math.pow(511, na);                                // factor de consistencia (lbf·sⁿ/100 ft²)
+    const shear = 144 * Va / (Dh - Dt);                                           // tasa de corte anular (1/s)
+    const Pa    = ka * Math.pow(shear, na) / (144000 * (Dh - Dt)) + ty / (200 * (Dh - Dt)); // psi/ft — término viscoso + término de cedencia
+    const ecd   = mw + Pa / 0.052;                                                // ppg
+    return { Va: +Va.toFixed(1), Pa: +Pa.toFixed(4), ecd: +ecd.toFixed(2), na: +na.toFixed(4), ka: +ka.toFixed(4), ty: +ty.toFixed(1) };
+  }
 
   if (modelo === 'powerlaw') {
     const na    = 0.5 * Math.log10(R300 / R3);                                     // índice de flujo anular
@@ -67,6 +77,7 @@ export default function ModuloPerforacion() {
   const [r600, setR600] = useState('60');
   const [r300, setR300] = useState('40');
   const [r3,   setR3]   = useState('5');
+  const [r6,   setR6]   = useState('8');
   const [modeloReologico, setModeloReologico] = useState('bingham');
   const [res, setRes] = useState<null | {
     bhp: ReturnType<typeof calcBHP>;
@@ -84,21 +95,25 @@ export default function ModuloPerforacion() {
     const Q   = parseFloat(caudal);
     const Dh  = parseFloat(diamPozo);
     const Dt  = parseFloat(diamTuberia);
-    const R6  = parseFloat(r600);
-    const R3  = parseFloat(r300);
-    const R3v = parseFloat(r3);
-    if ([tvd, mw, ob, pg, Q, Dh, Dt, R6, R3, R3v].some(isNaN)) return;
+    const R600v = parseFloat(r600);
+    const R300v = parseFloat(r300);
+    const R3v   = parseFloat(r3);
+    const R6v   = parseFloat(r6);
+    if ([tvd, mw, ob, pg, Q, Dh, Dt, R600v, R300v, R3v].some(isNaN)) return;
+    if (modeloReologico === 'herschelbulkley' && isNaN(R6v)) return;
     const mudCalc = calcMudWeight(pg);
     const r = {
       bhp:  calcBHP(tvd, mw),
       frac: calcFractureGradient(tvd, ob),
       mud:  mudCalc,
-      hid:  calcHidraulica(Q, Dh, Dt, R6, R3, mw, R3v, modeloReologico),
+      hid:  calcHidraulica(Q, Dh, Dt, R600v, R300v, mw, R3v, R6v, modeloReologico),
     };
     setRes(r);
     const hidParams = r.hid.PV !== undefined
       ? { 'VP - Viscosidad Plástica (cP)': r.hid.PV, 'YP - Punto de Cedencia (lbf/100ft²)': r.hid.YP ?? 0 }
-      : { 'n - Índice de flujo': r.hid.na ?? 0, 'k - Factor de consistencia': r.hid.ka ?? 0 };
+      : r.hid.ty !== undefined
+        ? { 'τy - Esfuerzo de cedencia (lbf/100ft²)': r.hid.ty, 'n - Índice de flujo': r.hid.na ?? 0, 'k - Factor de consistencia': r.hid.ka ?? 0 }
+        : { 'n - Índice de flujo': r.hid.na ?? 0, 'k - Factor de consistencia': r.hid.ka ?? 0 };
     const payload: DatosExportar = {
       tipo: 'PERFORACION',
       normativa: 'API RP 13D | API RP 7G',
@@ -113,6 +128,7 @@ export default function ModuloPerforacion() {
         'Viscosímetro 600 rpm (R600)':       r600,
         'Viscosímetro 300 rpm (R300)':       r300,
         'Viscosímetro 3 rpm (R3)':           r3,
+        'Viscosímetro 6 rpm (R6)':           r6,
         'Modelo reológico':                  modeloReologico,
       },
       resultado: {
@@ -167,6 +183,7 @@ export default function ModuloPerforacion() {
               style={{ width: '100%', background: '#0f172a', border: '1px solid #475569', borderRadius: 8, padding: '10px 12px', color: '#f8fafc', fontSize: 15, boxSizing: 'border-box' as const }}>
               <option value="bingham">Bingham Plastic</option>
               <option value="powerlaw">Power Law</option>
+              <option value="herschelbulkley">Herschel-Bulkley</option>
             </select>
           </div>
 
@@ -182,6 +199,7 @@ export default function ModuloPerforacion() {
               { label: 'Viscosímetro 600 rpm (R600)', val: r600, set: setR600, ph: '60' },
               { label: 'Viscosímetro 300 rpm (R300)', val: r300, set: setR300, ph: '40' },
               { label: 'Viscosímetro 3 rpm (R3)',     val: r3,   set: setR3,   ph: '5'  },
+              { label: 'Viscosímetro 6 rpm (R6)',     val: r6,   set: setR6,   ph: '8'  },
             ].map((f, i) => (
               <div key={i}>
                 <label style={{ color: '#94a3b8', fontSize: 12, display: 'block', marginBottom: 6 }}>{f.label}</label>
@@ -243,6 +261,12 @@ export default function ModuloPerforacion() {
                 </>
               ) : (
                 <>
+                  {res.hid.ty !== undefined && (
+                    <div style={{ background: '#0f172a', borderRadius: 8, padding: 12 }}>
+                      <div style={{ color: '#64748b', fontSize: 11 }}>τy — Esfuerzo de cedencia</div>
+                      <div style={{ color: '#f8fafc', fontWeight: 700 }}>{res.hid.ty} lbf/100ft²</div>
+                    </div>
+                  )}
                   <div style={{ background: '#0f172a', borderRadius: 8, padding: 12 }}>
                     <div style={{ color: '#64748b', fontSize: 11 }}>n — Índice de flujo</div>
                     <div style={{ color: '#f8fafc', fontWeight: 700 }}>{res.hid.na}</div>
@@ -267,7 +291,9 @@ export default function ModuloPerforacion() {
               <div style={{ color: '#a78bfa', marginBottom: 4, fontWeight: 700 }}>NORMATIVA APLICADA:</div>
               {res.hid.PV !== undefined
                 ? 'API RP 13D — Bingham Plastic | VP = R600 − R300 | YP = R300 − VP'
-                : 'API RP 13D — Power Law | n = 0.5·log₁₀(R300/R3) | k = 5.11·R300 / 511ⁿ'}
+                : res.hid.ty !== undefined
+                  ? 'API RP 13D — Herschel-Bulkley | τy = 2·R3 − R6 | n = 3.32·log₁₀((R600−τy)/(R300−τy)) | k = (R300−τy)/511ⁿ'
+                  : 'API RP 13D — Power Law | n = 0.5·log₁₀(R300/R3) | k = 5.11·R300 / 511ⁿ'}
               <div style={{ marginTop: 2 }}>Va = 24.51 × Q / (Dh² − Dt²) | ECD = MW + ΔPa / 0.052</div>
               <div style={{ marginTop: 4, color: '#475569' }}>API RP 7G — Sarta de perforacion | {new Date().toLocaleDateString('es-AR')}</div>
             </div>
