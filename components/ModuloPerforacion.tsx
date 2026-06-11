@@ -12,8 +12,8 @@ function calcBHP(TVD: number, mudWeight: number, cuttingsLoad = 0) {
   return { bhp: +bhp.toFixed(0), hydrostaticPsi: +hydrostaticPsi.toFixed(0), risk };
 }
 
-function calcFractureGradient(depth: number, overburdenGrad: number, poissonRatio = 0.25) {
-  const fracGrad = (poissonRatio / (1 - poissonRatio)) * (overburdenGrad - 0.433) + 0.433;
+function calcFractureGradient(depth: number, overburdenGrad: number, poreGrad = 0.433, poissonRatio = 0.25) {
+  const fracGrad = (poissonRatio / (1 - poissonRatio)) * (overburdenGrad - poreGrad) + poreGrad;
   const fracPressure = fracGrad * depth;
   return { fracGrad: +fracGrad.toFixed(3), fracPressure: +fracPressure.toFixed(0) };
 }
@@ -71,6 +71,7 @@ export default function ModuloPerforacion() {
   const [mudWeight, setMudWeight] = useState('10.5');
   const [overburden, setOverburden] = useState('1.0');
   const [poreGrad, setPoreGrad] = useState('0.433');
+  const [poisson, setPoisson] = useState('0.25');
   const [caudal, setCaudal] = useState('350');
   const [diamPozo, setDiamPozo] = useState('8.5');
   const [diamTuberia, setDiamTuberia] = useState('5');
@@ -99,12 +100,15 @@ export default function ModuloPerforacion() {
     const R300v = parseFloat(r300);
     const R3v   = parseFloat(r3);
     const R6v   = parseFloat(r6);
-    if ([tvd, mw, ob, pg, Q, Dh, Dt, R600v, R300v, R3v].some(isNaN)) return;
+    const nu  = parseFloat(poisson);
+    if ([tvd, mw, ob, Q, Dh, Dt, R600v, R300v, R3v].some(isNaN)) return;
     if (modeloReologico === 'herschelbulkley' && isNaN(R6v)) return;
-    const mudCalc = calcMudWeight(pg);
+    const pgVal = isNaN(pg) ? 0.433 : pg;                                  // default agua dulce si el campo quedó vacío
+    const nuVal = Math.min(Math.max(isNaN(nu) ? 0.25 : nu, 0), 0.49);      // default 0.25, acotado a [0, 0.49] — ν ≥ 0.5 divide por cero
+    const mudCalc = calcMudWeight(pgVal);
     const r = {
       bhp:  calcBHP(tvd, mw),
-      frac: calcFractureGradient(tvd, ob),
+      frac: calcFractureGradient(tvd, ob, pgVal, nuVal),
       mud:  mudCalc,
       hid:  calcHidraulica(Q, Dh, Dt, R600v, R300v, mw, R3v, R6v, modeloReologico),
     };
@@ -121,7 +125,8 @@ export default function ModuloPerforacion() {
         'Profundidad TVD (ft)':              TVD,
         'Peso de lodo (ppg)':                mudWeight,
         'Gradiente sobrecarga (psi/ft)':     overburden,
-        'Gradiente poros (psi/ft)':          poreGrad,
+        'Gradiente poros (psi/ft)':          pgVal,
+        'Coeficiente de Poisson (ν)':        nuVal,
         'Caudal de bombeo (gpm)':            caudal,
         'Diámetro del pozo (pulg)':          diamPozo,
         'Diámetro exterior tubería (pulg)':  diamTuberia,
@@ -193,6 +198,7 @@ export default function ModuloPerforacion() {
               { label: 'Peso de lodo (ppg)', val: mudWeight, set: setMudWeight, ph: '10.5' },
               { label: 'Gradiente sobrecarga (psi/ft)', val: overburden, set: setOverburden, ph: '1.0' },
               { label: 'Gradiente poros (psi/ft)', val: poreGrad, set: setPoreGrad, ph: '0.433' },
+              { label: 'Coeficiente de Poisson (ν)', val: poisson, set: setPoisson, ph: '0.25' },
               { label: 'Caudal de bombeo (gpm)', val: caudal, set: setCaudal, ph: '350' },
               { label: 'Diámetro del pozo (pulg)', val: diamPozo, set: setDiamPozo, ph: '8.5' },
               { label: 'Diámetro exterior tubería (pulg)', val: diamTuberia, set: setDiamTuberia, ph: '5' },
