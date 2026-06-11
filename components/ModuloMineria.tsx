@@ -81,46 +81,55 @@ function calcRMR(
   return { rmr, clase, descripcion, soporte, riesgo };
 }
 
-// Ventilacion subterranea - NIOSH / MSHA 30 CFR Part 57
-// Referencia: NIOSH (2010) Mine Ventilation Engineering
+// Ventilacion subterranea — factores de caudal minimo segun reglamento seleccionado
+// CO: TLV-TWA 25 ppm (ACGIH) | REL 35 ppm (NIOSH) | IDLH 1200 ppm (NIOSH)
+const NORMAS_VENT: Record<string, { label: string; porPersona: number; porKW: number; cita: string }> = {
+  generico: { label: 'Genérica — práctica internacional', porPersona: 0.06, porKW: 0.06,  cita: '0.06 m³/s por persona + 0.06 m³/s por kW diesel' },
+  chile:    { label: 'Chile — DS 132 Art. 138',           porPersona: 0.05, porKW: 0.063, cita: '3 m³/min por persona + 2.83 m³/min por HP diesel' },
+  peru:     { label: 'Perú — DS 023-2017-EM Art. 252',    porPersona: 0.05, porKW: 0.067, cita: '3 m³/min por persona (≤1500 msnm) + 3 m³/min por HP diesel' },
+};
+
 function calcVentilacion(
   trabajadores: number,
   equipos_diesel_kW: number,
   longitud_galeria: number,
   seccion_m2: number,
-  gases_ppm: number // CO medido en ppm
+  gases_ppm: number, // CO medido en ppm
+  norma: string,
+  Q_medido?: number // caudal real medido en galeria (m3/s) — opcional
 ) {
   if (seccion_m2 <= 0 || longitud_galeria <= 0) return null;
+  const f = NORMAS_VENT[norma] ?? NORMAS_VENT.generico;
 
-  // Caudal minimo por persona (MSHA: 0.06 m3/s por persona)
-  const Q_personas = trabajadores * 0.06;
-
-  // Caudal minimo por equipo diesel (MSHA: 0.06 m3/s por kW)
-  const Q_diesel = equipos_diesel_kW * 0.06;
-
-  // Caudal total requerido
+  const Q_personas = trabajadores * f.porPersona;
+  const Q_diesel = equipos_diesel_kW * f.porKW;
   const Q_requerido = Math.max(Q_personas + Q_diesel, 0.25);
 
-  // Velocidad en galeria
-  const V_galeria = Q_requerido / seccion_m2;
+  // Con caudal medido se evalua el sistema real; sin el, velocidad y renovacion son las estimadas para el caudal requerido
+  const usaMedido = Q_medido !== undefined && Q_medido > 0;
+  const Q_eval = usaMedido ? Q_medido : Q_requerido;
+  const cumple_caudal = Q_eval >= Q_requerido;
 
-  // Tiempo renovacion aire
+  const V_galeria = Q_eval / seccion_m2;
   const volumen = longitud_galeria * seccion_m2;
-  const t_renovacion = volumen / Q_requerido / 60; // minutos
+  const t_renovacion = volumen / Q_eval / 60; // minutos
 
-  // Evaluacion CO (NIOSH: limite 25ppm TWA, IDLH 1200ppm)
+  // Evaluacion CO: TLV-TWA 25 ppm (ACGIH) | REL 35 ppm (NIOSH) | techo 200 ppm / IDLH 1200 ppm (NIOSH)
   const co_ok = gases_ppm < 25;
-  const riesgo_co = gases_ppm > 200 ? 'CRITICAL' : gases_ppm > 50 ? 'HIGH' : gases_ppm > 25 ? 'MEDIUM' : 'LOW';
+  const riesgo_co = gases_ppm > 200 ? 'CRITICAL' : gases_ppm > 35 ? 'HIGH' : gases_ppm > 25 ? 'MEDIUM' : 'LOW';
 
-  const riesgo = V_galeria < 0.25 ? 'CRITICAL' : V_galeria < 0.5 ? 'HIGH' : riesgo_co;
+  const riesgo = (!cumple_caudal || V_galeria < 0.25) ? 'CRITICAL' : V_galeria < 0.5 ? 'HIGH' : riesgo_co;
 
   return {
     Q_requerido: +Q_requerido.toFixed(2),
     Q_personas: +Q_personas.toFixed(2),
     Q_diesel: +Q_diesel.toFixed(2),
+    Q_eval: +Q_eval.toFixed(2),
+    usaMedido, cumple_caudal,
     V_galeria: +V_galeria.toFixed(2),
     t_renovacion: +t_renovacion.toFixed(1),
-    co_ok, riesgo_co, riesgo
+    co_ok, riesgo_co, riesgo,
+    normaLabel: f.label, normaCita: f.cita
   };
 }
 
@@ -172,6 +181,8 @@ export default function ModuloMineria() {
   const [longitud, setLongitud] = useState('500');
   const [seccion, setSeccion] = useState('12');
   const [co_ppm, setCoPpm] = useState('15');
+  const [normaVent, setNormaVent] = useState('generico');
+  const [qMedido, setQMedido] = useState('');
   const [resVent, setResVent] = useState<ReturnType<typeof calcVentilacion>>(null);
   const [datosVent, setDatosVent] = useState<DatosExportar | null>(null);
   const [error, setError] = useState('');
@@ -188,7 +199,7 @@ export default function ModuloMineria() {
     const orientLabel = ORIENTACION.find(o => o.id === orientacion)?.label ?? orientacion;
     const payload: DatosExportar = {
       tipo: 'RMR_BIENIAWSKI',
-      normativa: 'Bieniawski 1989 | NIOSH 2010',
+      normativa: 'Bieniawski 1989 — ajuste por orientacion y soporte validos para tuneles de ~10 m de vano',
       parametros: {
         'UCS resistencia uniaxial (MPa)': ucs,
         'RQD (%)': rqd,
@@ -218,29 +229,35 @@ export default function ModuloMineria() {
 
   const calcularVent = () => {
     setError('');
+    const qm = parseFloat(qMedido);
     const r = calcVentilacion(
       parseFloat(trabajadores), parseFloat(diesel_kW),
-      parseFloat(longitud), parseFloat(seccion), parseFloat(co_ppm)
+      parseFloat(longitud), parseFloat(seccion), parseFloat(co_ppm),
+      normaVent, isNaN(qm) ? undefined : qm
     );
     if (!r) { setError('Verificar datos de entrada.'); return; }
     setResVent(r);
     const payload: DatosExportar = {
       tipo: 'VENTILACION_SUBTERRANEA',
-      normativa: 'NIOSH 2010 | MSHA 30 CFR Part 57',
+      normativa: `${r.normaLabel} | CO: ACGIH TLV 25 ppm / NIOSH IDLH 1200 ppm`,
       parametros: {
+        'Reglamento aplicado': r.normaLabel,
         'Trabajadores en frente': trabajadores,
         'Potencia equipos diesel (kW)': diesel_kW,
         'Longitud galeria (m)': longitud,
         'Seccion transversal (m2)': seccion,
         'CO medido (ppm)': co_ppm,
+        'Caudal medido (m3/s)': r.usaMedido ? qMedido : 'No informado — se evalua con caudal requerido',
       },
       resultado: {
         'Caudal requerido total (m3/s)': r.Q_requerido,
         'Q por trabajadores (m3/s)': r.Q_personas,
         'Q por diesel (m3/s)': r.Q_diesel,
+        'Caudal evaluado (m3/s)': r.Q_eval,
+        'Cumple caudal requerido': r.cumple_caudal ? 'SI' : 'NO',
         'Velocidad en galeria (m/s)': r.V_galeria,
         'Tiempo renovacion aire (min)': r.t_renovacion,
-        'CO dentro de limite': r.co_ok ? 'SI' : 'NO',
+        'CO dentro de limite (TLV 25 ppm)': r.co_ok ? 'SI' : 'NO',
         'Estado CO': r.riesgo_co,
         'Estado': r.riesgo,
       },
@@ -248,8 +265,8 @@ export default function ModuloMineria() {
         tipo: 'ventilacion',
         trabajadores: parseFloat(trabajadores), diesel_kW: parseFloat(diesel_kW),
         longitud_m: parseFloat(longitud), seccion_m2: parseFloat(seccion),
-        co_ppm: parseFloat(co_ppm),
-        Q_requerido: r.Q_requerido, V_galeria: r.V_galeria,
+        co_ppm: parseFloat(co_ppm), norma: normaVent,
+        Q_requerido: r.Q_requerido, Q_eval: r.Q_eval, V_galeria: r.V_galeria,
         t_renovacion: r.t_renovacion, co_ok: r.co_ok, riesgo: r.riesgo,
       },
     };
@@ -292,11 +309,11 @@ export default function ModuloMineria() {
             </div>
             <div>
               <div style={{ color: '#f8fafc', fontWeight: 800, fontSize: 22 }}>Modulo Mineria</div>
-              <div style={{ color: '#94a3b8', fontSize: 13 }}>RMR Bieniawski 1989 + Ventilacion NIOSH/MSHA</div>
+              <div style={{ color: '#94a3b8', fontSize: 13 }}>RMR Bieniawski 1989 + Ventilacion Subterranea</div>
             </div>
           </div>
           <div style={{ background: '#0f172a', borderRadius: 8, padding: '10px 14px', fontSize: 12, color: '#64748b' }}>
-            Normativa: Bieniawski 1989 | NIOSH 2010 | MSHA 30 CFR Part 57 | IRAM 11647
+            Normativa: Bieniawski 1989 | DS 132 (Chile) | DS 023-2017-EM (Perú) | ACGIH / NIOSH (CO)
           </div>
         </div>
 
@@ -370,7 +387,13 @@ export default function ModuloMineria() {
         {tab === 'vent' && (
           <div style={{ background: '#1e293b', border: '1px solid #334155', borderRadius: 12, padding: 24, marginBottom: 20 }}>
             <div style={{ color: '#a8a29e', fontWeight: 700, fontSize: 14, marginBottom: 16, textTransform: 'uppercase' as const }}>
-              Ventilacion Subterranea — NIOSH / MSHA
+              Ventilacion Subterranea
+            </div>
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ color: '#94a3b8', fontSize: 12, display: 'block', marginBottom: 6 }}>Reglamento aplicable</label>
+              <select value={normaVent} onChange={e => setNormaVent(e.target.value)} style={selectStyle}>
+                {Object.entries(NORMAS_VENT).map(([id, n]) => <option key={id} value={id}>{n.label} — {n.cita}</option>)}
+              </select>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 20 }}>
               {[
@@ -379,6 +402,7 @@ export default function ModuloMineria() {
                 { label: 'Longitud galeria (m)', val: longitud, set: setLongitud },
                 { label: 'Seccion transversal (m2)', val: seccion, set: setSeccion },
                 { label: 'CO medido en galeria (ppm)', val: co_ppm, set: setCoPpm },
+                { label: 'Caudal medido (m3/s) — opcional', val: qMedido, set: setQMedido },
               ].map((f, i) => (
                 <div key={i}>
                   <label style={{ color: '#94a3b8', fontSize: 12, display: 'block', marginBottom: 6 }}>{f.label}</label>
@@ -422,7 +446,8 @@ export default function ModuloMineria() {
             <div style={{ background: '#0f172a', borderRadius: 8, padding: 14, fontSize: 12, color: '#94a3b8', fontFamily: 'monospace' }}>
               <div style={{ color: '#a8a29e', marginBottom: 4, fontWeight: 700 }}>METODO RMR:</div>
               RMR = P1(UCS) + P2(RQD) + P3(Espaciado) + P4(Condicion) + P5(Agua) + Ajuste(Orientacion)
-              <div style={{ marginTop: 4, color: '#475569' }}>Bieniawski 1989 | NIOSH | {new Date().toLocaleDateString('es-AR')}</div>
+              <div style={{ marginTop: 4, color: '#64748b' }}>Nota: el ajuste por orientacion y la tabla de soporte aplican a tuneles de ~10 m de vano (Bieniawski 1989).</div>
+              <div style={{ marginTop: 4, color: '#475569' }}>Bieniawski 1989 | {new Date().toLocaleDateString('es-AR')}</div>
             </div>
           </div>
         )}
@@ -441,9 +466,10 @@ export default function ModuloMineria() {
                 { label: 'Caudal requerido total', value: resVent.Q_requerido + ' m3/s' },
                 { label: 'Por trabajadores', value: resVent.Q_personas + ' m3/s' },
                 { label: 'Por equipos diesel', value: resVent.Q_diesel + ' m3/s' },
-                { label: 'Velocidad en galeria', value: resVent.V_galeria + ' m/s' },
+                { label: resVent.usaMedido ? 'Cumple caudal (medido)' : 'Caudal medido', value: resVent.usaMedido ? (resVent.cumple_caudal ? 'SI' : 'NO') : 'No informado' },
+                { label: resVent.usaMedido ? 'Velocidad en galeria (medida)' : 'Velocidad en galeria (estimada)', value: resVent.V_galeria + ' m/s' },
                 { label: 'Tiempo renovacion aire', value: resVent.t_renovacion + ' min' },
-                { label: 'CO — Estado', value: resVent.co_ok ? 'DENTRO LIMITE' : 'SUPERA LIMITE' },
+                { label: 'CO — Estado (TLV 25 ppm)', value: resVent.co_ok ? 'DENTRO LIMITE' : 'SUPERA LIMITE' },
               ].map((r, i) => (
                 <div key={i} style={{ background: '#0f172a', borderRadius: 8, padding: 12, textAlign: 'center' as const }}>
                   <div style={{ color: '#64748b', fontSize: 11, marginBottom: 4 }}>{r.label}</div>
@@ -452,10 +478,10 @@ export default function ModuloMineria() {
               ))}
             </div>
             <div style={{ background: '#0f172a', borderRadius: 8, padding: 14, fontSize: 12, color: '#94a3b8', fontFamily: 'monospace' }}>
-              <div style={{ color: '#a8a29e', marginBottom: 4, fontWeight: 700 }}>CRITERIOS MSHA 30 CFR Part 57:</div>
-              Q minimo = 0.06 m3/s por persona + 0.06 m3/s por kW diesel
-              <div style={{ marginTop: 4, color: '#475569' }}>CO limite TWA: 25 ppm | IDLH: 1200 ppm | V min galeria: 0.25 m/s</div>
-              <div style={{ marginTop: 4, color: '#475569' }}>NIOSH 2010 | MSHA 30 CFR 57 | {new Date().toLocaleDateString('es-AR')}</div>
+              <div style={{ color: '#a8a29e', marginBottom: 4, fontWeight: 700 }}>CRITERIOS — {resVent.normaLabel}:</div>
+              Q minimo = {resVent.normaCita}
+              <div style={{ marginTop: 4, color: '#475569' }}>CO: TLV-TWA 25 ppm (ACGIH) | REL 35 ppm (NIOSH) | IDLH 1200 ppm (NIOSH) | V min galeria: 0.25 m/s</div>
+              <div style={{ marginTop: 4, color: '#475569' }}>{new Date().toLocaleDateString('es-AR')}</div>
             </div>
           </div>
         )}
