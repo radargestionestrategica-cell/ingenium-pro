@@ -134,6 +134,7 @@ export default function ModuloCivil() {
   const [Mu, setMu] = useState('150');
   const [Vu, setVu] = useState('80');
   const [Lv, setLv] = useState('6');
+  const [Lb, setLb] = useState(''); // Longitud no arriostrada (m) — opcional, solo informativa: el calculo F2-1 no la usa
   const [perfil, setPerfil] = useState('W310x39');
   const [acero, setAcero] = useState('a992');
   const [resViga, setResViga] = useState<ReturnType<typeof calcVigaAcero>>(null);
@@ -163,6 +164,7 @@ export default function ModuloCivil() {
         'Momento ultimo Mu (kN.m)': Mu,
         'Cortante ultimo Vu (kN)': Vu,
         'Longitud L (m)': Lv,
+        'Long. no arriostrada Lb (m)': Lb && parseFloat(Lb) > 0 ? Lb : 'No especificada',
         'Perfil W': perfil,
         'Acero': (ACEROS[acero] ?? ACEROS.a992).label,
       },
@@ -177,6 +179,7 @@ export default function ModuloCivil() {
         'Limite L/360 (mm)': r.delta_limite,
         'Servicio': r.ok_D ? 'OK' : 'EXCEDE',
         'Peso viga (kg)': r.peso_kg,
+        'Advertencia': 'Flexion segun AISC F2-1 (Mn = Fy.Zx) — asume arriostre lateral continuo; para vigas sin arriostrar o con Lb grande puede sobreestimar la capacidad: requiere verificacion aparte de pandeo lateral-torsional (F2-2/F2-3)',
         'Estado': r.riesgo,
       },
       dxfParams: {
@@ -296,6 +299,7 @@ export default function ModuloCivil() {
                 { label: 'Momento ultimo Mu (kN.m)', val: Mu, set: setMu },
                 { label: 'Cortante ultimo Vu (kN)', val: Vu, set: setVu },
                 { label: 'Longitud L (m)', val: Lv, set: setLv },
+                { label: 'Long. no arriostrada Lb (m) — opcional', val: Lb, set: setLb },
               ].map((f, i) => (
                 <div key={i}>
                   <label style={{ color: '#94a3b8', fontSize: 12, display: 'block', marginBottom: 6 }}>{f.label}</label>
@@ -373,6 +377,11 @@ export default function ModuloCivil() {
                   <div style={{ color: riskColor[resViga.riesgo], fontSize: 13, fontWeight: 800 }}>{r.value}</div>
                 </div>
               ))}
+            </div>
+            <div style={{ background: '#2a1a0a', border: '1px solid #E8A020', borderRadius: 8, padding: 12, marginBottom: 12 }}>
+              <div style={{ color: '#E8A020', fontWeight: 700, fontSize: 13 }}>
+                ⚠ El cálculo de flexión usa AISC F2-1 (Mn = Fy·Zx) y asume arriostre lateral continuo del ala comprimida{Lb && parseFloat(Lb) > 0 ? ` (Lb ingresado: ${Lb} m — no interviene en el cálculo)` : ''}. Para vigas sin arriostrar o con Lb grande, φ.Mn puede sobreestimar la capacidad real: se requiere verificación aparte de pandeo lateral-torsional (AISC F2-2 / F2-3).
+              </div>
             </div>
             <div style={{ background: '#0f172a', borderRadius: 8, padding: 14, fontSize: 12, color: '#94a3b8', fontFamily: 'monospace' }}>
               <div style={{ color: '#f97316', marginBottom: 4, fontWeight: 700 }}>AISC LRFD — Perfil {perfil}:</div>
