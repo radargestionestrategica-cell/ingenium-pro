@@ -21,18 +21,19 @@ function calcVigaAcero(
   if (Mu_kNm <= 0 || L_m <= 0) return null;
 
   // Propiedades perfiles W (AISC) - valores reales
-  const PERFILES: Record<string, { Sx: number; Zx: number; Ix: number; d: number; tw: number; bf: number; tf: number; A: number; peso: number }> = {
-    'W150x13': { Sx: 80.1, Zx: 91.8, Ix: 6.84e6, d: 148, tw: 4.3, bf: 100, tf: 4.9, A: 1670, peso: 13.1 },
-    'W200x22': { Sx: 194, Zx: 222, Ix: 20.0e6, d: 206, tw: 6.2, bf: 102, tf: 8.0, A: 2860, peso: 22.5 },
-    'W250x28': { Sx: 308, Zx: 351, Ix: 40.1e6, d: 260, tw: 6.4, bf: 102, tf: 10.0, A: 3620, peso: 28.4 },
-    'W310x39': { Sx: 547, Zx: 628, Ix: 84.8e6, d: 310, tw: 5.8, bf: 165, tf: 9.7, A: 4960, peso: 38.9 },
-    'W360x51': { Sx: 794, Zx: 895, Ix: 141e6, d: 355, tw: 7.2, bf: 171, tf: 11.6, A: 6450, peso: 50.6 },
-    'W410x67': { Sx: 1200, Zx: 1350, Ix: 245e6, d: 410, tw: 8.8, bf: 178, tf: 14.4, A: 8560, peso: 67.1 },
-    'W460x82': { Sx: 1610, Zx: 1840, Ix: 370e6, d: 460, tw: 9.9, bf: 191, tf: 16.0, A: 10400, peso: 82.0 },
-    'W530x101': { Sx: 2080, Zx: 2370, Ix: 554e6, d: 533, tw: 10.9,bf: 210, tf: 16.9, A: 12900, peso: 101 },
+  // Unidades LTB: rts y ho en mm | J en 10^3 mm^4 | Cw en 10^9 mm^6
+  const PERFILES: Record<string, { Sx: number; Zx: number; Ix: number; d: number; tw: number; bf: number; tf: number; A: number; peso: number; rts: number; ho: number; J: number; Cw: number }> = {
+    'W150x13': { Sx: 80.1, Zx: 91.8, Ix: 6.84e6, d: 148, tw: 4.3, bf: 100, tf: 4.9, A: 1670, peso: 13.1, rts: 26.7, ho: 143, J: 13.9, Cw: 4.24 },
+    'W200x22.5': { Sx: 194, Zx: 222, Ix: 20.0e6, d: 206, tw: 6.2, bf: 102, tf: 8.0, A: 2860, peso: 22.5, rts: 26.9, ho: 198, J: 57, Cw: 13.9 },
+    'W250x28.4': { Sx: 308, Zx: 351, Ix: 40.1e6, d: 260, tw: 6.4, bf: 102, tf: 10.0, A: 3620, peso: 28.4, rts: 26.9, ho: 249, J: 97, Cw: 27.9 },
+    'W310x38.7': { Sx: 547, Zx: 628, Ix: 84.8e6, d: 310, tw: 5.8, bf: 165, tf: 9.7, A: 4960, peso: 38.9, rts: 44.4, ho: 300, J: 125, Cw: 163 },
+    'W360x51': { Sx: 794, Zx: 895, Ix: 141e6, d: 355, tw: 7.2, bf: 171, tf: 11.6, A: 6450, peso: 50.6, rts: 45.7, ho: 343, J: 237, Cw: 287 },
+    'W410x67': { Sx: 1200, Zx: 1350, Ix: 245e6, d: 410, tw: 8.8, bf: 178, tf: 14.4, A: 8560, peso: 67.1, rts: 47.5, ho: 394, J: 462, Cw: 534 },
+    'W460x82': { Sx: 1610, Zx: 1840, Ix: 370e6, d: 460, tw: 9.9, bf: 191, tf: 16.0, A: 10400, peso: 82.0, rts: 50.8, ho: 444, J: 691, Cw: 921 },
+    'W530x101': { Sx: 2080, Zx: 2370, Ix: 554e6, d: 533, tw: 10.9,bf: 210, tf: 16.9, A: 12900, peso: 101, rts: 55.1, ho: 518, J: 1020, Cw: 1820 },
   };
 
-  const p = PERFILES[perfil] || PERFILES['W310x39'];
+  const p = PERFILES[perfil] || PERFILES['W310x38.7'];
   const Fy = (ACEROS[acero] ?? ACEROS.a992).Fy; // MPa
   const phi_b = 0.9;
   const phi_v = 1.0;
@@ -116,7 +117,7 @@ function calcColumnaHormigon(
 }
 
 const PERFILES_W = [
-  'W150x13', 'W200x22', 'W250x28', 'W310x39',
+  'W150x13', 'W200x22.5', 'W250x28.4', 'W310x38.7',
   'W360x51', 'W410x67', 'W460x82', 'W530x101'
 ];
 
@@ -135,7 +136,7 @@ export default function ModuloCivil() {
   const [Vu, setVu] = useState('80');
   const [Lv, setLv] = useState('6');
   const [Lb, setLb] = useState(''); // Longitud no arriostrada (m) — opcional, solo informativa: el calculo F2-1 no la usa
-  const [perfil, setPerfil] = useState('W310x39');
+  const [perfil, setPerfil] = useState('W310x38.7');
   const [acero, setAcero] = useState('a992');
   const [resViga, setResViga] = useState<ReturnType<typeof calcVigaAcero>>(null);
   const [datosViga, setDatosViga] = useState<DatosExportar | null>(null);
