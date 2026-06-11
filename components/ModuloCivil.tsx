@@ -30,8 +30,8 @@ function calcVigaAcero(
   const phi_b = 0.9;
   const phi_v = 1.0;
 
-  // Momento nominal plastico (AISC F2-1)
-  const Mp_kNm = (Fy * p.Zx) / 1e6;
+  // Momento nominal plastico (AISC F2-1) — Zx en cm³ (10³ mm³): MPa × 10³ mm³ = 10³ N·mm → /1e3 da kN·m
+  const Mp_kNm = (Fy * p.Zx) / 1e3;
   const phi_Mn = phi_b * Mp_kNm;
 
   // Cortante nominal (AISC G2-1)
@@ -221,6 +221,7 @@ export default function ModuloCivil() {
         'Excentricidad real (mm)': r.e_mm,
         'Excentricidad minima (mm)': r.e_min,
         'Cuantia dentro de limites': r.acero_ok ? 'SI' : 'NO',
+        'Advertencia': 'Capacidad axial pura (ACI 22.4.2.1) — no contempla interaccion flexo-compresion P-M; Mu solo informa excentricidad',
         'Estado': r.riesgo,
       },
       dxfParams: {
@@ -385,6 +386,11 @@ export default function ModuloCivil() {
                   <div style={{ color: riskColor[resCol.riesgo], fontSize: 14, fontWeight: 800 }}>{r.value}</div>
                 </div>
               ))}
+            </div>
+            <div style={{ background: '#2a1a0a', border: '1px solid #E8A020', borderRadius: 8, padding: 12, marginBottom: 12 }}>
+              <div style={{ color: '#E8A020', fontWeight: 700, fontSize: 13 }}>
+                ⚠ Resultado de capacidad axial pura (ACI 22.4.2.1): no contempla la interacción flexo-compresión (P-M). El Mu ingresado solo se usa para informar la excentricidad — no reduce φ.Pn.
+              </div>
             </div>
             <div style={{ background: resCol.acero_ok ? '#0a1f0a' : '#2a0a0a', border: `1px solid ${resCol.acero_ok ? '#00e5a0' : '#dc2626'}`, borderRadius: 8, padding: 12, marginBottom: 12 }}>
               <div style={{ color: resCol.acero_ok ? '#00e5a0' : '#dc2626', fontWeight: 700, fontSize: 13 }}>
