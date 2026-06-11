@@ -3,13 +3,20 @@ import { publicarResultado } from '@/components/ResultadoContexto';
 import BotonesExportar, { DatosExportar } from '@/components/BotonesExportar';
 import { useState } from 'react';
 
+// Tipos de acero estructural para perfiles W
+const ACEROS: Record<string, { label: string; Fy: number }> = {
+  a992: { label: 'A992 — Fy 345 MPa (estándar perfiles W)', Fy: 345 },
+  a36:  { label: 'A36 — Fy 250 MPa', Fy: 250 },
+};
+
 // Diseno de vigas de acero - AISC LRFD 360-16
 // Referencia: AISC Steel Construction Manual 15th Edition
 function calcVigaAcero(
   Mu_kNm: number, // Momento ultimo factorizado (kN.m)
   Vu_kN: number, // Cortante ultimo factorizado (kN)
   L_m: number, // Longitud viga (m)
-  perfil: string // Perfil seleccionado
+  perfil: string, // Perfil seleccionado
+  acero: string // Tipo de acero (a992 | a36)
 ) {
   if (Mu_kNm <= 0 || L_m <= 0) return null;
 
@@ -26,7 +33,7 @@ function calcVigaAcero(
   };
 
   const p = PERFILES[perfil] || PERFILES['W310x39'];
-  const Fy = 250; // A36 steel MPa
+  const Fy = (ACEROS[acero] ?? ACEROS.a992).Fy; // MPa
   const phi_b = 0.9;
   const phi_v = 1.0;
 
@@ -59,7 +66,8 @@ function calcVigaAcero(
     delta_mm: +delta_mm.toFixed(1), delta_limite: +delta_limite.toFixed(1),
     ok_M, ok_V, ok_D, riesgo,
     peso_kg: +(p.peso * L_m).toFixed(0),
-    Mp_kNm: +Mp_kNm.toFixed(1)
+    Mp_kNm: +Mp_kNm.toFixed(1),
+    Fy
   };
 }
 
@@ -127,6 +135,7 @@ export default function ModuloCivil() {
   const [Vu, setVu] = useState('80');
   const [Lv, setLv] = useState('6');
   const [perfil, setPerfil] = useState('W310x39');
+  const [acero, setAcero] = useState('a992');
   const [resViga, setResViga] = useState<ReturnType<typeof calcVigaAcero>>(null);
   const [datosViga, setDatosViga] = useState<DatosExportar | null>(null);
 
@@ -144,7 +153,7 @@ export default function ModuloCivil() {
 
   const calcViga = () => {
     setError('');
-    const r = calcVigaAcero(parseFloat(Mu), parseFloat(Vu), parseFloat(Lv), perfil);
+    const r = calcVigaAcero(parseFloat(Mu), parseFloat(Vu), parseFloat(Lv), perfil, acero);
     if (!r) { setError('Verificar datos.'); return; }
     setResViga(r);
     const payload: DatosExportar = {
@@ -155,7 +164,7 @@ export default function ModuloCivil() {
         'Cortante ultimo Vu (kN)': Vu,
         'Longitud L (m)': Lv,
         'Perfil W': perfil,
-        'Acero': 'A36 — Fy=250 MPa',
+        'Acero': (ACEROS[acero] ?? ACEROS.a992).label,
       },
       resultado: {
         'phi.Mn capacidad (kN.m)': r.phi_Mn,
@@ -300,6 +309,13 @@ export default function ModuloCivil() {
                   {PERFILES_W.map(p => <option key={p} value={p}>{p}</option>)}
                 </select>
               </div>
+              <div>
+                <label style={{ color: '#94a3b8', fontSize: 12, display: 'block', marginBottom: 6 }}>Tipo de acero</label>
+                <select value={acero} onChange={e => setAcero(e.target.value)}
+                  style={{ ...inputStyle, fontSize: 14 }}>
+                  {Object.entries(ACEROS).map(([id, a]) => <option key={id} value={id}>{a.label}</option>)}
+                </select>
+              </div>
             </div>
             {error && <div style={{ background: '#450a0a', border: '1px solid #dc2626', borderRadius: 8, padding: 10, color: '#fca5a5', fontSize: 13, marginBottom: 16 }}>{error}</div>}
             <button onClick={calcViga} style={{ width: '100%', background: 'linear-gradient(135deg,#f97316,#c2410c)', border: 'none', borderRadius: 10, padding: 14, color: 'white', fontWeight: 800, fontSize: 16, cursor: 'pointer' }}>
@@ -360,7 +376,7 @@ export default function ModuloCivil() {
             </div>
             <div style={{ background: '#0f172a', borderRadius: 8, padding: 14, fontSize: 12, color: '#94a3b8', fontFamily: 'monospace' }}>
               <div style={{ color: '#f97316', marginBottom: 4, fontWeight: 700 }}>AISC LRFD — Perfil {perfil}:</div>
-              phi.Mn = phi x Fy x Zx | phi.Vn = phi x 0.6Fy x Aw
+              phi.Mn = phi x Fy x Zx | phi.Vn = phi x 0.6Fy x Aw | Fy = {resViga.Fy} MPa
               <div style={{ marginTop: 4, color: '#475569' }}>Peso viga: {resViga.peso_kg} kg | AISC 360-16 | {new Date().toLocaleDateString('es-AR')}</div>
             </div>
           </div>
