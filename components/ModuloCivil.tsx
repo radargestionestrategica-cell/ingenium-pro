@@ -21,26 +21,40 @@ function calcVigaAcero(
   if (Mu_kNm <= 0 || L_m <= 0) return null;
 
   // Propiedades perfiles W (AISC) - valores reales
-  // Unidades LTB: rts y ho en mm | J en 10^3 mm^4 | Cw en 10^9 mm^6
-  const PERFILES: Record<string, { Sx: number; Zx: number; Ix: number; d: number; tw: number; bf: number; tf: number; A: number; peso: number; rts: number; ho: number; J: number; Cw: number }> = {
-    'W150x13': { Sx: 80.1, Zx: 91.8, Ix: 6.84e6, d: 148, tw: 4.3, bf: 100, tf: 4.9, A: 1670, peso: 13.1, rts: 26.7, ho: 143, J: 13.9, Cw: 4.24 },
-    'W200x22.5': { Sx: 194, Zx: 222, Ix: 20.0e6, d: 206, tw: 6.2, bf: 102, tf: 8.0, A: 2860, peso: 22.5, rts: 26.9, ho: 198, J: 57, Cw: 13.9 },
-    'W250x28.4': { Sx: 308, Zx: 351, Ix: 40.1e6, d: 260, tw: 6.4, bf: 102, tf: 10.0, A: 3620, peso: 28.4, rts: 26.9, ho: 249, J: 97, Cw: 27.9 },
-    'W310x38.7': { Sx: 547, Zx: 628, Ix: 84.8e6, d: 310, tw: 5.8, bf: 165, tf: 9.7, A: 4960, peso: 38.9, rts: 44.4, ho: 300, J: 125, Cw: 163 },
-    'W360x51': { Sx: 794, Zx: 895, Ix: 141e6, d: 355, tw: 7.2, bf: 171, tf: 11.6, A: 6450, peso: 50.6, rts: 45.7, ho: 343, J: 237, Cw: 287 },
-    'W410x67': { Sx: 1200, Zx: 1350, Ix: 245e6, d: 410, tw: 8.8, bf: 178, tf: 14.4, A: 8560, peso: 67.1, rts: 47.5, ho: 394, J: 462, Cw: 534 },
-    'W460x82': { Sx: 1610, Zx: 1840, Ix: 370e6, d: 460, tw: 9.9, bf: 191, tf: 16.0, A: 10400, peso: 82.0, rts: 50.8, ho: 444, J: 691, Cw: 921 },
-    'W530x101': { Sx: 2080, Zx: 2370, Ix: 554e6, d: 533, tw: 10.9,bf: 210, tf: 16.9, A: 12900, peso: 101, rts: 55.1, ho: 518, J: 1020, Cw: 1820 },
+  // Unidades LTB: rts y ho en mm | J en 10^3 mm^4 | Cw en 10^9 mm^6 | ry en mm
+  const PERFILES: Record<string, { Sx: number; Zx: number; Ix: number; d: number; tw: number; bf: number; tf: number; A: number; peso: number; ry: number; rts: number; ho: number; J: number; Cw: number }> = {
+    'W150x13': { Sx: 80.1, Zx: 91.8, Ix: 6.84e6, d: 148, tw: 4.3, bf: 100, tf: 4.9, A: 1670, peso: 13.1, ry: 22.6, rts: 26.7, ho: 143, J: 13.9, Cw: 4.24 },
+    'W200x22.5': { Sx: 194, Zx: 222, Ix: 20.0e6, d: 206, tw: 6.2, bf: 102, tf: 8.0, A: 2860, peso: 22.5, ry: 22.3, rts: 26.9, ho: 198, J: 57, Cw: 13.9 },
+    'W250x28.4': { Sx: 308, Zx: 351, Ix: 40.1e6, d: 260, tw: 6.4, bf: 102, tf: 10.0, A: 3620, peso: 28.4, ry: 22.2, rts: 26.9, ho: 249, J: 97, Cw: 27.9 },
+    'W310x38.7': { Sx: 547, Zx: 628, Ix: 84.8e6, d: 310, tw: 5.8, bf: 165, tf: 9.7, A: 4960, peso: 38.9, ry: 38.4, rts: 44.4, ho: 300, J: 125, Cw: 163 },
+    'W360x51': { Sx: 794, Zx: 895, Ix: 141e6, d: 355, tw: 7.2, bf: 171, tf: 11.6, A: 6450, peso: 50.6, ry: 38.9, rts: 45.7, ho: 343, J: 237, Cw: 287 },
+    'W410x67': { Sx: 1200, Zx: 1350, Ix: 245e6, d: 410, tw: 8.8, bf: 178, tf: 14.4, A: 8560, peso: 67.1, ry: 39.9, rts: 47.5, ho: 394, J: 462, Cw: 534 },
+    'W460x82': { Sx: 1610, Zx: 1840, Ix: 370e6, d: 460, tw: 9.9, bf: 191, tf: 16.0, A: 10400, peso: 82.0, ry: 42.4, rts: 50.8, ho: 444, J: 691, Cw: 921 },
+    'W530x101': { Sx: 2080, Zx: 2370, Ix: 554e6, d: 533, tw: 10.9,bf: 210, tf: 16.9, A: 12900, peso: 101, ry: 45.7, rts: 55.1, ho: 518, J: 1020, Cw: 1820 },
   };
 
   const p = PERFILES[perfil] || PERFILES['W310x38.7'];
   const Fy = (ACEROS[acero] ?? ACEROS.a992).Fy; // MPa
   const phi_b = 0.9;
   const phi_v = 1.0;
+  const E = 200000; // MPa - modulo de elasticidad del acero
 
   // Momento nominal plastico (AISC F2-1) — Zx en cm³ (10³ mm³): MPa × 10³ mm³ = 10³ N·mm → /1e3 da kN·m
   const Mp_kNm = (Fy * p.Zx) / 1e3;
   const phi_Mn = phi_b * Mp_kNm;
+
+  // Longitudes limite de pandeo lateral-torsional (AISC 360 Cap. F) — solo informativas, no afectan phi_Mn ni el riesgo
+  // Lp (F2-5): limite plastico
+  const Lp_mm = 1.76 * p.ry * Math.sqrt(E / Fy);
+  const Lp_m = Lp_mm / 1000;
+
+  // Lr (F2-6) viga doblemente simetrica: J/(Sx*ho) usa unidades de tabla (J en 10^3 mm^4, Sx en 10^3 mm^3, ho en mm) — los factores 10^3 se cancelan en el cociente
+  const ratio_J_Sxho = p.J / (p.Sx * p.ho);
+  const ratio_07Fy_E = (0.7 * Fy) / E;
+  const Lr_mm = 1.95 * p.rts * (E / (0.7 * Fy)) * Math.sqrt(
+    ratio_J_Sxho + Math.sqrt(ratio_J_Sxho * ratio_J_Sxho + 6.76 * ratio_07Fy_E * ratio_07Fy_E)
+  );
+  const Lr_m = Lr_mm / 1000;
 
   // Cortante nominal (AISC G2-1)
   const Aw = p.d * p.tw; // mm2
@@ -48,7 +62,6 @@ function calcVigaAcero(
   const phi_Vn = phi_v * Vn_kN;
 
   // Deflexion (L/360 para cargas vivas)
-  const E = 200000; // MPa
   const w_kNm = (8 * Mu_kNm) / (L_m * L_m);
   const delta_mm = (5 * w_kNm * Math.pow(L_m * 1000, 4)) / (384 * E * p.Ix);
   const delta_limite = (L_m * 1000) / 360;
@@ -68,6 +81,8 @@ function calcVigaAcero(
     ok_M, ok_V, ok_D, riesgo,
     peso_kg: +(p.peso * L_m).toFixed(0),
     Mp_kNm: +Mp_kNm.toFixed(1),
+    Lp_m: +Lp_m.toFixed(2),
+    Lr_m: +Lr_m.toFixed(2),
     Fy
   };
 }
@@ -387,6 +402,7 @@ export default function ModuloCivil() {
             <div style={{ background: '#0f172a', borderRadius: 8, padding: 14, fontSize: 12, color: '#94a3b8', fontFamily: 'monospace' }}>
               <div style={{ color: '#f97316', marginBottom: 4, fontWeight: 700 }}>AISC LRFD — Perfil {perfil}:</div>
               phi.Mn = phi x Fy x Zx | phi.Vn = phi x 0.6Fy x Aw | Fy = {resViga.Fy} MPa
+              <div style={{ marginTop: 4, color: '#475569' }}>Lp (F2-5) = {resViga.Lp_m} m | Lr (F2-6) = {resViga.Lr_m} m — solo informativo, no afecta phi.Mn</div>
               <div style={{ marginTop: 4, color: '#475569' }}>Peso viga: {resViga.peso_kg} kg | AISC 360-16 | {new Date().toLocaleDateString('es-AR')}</div>
             </div>
           </div>
