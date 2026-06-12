@@ -16,7 +16,8 @@ function calcVigaAcero(
   Vu_kN: number, // Cortante ultimo factorizado (kN)
   L_m: number, // Longitud viga (m)
   perfil: string, // Perfil seleccionado
-  acero: string // Tipo de acero (a992 | a36)
+  acero: string, // Tipo de acero (a992 | a36)
+  Lb_m: number = 0 // Longitud no arriostrada (m) — 0 = arriostre lateral continuo (tramo 1, F2-1)
 ) {
   if (Mu_kNm <= 0 || L_m <= 0) return null;
 
@@ -38,12 +39,12 @@ function calcVigaAcero(
   const phi_b = 0.9;
   const phi_v = 1.0;
   const E = 200000; // MPa - modulo de elasticidad del acero
+  const Cb = 1.0; // factor de modificacion por gradiente de momento — conservador
 
   // Momento nominal plastico (AISC F2-1) — Zx en cm³ (10³ mm³): MPa × 10³ mm³ = 10³ N·mm → /1e3 da kN·m
   const Mp_kNm = (Fy * p.Zx) / 1e3;
-  const phi_Mn = phi_b * Mp_kNm;
 
-  // Longitudes limite de pandeo lateral-torsional (AISC 360 Cap. F) — solo informativas, no afectan phi_Mn ni el riesgo
+  // Longitudes limite de pandeo lateral-torsional (AISC 360 Cap. F)
   // Lp (F2-5): limite plastico
   const Lp_mm = 1.76 * p.ry * Math.sqrt(E / Fy);
   const Lp_m = Lp_mm / 1000;
@@ -55,6 +56,32 @@ function calcVigaAcero(
     ratio_J_Sxho + Math.sqrt(ratio_J_Sxho * ratio_J_Sxho + 6.76 * ratio_07Fy_E * ratio_07Fy_E)
   );
   const Lr_m = Lr_mm / 1000;
+
+  // Momento nominal Mn segun tramo de pandeo lateral-torsional (AISC 360 Cap. F2) — Lb del usuario en m, convertido a mm
+  const Lb_mm = Lb_m * 1000;
+  const M07_kNm = (0.7 * Fy * p.Sx) / 1e3; // 0.7.Fy.Sx en kN.m (misma conversion que Mp_kNm)
+  let Mn_kNm: number;
+  let tramo: 1 | 2 | 3;
+  if (Lb_mm <= Lp_mm) {
+    // Tramo 1 (F2-1): fluencia plastica, arriostre lateral adecuado
+    Mn_kNm = Mp_kNm;
+    tramo = 1;
+  } else if (Lb_mm <= Lr_mm) {
+    // Tramo 2 (F2-2): pandeo lateral-torsional inelastico
+    Mn_kNm = Math.min(
+      Cb * (Mp_kNm - (Mp_kNm - M07_kNm) * ((Lb_mm - Lp_mm) / (Lr_mm - Lp_mm))),
+      Mp_kNm
+    );
+    tramo = 2;
+  } else {
+    // Tramo 3 (F2-3): pandeo lateral-torsional elastico
+    const Lb_rts = Lb_mm / p.rts;
+    const Fcr_MPa = (Cb * Math.PI * Math.PI * E / (Lb_rts * Lb_rts)) * Math.sqrt(1 + 0.078 * ratio_J_Sxho * (Lb_rts * Lb_rts));
+    Mn_kNm = Math.min((Fcr_MPa * p.Sx) / 1e3, Mp_kNm);
+    tramo = 3;
+  }
+
+  const phi_Mn = phi_b * Mn_kNm;
 
   // Cortante nominal (AISC G2-1)
   const Aw = p.d * p.tw; // mm2
@@ -80,7 +107,10 @@ function calcVigaAcero(
     delta_mm: +delta_mm.toFixed(1), delta_limite: +delta_limite.toFixed(1),
     ok_M, ok_V, ok_D, riesgo,
     peso_kg: +(p.peso * L_m).toFixed(0),
+    Mn_kNm: +Mn_kNm.toFixed(1),
     Mp_kNm: +Mp_kNm.toFixed(1),
+    tramo, Cb,
+    Lb_m: +Lb_m.toFixed(2),
     Lp_m: +Lp_m.toFixed(2),
     Lr_m: +Lr_m.toFixed(2),
     Fy
@@ -150,7 +180,7 @@ export default function ModuloCivil() {
   const [Mu, setMu] = useState('150');
   const [Vu, setVu] = useState('80');
   const [Lv, setLv] = useState('6');
-  const [Lb, setLb] = useState(''); // Longitud no arriostrada (m) — opcional, solo informativa: el calculo F2-1 no la usa
+  const [Lb, setLb] = useState(''); // Longitud no arriostrada (m) — 0 o vacio = arriostre lateral continuo (tramo 1, F2-1)
   const [perfil, setPerfil] = useState('W310x38.7');
   const [acero, setAcero] = useState('a992');
   const [resViga, setResViga] = useState<ReturnType<typeof calcVigaAcero>>(null);
@@ -170,7 +200,7 @@ export default function ModuloCivil() {
 
   const calcViga = () => {
     setError('');
-    const r = calcVigaAcero(parseFloat(Mu), parseFloat(Vu), parseFloat(Lv), perfil, acero);
+    const r = calcVigaAcero(parseFloat(Mu), parseFloat(Vu), parseFloat(Lv), perfil, acero, parseFloat(Lb) || 0);
     if (!r) { setError('Verificar datos.'); return; }
     setResViga(r);
     const payload: DatosExportar = {
@@ -185,6 +215,11 @@ export default function ModuloCivil() {
         'Acero': (ACEROS[acero] ?? ACEROS.a992).label,
       },
       resultado: {
+        'Mn nominal (kN.m)': r.Mn_kNm,
+        'Mp plastico (kN.m)': r.Mp_kNm,
+        'Tramo AISC F2': `Tramo ${r.tramo} (F2-${r.tramo})${r.tramo === 1 ? ' — fluencia plastica' : r.tramo === 2 ? ' — LTB inelastico' : ' — LTB elastico'}`,
+        'Lp (m)': r.Lp_m,
+        'Lr (m)': r.Lr_m,
         'phi.Mn capacidad (kN.m)': r.phi_Mn,
         'Utilizacion flexion (%)': r.util_M,
         'Flexion': r.ok_M ? 'OK' : 'FALLA',
@@ -195,7 +230,7 @@ export default function ModuloCivil() {
         'Limite L/360 (mm)': r.delta_limite,
         'Servicio': r.ok_D ? 'OK' : 'EXCEDE',
         'Peso viga (kg)': r.peso_kg,
-        'Advertencia': 'Flexion segun AISC F2-1 (Mn = Fy.Zx) — asume arriostre lateral continuo; para vigas sin arriostrar o con Lb grande puede sobreestimar la capacidad: requiere verificacion aparte de pandeo lateral-torsional (F2-2/F2-3)',
+        'Advertencia': `Flexion verificada segun AISC 360 Cap. F2, Tramo ${r.tramo} (Cb = ${r.Cb}, conservador). phi.Mn ya incluye la reduccion por pandeo lateral-torsional segun Lb ingresado (Lp = ${r.Lp_m} m, Lr = ${r.Lr_m} m).`,
         'Estado': r.riesgo,
       },
       dxfParams: {
@@ -315,7 +350,7 @@ export default function ModuloCivil() {
                 { label: 'Momento ultimo Mu (kN.m)', val: Mu, set: setMu },
                 { label: 'Cortante ultimo Vu (kN)', val: Vu, set: setVu },
                 { label: 'Longitud L (m)', val: Lv, set: setLv },
-                { label: 'Long. no arriostrada Lb (m) — opcional', val: Lb, set: setLb },
+                { label: 'Long. no arriostrada Lb (m) — 0/vacio = arriostre continuo', val: Lb, set: setLb },
               ].map((f, i) => (
                 <div key={i}>
                   <label style={{ color: '#94a3b8', fontSize: 12, display: 'block', marginBottom: 6 }}>{f.label}</label>
@@ -396,13 +431,13 @@ export default function ModuloCivil() {
             </div>
             <div style={{ background: '#2a1a0a', border: '1px solid #E8A020', borderRadius: 8, padding: 12, marginBottom: 12 }}>
               <div style={{ color: '#E8A020', fontWeight: 700, fontSize: 13 }}>
-                ⚠ El cálculo de flexión usa AISC F2-1 (Mn = Fy·Zx) y asume arriostre lateral continuo del ala comprimida{Lb && parseFloat(Lb) > 0 ? ` (Lb ingresado: ${Lb} m — no interviene en el cálculo)` : ''}. Para vigas sin arriostrar o con Lb grande, φ.Mn puede sobreestimar la capacidad real: se requiere verificación aparte de pandeo lateral-torsional (AISC F2-2 / F2-3).
+                ⚠ Flexión verificada con AISC 360 Cap. F2 — Tramo {resViga.tramo} ({resViga.tramo === 1 ? 'F2-1, fluencia plástica, Lb ≤ Lp' : resViga.tramo === 2 ? 'F2-2, pandeo lateral-torsional inelástico, Lp < Lb ≤ Lr' : 'F2-3, pandeo lateral-torsional elástico, Lb > Lr'}), con Cb = {resViga.Cb} (conservador). Lp = {resViga.Lp_m} m | Lr = {resViga.Lr_m} m | Lb usado = {resViga.Lb_m} m. φ.Mn ya incluye esta reducción.
               </div>
             </div>
             <div style={{ background: '#0f172a', borderRadius: 8, padding: 14, fontSize: 12, color: '#94a3b8', fontFamily: 'monospace' }}>
               <div style={{ color: '#f97316', marginBottom: 4, fontWeight: 700 }}>AISC LRFD — Perfil {perfil}:</div>
-              phi.Mn = phi x Fy x Zx | phi.Vn = phi x 0.6Fy x Aw | Fy = {resViga.Fy} MPa
-              <div style={{ marginTop: 4, color: '#475569' }}>Lp (F2-5) = {resViga.Lp_m} m | Lr (F2-6) = {resViga.Lr_m} m — solo informativo, no afecta phi.Mn</div>
+              phi.Mn = phi x Mn | Mn segun Tramo F2-{resViga.tramo} | phi.Vn = phi x 0.6Fy x Aw | Fy = {resViga.Fy} MPa
+              <div style={{ marginTop: 4, color: '#475569' }}>Mn = {resViga.Mn_kNm} kN.m | Mp = {resViga.Mp_kNm} kN.m | Lp = {resViga.Lp_m} m | Lr = {resViga.Lr_m} m</div>
               <div style={{ marginTop: 4, color: '#475569' }}>Peso viga: {resViga.peso_kg} kg | AISC 360-16 | {new Date().toLocaleDateString('es-AR')}</div>
             </div>
           </div>
