@@ -72,6 +72,7 @@ export default function ModuloPerforacion() {
   const [overburden, setOverburden] = useState('1.0');
   const [poreGrad, setPoreGrad] = useState('0.433');
   const [poisson, setPoisson] = useState('0.25');
+  const [margenSeguridad, setMargenSeguridad] = useState('0.5');
   const [caudal, setCaudal] = useState('350');
   const [diamPozo, setDiamPozo] = useState('8.5');
   const [diamTuberia, setDiamTuberia] = useState('5');
@@ -101,11 +102,13 @@ export default function ModuloPerforacion() {
     const R3v   = parseFloat(r3);
     const R6v   = parseFloat(r6);
     const nu  = parseFloat(poisson);
+    const sf  = parseFloat(margenSeguridad);
     if ([tvd, mw, ob, Q, Dh, Dt, R600v, R300v, R3v].some(isNaN)) return;
     if (modeloReologico === 'herschelbulkley' && isNaN(R6v)) return;
     const pgVal = isNaN(pg) ? 0.433 : pg;                                  // default agua dulce si el campo quedó vacío
     const nuVal = Math.min(Math.max(isNaN(nu) ? 0.25 : nu, 0), 0.49);      // default 0.25, acotado a [0, 0.49] — ν ≥ 0.5 divide por cero
-    const mudCalc = calcMudWeight(pgVal);
+    const sfVal = Math.min(Math.max(isNaN(sf) ? 0.5 : sf, 0), 1);          // default 0.5, acotado a [0, 1]
+    const mudCalc = calcMudWeight(pgVal, sfVal);
     const r = {
       bhp:  calcBHP(tvd, mw),
       frac: calcFractureGradient(tvd, ob, pgVal, nuVal),
@@ -127,6 +130,7 @@ export default function ModuloPerforacion() {
         'Gradiente sobrecarga (psi/ft)':     overburden,
         'Gradiente poros (psi/ft)':          pgVal,
         'Coeficiente de Poisson (ν)':        nuVal,
+        'Factor de seguridad peso de lodo':  sfVal,
         'Caudal de bombeo (gpm)':            caudal,
         'Diámetro del pozo (pulg)':          diamPozo,
         'Diámetro exterior tubería (pulg)':  diamTuberia,
@@ -199,6 +203,7 @@ export default function ModuloPerforacion() {
               { label: 'Gradiente sobrecarga (psi/ft)', val: overburden, set: setOverburden, ph: '1.0' },
               { label: 'Gradiente poros (psi/ft)', val: poreGrad, set: setPoreGrad, ph: '0.433' },
               { label: 'Coeficiente de Poisson (ν)', val: poisson, set: setPoisson, ph: '0.25' },
+              { label: 'Factor de seguridad peso de lodo', val: margenSeguridad, set: setMargenSeguridad, ph: '0.5' },
               { label: 'Caudal de bombeo (gpm)', val: caudal, set: setCaudal, ph: '350' },
               { label: 'Diámetro del pozo (pulg)', val: diamPozo, set: setDiamPozo, ph: '8.5' },
               { label: 'Diámetro exterior tubería (pulg)', val: diamTuberia, set: setDiamTuberia, ph: '5' },
