@@ -73,6 +73,9 @@ export default function ModuloPerforacion() {
   const [poreGrad, setPoreGrad] = useState('0.433');
   const [poisson, setPoisson] = useState('0.25');
   const [margenSeguridad, setMargenSeguridad] = useState('0.5');
+  const [rop, setRop] = useState('30');
+  const [densidadRecortes, setDensidadRecortes] = useState('21');
+  const [transportRatio, setTransportRatio] = useState('0.55');
   const [caudal, setCaudal] = useState('350');
   const [diamPozo, setDiamPozo] = useState('8.5');
   const [diamTuberia, setDiamTuberia] = useState('5');
@@ -103,14 +106,23 @@ export default function ModuloPerforacion() {
     const R6v   = parseFloat(r6);
     const nu  = parseFloat(poisson);
     const sf  = parseFloat(margenSeguridad);
+    const ropv = parseFloat(rop);
+    const drv  = parseFloat(densidadRecortes);
+    const trv  = parseFloat(transportRatio);
     if ([tvd, mw, ob, Q, Dh, Dt, R600v, R300v, R3v].some(isNaN)) return;
     if (modeloReologico === 'herschelbulkley' && isNaN(R6v)) return;
     const pgVal = isNaN(pg) ? 0.433 : pg;                                  // default agua dulce si el campo quedó vacío
     const nuVal = Math.min(Math.max(isNaN(nu) ? 0.25 : nu, 0), 0.49);      // default 0.25, acotado a [0, 0.49] — ν ≥ 0.5 divide por cero
     const sfVal = Math.min(Math.max(isNaN(sf) ? 0.5 : sf, 0), 1);          // default 0.5, acotado a [0, 1]
+    const ropVal = isNaN(ropv) ? 30 : ropv;                                // default ROP 30 ft/h
+    const drVal  = isNaN(drv) ? 21 : drv;                                  // default densidad recortes 21 ppg
+    const trVal  = isNaN(trv) ? 0.55 : trv;                                // default transport ratio 0.55
+    const ccaRaw = (ropVal * Dh * Dh) / (1471 * Q * trVal);                // CCA — API RP 13D, concentración de recortes en anular
+    const ccaVal = Math.min(Math.max(ccaRaw, 0), 1);                       // acotado a [0, 1] por seguridad
+    const mwEfectiva = mw * (1 - ccaVal) + drVal * ccaVal;                 // densidad efectiva de la mezcla lodo + recortes
     const mudCalc = calcMudWeight(pgVal, sfVal);
     const r = {
-      bhp:  calcBHP(tvd, mw),
+      bhp:  calcBHP(tvd, mwEfectiva),
       frac: calcFractureGradient(tvd, ob, pgVal, nuVal),
       mud:  mudCalc,
       hid:  calcHidraulica(Q, Dh, Dt, R600v, R300v, mw, R3v, R6v, modeloReologico),
@@ -146,6 +158,8 @@ export default function ModuloPerforacion() {
         'Gradiente de fractura (psi/ft)':    r.frac.fracGrad,
         'Presion de fractura (psi)':         r.frac.fracPressure,
         'Peso lodo recomendado (ppg)':       r.mud.mudWeight,
+        'CCA - Concentración recortes anular': +ccaVal.toFixed(3),
+        'Densidad efectiva mezcla (ppg)':    +mwEfectiva.toFixed(2),
         ...hidParams,
         'Velocidad anular (ft/min)':         r.hid.Va,
         'Pérdida presión anular (psi/ft)':   r.hid.Pa,
@@ -211,6 +225,9 @@ export default function ModuloPerforacion() {
               { label: 'Viscosímetro 300 rpm (R300)', val: r300, set: setR300, ph: '40' },
               { label: 'Viscosímetro 3 rpm (R3)',     val: r3,   set: setR3,   ph: '5'  },
               { label: 'Viscosímetro 6 rpm (R6)',     val: r6,   set: setR6,   ph: '8'  },
+              { label: 'ROP - Velocidad de penetración (ft/h)', val: rop, set: setRop, ph: '30' },
+              { label: 'Densidad de recortes (ppg)', val: densidadRecortes, set: setDensidadRecortes, ph: '21' },
+              { label: 'Transport ratio (adimensional)', val: transportRatio, set: setTransportRatio, ph: '0.55' },
             ].map((f, i) => (
               <div key={i}>
                 <label style={{ color: '#94a3b8', fontSize: 12, display: 'block', marginBottom: 6 }}>{f.label}</label>
