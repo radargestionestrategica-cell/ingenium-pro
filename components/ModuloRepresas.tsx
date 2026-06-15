@@ -18,6 +18,20 @@ interface ResultadoFiltracion {
   normativa: string;
 }
 
+interface ResultadoEstabilidad {
+  W_kN: number; // peso propio presa por metro lineal
+  U_kN: number; // subpresion (uplift) por metro lineal
+  Pw_kN: number; // empuje hidrostatico por metro lineal
+  FS_deslizamiento: number;
+  FS_volcamiento: number;
+  e_m: number; // excentricidad de la resultante
+  tercio_medio: boolean;
+  sigma_max: number; // kN/m2
+  sigma_min: number; // kN/m2
+  riesgo: string;
+  normativa: string;
+}
+
 function calcularVertedero(L: number, H: number, Cd: number): ResultadoVertedero {
   // Fórmula de Francis — USACE EM 1110-2-1603
   const g = 9.81;
@@ -48,8 +62,68 @@ function calcularFiltracion(H: number, k: number, L: number, d: number): Resulta
   };
 }
 
+// Estabilidad de presa de gravedad (sección triangular, cara vertical aguas arriba)
+// Referencia: USACE EM 1110-2-2200 · ICOLD Bulletin 117 — Regla del tercio medio
+// Incluye subpresión (uplift) en la base — FS mínimo aceptable: deslizamiento ≥ 1.5, vuelco ≥ 1.5
+function calcularEstabilidad(Hw: number, B: number, Hd: number, gammaH: number, gammaW: number, mu: number): ResultadoEstabilidad {
+  // Empuje hidrostático horizontal — actúa a Hw/3 desde la base
+  const Pw = 0.5 * gammaW * Hw * Hw;
+  const brazoPw = Hw / 3;
+
+  // Peso propio (sección triangular) — actúa en el centroide a 2/3·B del pie de aguas abajo
+  const W = gammaH * (0.5 * B * Hd);
+  const brazoW = (2 / 3) * B;
+
+  // Subpresión (uplift) en la base — resta estabilidad
+  const U = 0.5 * gammaW * Hw * B;
+
+  // Fuerza vertical neta resistente
+  const N = W - U;
+
+  // Factor de seguridad al deslizamiento — mínimo aceptable 1.5
+  const FS_deslizamiento = (mu * N) / Pw;
+
+  // Momentos respecto al pie de aguas abajo
+  const M_volcador = Pw * brazoPw;
+  const M_estabilizante = N * brazoW;
+
+  // Factor de seguridad al vuelco — mínimo aceptable 1.5
+  const FS_volcamiento = M_estabilizante / M_volcador;
+
+  // Excentricidad y regla del tercio medio (solo si N > 0)
+  let e = 0, sigma_max = 0, sigma_min = 0;
+  let tercio_medio = false;
+  if (N > 0) {
+    const x_bar = (M_estabilizante - M_volcador) / N;
+    e = Math.abs(B / 2 - x_bar);
+    tercio_medio = e <= B / 6;
+    sigma_max = (N / B) * (1 + 6 * e / B);
+    sigma_min = (N / B) * (1 - 6 * e / B);
+  }
+
+  const riesgo = (FS_deslizamiento < 1.0 || FS_volcamiento < 1.0 || N <= 0 || sigma_min < 0)
+    ? 'CRITICAL'
+    : (FS_deslizamiento < 1.5 || FS_volcamiento < 1.5 || !tercio_medio)
+      ? 'HIGH'
+      : 'LOW';
+
+  return {
+    W_kN: Math.round(W * 100) / 100,
+    U_kN: Math.round(U * 100) / 100,
+    Pw_kN: Math.round(Pw * 100) / 100,
+    FS_deslizamiento: Math.round(FS_deslizamiento * 1000) / 1000,
+    FS_volcamiento: Math.round(FS_volcamiento * 1000) / 1000,
+    e_m: Math.round(e * 1000) / 1000,
+    tercio_medio,
+    sigma_max: Math.round(sigma_max * 100) / 100,
+    sigma_min: Math.round(sigma_min * 100) / 100,
+    riesgo,
+    normativa: 'USACE EM 1110-2-2100 Stability Analysis of Concrete Structures — FS min. deslizamiento y vuelco = 1.5',
+  };
+}
+
 export default function ModuloRepresas() {
-  const [calculo, setCalculo] = useState<'vertedero' | 'filtracion'>('vertedero');
+  const [calculo, setCalculo] = useState<'vertedero' | 'filtracion' | 'estabilidad'>('vertedero');
 
   // Vertedero
   const [L, setL] = useState('10');
@@ -65,6 +139,16 @@ export default function ModuloRepresas() {
   const [d, setD] = useState('1');
   const [resF, setResF] = useState<ResultadoFiltracion | null>(null);
   const [datosF, setDatosF] = useState<DatosExportar | null>(null);
+
+  // Estabilidad presa de gravedad
+  const [He, setHe] = useState('10');
+  const [Be, setBe] = useState('8');
+  const [HdE, setHdE] = useState('12');
+  const [gammaH, setGammaH] = useState('23.5');
+  const [gammaW, setGammaW] = useState('9.81');
+  const [muE, setMuE] = useState('0.7');
+  const [resE, setResE] = useState<ResultadoEstabilidad | null>(null);
+  const [datosE, setDatosE] = useState<DatosExportar | null>(null);
 
   const [error, setError] = useState('');
 
@@ -107,7 +191,7 @@ export default function ModuloRepresas() {
         };
         setDatosV(payloadV);
         publicarResultado(payloadV);
-      } else {
+      } else if (calculo === 'filtracion') {
         const hf = parseFloat(Hf);
         const kv = parseFloat(k);
         const lf = parseFloat(Lf);
@@ -144,13 +228,63 @@ export default function ModuloRepresas() {
         };
         setDatosF(payloadF);
         publicarResultado(payloadF);
+      } else {
+        const he = parseFloat(He);
+        const be = parseFloat(Be);
+        const hde = parseFloat(HdE);
+        const gh = parseFloat(gammaH);
+        const gw = parseFloat(gammaW);
+        const mu = parseFloat(muE);
+        if (isNaN(he) || isNaN(be) || isNaN(hde) || isNaN(gh) || isNaN(gw) || isNaN(mu) || he <= 0 || be <= 0 || hde <= 0 || gh <= 0 || gw <= 0 || mu <= 0) {
+          setError('Todos los valores deben ser positivos'); return;
+        }
+        const re = calcularEstabilidad(he, be, hde, gh, gw, mu);
+        setResE(re);
+        const payloadE: DatosExportar = {
+          tipo: 'ESTABILIDAD_PRESA_GRAVEDAD',
+          normativa: 'USACE EM 1110-2-2100 Stability Analysis of Concrete Structures',
+          parametros: {
+            'Altura de agua Hw (m)': he,
+            'Base de la presa B (m)': be,
+            'Altura de la presa Hd (m)': hde,
+            'Peso especifico hormigon (kN/m3)': gh,
+            'Peso especifico agua (kN/m3)': gw,
+            'Coef. friccion base': mu,
+          },
+          resultado: {
+            'Peso presa W (kN/m)': re.W_kN,
+            'Subpresion U (kN/m)': re.U_kN,
+            'Empuje hidrostatico Pw (kN/m)': re.Pw_kN,
+            'FS deslizamiento': re.FS_deslizamiento,
+            'FS volcamiento': re.FS_volcamiento,
+            'Excentricidad e (m)': re.e_m,
+            'Dentro del tercio medio': re.tercio_medio ? 'SI' : 'NO',
+            'Tension maxima (kN/m2)': re.sigma_max,
+            'Tension minima (kN/m2)': re.sigma_min,
+          },
+          dxfParams: {
+            tipo:      'estabilidad_presa',
+            Hw:        he,
+            B:         be,
+            Hd:        hde,
+            gammaH:    gh,
+            gammaW:    gw,
+            mu,
+            U_kN:      re.U_kN,
+            FS_desliz: re.FS_deslizamiento,
+            FS_volc:   re.FS_volcamiento,
+            e_m:       re.e_m,
+          },
+        };
+        setDatosE(payloadE);
+        publicarResultado(payloadE);
       }
     } catch {
       setError('Error en el cálculo. Verificá los datos.');
     }
   };
 
-  const datosActivo = calculo === 'vertedero' ? datosV : datosF;
+  const datosActivo = calculo === 'vertedero' ? datosV : calculo === 'filtracion' ? datosF : datosE;
 
   return (
     <div style={{ padding: 24, color: '#f1f5f9', fontFamily: 'Inter, sans-serif' }}>
@@ -186,8 +320,8 @@ export default function ModuloRepresas() {
         display: 'flex', background: '#0a0f1e', borderRadius: 12,
         padding: 4, marginBottom: 24, border: '1px solid rgba(6,182,212,0.15)',
       }}>
-        {(['vertedero', 'filtracion'] as const).map(t => (
-          <button key={t} onClick={() => { setCalculo(t); setError(''); setResV(null); setResF(null); }}
+        {(['vertedero', 'filtracion', 'estabilidad'] as const).map(t => (
+          <button key={t} onClick={() => { setCalculo(t); setError(''); setResV(null); setResF(null); setResE(null); }}
             style={{
               flex: 1, padding: '10px 0', border: 'none', borderRadius: 10,
               cursor: 'pointer', fontSize: 13, fontWeight: 700,
@@ -195,7 +329,7 @@ export default function ModuloRepresas() {
               color: calculo === t ? '#fff' : '#475569',
               boxShadow: calculo === t ? '0 4px 12px rgba(6,182,212,0.4)' : 'none',
             }}>
-            {t === 'vertedero' ? 'Vertedero Francis' : 'Filtración Darcy'}
+            {t === 'vertedero' ? 'Vertedero Francis' : t === 'filtracion' ? 'Filtración Darcy' : 'Estabilidad Presa'}
           </button>
         ))}
       </div>
@@ -245,6 +379,41 @@ export default function ModuloRepresas() {
             <div>
               <label style={lbl}>Espesor estrato d (m)</label>
               <input value={d} onChange={e => setD(e.target.value)} style={inp} type="number" min="0" step="0.1" />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* FORMULARIO ESTABILIDAD */}
+      {calculo === 'estabilidad' && (
+        <div>
+          <div style={{ fontSize: 11, color: '#06b6d4', fontWeight: 700, letterSpacing: 1, marginBottom: 16, textTransform: 'uppercase' as const }}>
+            Parámetros — Estabilidad Presa de Gravedad
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
+            <div>
+              <label style={lbl}>Altura de agua Hw (m)</label>
+              <input value={He} onChange={e => setHe(e.target.value)} style={inp} type="number" min="0" step="0.1" />
+            </div>
+            <div>
+              <label style={lbl}>Base de la presa B (m)</label>
+              <input value={Be} onChange={e => setBe(e.target.value)} style={inp} type="number" min="0" step="0.1" />
+            </div>
+            <div>
+              <label style={lbl}>Altura de la presa Hd (m)</label>
+              <input value={HdE} onChange={e => setHdE(e.target.value)} style={inp} type="number" min="0" step="0.1" />
+            </div>
+            <div>
+              <label style={lbl}>Peso especifico hormigon (kN/m³)</label>
+              <input value={gammaH} onChange={e => setGammaH(e.target.value)} style={inp} type="number" min="0" step="0.1" />
+            </div>
+            <div>
+              <label style={lbl}>Peso especifico agua (kN/m³)</label>
+              <input value={gammaW} onChange={e => setGammaW(e.target.value)} style={inp} type="number" min="0" step="0.01" />
+            </div>
+            <div>
+              <label style={lbl}>Coef. friccion base μ</label>
+              <input value={muE} onChange={e => setMuE(e.target.value)} style={inp} type="number" min="0" step="0.01" />
             </div>
           </div>
         </div>
@@ -321,6 +490,37 @@ export default function ModuloRepresas() {
           </div>
           <div style={{ fontSize: 11, color: '#475569', padding: '8px 12px', background: '#0a0f1e', borderRadius: 8 }}>
             {resF.normativa}
+          </div>
+        </div>
+      )}
+
+      {/* RESULTADO ESTABILIDAD */}
+      {resE && (
+        <div style={{
+          background: resE.riesgo === 'LOW' ? 'rgba(34,197,94,0.08)' : resE.riesgo === 'HIGH' ? 'rgba(232,160,32,0.08)' : 'rgba(239,68,68,0.08)',
+          border: `1px solid ${resE.riesgo === 'LOW' ? 'rgba(34,197,94,0.25)' : resE.riesgo === 'HIGH' ? 'rgba(232,160,32,0.25)' : 'rgba(239,68,68,0.25)'}`,
+          borderRadius: 16, padding: 20,
+        }}>
+          <div style={{ fontSize: 13, color: resE.riesgo === 'LOW' ? '#4ade80' : resE.riesgo === 'HIGH' ? '#E8A020' : '#f87171', fontWeight: 700, marginBottom: 16 }}>
+            RESULTADO — ESTABILIDAD PRESA DE GRAVEDAD · {resE.riesgo === 'LOW' ? '✅ ESTABLE' : resE.riesgo === 'HIGH' ? '⚠️ REVISAR' : '🛑 CRITICO'}
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
+            {[
+              { label: 'Empuje horizontal Pw', value: `${resE.Pw_kN} kN/m`, ok: null },
+              { label: 'Peso propio W', value: `${resE.W_kN} kN/m`, ok: null },
+              { label: 'Subpresion U', value: `${resE.U_kN} kN/m`, ok: null },
+              { label: 'FS deslizamiento', value: `${resE.FS_deslizamiento}${resE.FS_deslizamiento >= 1.5 ? ' ✅ Cumple' : ' ⚠️ No cumple'}`, ok: resE.FS_deslizamiento >= 1.5 },
+              { label: 'FS vuelco', value: `${resE.FS_volcamiento}${resE.FS_volcamiento >= 1.5 ? ' ✅ Cumple' : ' ⚠️ No cumple'}`, ok: resE.FS_volcamiento >= 1.5 },
+              { label: 'FS minimo aceptable', value: '1.5 (USACE EM 1110-2-2100)', ok: null },
+            ].map((r, i) => (
+              <div key={i} style={{ background: '#0a0f1e', borderRadius: 10, padding: 12 }}>
+                <div style={{ fontSize: 10, color: '#475569', marginBottom: 4, textTransform: 'uppercase' as const }}>{r.label}</div>
+                <div style={{ fontSize: 15, fontWeight: 700, color: r.ok === null ? '#06b6d4' : r.ok ? '#4ade80' : '#f97316' }}>{r.value}</div>
+              </div>
+            ))}
+          </div>
+          <div style={{ fontSize: 11, color: '#475569', padding: '8px 12px', background: '#0a0f1e', borderRadius: 8 }}>
+            {resE.normativa}
           </div>
         </div>
       )}
