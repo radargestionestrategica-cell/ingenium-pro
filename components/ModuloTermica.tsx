@@ -96,7 +96,7 @@ function calcDilatacion(
   // Tension termica si esta restringido (ASME B31.3 S302)
   const sigma_MPa = restringido ? E_GPa * 1000 * alpha * 1e-6 * Math.abs(dT) : 0;
 
-  // Longitud lira en U (formula empirica)
+  // Longitud lira en U (regla practica de dimensionamiento preliminar de loop de expansion, segun el marco de analisis de flexibilidad de ASME B31.3; verificar con analisis formal)
   const D_m = OD_mm / 1000;
   const L_lira_m = t_mm > 0 && OD_mm > 0
     ? Math.sqrt(3 * E_GPa * 1e9 * D_m * (dL_mm / 1000) / (200e6))
