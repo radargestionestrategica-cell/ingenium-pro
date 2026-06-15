@@ -13,6 +13,7 @@ function calcBHP(TVD: number, mudWeight: number, cuttingsLoad = 0) {
 }
 
 function calcFractureGradient(depth: number, overburdenGrad: number, poreGrad = 0.433, poissonRatio = 0.25) {
+  // Gradiente de fractura — método de Eaton (1969), coeficiente de Poisson variable acotado entre 0 y 0.49
   const fracGrad = (poissonRatio / (1 - poissonRatio)) * (overburdenGrad - poreGrad) + poreGrad;
   const fracPressure = fracGrad * depth;
   return { fracGrad: +fracGrad.toFixed(3), fracPressure: +fracPressure.toFixed(0) };
