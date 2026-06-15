@@ -76,6 +76,8 @@ export default function ModuloPerforacion() {
   const [rop, setRop] = useState('30');
   const [densidadRecortes, setDensidadRecortes] = useState('21');
   const [transportRatio, setTransportRatio] = useState('0.55');
+  const [dCutting, setDCutting] = useState('0.25');
+  const [tipoTR, setTipoTR] = useState('manual');
   const [caudal, setCaudal] = useState('350');
   const [diamPozo, setDiamPozo] = useState('8.5');
   const [diamTuberia, setDiamTuberia] = useState('5');
@@ -116,7 +118,45 @@ export default function ModuloPerforacion() {
     const sfVal = Math.min(Math.max(isNaN(sf) ? 0.5 : sf, 0), 1);          // default 0.5, acotado a [0, 1]
     const ropVal = isNaN(ropv) ? 30 : ropv;                                // default ROP 30 ft/h
     const drVal  = isNaN(drv) ? 21 : drv;                                  // default densidad recortes 21 ppg
-    const trVal  = isNaN(trv) ? 0.55 : trv;                                // default transport ratio 0.55
+
+    const hid = calcHidraulica(Q, Dh, Dt, R600v, R300v, mw, R3v, R6v, modeloReologico);
+
+    // Viscosidad aparente de Moore — paso intermedio, aún no conectado a CCA
+    const espacioAnular = Dh - Dt;
+    const naMoore = hid.na ?? 0;
+    const kaMoore = hid.ka ?? 0;
+    const muMoore = (kaMoore / 144) * Math.pow(espacioAnular / hid.Va, 1 - naMoore) * Math.pow((2 + 1 / naMoore) / (0.0208 * naMoore), naMoore);
+
+    // Numero de Reynolds de particula y velocidad de deslizamiento — iteracion de Moore
+    const dp = parseFloat(dCutting);
+    let vSlip = 1;
+    let Rep = 0;
+    let regimen = 'intermedio';
+    if (hid.PV !== undefined) {
+      // Bingham Plastic — Lyons, Formulas and Calculations, cap. 5.5, Metodo 1 (usa PV directo, sin iteracion)
+      regimen = 'method1';
+      vSlip = 174 * dp * Math.pow((drVal - mw) / mw, 0.667) * Math.pow(mw / hid.PV, 0.333);
+    } else {
+      for (let i = 0; i < 10; i++) {
+        Rep = 928 * mw * vSlip * dp / muMoore;
+        if (Rep < 1) {
+          regimen = 'laminar';
+          vSlip = 4980 * dp * dp * (drVal - mw) / muMoore;
+        } else if (Rep > 2000) {
+          regimen = 'turbulento';
+          vSlip = 1.89 * Math.sqrt(dp * (drVal - mw) / mw) * 113.4;
+        } else {
+          regimen = 'intermedio';
+          vSlip = 175 * dp * Math.pow(drVal - mw, 0.667) / (Math.pow(mw, 0.333) * Math.pow(muMoore, 0.333));
+        }
+      }
+    }
+
+    // Transport ratio — manual (input) o calculado desde slip velocity (solo Bingham)
+    const trVal = (tipoTR === 'calculado' && hid.PV !== undefined)
+      ? Math.min(Math.max(1 - vSlip / hid.Va, 0), 1)                       // TR = 1 - vSlip/Va, acotado a [0, 1]
+      : (isNaN(trv) ? 0.55 : trv);                                         // manual — default 0.55
+
     const ccaRaw = (ropVal * Dh * Dh) / (1471 * Q * trVal);                // CCA — API RP 13D, concentración de recortes en anular
     const ccaVal = Math.min(Math.max(ccaRaw, 0), 1);                       // acotado a [0, 1] por seguridad
     const mwEfectiva = mw * (1 - ccaVal) + drVal * ccaVal;                 // densidad efectiva de la mezcla lodo + recortes
@@ -125,9 +165,10 @@ export default function ModuloPerforacion() {
       bhp:  calcBHP(tvd, mwEfectiva),
       frac: calcFractureGradient(tvd, ob, pgVal, nuVal),
       mud:  mudCalc,
-      hid:  calcHidraulica(Q, Dh, Dt, R600v, R300v, mw, R3v, R6v, modeloReologico),
+      hid,
     };
     setRes(r);
+
     const hidParams = r.hid.PV !== undefined
       ? { 'VP - Viscosidad Plástica (cP)': r.hid.PV, 'YP - Punto de Cedencia (lbf/100ft²)': r.hid.YP ?? 0 }
       : r.hid.ty !== undefined
@@ -210,6 +251,15 @@ export default function ModuloPerforacion() {
             </select>
           </div>
 
+          <div style={{ marginBottom: 16 }}>
+            <label style={{ color: '#94a3b8', fontSize: 12, display: 'block', marginBottom: 6 }}>Tipo de transport ratio</label>
+            <select value={tipoTR} onChange={e => setTipoTR(e.target.value)}
+              style={{ width: '100%', background: '#0f172a', border: '1px solid #475569', borderRadius: 8, padding: '10px 12px', color: '#f8fafc', fontSize: 15, boxSizing: 'border-box' as const }}>
+              <option value="manual">Manual</option>
+              <option value="moore">Moore</option>
+            </select>
+          </div>
+
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 20 }}>
             {[
               { label: 'Profundidad TVD (ft)', val: TVD, set: setTVD, ph: '3000' },
@@ -228,6 +278,7 @@ export default function ModuloPerforacion() {
               { label: 'ROP - Velocidad de penetración (ft/h)', val: rop, set: setRop, ph: '30' },
               { label: 'Densidad de recortes (ppg)', val: densidadRecortes, set: setDensidadRecortes, ph: '21' },
               { label: 'Transport ratio (adimensional)', val: transportRatio, set: setTransportRatio, ph: '0.55' },
+              { label: 'Diámetro de partícula de recorte (pulg)', val: dCutting, set: setDCutting, ph: '0.25' },
             ].map((f, i) => (
               <div key={i}>
                 <label style={{ color: '#94a3b8', fontSize: 12, display: 'block', marginBottom: 6 }}>{f.label}</label>
