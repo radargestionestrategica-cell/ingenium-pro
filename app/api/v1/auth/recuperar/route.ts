@@ -39,7 +39,7 @@ export async function POST(req: Request) {
     const link = `https://ingeniumpro.store/reset/${token}`;
 
     await resend.emails.send({
-      from:    'onboarding@resend.dev',
+      from:    'INGENIUM PRO <noreply@ingeniumpro.store>',
       to:      usuario.email,
       subject: 'Restablecer tu contraseña — INGENIUM PRO',
       html:    `<!DOCTYPE html>
