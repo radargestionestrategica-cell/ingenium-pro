@@ -124,9 +124,15 @@ export default function ModuloPerforacion() {
 
     // Viscosidad aparente de Moore — paso intermedio, aún no conectado a CCA
     const espacioAnular = Dh - Dt;
-    const naMoore = hid.na ?? 0;
+    const naMoore = 3.32 * Math.log10(R600v / R300v);
     const kaMoore = hid.ka ?? 0;
-    const muMoore = (kaMoore / 144) * Math.pow(espacioAnular / hid.Va, 1 - naMoore) * Math.pow((2 + 1 / naMoore) / (0.0208 * naMoore), naMoore);
+    const muMoore = Math.pow((2.4 * hid.Va / espacioAnular) * ((2 * naMoore + 1) / (3 * naMoore)), naMoore) * (200 * kaMoore * espacioAnular / hid.Va);
+
+    // Slip velocity turbulenta de Moore — Moore (1974), Lyons cap. 5.5
+    const dCuttingVal = parseFloat(dCutting);
+    const vslTurb = 1.89 * Math.sqrt(dCuttingVal * (drVal - mw) / mw);
+    const RepTurb = 928 * mw * vslTurb * dCuttingVal / muMoore;
+    const vslLam = 4972 * dCuttingVal * dCuttingVal * (drVal - mw) / (muMoore * mw);
 
     // Numero de Reynolds de particula y velocidad de deslizamiento — iteracion de Moore
     const dp = parseFloat(dCutting);
@@ -138,25 +144,19 @@ export default function ModuloPerforacion() {
       regimen = 'method1';
       vSlip = 174 * dp * Math.pow((drVal - mw) / mw, 0.667) * Math.pow(mw / hid.PV, 0.333);
     } else {
-      for (let i = 0; i < 10; i++) {
-        Rep = 928 * mw * vSlip * dp / muMoore;
-        if (Rep < 1) {
-          regimen = 'laminar';
-          vSlip = 4980 * dp * dp * (drVal - mw) / muMoore;
-        } else if (Rep > 2000) {
-          regimen = 'turbulento';
-          vSlip = 1.89 * Math.sqrt(dp * (drVal - mw) / mw) * 113.4;
-        } else {
-          regimen = 'intermedio';
-          vSlip = 175 * dp * Math.pow(drVal - mw, 0.667) / (Math.pow(mw, 0.333) * Math.pow(muMoore, 0.333));
-        }
-      }
+      // Power Law / Herschel-Bulkley — Lyons, Formulas and Calculations, cap. 5.5, Metodo 2 (usa muMoore, sin iteracion)
+      regimen = 'method2';
+      vSlip = 175 * dp * Math.pow(drVal - mw, 0.667) / (Math.pow(mw, 0.333) * Math.pow(muMoore, 0.333));
+      Rep = 928 * mw * vSlip * dp / muMoore;
     }
 
-    // Transport ratio — manual (input) o calculado desde slip velocity (solo Bingham)
-    const trVal = (tipoTR === 'calculado' && hid.PV !== undefined)
-      ? Math.min(Math.max(1 - vSlip / hid.Va, 0), 1)                       // TR = 1 - vSlip/Va, acotado a [0, 1]
-      : (isNaN(trv) ? 0.55 : trv);                                         // manual — default 0.55
+    // Seleccion de slip velocity por regimen — Moore (1974)
+    const vslMoore = RepTurb > 100 ? vslTurb : RepTurb < 1 ? vslLam : (vslTurb + vslLam) / 2;
+
+    // Transport ratio — Moore (regimen completo), Bingham (calculado desde vSlip) o manual
+    const trVal = (tipoTR === 'moore' && muMoore > 0)
+      ? Math.min(Math.max(1 - vslMoore / hid.Va, 0), 1)
+      : (isNaN(trv) ? 0.55 : trv);
 
     const ccaRaw = (ropVal * Dh * Dh) / (1471 * Q * trVal);                // CCA — API RP 13D, concentración de recortes en anular
     const ccaVal = Math.min(Math.max(ccaRaw, 0), 1);                       // acotado a [0, 1] por seguridad
