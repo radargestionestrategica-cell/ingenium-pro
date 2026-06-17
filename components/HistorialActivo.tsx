@@ -74,8 +74,8 @@ export default function HistorialActivo({ usuarioId, proyectoId, activoNombre, m
 
       const res = await fetch(`/api/calculos/historial?${params.toString()}`, { credentials: 'include', headers: ipAuthHeader() });
       if (!res.ok) throw new Error(`Error ${res.status}`);
-      const json = await res.json() as RespuestaHistorial;
-      setDatos(json);
+      const json = await res.json();
+      setDatos({ ...json, calculos: json.calculos ?? json.data ?? [] } as RespuestaHistorial);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Error al cargar historial');
     } finally {
