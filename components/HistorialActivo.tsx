@@ -172,6 +172,17 @@ export default function HistorialActivo({ usuarioId, proyectoId, activoNombre, m
 
   const semaforo = SEMAFORO[datos.estadoGeneral] ?? SEMAFORO.ESTABLE;
 
+  const fechasOrdenadas = datos.calculos
+    .map(c => new Date(c.createdAt).getTime())
+    .filter(t => !Number.isNaN(t))
+    .sort((a, b) => a - b);
+  const fechaInicioCalc = fechasOrdenadas.length > 0
+    ? new Date(fechasOrdenadas[0]).toLocaleDateString('es-AR')
+    : '—';
+  const fechaUltimoCalc = fechasOrdenadas.length > 0
+    ? new Date(fechasOrdenadas[fechasOrdenadas.length - 1]).toLocaleDateString('es-AR')
+    : '—';
+
   return (
     <div className="space-y-4 font-mono text-sm">
 
@@ -206,10 +217,10 @@ export default function HistorialActivo({ usuarioId, proyectoId, activoNombre, m
             </div>
             <div>
               <p className="text-cyan-400 font-bold text-xs">
-                {new Date(datos.fechaInicio).toLocaleDateString('es-AR')}
+                {fechaInicioCalc}
               </p>
               <p className="text-cyan-400 font-bold text-xs">
-                → {new Date(datos.fechaUltimo).toLocaleDateString('es-AR')}
+                → {fechaUltimoCalc}
               </p>
               <p className="text-gray-400 text-xs">Período</p>
             </div>
