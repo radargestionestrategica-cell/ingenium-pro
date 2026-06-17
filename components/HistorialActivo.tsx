@@ -122,6 +122,21 @@ export default function HistorialActivo({ usuarioId, proyectoId, activoNombre, m
     }
   };
 
+  // ── Borrar cálculo ──────────────────────────────────────────────────────
+  const borrarCalculo = async (calculoId: string) => {
+    if (!window.confirm('¿Eliminar este cálculo?')) return;
+    try {
+      const res = await fetch(`/api/calculos/${calculoId}`, {
+        method:  'DELETE',
+        headers: ipAuthHeader(),
+      });
+      if (!res.ok) throw new Error(`Error ${res.status}`);
+      await cargarHistorial();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Error al borrar el cálculo');
+    }
+  };
+
   // ── Extraer valor principal de resultado para timeline ────────────────────
   const resumenResultado = (calc: Calculo): string => {
     const r = calc.resultado;
@@ -317,6 +332,15 @@ export default function HistorialActivo({ usuarioId, proyectoId, activoNombre, m
                         title="Exportar PDF de este cálculo"
                       >
                         📄
+                      </button>
+
+                      {/* Botón borrar */}
+                      <button
+                        onClick={e => { e.stopPropagation(); borrarCalculo(calc.id); }}
+                        className="text-red-400 hover:text-red-300 text-xs"
+                        title="Eliminar este cálculo"
+                      >
+                        🗑️
                       </button>
                     </div>
                   </div>
