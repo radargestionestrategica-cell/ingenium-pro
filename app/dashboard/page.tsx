@@ -64,6 +64,18 @@ function Dashboard() {
   const [conversorOpen, setConversorOpen] = useState(false);
   const { datos, limpiar } = useResultado();
   const [consultasIa, setConsultasIa] = useState<{ usadas: number; tope: number; restantes: number } | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      const mobile = window.innerWidth < 768;
+      setIsMobile(mobile);
+      setSidebarOpen(!mobile);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   useEffect(() => {
     fetch('/api/consultas-ia', { credentials: 'include', headers: ipAuthHeader() })
@@ -131,11 +143,22 @@ function Dashboard() {
       </header>
 
       {/* BODY */}
-      <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+      <div style={{ display: 'flex', flex: 1, overflow: 'hidden', position: 'relative' }}>
+
+        {/* BACKDROP — solo mobile, cierra el menú al tocar afuera */}
+        {isMobile && sidebarOpen && (
+          <div
+            onClick={() => setSidebarOpen(false)}
+            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 49 }}
+          />
+        )}
 
         {/* SIDEBAR */}
         {sidebarOpen && (
-          <aside style={{ width: 220, background: PANEL, borderRight: `1px solid ${BORD}`, overflowY: 'auto', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 2, padding: '12px 8px' }}>
+          <aside style={isMobile
+            ? { width: 220, background: PANEL, borderRight: `1px solid ${BORD}`, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 2, padding: '12px 8px', position: 'fixed', top: 56, bottom: 0, left: 0, zIndex: 50 }
+            : { width: 220, background: PANEL, borderRight: `1px solid ${BORD}`, overflowY: 'auto', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 2, padding: '12px 8px' }
+          }>
             <button onClick={() => cambiarModulo(null)} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 10, border: 'none', background: moduloActivo === null ? 'rgba(232,160,32,0.12)' : 'transparent', color: moduloActivo === null ? GOLD : '#64748b', fontSize: 13, fontWeight: moduloActivo === null ? 700 : 400, cursor: 'pointer', textAlign: 'left', width: '100%' }}>
               <span>🏠</span> Inicio
             </button>
