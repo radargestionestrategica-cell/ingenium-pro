@@ -377,6 +377,10 @@ export default function PlanesPage() {
           ))}
         </div>
 
+        <p style={{ textAlign: 'center', fontSize: 12, color: '#475569', marginTop: 32 }}>
+          Las consultas IA se renuevan cada mes y no se acumulan.
+        </p>
+
         {/* BANNER DEMO EXPIRADO — solo si ?demo=expired */}
         {demoExpirado && (
           <div style={{
