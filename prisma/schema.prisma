@@ -27,8 +27,24 @@ model Usuario {
   resetTokenExpira DateTime?
   consultasIaUsadas  Int       @default(0)
   consultasIaResetEn DateTime?
+  equipoId  String?
+  equipo    Equipo?    @relation(fields: [equipoId], references: [id])
+  rolEquipo String     @default("miembro")
   calculos  Calculo[]
   proyectos Proyecto[]
+}
+
+// ─── EQUIPO ──────────────────────────────────────────────────
+// Plan Team: un dueño crea un equipo e invita hasta `limiteMiembros` usuarios.
+// Un usuario pertenece a lo sumo a un equipo (equipoId en Usuario).
+model Equipo {
+  id             String   @id @default(cuid())
+  nombre         String
+  plan           String   @default("team")
+  propietarioId  String
+  limiteMiembros Int      @default(3)
+  createdAt      DateTime @default(now())
+  miembros       Usuario[]
 }
 
 // ─── PROYECTO ─────────────────────────────────────────────────
