@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import ModalDatosProfesional from './ModalDatosProfesional';
 
 function ipAuthHeader(): Record<string, string> {
   if (typeof window === 'undefined') return {};
@@ -45,6 +46,7 @@ export default function BotonesExportar({ datos, visible }: Props) {
   const [hash,       setHash]       = useState<string | null>(null);
   const [msgOk,      setMsgOk]      = useState('');
   const [msgErr,     setMsgErr]     = useState('');
+  const [mostrarModalDatos, setMostrarModalDatos] = useState(false);
 
   if (!visible) return null;
 
@@ -90,6 +92,24 @@ export default function BotonesExportar({ datos, visible }: Props) {
 
   // ── 2. EXPORTAR PDF ─────────────────────────────────────────
   const exportarPDF = async () => {
+    const usr = (() => { try { return JSON.parse(localStorage.getItem('ip_usuario') || '{}'); } catch { return {}; } })();
+    if (!usr?.dni) {
+      setMostrarModalDatos(true);
+      return;
+    }
+    await ejecutarExportarPDF();
+  };
+
+  const handleDatosGuardados = (datosNuevos: { matricula: string; dni: string }) => {
+    try {
+      const usr = JSON.parse(localStorage.getItem('ip_usuario') || '{}');
+      localStorage.setItem('ip_usuario', JSON.stringify({ ...usr, ...datosNuevos }));
+    } catch {}
+    setMostrarModalDatos(false);
+    ejecutarExportarPDF();
+  };
+
+  const ejecutarExportarPDF = async () => {
     setExportando('pdf');
     setMsgErr('');
     const id = await guardar();
@@ -266,6 +286,13 @@ export default function BotonesExportar({ datos, visible }: Props) {
 
   return (
     <div style={{ margin: '24px 0 8px', padding: '20px 24px', background: BG, border: '1px solid rgba(99,102,241,0.2)', borderRadius: 16 }}>
+
+      {mostrarModalDatos && (
+        <ModalDatosProfesional
+          onGuardado={handleDatosGuardados}
+          onCancelar={() => setMostrarModalDatos(false)}
+        />
+      )}
 
       {/* TÍTULO */}
       <div style={{ fontSize: 11, color: '#6366f1', fontWeight: 700, letterSpacing: 1, marginBottom: 16, textTransform: 'uppercase' }}>
