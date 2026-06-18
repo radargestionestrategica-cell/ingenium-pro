@@ -28,23 +28,22 @@ model Usuario {
   consultasIaUsadas  Int       @default(0)
   consultasIaResetEn DateTime?
   equipoId  String?
-  equipo    Equipo?    @relation(fields: [equipoId], references: [id])
-  rolEquipo String     @default("miembro")
+  equipo    Equipo?    @relation("EquipoMiembros", fields: [equipoId], references: [id])
+  equiposPropios Equipo[] @relation("EquipoOwner")
   calculos  Calculo[]
   proyectos Proyecto[]
 }
 
 // ─── EQUIPO ──────────────────────────────────────────────────
-// Plan Team: un dueño crea un equipo e invita hasta `limiteMiembros` usuarios.
+// Plan Team: un dueño (owner) crea un equipo e invita miembros.
 // Un usuario pertenece a lo sumo a un equipo (equipoId en Usuario).
 model Equipo {
-  id             String   @id @default(cuid())
-  nombre         String
-  plan           String   @default("team")
-  propietarioId  String
-  limiteMiembros Int      @default(3)
-  createdAt      DateTime @default(now())
-  miembros       Usuario[]
+  id        String    @id @default(cuid())
+  nombre    String
+  ownerId   String
+  owner     Usuario   @relation("EquipoOwner", fields: [ownerId], references: [id])
+  miembros  Usuario[] @relation("EquipoMiembros")
+  createdAt DateTime  @default(now())
 }
 
 // ─── PROYECTO ─────────────────────────────────────────────────
