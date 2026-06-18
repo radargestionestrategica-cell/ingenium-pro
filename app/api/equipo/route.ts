@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
       },
     });
 
-    return NextResponse.json({ ok: true, equipo });
+    return NextResponse.json({ ok: true, plan: payload.plan, equipo });
   } catch (e) {
     return NextResponse.json({ ok: false, error: e instanceof Error ? e.message : 'Error interno' }, { status: 500 });
   }

@@ -15,10 +15,6 @@ function ipAuthHeader(): Record<string, string> {
   return t ? { Authorization: `Bearer ${t}` } : {};
 }
 
-function decodePayload(t: string) {
-  try { return JSON.parse(atob(t.split('.')[0])); } catch { return null; }
-}
-
 type Miembro = { id: string; nombre: string; email: string };
 type EquipoData = { id: string; nombre: string; owner: Miembro; miembros: Miembro[] } | null;
 
@@ -29,32 +25,15 @@ export default function EquipoPage() {
   const [equipo, setEquipo]   = useState<EquipoData>(null);
 
   useEffect(() => {
-    const cargar = async () => {
-      try {
-        const resSession = await fetch('/api/v1/auth/session');
-        if (!resSession.ok) { router.replace('/Login'); return; }
-        const dataSession = await resSession.json();
-        if (!dataSession.token) { router.replace('/Login'); return; }
-
-        localStorage.setItem('ip_token', dataSession.token);
-        const pl = decodePayload(dataSession.token);
-        setPlan(pl?.plan ?? null);
-
-        if (pl?.plan === 'team') {
-          const resEquipo = await fetch('/api/equipo', { credentials: 'include', headers: ipAuthHeader() });
-          if (resEquipo.ok) {
-            const dataEquipo = await resEquipo.json();
-            setEquipo(dataEquipo.equipo ?? null);
-          }
-        }
-      } catch {
-        router.replace('/Login');
-      } finally {
-        setLoading(false);
-      }
-    };
-    cargar();
-  }, [router]);
+    // La sesión ya la valida el middleware (matcher incluye /equipo) — acá solo se pide la data.
+    fetch('/api/equipo', { credentials: 'include', headers: ipAuthHeader() })
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        setPlan(data?.plan ?? null);
+        setEquipo(data?.equipo ?? null);
+      })
+      .finally(() => setLoading(false));
+  }, []);
 
   return (
     <div style={{ minHeight: '100vh', background: BG, color: '#f1f5f9', fontFamily: 'Inter,sans-serif' }}>
