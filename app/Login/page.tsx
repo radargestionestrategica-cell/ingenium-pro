@@ -167,6 +167,13 @@ export default function LoginPage() {
           </div>
         </div>
 
+        {/* OLVIDÉ MI CONTRASEÑA */}
+        <div style={{ textAlign:'right', marginBottom:18 }}>
+          <a href="/recuperar" style={{ color:'#64748b', fontSize:12, textDecoration:'underline' }}>
+            ¿Olvidaste tu contraseña?
+          </a>
+        </div>
+
         {/* TÉRMINOS Y COOKIES — obligatorios */}
         {(['login','signup'] as const).includes(modo) && (
           <div style={{ marginBottom:18, display:'flex', flexDirection:'column', gap:10 }}>
