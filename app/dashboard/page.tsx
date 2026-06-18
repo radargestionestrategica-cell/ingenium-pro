@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import TerminosModalWrapper from '@/components/TerminosModalWrapper';
@@ -44,6 +44,12 @@ const MODULOS = [
   { id: 'arquitectura', label: 'Arquitectura',      icon: '🏛️', component: ModuloArquitectura},
 ];
 
+function ipAuthHeader(): Record<string, string> {
+  if (typeof window === 'undefined') return {};
+  const t = localStorage.getItem('ip_token');
+  return t ? { Authorization: `Bearer ${t}` } : {};
+}
+
 const BG    = '#020609';
 const GOLD  = '#E8A020';
 const GREEN = '#22c55e';
@@ -57,6 +63,14 @@ function Dashboard() {
   const [sidebarOpen, setSidebarOpen]   = useState(true);
   const [conversorOpen, setConversorOpen] = useState(false);
   const { datos, limpiar } = useResultado();
+  const [consultasIa, setConsultasIa] = useState<{ usadas: number; tope: number; restantes: number } | null>(null);
+
+  useEffect(() => {
+    fetch('/api/consultas-ia', { credentials: 'include', headers: ipAuthHeader() })
+      .then(res => res.ok ? res.json() : null)
+      .then(json => { if (json?.ok) setConsultasIa(json); })
+      .catch(() => {});
+  }, []);
 
   const cerrarSesion = async () => {
     await fetch('/api/v1/auth/logout', { method: 'POST' }).catch(() => {});
@@ -97,6 +111,14 @@ function Dashboard() {
           </>
         )}
         <div style={{ flex: 1 }} />
+        {consultasIa && (
+          <span style={{
+            fontSize: 11, fontWeight: 600,
+            color: consultasIa.restantes < 10 ? '#ef4444' : '#64748b',
+          }}>
+            Consultas IA: {consultasIa.usadas} de {consultasIa.tope} usadas este mes (se renuevan cada mes, no se acumulan)
+          </span>
+        )}
         <button onClick={() => setConversorOpen(o => !o)} style={{ background: conversorOpen ? 'rgba(34,197,94,0.15)' : 'none', border: `1px solid ${conversorOpen ? GREEN : 'rgba(34,197,94,0.2)'}`, borderRadius: 8, color: GREEN, fontSize: 12, fontWeight: 700, cursor: 'pointer', padding: '6px 12px' }}>⇄ CONVERSOR</button>
         <a href="/planes" style={{ background: `linear-gradient(135deg,${GOLD},#c47a10)`, borderRadius: 8, color: BG, fontSize: 12, fontWeight: 800, padding: '6px 14px', textDecoration: 'none' }}>★ PLANES</a>
         <SelectorIdioma />

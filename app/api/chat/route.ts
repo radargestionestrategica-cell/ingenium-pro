@@ -13,6 +13,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { rateLimit } from '@/lib/rate-limit';
 import { verificarTokenAPI, respuestaNoAutorizado } from '@/lib/api-auth';
+import { puedeUsarIa, registrarConsultaIa } from '@/lib/consultasIa';
 
 // ── Tipos del contexto real del cálculo ──────────────────────────────────────
 type ContextoCalculo = {
@@ -902,13 +903,21 @@ Respondé en el idioma del ingeniero. Directo. Sin rodeos. Sin frases vacías.`;
 // ════════════════════════════════════════════════════════════════════════════
 
 export async function POST(req: NextRequest) {
-  if (!verificarTokenAPI(req)) return respuestaNoAutorizado();
+  const payload = verificarTokenAPI(req);
+  if (!payload) return respuestaNoAutorizado();
 
   const ip = req.headers.get('x-forwarded-for') ?? req.headers.get('x-real-ip') ?? 'unknown';
   const limited = rateLimit(`chat:${ip}`, 20, 60_000);
   if (limited) return limited;
 
   try {
+    if (!(await puedeUsarIa(payload.id))) {
+      return NextResponse.json({
+        error:   'limite_alcanzado',
+        mensaje: 'Alcanzaste tu límite mensual de consultas IA. Mejorá tu plan para seguir.',
+      }, { status: 403 });
+    }
+
     const body = await req.json() as {
       messages:  Mensaje[];
       contexto?: ContextoCalculo;
@@ -970,6 +979,8 @@ Respondé en el idioma del ingeniero. Técnico y directo.`;
     if (!texto) {
       return NextResponse.json({ error: 'Sin respuesta del motor' }, { status: 500 });
     }
+
+    await registrarConsultaIa(payload.id);
 
     return NextResponse.json({
       content:   [{ text: texto }],

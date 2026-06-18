@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verificarTokenAPI, respuestaNoAutorizado } from '@/lib/api-auth';
 import { aplicarReglasDecruce } from '@/lib/cruceReglas';
 import type { CalculoSnap } from '@/lib/cruceReglas';
+import { puedeUsarIa, registrarConsultaIa } from '@/lib/consultasIa';
 
 export async function GET(req: NextRequest) {
   const payload = verificarTokenAPI(req);
@@ -46,6 +47,13 @@ export async function GET(req: NextRequest) {
     let analisisIA: string | null = null;
 
     if (conIA && riesgos.length > 0) {
+      if (!(await puedeUsarIa(payload.id))) {
+        return NextResponse.json({
+          error:   'limite_alcanzado',
+          mensaje: 'Alcanzaste tu límite mensual de consultas IA. Mejorá tu plan.',
+        }, { status: 403 });
+      }
+
       const resumenRiesgos = riesgos
         .map(r => `[${r.nivel}] ${r.id} — ${r.titulo}: ${r.descripcion} | Normativa: ${r.normativa}`)
         .join('\n');
@@ -88,6 +96,7 @@ MÓDULOS CON CÁLCULOS EN HISTORIAL: ${modulosUsados}`;
       if (resp.ok) {
         const data = await resp.json() as { content: { type: string; text: string }[] };
         analisisIA = data.content?.find(b => b.type === 'text')?.text ?? null;
+        await registrarConsultaIa(payload.id);
       }
     }
 

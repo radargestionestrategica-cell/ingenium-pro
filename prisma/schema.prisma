@@ -25,6 +25,8 @@ model Usuario {
   createdAt        DateTime   @default(now())
   resetToken       String?    @unique
   resetTokenExpira DateTime?
+  consultasIaUsadas  Int       @default(0)
+  consultasIaResetEn DateTime?
   calculos  Calculo[]
   proyectos Proyecto[]
 }
