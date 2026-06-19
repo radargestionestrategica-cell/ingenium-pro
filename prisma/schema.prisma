@@ -38,12 +38,25 @@ model Usuario {
 // Plan Team: un dueño (owner) crea un equipo e invita miembros.
 // Un usuario pertenece a lo sumo a un equipo (equipoId en Usuario).
 model Equipo {
-  id        String    @id @default(cuid())
-  nombre    String
-  ownerId   String
-  owner     Usuario   @relation("EquipoOwner", fields: [ownerId], references: [id])
-  miembros  Usuario[] @relation("EquipoMiembros")
-  createdAt DateTime  @default(now())
+  id           String              @id @default(cuid())
+  nombre       String
+  ownerId      String
+  owner        Usuario             @relation("EquipoOwner", fields: [ownerId], references: [id])
+  miembros     Usuario[]           @relation("EquipoMiembros")
+  invitaciones InvitacionEquipo[]
+  createdAt    DateTime            @default(now())
+}
+
+// ─── INVITACION EQUIPO ────────────────────────────────────────
+// Invitación pendiente de aceptación para unirse a un Equipo.
+model InvitacionEquipo {
+  id        String   @id @default(cuid())
+  email     String
+  equipoId  String
+  equipo    Equipo   @relation(fields: [equipoId], references: [id])
+  token     String   @unique
+  estado    String   @default("pendiente")
+  createdAt DateTime @default(now())
 }
 
 // ─── PROYECTO ─────────────────────────────────────────────────
