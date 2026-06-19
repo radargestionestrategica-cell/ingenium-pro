@@ -55,9 +55,9 @@ export async function POST(req: Request) {
         pais:        pais      || 'Argentina',
         matricula:   matricula || '',
         dni:         dni       || '',
-        plan:        'demo',
+        plan:        invitacionPendiente ? 'team' : 'demo',
         demoStartAt: new Date(),
-        planElegido: false,
+        planElegido: invitacionPendiente ? true : false,
         ...(invitacionPendiente ? { equipoId: invitacionPendiente.equipoId } : {}),
       },
     });
@@ -72,9 +72,9 @@ export async function POST(req: Request) {
     const token = generarToken({
       id:          usuario.id,
       email:       usuario.email,
-      plan:        'demo',
-      planElegido: false,
-      demoExpira:  usuario.createdAt.getTime() + 259_200_000,
+      plan:        usuario.plan,
+      planElegido: usuario.planElegido,
+      ...(invitacionPendiente ? {} : { demoExpira: usuario.createdAt.getTime() + 259_200_000 }),
     });
 
     const response = NextResponse.json({
