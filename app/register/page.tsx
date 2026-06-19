@@ -1,6 +1,6 @@
 'use client';
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 const PAISES = [
   'Argentina','Bolivia','Brasil','Chile','Colombia','Costa Rica','Cuba',
@@ -39,7 +39,17 @@ function OjoIcono({ visible }: { visible: boolean }) {
 }
 
 export default function RegisterPage() {
+  return (
+    <Suspense fallback={null}>
+      <RegisterForm />
+    </Suspense>
+  );
+}
+
+function RegisterForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const [invitacion] = useState(() => searchParams.get('invitacion') ?? '');
   const [form, setForm] = useState({ email:'', password:'', nombre:'', empresa:'', pais:'', matricula:'', dni:'' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -59,7 +69,7 @@ export default function RegisterPage() {
       const res = await fetch('/api/v1/auth/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify(invitacion ? { ...form, invitacion } : form),
       });
       const data = await res.json();
       if (!res.ok) { setError(data.error || 'Error al crear la cuenta'); return; }

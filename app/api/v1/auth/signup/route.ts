@@ -19,7 +19,7 @@ export async function POST(req: Request) {
   if (limited) return limited;
 
   try {
-    const { email, password, nombre, empresa, pais, matricula, dni } = await req.json();
+    const { email, password, nombre, empresa, pais, matricula, dni, invitacion } = await req.json();
 
     if (!email || !password || !nombre || !empresa) {
       return NextResponse.json({ error: 'Todos los campos son requeridos' }, { status: 400 });
@@ -38,6 +38,14 @@ export async function POST(req: Request) {
 
     const passwordHash = await bcrypt.hash(password, 12);
 
+    let invitacionPendiente: { id: string; equipoId: string } | null = null;
+    if (invitacion && typeof invitacion === 'string') {
+      const inv = await prisma.invitacionEquipo.findUnique({ where: { token: invitacion } });
+      if (inv && inv.estado === 'pendiente') {
+        invitacionPendiente = { id: inv.id, equipoId: inv.equipoId };
+      }
+    }
+
     const usuario = await prisma.usuario.create({
       data: {
         email,
@@ -50,8 +58,16 @@ export async function POST(req: Request) {
         plan:        'demo',
         demoStartAt: new Date(),
         planElegido: false,
+        ...(invitacionPendiente ? { equipoId: invitacionPendiente.equipoId } : {}),
       },
     });
+
+    if (invitacionPendiente) {
+      await prisma.invitacionEquipo.update({
+        where: { id: invitacionPendiente.id },
+        data:  { estado: 'aceptada' },
+      });
+    }
 
     const token = generarToken({
       id:          usuario.id,
