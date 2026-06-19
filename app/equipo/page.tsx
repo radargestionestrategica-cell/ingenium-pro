@@ -24,16 +24,52 @@ export default function EquipoPage() {
   const [plan, setPlan]       = useState<string | null>(null);
   const [equipo, setEquipo]   = useState<EquipoData>(null);
 
-  useEffect(() => {
-    // La sesión ya la valida el middleware (matcher incluye /equipo) — acá solo se pide la data.
-    fetch('/api/equipo', { credentials: 'include', headers: ipAuthHeader() })
+  const [invitando, setInvitando]       = useState(false);
+  const [emailInvitar, setEmailInvitar] = useState('');
+  const [enviando, setEnviando]         = useState(false);
+  const [msgOk, setMsgOk]               = useState('');
+  const [msgErr, setMsgErr]             = useState('');
+
+  const cargarEquipo = () => {
+    return fetch('/api/equipo', { credentials: 'include', headers: ipAuthHeader() })
       .then(res => res.ok ? res.json() : null)
       .then(data => {
         setPlan(data?.plan ?? null);
         setEquipo(data?.equipo ?? null);
-      })
-      .finally(() => setLoading(false));
+      });
+  };
+
+  useEffect(() => {
+    // La sesión ya la valida el middleware (matcher incluye /equipo) — acá solo se pide la data.
+    cargarEquipo().finally(() => setLoading(false));
   }, []);
+
+  const enviarInvitacion = async () => {
+    setEnviando(true);
+    setMsgOk('');
+    setMsgErr('');
+    try {
+      const res = await fetch('/api/equipo/invitar', {
+        method:      'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json', ...ipAuthHeader() },
+        body: JSON.stringify({ email: emailInvitar }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) {
+        setMsgErr(data.error || 'Error al enviar la invitación');
+        return;
+      }
+      setMsgOk(data.mensaje || 'Invitación enviada');
+      setEmailInvitar('');
+      setInvitando(false);
+      await cargarEquipo();
+    } catch {
+      setMsgErr('Error de red al enviar la invitación');
+    } finally {
+      setEnviando(false);
+    }
+  };
 
   return (
     <div style={{ minHeight: '100vh', background: BG, color: '#f1f5f9', fontFamily: 'Inter,sans-serif' }}>
@@ -133,17 +169,73 @@ export default function EquipoPage() {
               )}
             </div>
 
-            <button
-              disabled
-              title="Próximamente"
-              style={{
-                width: '100%', padding: '13px 0', borderRadius: 12, border: '1px solid rgba(255,255,255,0.1)',
-                background: 'rgba(255,255,255,0.05)', color: '#475569',
-                fontWeight: 800, fontSize: 14, cursor: 'not-allowed',
-              }}
-            >
-              + Invitar miembro
-            </button>
+            {msgOk && (
+              <div style={{ marginBottom: 12, padding: '10px 14px', borderRadius: 10, background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.25)', color: GREEN, fontSize: 13 }}>
+                ✓ {msgOk}
+              </div>
+            )}
+            {msgErr && (
+              <div style={{ marginBottom: 12, padding: '10px 14px', borderRadius: 10, background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.3)', color: '#f87171', fontSize: 13 }}>
+                ✗ {msgErr}
+              </div>
+            )}
+
+            {!invitando && (
+              <button
+                onClick={() => { setInvitando(true); setMsgOk(''); setMsgErr(''); }}
+                style={{
+                  width: '100%', padding: '13px 0', borderRadius: 12, border: 'none',
+                  background: `linear-gradient(135deg,${GOLD},#c47a10)`, color: BG,
+                  fontWeight: 800, fontSize: 14, cursor: 'pointer',
+                }}
+              >
+                + Invitar miembro
+              </button>
+            )}
+
+            {invitando && (
+              <div style={{
+                background: PANEL, border: `1px solid ${BORD}`, borderRadius: 16,
+                padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 12,
+              }}>
+                <input
+                  type="email"
+                  value={emailInvitar}
+                  onChange={e => setEmailInvitar(e.target.value)}
+                  placeholder="email@del-invitado.com"
+                  style={{
+                    width: '100%', padding: '11px 14px', borderRadius: 10,
+                    background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)',
+                    color: '#f1f5f9', fontSize: 13, outline: 'none', boxSizing: 'border-box',
+                  }}
+                />
+                <div style={{ display: 'flex', gap: 10 }}>
+                  <button
+                    onClick={() => { setInvitando(false); setEmailInvitar(''); }}
+                    disabled={enviando}
+                    style={{
+                      flex: 1, padding: '11px 0', borderRadius: 10, border: '1px solid rgba(255,255,255,0.1)',
+                      background: 'rgba(255,255,255,0.05)', color: '#94a3b8',
+                      fontWeight: 700, fontSize: 13, cursor: enviando ? 'not-allowed' : 'pointer',
+                    }}
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={enviarInvitacion}
+                    disabled={enviando || !emailInvitar.trim()}
+                    style={{
+                      flex: 1, padding: '11px 0', borderRadius: 10, border: 'none',
+                      background: enviando ? 'rgba(255,255,255,0.05)' : `linear-gradient(135deg,${GOLD},#c47a10)`,
+                      color: enviando ? '#475569' : BG,
+                      fontWeight: 800, fontSize: 13, cursor: enviando || !emailInvitar.trim() ? 'not-allowed' : 'pointer',
+                    }}
+                  >
+                    {enviando ? 'Enviando...' : 'Enviar invitación'}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
