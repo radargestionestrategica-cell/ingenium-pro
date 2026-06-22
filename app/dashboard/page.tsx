@@ -63,7 +63,7 @@ function Dashboard() {
   const [sidebarOpen, setSidebarOpen]   = useState(true);
   const [conversorOpen, setConversorOpen] = useState(false);
   const { datos, limpiar } = useResultado();
-  const [consultasIa, setConsultasIa] = useState<{ usadas: number; tope: number; restantes: number } | null>(null);
+  const [consultasIa, setConsultasIa] = useState<{ plan: string; usadas: number; tope: number; restantes: number } | null>(null);
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
@@ -174,6 +174,12 @@ function Dashboard() {
               <span style={{ flexShrink: 0 }}>🧠</span>
               <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>Inteligencia Cruzada</span>
             </button>
+            {consultasIa?.plan === 'team' && (
+              <button onClick={() => router.push('/equipo')} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 10, border: `1px solid ${GOLD}`, background: 'rgba(232,160,32,0.12)', color: GOLD, fontSize: 12, fontWeight: 800, cursor: 'pointer', textAlign: 'left', width: '100%' }}>
+                <span style={{ flexShrink: 0 }}>👥</span>
+                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>Equipo</span>
+              </button>
+            )}
             <button onClick={() => router.push('/historial')} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 10, border: `1px solid ${GOLD}`, background: 'rgba(232,160,32,0.12)', color: GOLD, fontSize: 12, fontWeight: 800, cursor: 'pointer', textAlign: 'left', width: '100%' }}>
               <span style={{ flexShrink: 0 }}>📋</span>
               <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>Mis Cálculos Guardados</span>
