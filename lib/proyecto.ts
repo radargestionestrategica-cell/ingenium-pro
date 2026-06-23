@@ -47,6 +47,55 @@ export interface ProyectoData {
     } catch {
       // localStorage no disponible — no bloquea la app
     }
+    sincronizarProyectoConServidor(data);
+  }
+
+  // Envía el proyecto activo al backend — best-effort, nunca bloquea el banner
+  function sincronizarProyectoConServidor(data: ProyectoData): void {
+    try {
+      if (typeof window === 'undefined' || !data.nombre) return;
+      const token = localStorage.getItem('ip_token');
+      fetch('/api/proyectos', {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          nombre: data.nombre,
+          industria: data.industria,
+          fluido: data.fluido,
+          presion_bar: data.presion_bar,
+          temp_c: data.temperatura_c,
+          nps: data.nps_pulgadas,
+          material: data.material_tuberia,
+          norma: data.norma,
+          H2S_ppm: data.H2S_ppm,
+          zona_elec: data.zona_electrica,
+          pais: data.pais,
+        }),
+      }).catch(() => {});
+    } catch {
+      // best-effort — no bloquea el banner
+    }
+  }
+
+  // Trae los proyectos visibles para el equipo del usuario logueado (+ propios sin equipo)
+  export async function listarProyectosEquipo(): Promise<unknown[]> {
+    try {
+      if (typeof window === 'undefined') return [];
+      const token = localStorage.getItem('ip_token');
+      const res = await fetch('/api/proyectos', {
+        credentials: 'include',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (!res.ok) return [];
+      const json = await res.json();
+      return json?.ok ? json.data : [];
+    } catch {
+      return [];
+    }
   }
   
   // Leer proyecto activo
