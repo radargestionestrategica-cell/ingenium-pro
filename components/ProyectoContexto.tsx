@@ -6,6 +6,7 @@ import {
   guardarProyecto,
   leerProyecto,
   limpiarProyecto,
+  listarProyectosEquipo,
 } from '@/lib/proyecto';
 
 // ═══════════════════════════════════════════════════════════════
@@ -88,6 +89,18 @@ export default function ProyectoContexto() {
     const p = leerProyecto();
     return !!(p && p.nombre);
   });
+  const [equipoAbierto, setEquipoAbierto] = useState(false);
+  const [proyectosEquipo, setProyectosEquipo] = useState<Array<{ id: string; nombre: string; industria?: string }>>([]);
+
+  const toggleEquipo = () => {
+    const next = !equipoAbierto;
+    setEquipoAbierto(next);
+    if (next) {
+      listarProyectosEquipo()
+        .then(data => setProyectosEquipo(Array.isArray(data) ? data as Array<{ id: string; nombre: string; industria?: string }> : []))
+        .catch(() => setProyectosEquipo([]));
+    }
+  };
 
   const guardar = () => {
     guardarProyecto(draft);
@@ -397,6 +410,33 @@ export default function ProyectoContexto() {
               </div>
             </div>
           )}
+
+          {/* ── PROYECTOS DEL EQUIPO ──────────────────────── */}
+          <div style={{ marginTop: 14, borderTop: '1px solid rgba(99,102,241,0.15)', paddingTop: 12 }}>
+            <div
+              onClick={toggleEquipo}
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                cursor: 'pointer', fontSize: 11, fontWeight: 700, color: '#94a3b8',
+              }}
+            >
+              <span>👥 Proyectos del equipo</span>
+              <span style={{ color: '#475569' }}>{equipoAbierto ? '▲' : '▼'}</span>
+            </div>
+
+            {equipoAbierto && proyectosEquipo.length > 0 && (
+              <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {proyectosEquipo.map(p => (
+                  <div key={p.id} style={{
+                    background: '#0a0f1e', borderRadius: 8, padding: '8px 10px',
+                    fontSize: 11, color: '#f1f5f9',
+                  }}>
+                    {p.nombre}{p.industria ? ` — ${p.industria}` : ''}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>
