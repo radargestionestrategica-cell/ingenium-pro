@@ -10,6 +10,7 @@ import BienvenidaModal from '@/components/BienvenidaModal';
 import ConversorUnidades from '@/components/ConversorUnidades';
 import ModuloIntro from '@/components/ModuloIntro';
 import DashboardHome from '@/components/DashboardHome';
+import ProyectoContexto from '@/components/ProyectoContexto';
 import ModuloArquitectura from '@/components/ModuloArquitectura';
 import ModuloCanerias from '@/components/ModuloCanerias';
 import ModuloCivil from '@/components/ModuloCivil';
@@ -192,6 +193,9 @@ function Dashboard() {
 
         {/* CONTENIDO */}
         <main style={{ flex: 1, overflowY: 'auto' }}>
+          <div style={{ padding: '16px 24px 0' }}>
+            <ProyectoContexto />
+          </div>
           {ModuloActual
             ? (
               <ErrorBoundary modulo={MODULOS.find(m => m.id === moduloActivo)?.label}>
