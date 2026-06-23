@@ -10,41 +10,44 @@ datasource db {
 // ─── USUARIO ─────────────────────────────────────────────────
 // Sin cambios — igual al original
 model Usuario {
-  id        String     @id @default(cuid())
-  email     String     @unique
-  password  String
-  nombre    String
-  empresa   String
-  pais      String     @default("Argentina")
-  matricula String?    @default("")
-  dni       String?    @default("")
-  plan        String     @default("demo")
-  demoStartAt DateTime?
-  planElegido Boolean    @default(false)
-  activo           Boolean    @default(true)
-  createdAt        DateTime   @default(now())
-  resetToken       String?    @unique
-  resetTokenExpira DateTime?
-  consultasIaUsadas  Int       @default(0)
+  id                 String              @id @default(cuid())
+  email              String              @unique
+  password           String
+  nombre             String
+  empresa            String
+  pais               String              @default("Argentina")
+  matricula          String?             @default("")
+  dni                String?             @default("")
+  plan               String              @default("demo")
+  demoStartAt        DateTime?
+  planElegido        Boolean             @default(false)
+  activo             Boolean             @default(true)
+  createdAt          DateTime            @default(now())
+  resetToken         String?             @unique
+  resetTokenExpira   DateTime?
+  consultasIaUsadas  Int                 @default(0)
   consultasIaResetEn DateTime?
-  equipoId  String?
-  equipo    Equipo?    @relation("EquipoMiembros", fields: [equipoId], references: [id])
-  equiposPropios Equipo[] @relation("EquipoOwner")
-  calculos  Calculo[]
-  proyectos Proyecto[]
+  equipoId           String?
+  equipo             Equipo?             @relation("EquipoMiembros", fields: [equipoId], references: [id])
+  equiposPropios     Equipo[]            @relation("EquipoOwner")
+  calculos           Calculo[]
+  proyectos          Proyecto[]
+  activosTelemetria  ActivoTelemetria[]
+  lecturasTelemetria LecturaTelemetria[]
 }
 
 // ─── EQUIPO ──────────────────────────────────────────────────
 // Plan Team: un dueño (owner) crea un equipo e invita miembros.
 // Un usuario pertenece a lo sumo a un equipo (equipoId en Usuario).
 model Equipo {
-  id           String              @id @default(cuid())
+  id           String             @id @default(cuid())
   nombre       String
   ownerId      String
-  owner        Usuario             @relation("EquipoOwner", fields: [ownerId], references: [id])
-  miembros     Usuario[]           @relation("EquipoMiembros")
+  owner        Usuario            @relation("EquipoOwner", fields: [ownerId], references: [id])
+  miembros     Usuario[]          @relation("EquipoMiembros")
   invitaciones InvitacionEquipo[]
-  createdAt    DateTime            @default(now())
+  createdAt    DateTime           @default(now())
+  proyectos    Proyecto[]
 }
 
 // ─── INVITACION EQUIPO ────────────────────────────────────────
@@ -63,24 +66,27 @@ model InvitacionEquipo {
 // Agrupa cálculos del mismo activo físico en el tiempo.
 // Base del Asset Integrity Management de INGENIUM PRO.
 model Proyecto {
-  id         String    @id @default(cuid())
-  nombre     String
-  industria  String    @default("Petróleo / Gas")
-  fluido     String?
-  presion_bar Float?
-  temp_c     Float?
-  nps        String?
-  material   String?
-  norma      String    @default("ASME B31.8")
-  H2S_ppm    Float?    @default(0)
-  zona_elec  String?
-  pais       String    @default("Argentina")
-  activo     Boolean   @default(true)
-  usuarioId  String
-  usuario    Usuario   @relation(fields: [usuarioId], references: [id])
-  calculos   Calculo[]
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
+  id                String             @id @default(cuid())
+  nombre            String
+  industria         String             @default("Petróleo / Gas")
+  fluido            String?
+  presion_bar       Float?
+  temp_c            Float?
+  nps               String?
+  material          String?
+  norma             String             @default("ASME B31.8")
+  H2S_ppm           Float?             @default(0)
+  zona_elec         String?
+  pais              String             @default("Argentina")
+  activo            Boolean            @default(true)
+  usuarioId         String
+  usuario           Usuario            @relation(fields: [usuarioId], references: [id])
+  equipoId          String?
+  equipo            Equipo?            @relation(fields: [equipoId], references: [id])
+  calculos          Calculo[]
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  activosTelemetria ActivoTelemetria[]
 }
 
 // ─── CALCULO ──────────────────────────────────────────────────
@@ -104,4 +110,35 @@ model Calculo {
   user         Usuario?  @relation(fields: [usuarioId], references: [id])
   proyecto     Proyecto? @relation(fields: [proyectoId], references: [id])
   createdAt    DateTime  @default(now())
-} 
+}
+
+// ─── ACTIVO TELEMETRIA ──────────────────────────────────────────
+// Activo físico monitoreado, cuelga de un Proyecto. Geometría como JSON en texto.
+model ActivoTelemetria {
+  id            String              @id @default(cuid())
+  nombre        String
+  tipoActivo    String
+  geometriaJson String
+  proyectoId    String
+  proyecto      Proyecto            @relation(fields: [proyectoId], references: [id])
+  usuarioId     String
+  usuario       Usuario             @relation(fields: [usuarioId], references: [id])
+  createdAt     DateTime            @default(now())
+  lecturas      LecturaTelemetria[]
+}
+
+// ─── LECTURA TELEMETRIA ─────────────────────────────────────────
+// Lectura/medición individual de un ActivoTelemetria, con sello de integridad.
+model LecturaTelemetria {
+  id        String           @id @default(cuid())
+  activoId  String
+  activo    ActivoTelemetria @relation(fields: [activoId], references: [id])
+  magnitud  String
+  valor     Float
+  unidad    String
+  fuente    String
+  createdAt DateTime         @default(now())
+  usuarioId String
+  usuario   Usuario          @relation(fields: [usuarioId], references: [id])
+  hash      String?
+}
