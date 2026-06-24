@@ -150,9 +150,35 @@ export default function TelemetriaPage() {
 
         {/* TÍTULO */}
         <h1 style={{ fontSize: 20, fontWeight: 800, marginBottom: 4 }}>📡 Telemetría — Activos</h1>
-        <p style={{ fontSize: 12, color: '#475569', marginBottom: 24 }}>
+        <p style={{ fontSize: 12, color: '#475569', marginBottom: 16 }}>
           Cargá un activo de tipo pileta troncopiramidal con su geometría.
         </p>
+
+        {/* CABECERA EXPLICATIVA */}
+        <div style={{
+          display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12,
+          marginBottom: 24,
+        }}>
+          {[
+            { icono: '💡', titulo: 'Para qué es', texto: 'Convierte una medición real de campo en un cálculo normativo auditable y sellado.' },
+            { icono: '🚀', titulo: 'Cómo se usa', texto: 'Cargás la geometría de la pileta una vez, después el nivel medido, y la plataforma calcula y sella el resultado con firma SHA-256.' },
+            { icono: '📐', titulo: 'Normas', texto: 'Fórmula del prismatoide para volumen, USACE EM 1110-2-1902 para estabilidad de talud, empuje hidrostático clásico.' },
+            { icono: '📊', titulo: 'Qué calcula', texto: 'Volumen actual, capacidad restante, cantidad de camiones, empuje sobre la pared y factor de seguridad del talud.' },
+            { icono: '🔗', titulo: 'Con qué módulos se cruza', texto: 'Las lecturas alimentan Hidráulica y Represas mediante la Inteligencia Cruzada.' },
+          ].map(s => (
+            <div key={s.titulo} style={{
+              border: `1px solid ${BORD}`, borderRadius: 12,
+              background: 'rgba(7,13,26,0.8)', padding: 14,
+            }}>
+              <div style={{ fontSize: 10, fontWeight: 800, color: GOLD, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6 }}>
+                {s.icono} {s.titulo}
+              </div>
+              <div style={{ fontSize: 12, color: '#94a3b8', lineHeight: 1.6 }}>
+                {s.texto}
+              </div>
+            </div>
+          ))}
+        </div>
 
         {/* FORMULARIO */}
         <div style={{
