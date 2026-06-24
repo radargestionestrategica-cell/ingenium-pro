@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import AuthGuard from '@/components/AuthGuard';
 
 const BG    = '#020609';
 const PANEL = '#0a0f1e';
@@ -54,7 +53,7 @@ const GEOMETRIA_VACIA: GeometriaPileta = {
   talud: 2,
 };
 
-function TelemetriaContenido() {
+export default function TelemetriaPage() {
   const [nombre, setNombre] = useState('');
   const [proyectoId, setProyectoId] = useState('');
   const [geometria, setGeometria] = useState<GeometriaPileta>(GEOMETRIA_VACIA);
@@ -248,13 +247,5 @@ function TelemetriaContenido() {
         )}
       </div>
     </div>
-  );
-}
-
-export default function TelemetriaPage() {
-  return (
-    <AuthGuard>
-      <TelemetriaContenido />
-    </AuthGuard>
   );
 }
