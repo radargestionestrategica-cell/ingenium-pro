@@ -119,8 +119,8 @@ model ActivoTelemetria {
   nombre        String
   tipoActivo    String
   geometriaJson String
-  proyectoId    String
-  proyecto      Proyecto            @relation(fields: [proyectoId], references: [id])
+  proyectoId    String?
+  proyecto      Proyecto?           @relation(fields: [proyectoId], references: [id])
   usuarioId     String
   usuario       Usuario             @relation(fields: [usuarioId], references: [id])
   createdAt     DateTime            @default(now())
