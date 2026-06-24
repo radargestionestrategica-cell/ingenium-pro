@@ -8,9 +8,9 @@ export async function POST(req: NextRequest) {
 
   try {
     const b = await req.json();
-    if (!b.nombre || !b.tipoActivo || !b.geometriaJson || !b.proyectoId) {
+    if (!b.nombre || !b.tipoActivo || !b.geometriaJson) {
       return NextResponse.json(
-        { ok: false, error: 'nombre, tipoActivo, geometriaJson y proyectoId son obligatorios' },
+        { ok: false, error: 'nombre, tipoActivo y geometriaJson son obligatorios' },
         { status: 400 },
       );
     }
@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
         nombre: b.nombre,
         tipoActivo: b.tipoActivo,
         geometriaJson: b.geometriaJson,
-        proyectoId: b.proyectoId,
+        proyectoId: b.proyectoId ?? null,
         usuarioId: payload.id,
       },
     });

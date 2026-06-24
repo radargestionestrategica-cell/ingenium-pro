@@ -94,8 +94,8 @@ export default function TelemetriaPage() {
   };
 
   const guardar = async () => {
-    if (!nombre || !proyectoId) {
-      setMensaje('Seleccioná un proyecto válido e ingresá un nombre para el activo');
+    if (!nombre) {
+      setMensaje('Ingresá un nombre para el activo');
       return;
     }
     setGuardando(true);
@@ -109,7 +109,7 @@ export default function TelemetriaPage() {
           nombre,
           tipoActivo: 'pileta',
           geometriaJson: JSON.stringify(geometria),
-          proyectoId,
+          proyectoId: proyectoId || null,
         }),
       });
       const json = await res.json();
@@ -120,10 +120,10 @@ export default function TelemetriaPage() {
         setGeometria(GEOMETRIA_VACIA);
         cargarActivos();
       } else {
-        setMensaje('No se pudo crear el activo. Seleccioná un proyecto válido e intentá de nuevo.');
+        setMensaje('No se pudo crear el activo. Revisá los datos e intentá de nuevo.');
       }
     } catch {
-      setMensaje('No se pudo crear el activo. Seleccioná un proyecto válido e intentá de nuevo.');
+      setMensaje('No se pudo crear el activo. Revisá los datos e intentá de nuevo.');
     } finally {
       setGuardando(false);
     }
@@ -198,7 +198,7 @@ export default function TelemetriaPage() {
             <div>
               <label style={lbl}>Proyecto</label>
               <select value={proyectoId} onChange={e => setProyectoId(e.target.value)} style={inp}>
-                <option value="" style={{ background: '#0a0f1e' }}>— Seleccioná un proyecto —</option>
+                <option value="" style={{ background: '#0a0f1e' }}>Sin proyecto, cálculo rápido</option>
                 {proyectos.map(p => (
                   <option key={p.id} value={p.id} style={{ background: '#0a0f1e' }}>{p.nombre}</option>
                 ))}
