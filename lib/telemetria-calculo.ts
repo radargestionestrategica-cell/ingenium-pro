@@ -61,3 +61,42 @@ export function calcularPileta(
 
   return { volumenActual, capacidadTotal, capacidadRestante, camiones30m3 };
 }
+
+export interface ResultadoEstabilidadPared {
+  empujeHidrostatico: number;          // fuerza por metro lineal de pared, en kilonewton sobre metro
+  puntoAplicacion: number;             // altura desde el fondo donde actua la fuerza resultante, en metros
+  factorSeguridadDeslizamiento: number; // factor de seguridad del talud frente al deslizamiento, sin unidad
+}
+
+// Calcula el empuje hidrostatico, su punto de aplicacion y el factor de
+// seguridad al deslizamiento del talud, a partir del nivel de liquido medido,
+// el peso especifico del liquido, el angulo de friccion interna del suelo
+// y la relacion del talud.
+//
+// El empuje hidrostatico se obtiene de la distribucion triangular de presion
+// contra la pared: se multiplica el peso especifico del liquido por el
+// cuadrado del nivel medido, y el resultado se divide a la mitad.
+//
+// El punto de aplicacion de esa fuerza, al ser la distribucion triangular,
+// queda ubicado a un tercio del nivel medido contado desde el fondo.
+//
+// El factor de seguridad al deslizamiento del talud se calcula con el
+// metodo del talud infinito en condicion seca: se compara la tangente del
+// angulo de friccion del suelo contra la tangente del angulo del talud. El
+// angulo del talud se obtiene a partir de la relacion horizontal sobre
+// vertical que describe el talud.
+export function calcularEstabilidadPared(
+  nivelMedido: number,
+  pesoEspecificoLiquido: number,
+  anguloFriccionGrados: number,
+  talud: number,
+): ResultadoEstabilidadPared {
+  const empujeHidrostatico = (pesoEspecificoLiquido * nivelMedido * nivelMedido) / 2;
+  const puntoAplicacion = nivelMedido / 3;
+
+  const anguloFriccionRadianes = (anguloFriccionGrados * Math.PI) / 180;
+  const anguloTaludRadianes = Math.atan(1 / talud);
+  const factorSeguridadDeslizamiento = Math.tan(anguloFriccionRadianes) / Math.tan(anguloTaludRadianes);
+
+  return { empujeHidrostatico, puntoAplicacion, factorSeguridadDeslizamiento };
+}
