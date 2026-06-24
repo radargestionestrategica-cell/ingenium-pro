@@ -185,6 +185,10 @@ function Dashboard() {
               <span style={{ flexShrink: 0 }}>📋</span>
               <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>Mis Cálculos Guardados</span>
             </button>
+            <button onClick={() => router.push('/telemetria')} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 10, border: `1px solid ${GOLD}`, background: 'rgba(232,160,32,0.12)', color: GOLD, fontSize: 12, fontWeight: 800, cursor: 'pointer', textAlign: 'left', width: '100%' }}>
+              <span style={{ flexShrink: 0 }}>📡</span>
+              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>Telemetría</span>
+            </button>
             <div style={{ marginTop: 'auto', padding: '12px 8px 4px', borderTop: `1px solid ${BORD}` }}>
               <div style={{ fontSize: 9, color: '#1e3a5f', textAlign: 'center', letterSpacing: 1 }}>INGENIUM PRO v8.1 · RADAR © 2026</div>
             </div>
