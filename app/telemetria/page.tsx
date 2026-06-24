@@ -39,6 +39,11 @@ interface ActivoTelemetria {
   createdAt: string;
 }
 
+interface Proyecto {
+  id: string;
+  nombre: string;
+}
+
 interface GeometriaPileta {
   largoCoronamiento: number;
   anchoCoronamiento: number;
@@ -58,6 +63,7 @@ export default function TelemetriaPage() {
   const [proyectoId, setProyectoId] = useState('');
   const [geometria, setGeometria] = useState<GeometriaPileta>(GEOMETRIA_VACIA);
   const [activos, setActivos] = useState<ActivoTelemetria[]>([]);
+  const [proyectos, setProyectos] = useState<Proyecto[]>([]);
   const [guardando, setGuardando] = useState(false);
   const [mensaje, setMensaje] = useState('');
 
@@ -71,7 +77,17 @@ export default function TelemetriaPage() {
     }
   };
 
-  useEffect(() => { cargarActivos(); }, []);
+  const cargarProyectos = async () => {
+    try {
+      const res = await fetch('/api/proyectos', { credentials: 'include', headers: ipAuthHeader() });
+      const json = await res.json();
+      if (json?.ok) setProyectos(json.data);
+    } catch {
+      // best-effort
+    }
+  };
+
+  useEffect(() => { cargarActivos(); cargarProyectos(); }, []);
 
   const upd = (campo: keyof GeometriaPileta, valor: number) => {
     setGeometria(prev => ({ ...prev, [campo]: valor }));
@@ -79,7 +95,7 @@ export default function TelemetriaPage() {
 
   const guardar = async () => {
     if (!nombre || !proyectoId) {
-      setMensaje('Nombre y proyecto son obligatorios');
+      setMensaje('Seleccioná un proyecto válido e ingresá un nombre para el activo');
       return;
     }
     setGuardando(true);
@@ -104,10 +120,10 @@ export default function TelemetriaPage() {
         setGeometria(GEOMETRIA_VACIA);
         cargarActivos();
       } else {
-        setMensaje(json?.error ?? 'Error al guardar');
+        setMensaje('No se pudo crear el activo. Seleccioná un proyecto válido e intentá de nuevo.');
       }
     } catch {
-      setMensaje('Error al guardar');
+      setMensaje('No se pudo crear el activo. Seleccioná un proyecto válido e intentá de nuevo.');
     } finally {
       setGuardando(false);
     }
@@ -154,13 +170,13 @@ export default function TelemetriaPage() {
               />
             </div>
             <div>
-              <label style={lbl}>ID del proyecto</label>
-              <input
-                value={proyectoId}
-                onChange={e => setProyectoId(e.target.value)}
-                style={inp}
-                placeholder="ID del proyecto al que pertenece"
-              />
+              <label style={lbl}>Proyecto</label>
+              <select value={proyectoId} onChange={e => setProyectoId(e.target.value)} style={inp}>
+                <option value="" style={{ background: '#0a0f1e' }}>— Seleccioná un proyecto —</option>
+                {proyectos.map(p => (
+                  <option key={p.id} value={p.id} style={{ background: '#0a0f1e' }}>{p.nombre}</option>
+                ))}
+              </select>
             </div>
           </div>
 
