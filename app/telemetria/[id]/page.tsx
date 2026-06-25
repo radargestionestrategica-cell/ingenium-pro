@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import { calcularPileta, calcularEstabilidadPared } from '@/lib/telemetria-calculo';
 
 const BG    = '#020609';
 const PANEL = '#0a0f1e';
@@ -40,6 +41,10 @@ export default function FichaActivoPage() {
   const [guardandoLectura, setGuardandoLectura] = useState(false);
   const [mensajeLectura, setMensajeLectura] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
+  const [resultados, setResultados] = useState<{
+    volumenActual: number; capacidadRestante: number; camiones30m3: number;
+    empujeHidrostatico: number; factorSeguridadDeslizamiento: number; nivel: number;
+  } | null>(null);
 
   useEffect(() => {
     if (!id) return;
@@ -75,6 +80,11 @@ export default function FichaActivoPage() {
       const json = await res.json();
       if (json?.ok) {
         setMensajeLectura('✅ Lectura guardada y sellada con éxito.');
+        if (geometria) {
+          const r1 = calcularPileta(geometria, valor);
+          const r2 = calcularEstabilidadPared(valor, 9.81, 30, geometria.talud);
+          setResultados({ volumenActual: r1.volumenActual, capacidadRestante: r1.capacidadRestante, camiones30m3: r1.camiones30m3, empujeHidrostatico: r2.empujeHidrostatico, factorSeguridadDeslizamiento: r2.factorSeguridadDeslizamiento, nivel: valor });
+        }
         setNivelMedido('');
         inputRef.current?.focus();
       } else {
@@ -187,6 +197,38 @@ export default function FichaActivoPage() {
                 </div>
               )}
             </div>
+
+            {resultados && (() => {
+              const fs = resultados.factorSeguridadDeslizamiento;
+              const color = fs >= 1.5 ? '#4ade80' : fs >= 1.3 ? '#facc15' : '#f87171';
+              const label = fs >= 1.5 ? 'SEGURO' : fs >= 1.3 ? 'ALERTA' : 'CRÍTICO';
+              return (
+                <div style={{ border: `1px solid ${BORD}`, borderRadius: 12, background: 'rgba(7,13,26,0.8)', padding: 16, marginTop: 16 }}>
+                  <div style={{ fontSize: 10, fontWeight: 800, color: GOLD, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 12 }}>
+                    📊 Resultados — nivel {resultados.nivel.toFixed(2)} m
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                    {([
+                      { l: 'Volumen actual',      v: `${resultados.volumenActual.toFixed(2)} m³` },
+                      { l: 'Capacidad restante',  v: `${resultados.capacidadRestante.toFixed(2)} m³` },
+                      { l: 'Camiones (30 m³)',    v: String(resultados.camiones30m3) },
+                      { l: 'Empuje hidrostático', v: `${resultados.empujeHidrostatico.toFixed(2)} kN/m` },
+                    ] as { l: string; v: string }[]).map(r => (
+                      <div key={r.l} style={{ background: '#0a0f1e', borderRadius: 8, padding: '8px 10px' }}>
+                        <div style={{ fontSize: 9, color: '#475569', textTransform: 'uppercase', marginBottom: 2 }}>{r.l}</div>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: '#f1f5f9' }}>{r.v}</div>
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{ marginTop: 10, display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <div style={{ width: 16, height: 16, borderRadius: '50%', background: color, boxShadow: `0 0 8px ${color}`, flexShrink: 0 }} />
+                    <div style={{ fontSize: 11, fontWeight: 700, color }}>
+                      Factor de seguridad del talud: {fs.toFixed(3)} — {label}
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
           </>
         )}
       </div>
