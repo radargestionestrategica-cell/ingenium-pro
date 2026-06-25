@@ -4,14 +4,15 @@ import { verificarTokenAPI, respuestaNoAutorizado } from '@/lib/api-auth';
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   const payload = verificarTokenAPI(req);
   if (!payload) return respuestaNoAutorizado();
 
   try {
+    const { id } = await params;
     const activo = await prisma.activoTelemetria.findFirst({
-      where: { id: params.id, usuarioId: payload.id },
+      where: { id, usuarioId: payload.id },
     });
     if (!activo) {
       return NextResponse.json({ ok: false, error: 'Activo no encontrado' }, { status: 404 });
