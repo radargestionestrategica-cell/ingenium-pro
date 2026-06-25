@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 
 const BG    = '#020609';
@@ -36,6 +36,10 @@ export default function FichaActivoPage() {
   const [activo, setActivo] = useState<ActivoTelemetria | null>(null);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState('');
+  const [nivelMedido, setNivelMedido] = useState('');
+  const [guardandoLectura, setGuardandoLectura] = useState(false);
+  const [mensajeLectura, setMensajeLectura] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!id) return;
@@ -52,6 +56,36 @@ export default function FichaActivoPage() {
       .catch(() => router.replace('/Login'))
       .finally(() => setCargando(false));
   }, [id, router]);
+
+  const guardarLectura = async () => {
+    const valor = parseFloat(nivelMedido);
+    if (!activo || isNaN(valor)) {
+      setMensajeLectura('Ingresá un valor numérico válido para el nivel.');
+      return;
+    }
+    setGuardandoLectura(true);
+    setMensajeLectura('');
+    try {
+      const res = await fetch('/api/telemetria/lecturas', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json', ...ipAuthHeader() },
+        body: JSON.stringify({ activoId: activo.id, magnitud: 'nivel', valor, unidad: 'm', fuente: 'manual' }),
+      });
+      const json = await res.json();
+      if (json?.ok) {
+        setMensajeLectura('✅ Lectura guardada y sellada con éxito.');
+        setNivelMedido('');
+        inputRef.current?.focus();
+      } else {
+        setMensajeLectura('No se pudo guardar la lectura. Intentá de nuevo.');
+      }
+    } catch {
+      setMensajeLectura('Error de conexión. Intentá de nuevo.');
+    } finally {
+      setGuardandoLectura(false);
+    }
+  };
 
   const geometria: GeometriaPileta | null = (() => {
     try { return activo ? JSON.parse(activo.geometriaJson) : null; } catch { return null; }
@@ -108,6 +142,51 @@ export default function FichaActivoPage() {
                 </div>
               </div>
             )}
+
+            {/* FORMULARIO LECTURA */}
+            <div style={{
+              border: `1px solid ${BORD}`, borderRadius: 12,
+              background: 'rgba(7,13,26,0.8)', padding: 16, marginTop: 16,
+            }}>
+              <div style={{ fontSize: 10, fontWeight: 800, color: GOLD, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 12 }}>
+                📏 Cargar lectura — nivel medido
+              </div>
+              <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                <input
+                  ref={inputRef}
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={nivelMedido}
+                  onChange={e => setNivelMedido(e.target.value)}
+                  placeholder="Ej: 3.20"
+                  style={{
+                    width: 140, padding: '8px 10px',
+                    background: '#0a0f1e', border: '1px solid rgba(99,102,241,0.2)',
+                    borderRadius: 8, color: '#f1f5f9', fontSize: 13, outline: 'none',
+                  }}
+                />
+                <span style={{ fontSize: 12, color: '#475569' }}>m</span>
+                <button
+                  onClick={guardarLectura}
+                  disabled={guardandoLectura}
+                  style={{
+                    padding: '9px 18px',
+                    background: 'linear-gradient(135deg,#6366f1,#8b5cf6)',
+                    border: 'none', borderRadius: 8, color: '#fff',
+                    fontSize: 12, fontWeight: 700, cursor: guardandoLectura ? 'default' : 'pointer',
+                    opacity: guardandoLectura ? 0.6 : 1,
+                  }}
+                >
+                  {guardandoLectura ? 'Guardando…' : '💾 Guardar lectura'}
+                </button>
+              </div>
+              {mensajeLectura && (
+                <div style={{ marginTop: 10, fontSize: 12, fontWeight: 600, color: mensajeLectura.startsWith('✅') ? '#4ade80' : '#f87171' }}>
+                  {mensajeLectura}
+                </div>
+              )}
+            </div>
           </>
         )}
       </div>
