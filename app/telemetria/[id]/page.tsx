@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 
 const BG    = '#020609';
 const PANEL = '#0a0f1e';
@@ -32,6 +32,7 @@ interface ActivoTelemetria {
 
 export default function FichaActivoPage() {
   const { id } = useParams<{ id: string }>();
+  const router = useRouter();
   const [activo, setActivo] = useState<ActivoTelemetria | null>(null);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState('');
@@ -39,14 +40,18 @@ export default function FichaActivoPage() {
   useEffect(() => {
     if (!id) return;
     fetch(`/api/telemetria/${id}`, { credentials: 'include', headers: ipAuthHeader() })
-      .then(res => res.ok ? res.json() : null)
+      .then(res => {
+        if (res.status === 401 || res.status === 403) { router.replace('/Login'); return null; }
+        return res.ok ? res.json() : null;
+      })
       .then(json => {
+        if (!json) return;
         if (json?.ok) setActivo(json.activo);
         else setError('No se pudo cargar el activo.');
       })
-      .catch(() => setError('Error al cargar el activo.'))
+      .catch(() => router.replace('/Login'))
       .finally(() => setCargando(false));
-  }, [id]);
+  }, [id, router]);
 
   const geometria: GeometriaPileta | null = (() => {
     try { return activo ? JSON.parse(activo.geometriaJson) : null; } catch { return null; }
