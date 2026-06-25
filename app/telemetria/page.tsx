@@ -271,19 +271,25 @@ export default function TelemetriaPage() {
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {activos.map(a => (
-              <div key={a.id} style={{
-                border: `1px solid ${BORD}`, borderRadius: 10,
-                background: '#0a0f1e', padding: '10px 14px',
-                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-              }}>
-                <div>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: '#f1f5f9' }}>{a.nombre}</div>
-                  <div style={{ fontSize: 10, color: '#475569' }}>{a.tipoActivo}</div>
+              <a key={a.id} href={`/telemetria/${a.id}`} style={{ textDecoration: 'none' }}>
+                <div style={{
+                  border: `1px solid ${BORD}`, borderRadius: 10,
+                  background: '#0a0f1e', padding: '10px 14px',
+                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                  cursor: 'pointer', transition: 'border-color 0.15s',
+                }}>
+                  <div>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: '#f1f5f9' }}>{a.nombre}</div>
+                    <div style={{ fontSize: 10, color: '#475569' }}>{a.tipoActivo}</div>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <div style={{ fontSize: 10, color: '#334155' }}>
+                      {new Date(a.createdAt).toLocaleDateString()}
+                    </div>
+                    <span style={{ fontSize: 11, color: '#6366f1' }}>→</span>
+                  </div>
                 </div>
-                <div style={{ fontSize: 10, color: '#334155' }}>
-                  {new Date(a.createdAt).toLocaleDateString()}
-                </div>
-              </div>
+              </a>
             ))}
           </div>
         )}
