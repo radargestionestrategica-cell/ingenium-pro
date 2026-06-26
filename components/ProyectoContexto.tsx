@@ -182,11 +182,7 @@ export default function ProyectoContexto() {
                 ].filter(Boolean).join(' · ') || 'Sin datos de proceso cargados'}
               </div>
             </>
-          ) : (
-            <div style={{ fontSize: 12, color: '#475569' }}>
-              Sin proyecto activo — creá uno para conectar todos los módulos
-            </div>
-          )}
+          ) : null}
         </div>
 
         {tieneProyecto && (
