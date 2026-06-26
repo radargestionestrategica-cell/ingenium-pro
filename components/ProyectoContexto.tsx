@@ -145,6 +145,7 @@ export default function ProyectoContexto() {
     }}>
 
       {/* ── CABECERA COLAPSABLE ────────────────────────────── */}
+      {tieneProyecto && (
       <div
         onClick={() => setAbierto(!abierto)}
         style={{
@@ -200,6 +201,7 @@ export default function ProyectoContexto() {
           {abierto ? '▲' : '▼'}
         </div>
       </div>
+      )}
 
       {/* ── PANEL EXPANDIDO ───────────────────────────────── */}
       {abierto && (
