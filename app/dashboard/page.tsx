@@ -110,7 +110,7 @@ function Dashboard() {
       <TerminosModalWrapper />
 
       {/* HEADER */}
-      <header style={{ height: 56, background: PANEL, borderBottom: `1px solid ${BORD}`, display: 'flex', alignItems: 'center', padding: '0 20px', gap: 16, flexShrink: 0, position: 'sticky', top: 0, zIndex: 40 }}>
+      <header style={{ minHeight: 56, background: PANEL, borderBottom: `1px solid ${BORD}`, display: 'flex', alignItems: 'center', padding: '0 20px', gap: 16, flexShrink: 0, position: 'sticky', top: 0, zIndex: 40, flexWrap: 'wrap' }}>
         <button onClick={() => setSidebarOpen(o => !o)} style={{ background: 'none', border: 'none', color: GOLD, fontSize: 20, cursor: 'pointer', padding: '4px 8px' }}>☰</button>
         <span style={{ color: GOLD, fontWeight: 900, fontSize: 18, letterSpacing: 2 }}>INGENIUM PRO</span>
         <span style={{ color: GOLD, fontSize: 22, fontWeight: 300 }}>Ω</span>
