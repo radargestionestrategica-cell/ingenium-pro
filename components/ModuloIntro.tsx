@@ -77,6 +77,7 @@ export default function ModuloIntro({ moduloId }: Props) {
           background: `linear-gradient(135deg,${c}18,${c}08)`,
           borderBottom: abierto ? `1px solid ${c}25` : 'none',
           flexDirection: rtl ? 'row-reverse' : 'row',
+          flexWrap: 'wrap',
         }}
       >
         <div style={{
@@ -87,7 +88,7 @@ export default function ModuloIntro({ moduloId }: Props) {
           {data.icono}
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 12, fontWeight: 800, color: c }}>
+          <div style={{ fontSize: 12, fontWeight: 800, color: c, wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
             {ui.intro_titulo} — {titulo}
           </div>
           {!abierto && (
