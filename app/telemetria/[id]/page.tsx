@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { calcularPileta, calcularEstabilidadPared } from '@/lib/telemetria-calculo';
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 
 const BG    = '#020609';
 const PANEL = '#0a0f1e';
@@ -31,6 +32,16 @@ interface ActivoTelemetria {
   createdAt: string;
 }
 
+interface LecturaHistorial {
+  id: string;
+  magnitud: string;
+  valor: number;
+  unidad: string;
+  fuente: string;
+  hash: string | null;
+  createdAt: string;
+}
+
 export default function FichaActivoPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
@@ -41,11 +52,28 @@ export default function FichaActivoPage() {
   const [guardandoLectura, setGuardandoLectura] = useState(false);
   const [mensajeLectura, setMensajeLectura] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
+  const [historial, setHistorial] = useState<LecturaHistorial[]>([]);
+
   const [resultados, setResultados] = useState<{
     volumenActual: number; capacidadRestante: number; camiones30m3: number;
     empujeHidrostatico: number; factorSeguridadDeslizamiento: number; nivel: number;
     hash: string; norma?: string;
   } | null>(null);
+
+  useEffect(() => {
+    if (!activo) return;
+    fetch(`/api/telemetria/lecturas?activoId=${activo.id}`, { credentials: 'include', headers: ipAuthHeader() })
+      .then(res => res.ok ? res.json() : null)
+      .then(json => {
+        if (json?.ok && Array.isArray(json.data)) {
+          const ordenado = [...json.data as LecturaHistorial[]].sort(
+            (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+          );
+          setHistorial(ordenado);
+        }
+      })
+      .catch(() => {});
+  }, [activo]);
 
   useEffect(() => {
     if (!id) return;
@@ -244,6 +272,24 @@ export default function FichaActivoPage() {
                 </div>
               );
             })()}
+
+            {/* EVOLUCIÓN DEL NIVEL */}
+            <div style={{ border: `1px solid ${BORD}`, borderRadius: 12, background: 'rgba(7,13,26,0.8)', padding: 16, marginTop: 16 }}>
+              <div style={{ fontSize: 9, color: '#334155', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 12 }}>Evolución del nivel en el tiempo</div>
+              {historial.length >= 2 ? (
+                <ResponsiveContainer width="100%" height={200}>
+                  <LineChart data={historial.map(l => ({ fecha: new Date(l.createdAt).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit' }), nivel: l.valor }))}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                    <XAxis dataKey="fecha" tick={{ fontSize: 10, fill: '#475569' }} axisLine={false} tickLine={false} />
+                    <YAxis tick={{ fontSize: 10, fill: '#475569' }} axisLine={false} tickLine={false} width={36} />
+                    <Tooltip contentStyle={{ background: '#0a0f1e', border: '1px solid rgba(99,102,241,0.2)', borderRadius: 8, fontSize: 11, color: '#f1f5f9' }} />
+                    <Line type="monotone" dataKey="nivel" stroke={GOLD} strokeWidth={2} dot={{ fill: GOLD, r: 4 }} activeDot={{ r: 6 }} />
+                  </LineChart>
+                </ResponsiveContainer>
+              ) : (
+                <div style={{ fontSize: 12, color: '#475569' }}>Se necesitan al menos dos lecturas para ver la evolución.</div>
+              )}
+            </div>
           </>
         )}
       </div>
