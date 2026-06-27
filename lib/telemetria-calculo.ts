@@ -14,6 +14,7 @@ export interface ResultadoPileta {
   capacidadTotal: number;      // metros cubicos totales de la pileta llena
   capacidadRestante: number;   // metros cubicos que faltan para llenar la pileta
   camiones30m3: number;        // cantidad de camiones de treinta metros cubicos necesarios
+  norma: string;
 }
 
 const CAPACIDAD_CAMION_M3 = 30;
@@ -59,13 +60,14 @@ export function calcularPileta(
   const capacidadRestante = Math.max(capacidadTotal - volumenActual, 0);
   const camiones30m3 = Math.ceil(capacidadRestante / CAPACIDAD_CAMION_M3);
 
-  return { volumenActual, capacidadTotal, capacidadRestante, camiones30m3 };
+  return { volumenActual, capacidadTotal, capacidadRestante, camiones30m3, norma: 'Metodo del prismatoide (regla de Simpson)' };
 }
 
 export interface ResultadoEstabilidadPared {
   empujeHidrostatico: number;          // fuerza por metro lineal de pared, en kilonewton sobre metro
   puntoAplicacion: number;             // altura desde el fondo donde actua la fuerza resultante, en metros
   factorSeguridadDeslizamiento: number; // factor de seguridad del talud frente al deslizamiento, sin unidad
+  norma: string;
 }
 
 // Calcula el empuje hidrostatico, su punto de aplicacion y el factor de
@@ -98,5 +100,5 @@ export function calcularEstabilidadPared(
   const anguloTaludRadianes = Math.atan(1 / talud);
   const factorSeguridadDeslizamiento = Math.tan(anguloFriccionRadianes) / Math.tan(anguloTaludRadianes);
 
-  return { empujeHidrostatico, puntoAplicacion, factorSeguridadDeslizamiento };
+  return { empujeHidrostatico, puntoAplicacion, factorSeguridadDeslizamiento, norma: 'USACE EM 1110-2-1902' };
 }

@@ -44,7 +44,7 @@ export default function FichaActivoPage() {
   const [resultados, setResultados] = useState<{
     volumenActual: number; capacidadRestante: number; camiones30m3: number;
     empujeHidrostatico: number; factorSeguridadDeslizamiento: number; nivel: number;
-    hash: string;
+    hash: string; norma?: string;
   } | null>(null);
 
   useEffect(() => {
@@ -84,7 +84,7 @@ export default function FichaActivoPage() {
         if (geometria) {
           const r1 = calcularPileta(geometria, valor);
           const r2 = calcularEstabilidadPared(valor, 9.81, 30, geometria.talud);
-          setResultados({ volumenActual: r1.volumenActual, capacidadRestante: r1.capacidadRestante, camiones30m3: r1.camiones30m3, empujeHidrostatico: r2.empujeHidrostatico, factorSeguridadDeslizamiento: r2.factorSeguridadDeslizamiento, nivel: valor, hash: json.lectura?.hash ?? '' });
+          setResultados({ volumenActual: r1.volumenActual, capacidadRestante: r1.capacidadRestante, camiones30m3: r1.camiones30m3, empujeHidrostatico: r2.empujeHidrostatico, factorSeguridadDeslizamiento: r2.factorSeguridadDeslizamiento, nivel: valor, hash: json.lectura?.hash ?? '', norma: `${r1.norma} · ${r2.norma}` });
         }
         setNivelMedido('');
         inputRef.current?.focus();
@@ -227,6 +227,12 @@ export default function FichaActivoPage() {
                       Factor de seguridad del talud: {fs.toFixed(3)} — {label}
                     </div>
                   </div>
+                  {resultados.norma && (
+                    <div style={{ marginTop: 12, paddingTop: 10, borderTop: '1px solid rgba(99,102,241,0.1)' }}>
+                      <div style={{ fontSize: 9, color: '#334155', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 }}>Norma aplicada</div>
+                      <div style={{ fontSize: 10, color: '#94a3b8', fontFamily: 'ui-monospace,SFMono-Regular,monospace', wordBreak: 'break-all', fontWeight: 700 }}>{resultados.norma}</div>
+                    </div>
+                  )}
                   {resultados.hash && (
                     <div style={{ marginTop: 12, paddingTop: 10, borderTop: '1px solid rgba(99,102,241,0.1)' }}>
                       <div style={{ fontSize: 9, color: '#334155', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 }}>Sello SHA-256 verificable</div>
