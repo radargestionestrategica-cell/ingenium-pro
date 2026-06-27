@@ -208,6 +208,7 @@ export default function FichaActivoPage() {
                   <div style={{ fontSize: 10, fontWeight: 800, color: GOLD, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 12 }}>
                     📊 Resultados — nivel {resultados.nivel.toFixed(2)} m
                   </div>
+                  <div style={{ fontSize: 9, color: '#334155', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>Contenido y estructura del activo</div>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                     {([
                       { l: 'Volumen actual',      v: `${resultados.volumenActual.toFixed(2)} m³` },
@@ -221,7 +222,8 @@ export default function FichaActivoPage() {
                       </div>
                     ))}
                   </div>
-                  <div style={{ marginTop: 10, display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div style={{ fontSize: 9, color: '#334155', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, marginTop: 14, marginBottom: 8 }}>Integridad estructural</div>
+                  <div style={{ marginTop: 0, display: 'flex', alignItems: 'center', gap: 10 }}>
                     <div style={{ width: 16, height: 16, borderRadius: '50%', background: color, boxShadow: `0 0 8px ${color}`, flexShrink: 0 }} />
                     <div style={{ fontSize: 11, fontWeight: 700, color }}>
                       Factor de seguridad del talud: {fs.toFixed(3)} — {label}
