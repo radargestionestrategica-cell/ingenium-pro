@@ -14,6 +14,7 @@ function fsCirculo(
   xc: number, yc: number, R: number,
   H: number, pend: number,
   c: number, friccionGrados: number, gamma: number,
+  nivelAgua: number,
 ): number | null {
   const pasos = 400;
   const dx = (2 * R) / pasos;
@@ -38,18 +39,23 @@ function fsCirculo(
 
   for (let i = 0; i < nDovelas; i++) {
     const xMid = xIni + (i + 0.5) * ancho;
-    const h = Math.max(yTerr(xMid, H, pend) - baseCirc(xMid, xc, yc, R), 0);
+    const yBase = baseCirc(xMid, xc, yc, R);
+    const h = Math.max(yTerr(xMid, H, pend) - yBase, 0);
     const sinAlfa = Math.max(-1, Math.min(1, (xMid - xc) / R));
     const alfa = (Math.asin(sinAlfa) * 180) / Math.PI;
-    dovelas.push({ b: ancho, h, alfa });
+    const profAgua = nivelAgua - yBase;
+    const u = profAgua > 0 ? 9.81 * profAgua : 0;
+    dovelas.push({ b: ancho, h, alfa, u });
   }
 
   return calcularFSBishop(dovelas, c, friccionGrados, gamma);
 }
 
+
 export function buscarFSCritico(
   H: number, pend: number,
   c: number, friccionGrados: number, gamma: number,
+  nivelAgua: number,
 ): number {
   let fsMin = Infinity;
   let bestXc = 0, bestYc = 0, bestR = 0;
@@ -57,7 +63,7 @@ export function buscarFSCritico(
   for (let xc = 0; xc <= 40; xc += 4) {
     for (let yc = 12; yc <= 44; yc += 4) {
       for (let R = 10; R <= 52; R += 4) {
-        const fs = fsCirculo(xc, yc, R, H, pend, c, friccionGrados, gamma);
+        const fs = fsCirculo(xc, yc, R, H, pend, c, friccionGrados, gamma, nivelAgua);
         if (fs !== null && fs >= 0.2 && fs < fsMin) {
           fsMin = fs; bestXc = xc; bestYc = yc; bestR = R;
         }
@@ -69,7 +75,7 @@ export function buscarFSCritico(
     for (let yc = bestYc - 4; yc <= bestYc + 4; yc += 1) {
       for (let R = bestR - 4; R <= bestR + 4; R += 1) {
         if (R < 1) continue;
-        const fs = fsCirculo(xc, yc, R, H, pend, c, friccionGrados, gamma);
+        const fs = fsCirculo(xc, yc, R, H, pend, c, friccionGrados, gamma, nivelAgua);
         if (fs !== null && fs >= 0.2 && fs < fsMin) {
           fsMin = fs;
         }
