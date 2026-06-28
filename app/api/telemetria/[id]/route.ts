@@ -2,6 +2,55 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { verificarTokenAPI, respuestaNoAutorizado } from '@/lib/api-auth';
 
+export async function PATCH(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const payload = verificarTokenAPI(req);
+  if (!payload) return respuestaNoAutorizado();
+
+  try {
+    const { id } = await params;
+    const b = await req.json();
+
+    const data: Record<string, number> = {};
+
+    if (b.cohesion !== undefined) {
+      if (typeof b.cohesion !== 'number' || b.cohesion < 0 || b.cohesion > 500)
+        return NextResponse.json({ ok: false, error: 'cohesion debe estar entre 0 y 500' }, { status: 400 });
+      data.cohesion = b.cohesion;
+    }
+    if (b.friccionGrados !== undefined) {
+      if (typeof b.friccionGrados !== 'number' || b.friccionGrados < 0 || b.friccionGrados > 50)
+        return NextResponse.json({ ok: false, error: 'friccionGrados debe estar entre 0 y 50' }, { status: 400 });
+      data.friccionGrados = b.friccionGrados;
+    }
+    if (b.pesoEspecifico !== undefined) {
+      if (typeof b.pesoEspecifico !== 'number' || b.pesoEspecifico < 10 || b.pesoEspecifico > 25)
+        return NextResponse.json({ ok: false, error: 'pesoEspecifico debe estar entre 10 y 25' }, { status: 400 });
+      data.pesoEspecifico = b.pesoEspecifico;
+    }
+
+    if (Object.keys(data).length === 0)
+      return NextResponse.json({ ok: false, error: 'No hay campos válidos para actualizar' }, { status: 400 });
+
+    const activo = await prisma.activoTelemetria.updateMany({
+      where: { id, usuarioId: payload.id },
+      data,
+    });
+
+    if (activo.count === 0)
+      return NextResponse.json({ ok: false, error: 'Activo no encontrado' }, { status: 404 });
+
+    return NextResponse.json({ ok: true });
+  } catch (e) {
+    return NextResponse.json(
+      { ok: false, error: e instanceof Error ? e.message : 'Error interno' },
+      { status: 500 },
+    );
+  }
+}
+
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
