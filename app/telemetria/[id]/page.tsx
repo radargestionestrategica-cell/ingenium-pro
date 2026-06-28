@@ -46,6 +46,7 @@ interface ActivoTelemetria {
   cohesion: number | null;
   friccionGrados: number | null;
   pesoEspecifico: number | null;
+  tipoRevestimiento: string | null;
   proyectoId: string | null;
   createdAt: string;
 }
@@ -77,6 +78,11 @@ export default function FichaActivoPage() {
   const [pesoSuelo, setPesoSuelo] = useState<number | null>(null);
   const [guardandoMaterial, setGuardandoMaterial] = useState(false);
   const [mensajeMaterial, setMensajeMaterial] = useState('');
+  const [tipoRevestimiento, setTipoRevestimiento] = useState<string>('sin_revestir');
+
+  useEffect(() => {
+    if (activo?.tipoRevestimiento) setTipoRevestimiento(activo.tipoRevestimiento);
+  }, [activo]);
 
   const [resultados, setResultados] = useState<{
     volumenActual: number; capacidadRestante: number; camiones30m3: number;
@@ -124,7 +130,7 @@ export default function FichaActivoPage() {
         method: 'PATCH',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json', ...ipAuthHeader() },
-        body: JSON.stringify({ cohesion: cohesionSuelo, friccionGrados: friccionSuelo, pesoEspecifico: pesoSuelo }),
+        body: JSON.stringify({ cohesion: cohesionSuelo, friccionGrados: friccionSuelo, pesoEspecifico: pesoSuelo, tipoRevestimiento }),
       });
       const json = await res.json();
       if (json?.ok) {
@@ -330,6 +336,17 @@ export default function FichaActivoPage() {
                       {SUELOS.map(s => (
                         <option key={s.key} value={s.key}>{s.label}</option>
                       ))}
+                    </select>
+                  </div>
+                  <div style={{ marginBottom: 12 }}>
+                    <div style={{ fontSize: 9, color: '#475569', textTransform: 'uppercase', marginBottom: 4 }}>Tipo de revestimiento</div>
+                    <select
+                      value={tipoRevestimiento}
+                      onChange={e => setTipoRevestimiento(e.target.value)}
+                      style={{ background: '#0a0f1e', border: '1px solid rgba(99,102,241,0.2)', borderRadius: 8, color: '#f1f5f9', fontSize: 12, padding: '7px 10px', outline: 'none', width: '100%', cursor: 'pointer' }}
+                    >
+                      <option value="revestida">Revestida (membrana u hormigón)</option>
+                      <option value="sin_revestir">Sin revestir (excavación en tierra)</option>
                     </select>
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: 10 }}>
