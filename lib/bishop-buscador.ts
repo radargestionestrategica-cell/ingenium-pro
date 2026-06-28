@@ -15,6 +15,7 @@ function fsCirculo(
   H: number, pend: number,
   c: number, friccionGrados: number, gamma: number,
   nivelAgua: number | null,
+  kh = 0,
 ): number | null {
   const pasos = 400;
   const dx = (2 * R) / pasos;
@@ -45,10 +46,11 @@ function fsCirculo(
     const alfa = (Math.asin(sinAlfa) * 180) / Math.PI;
     const profAgua = (nivelAgua ?? 0) - yBase;
     const u = profAgua > 0 ? 9.81 * profAgua : 0;
-    dovelas.push({ b: ancho, h, alfa, u });
+    const brazo = yc - (yBase + h / 2);
+    dovelas.push({ b: ancho, h, alfa, u, brazo });
   }
 
-  return calcularFSBishop(dovelas, c, friccionGrados, gamma);
+  return calcularFSBishop(dovelas, c, friccionGrados, gamma, R, kh);
 }
 
 
@@ -56,6 +58,7 @@ export function buscarFSCritico(
   H: number, pend: number,
   c: number, friccionGrados: number, gamma: number,
   nivelAgua: number | null,
+  kh = 0,
 ): number {
   let fsMin = Infinity;
   let bestXc = 0, bestYc = 0, bestR = 0;
@@ -63,7 +66,7 @@ export function buscarFSCritico(
   for (let xc = 0; xc <= 40; xc += 4) {
     for (let yc = 12; yc <= 44; yc += 4) {
       for (let R = 10; R <= 52; R += 4) {
-        const fs = fsCirculo(xc, yc, R, H, pend, c, friccionGrados, gamma, nivelAgua);
+        const fs = fsCirculo(xc, yc, R, H, pend, c, friccionGrados, gamma, nivelAgua, kh);
         if (fs !== null && fs >= 0.2 && fs < fsMin) {
           fsMin = fs; bestXc = xc; bestYc = yc; bestR = R;
         }
@@ -75,7 +78,7 @@ export function buscarFSCritico(
     for (let yc = bestYc - 4; yc <= bestYc + 4; yc += 1) {
       for (let R = bestR - 4; R <= bestR + 4; R += 1) {
         if (R < 1) continue;
-        const fs = fsCirculo(xc, yc, R, H, pend, c, friccionGrados, gamma, nivelAgua);
+        const fs = fsCirculo(xc, yc, R, H, pend, c, friccionGrados, gamma, nivelAgua, kh);
         if (fs !== null && fs >= 0.2 && fs < fsMin) {
           fsMin = fs;
         }
