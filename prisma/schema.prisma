@@ -123,9 +123,10 @@ model ActivoTelemetria {
   proyecto      Proyecto?           @relation(fields: [proyectoId], references: [id])
   usuarioId     String
   usuario       Usuario             @relation(fields: [usuarioId], references: [id])
-  cohesion       Float?
-  friccionGrados Float?
-  pesoEspecifico Float?
+  cohesion          Float?
+  friccionGrados    Float?
+  pesoEspecifico    Float?
+  tipoRevestimiento String?
   createdAt      DateTime            @default(now())
   lecturas       LecturaTelemetria[]
 }
