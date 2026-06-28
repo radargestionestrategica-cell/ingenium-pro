@@ -123,8 +123,11 @@ model ActivoTelemetria {
   proyecto      Proyecto?           @relation(fields: [proyectoId], references: [id])
   usuarioId     String
   usuario       Usuario             @relation(fields: [usuarioId], references: [id])
-  createdAt     DateTime            @default(now())
-  lecturas      LecturaTelemetria[]
+  cohesion       Float?
+  friccionGrados Float?
+  pesoEspecifico Float?
+  createdAt      DateTime            @default(now())
+  lecturas       LecturaTelemetria[]
 }
 
 // ─── LECTURA TELEMETRIA ─────────────────────────────────────────
