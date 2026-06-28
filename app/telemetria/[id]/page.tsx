@@ -21,6 +21,9 @@ interface GeometriaPileta {
   anchoCoronamiento: number;
   profundidad: number;
   talud: number;
+  cohesion?: number;
+  friccionGrados?: number;
+  pesoEspecifico?: number;
 }
 
 interface ActivoTelemetria {
@@ -28,6 +31,9 @@ interface ActivoTelemetria {
   nombre: string;
   tipoActivo: string;
   geometriaJson: string;
+  cohesion: number | null;
+  friccionGrados: number | null;
+  pesoEspecifico: number | null;
   proyectoId: string | null;
   createdAt: string;
 }
