@@ -99,12 +99,13 @@ export default function FichaActivoPage() {
     }
     setGuardandoLectura(true);
     setMensajeLectura('');
+    const fsPreview = geometria ? calcularEstabilidadPared(valor, 9.81, 30, geometria.talud).factorSeguridadDeslizamiento : null;
     try {
       const res = await fetch('/api/telemetria/lecturas', {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json', ...ipAuthHeader() },
-        body: JSON.stringify({ activoId: activo.id, magnitud: 'nivel', valor, unidad: 'm', fuente: 'manual' }),
+        body: JSON.stringify({ activoId: activo.id, magnitud: 'nivel', valor, unidad: 'm', fuente: 'manual', factorSeguridad: fsPreview }),
       });
       const json = await res.json();
       if (json?.ok) {
