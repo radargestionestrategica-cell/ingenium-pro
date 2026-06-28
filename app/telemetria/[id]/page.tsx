@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { calcularPileta, calcularEstabilidadPared } from '@/lib/telemetria-calculo';
+import { buscarFSCritico } from '@/lib/bishop-buscador';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 
 const BG    = '#020609';
@@ -235,9 +236,15 @@ export default function FichaActivoPage() {
             </div>
 
             {resultados && (() => {
-              const fs = resultados.factorSeguridadDeslizamiento;
-              const color = fs >= 1.5 ? '#4ade80' : fs >= 1.3 ? '#facc15' : '#f87171';
-              const label = fs >= 1.5 ? 'SEGURO' : fs >= 1.3 ? 'ALERTA' : 'CRÍTICO';
+              const c    = activo?.cohesion;
+              const fric = activo?.friccionGrados;
+              const peso = activo?.pesoEspecifico;
+              const tieneMaterial = c != null && fric != null && peso != null;
+              const fsTalud = (tieneMaterial && geometria)
+                ? buscarFSCritico(geometria.profundidad, geometria.talud, c!, fric!, peso!, resultados.nivel)
+                : null;
+              const color = fsTalud != null ? (fsTalud >= 1.5 ? '#4ade80' : fsTalud >= 1.3 ? '#facc15' : '#f87171') : '#475569';
+              const label = fsTalud != null ? (fsTalud >= 1.5 ? 'SEGURO' : fsTalud >= 1.3 ? 'ALERTA' : 'CRÍTICO') : '';
               return (
                 <div style={{ border: `1px solid ${BORD}`, borderRadius: 12, background: 'rgba(7,13,26,0.8)', padding: 16, marginTop: 16 }}>
                   <div style={{ fontSize: 10, fontWeight: 800, color: GOLD, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 12 }}>
@@ -258,17 +265,23 @@ export default function FichaActivoPage() {
                     ))}
                   </div>
                   <div style={{ fontSize: 9, color: '#334155', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, marginTop: 14, marginBottom: 8 }}>Integridad estructural</div>
-                  <div style={{ marginTop: 0, display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <div style={{ width: 16, height: 16, borderRadius: '50%', background: color, boxShadow: `0 0 8px ${color}`, flexShrink: 0 }} />
-                    <div style={{ fontSize: 11, fontWeight: 700, color }}>
-                      Factor de seguridad del talud: {fs.toFixed(3)} — {label}
+                  {!tieneMaterial ? (
+                    <div style={{ fontSize: 11, color: '#475569', fontStyle: 'italic' }}>
+                      Faltan datos de material del suelo para el factor de seguridad de talud.
                     </div>
-                  </div>
-                  {resultados.norma && (
-                    <div style={{ marginTop: 12, paddingTop: 10, borderTop: '1px solid rgba(99,102,241,0.1)' }}>
-                      <div style={{ fontSize: 9, color: '#334155', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 }}>Norma aplicada</div>
-                      <div style={{ fontSize: 10, color: '#94a3b8', fontFamily: 'ui-monospace,SFMono-Regular,monospace', wordBreak: 'break-all', fontWeight: 700 }}>{resultados.norma}</div>
-                    </div>
+                  ) : (
+                    <>
+                      <div style={{ marginTop: 0, display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <div style={{ width: 16, height: 16, borderRadius: '50%', background: color, boxShadow: `0 0 8px ${color}`, flexShrink: 0 }} />
+                        <div style={{ fontSize: 11, fontWeight: 700, color }}>
+                          Factor de seguridad del talud: {fsTalud!.toFixed(3)} — {label}
+                        </div>
+                      </div>
+                      <div style={{ marginTop: 12, paddingTop: 10, borderTop: '1px solid rgba(99,102,241,0.1)' }}>
+                        <div style={{ fontSize: 9, color: '#334155', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 }}>Norma aplicada</div>
+                        <div style={{ fontSize: 10, color: '#94a3b8', fontFamily: 'ui-monospace,SFMono-Regular,monospace', wordBreak: 'break-all', fontWeight: 700 }}>USACE EM 1110-2-1902 · Método de Bishop Simplificado</div>
+                      </div>
+                    </>
                   )}
                   {resultados.hash && (
                     <div style={{ marginTop: 12, paddingTop: 10, borderTop: '1px solid rgba(99,102,241,0.1)' }}>
