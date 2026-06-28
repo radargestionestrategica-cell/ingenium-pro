@@ -2,6 +2,7 @@ export interface Dovela {
   b: number;
   h: number;
   alfa: number;
+  u?: number;
 }
 
 export function calcularFSBishop(
@@ -20,8 +21,9 @@ export function calcularFSBishop(
     for (const d of dovelas) {
       const alfaRad = toRad(d.alfa);
       const W = d.b * d.h * gamma;
+      const u = d.u ?? 0;
       const mAlfa = Math.cos(alfaRad) * (1 + (tanFric * Math.tan(alfaRad)) / fs);
-      sumResistente += (c * d.b + W * tanFric) / mAlfa;
+      sumResistente += (c * d.b + (W - u * d.b) * tanFric) / mAlfa;
       sumMotor += W * Math.sin(alfaRad);
     }
     const fsNuevo = sumResistente / sumMotor;
