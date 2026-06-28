@@ -75,6 +75,8 @@ export default function FichaActivoPage() {
   const [cohesionSuelo, setCohesionSuelo] = useState<number | null>(null);
   const [friccionSuelo, setFriccionSuelo] = useState<number | null>(null);
   const [pesoSuelo, setPesoSuelo] = useState<number | null>(null);
+  const [guardandoMaterial, setGuardandoMaterial] = useState(false);
+  const [mensajeMaterial, setMensajeMaterial] = useState('');
 
   const [resultados, setResultados] = useState<{
     volumenActual: number; capacidadRestante: number; camiones30m3: number;
@@ -112,6 +114,33 @@ export default function FichaActivoPage() {
       .catch(() => router.replace('/Login'))
       .finally(() => setCargando(false));
   }, [id, router]);
+
+  const guardarMaterial = async () => {
+    if (!activo) return;
+    setGuardandoMaterial(true);
+    setMensajeMaterial('');
+    try {
+      const res = await fetch(`/api/telemetria/${activo.id}`, {
+        method: 'PATCH',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json', ...ipAuthHeader() },
+        body: JSON.stringify({ cohesion: cohesionSuelo, friccionGrados: friccionSuelo, pesoEspecifico: pesoSuelo }),
+      });
+      const json = await res.json();
+      if (json?.ok) {
+        setMensajeMaterial('✅ Material guardado.');
+        const r2 = await fetch(`/api/telemetria/${activo.id}`, { credentials: 'include', headers: ipAuthHeader() });
+        const j2 = await r2.json();
+        if (j2?.ok) setActivo(j2.activo);
+      } else {
+        setMensajeMaterial(json?.error ?? 'Error al guardar.');
+      }
+    } catch {
+      setMensajeMaterial('Error de conexión.');
+    } finally {
+      setGuardandoMaterial(false);
+    }
+  };
 
   const guardarLectura = async () => {
     const valor = parseFloat(nivelMedido);
@@ -303,6 +332,33 @@ export default function FichaActivoPage() {
                       ))}
                     </select>
                   </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: 10 }}>
+                    {([
+                      { l: 'Cohesión (kPa)',          val: cohesionSuelo, set: setCohesionSuelo },
+                      { l: 'Fricción (°)',             val: friccionSuelo, set: setFriccionSuelo },
+                      { l: 'Peso espec. (kN/m³)',      val: pesoSuelo,     set: setPesoSuelo     },
+                    ] as { l: string; val: number | null; set: (v: number | null) => void }[]).map(f => (
+                      <div key={f.l}>
+                        <div style={{ fontSize: 9, color: '#475569', textTransform: 'uppercase', marginBottom: 3 }}>{f.l}</div>
+                        <input
+                          type="number" step="0.1"
+                          value={f.val ?? ''}
+                          onChange={e => f.set(e.target.value === '' ? null : parseFloat(e.target.value))}
+                          style={{ width: '100%', padding: '7px 8px', background: '#0a0f1e', border: '1px solid rgba(99,102,241,0.2)', borderRadius: 8, color: '#f1f5f9', fontSize: 12, outline: 'none', boxSizing: 'border-box' }}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                  <button
+                    onClick={guardarMaterial}
+                    disabled={guardandoMaterial}
+                    style={{ padding: '8px 16px', background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', border: 'none', borderRadius: 8, color: '#fff', fontSize: 11, fontWeight: 700, cursor: guardandoMaterial ? 'default' : 'pointer', opacity: guardandoMaterial ? 0.6 : 1, marginBottom: 12 }}
+                  >
+                    {guardandoMaterial ? 'Guardando…' : '💾 Guardar material del suelo'}
+                  </button>
+                  {mensajeMaterial && (
+                    <div style={{ marginBottom: 10, fontSize: 11, fontWeight: 600, color: mensajeMaterial.startsWith('✅') ? '#4ade80' : '#f87171' }}>{mensajeMaterial}</div>
+                  )}
                   {!tieneMaterial ? (
                     <div style={{ fontSize: 11, color: '#475569', fontStyle: 'italic' }}>
                       Faltan datos de material del suelo para el factor de seguridad de talud.
