@@ -34,6 +34,7 @@ export async function POST(req: NextRequest) {
         fuente: b.fuente,
         usuarioId: payload.id,
         hash,
+        factorSeguridad: typeof b.factorSeguridad === 'number' ? b.factorSeguridad : null,
       },
     });
 
