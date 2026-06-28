@@ -11,6 +11,17 @@ const PANEL = '#0a0f1e';
 const GOLD  = '#E8A020';
 const BORD  = 'rgba(99,102,241,0.15)';
 
+const SUELOS = [
+  { label: 'Valores propios',  key: 'propio',         c: null, f: null, p: null   },
+  { label: 'Arena suelta',     key: 'arena_suelta',   c: 0,    f: 30,   p: 17     },
+  { label: 'Arena densa',      key: 'arena_densa',    c: 0,    f: 38,   p: 19     },
+  { label: 'Grava',            key: 'grava',          c: 0,    f: 38,   p: 20     },
+  { label: 'Limo',             key: 'limo',           c: 8,    f: 28,   p: 19     },
+  { label: 'Arcilla blanda',   key: 'arcilla_blanda', c: 18,   f: 22,   p: 17.5   },
+  { label: 'Arcilla media',    key: 'arcilla_media',  c: 35,   f: 24,   p: 18.5   },
+  { label: 'Arcilla dura',     key: 'arcilla_dura',   c: 70,   f: 25,   p: 19.5   },
+] as const;
+
 function ipAuthHeader(): Record<string, string> {
   if (typeof window === 'undefined') return {};
   const t = localStorage.getItem('ip_token');
@@ -60,6 +71,10 @@ export default function FichaActivoPage() {
   const [mensajeLectura, setMensajeLectura] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
   const [historial, setHistorial] = useState<LecturaHistorial[]>([]);
+  const [tipoSuelo, setTipoSuelo] = useState<string>('propio');
+  const [cohesionSuelo, setCohesionSuelo] = useState<number | null>(null);
+  const [friccionSuelo, setFriccionSuelo] = useState<number | null>(null);
+  const [pesoSuelo, setPesoSuelo] = useState<number | null>(null);
 
   const [resultados, setResultados] = useState<{
     volumenActual: number; capacidadRestante: number; camiones30m3: number;
@@ -265,6 +280,29 @@ export default function FichaActivoPage() {
                     ))}
                   </div>
                   <div style={{ fontSize: 9, color: '#334155', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, marginTop: 14, marginBottom: 8 }}>Integridad estructural</div>
+                  <div style={{ marginBottom: 12 }}>
+                    <div style={{ fontSize: 9, color: '#475569', textTransform: 'uppercase', marginBottom: 4 }}>Tipo de suelo</div>
+                    <select
+                      value={tipoSuelo}
+                      onChange={e => {
+                        const key = e.target.value;
+                        setTipoSuelo(key);
+                        const s = SUELOS.find(x => x.key === key);
+                        setCohesionSuelo(s?.c ?? null);
+                        setFriccionSuelo(s?.f ?? null);
+                        setPesoSuelo(s?.p ?? null);
+                      }}
+                      style={{
+                        background: '#0a0f1e', border: '1px solid rgba(99,102,241,0.2)',
+                        borderRadius: 8, color: '#f1f5f9', fontSize: 12, padding: '7px 10px',
+                        outline: 'none', width: '100%', cursor: 'pointer',
+                      }}
+                    >
+                      {SUELOS.map(s => (
+                        <option key={s.key} value={s.key}>{s.label}</option>
+                      ))}
+                    </select>
+                  </div>
                   {!tieneMaterial ? (
                     <div style={{ fontSize: 11, color: '#475569', fontStyle: 'italic' }}>
                       Faltan datos de material del suelo para el factor de seguridad de talud.
