@@ -3,6 +3,7 @@ export interface Dovela {
   h: number;
   alfa: number;
   u?: number;
+  brazo?: number;
 }
 
 export function calcularFSBishop(
@@ -10,6 +11,8 @@ export function calcularFSBishop(
   c: number,
   friccionGrados: number,
   gamma: number,
+  R: number,
+  kh = 0,
 ): number {
   const toRad = (deg: number) => (deg * Math.PI) / 180;
   const tanFric = Math.tan(toRad(friccionGrados));
@@ -24,7 +27,7 @@ export function calcularFSBishop(
       const u = d.u ?? 0;
       const mAlfa = Math.cos(alfaRad) * (1 + (tanFric * Math.tan(alfaRad)) / fs);
       sumResistente += (c * d.b + (W - u * d.b) * tanFric) / mAlfa;
-      sumMotor += W * Math.sin(alfaRad);
+      sumMotor += W * Math.sin(alfaRad) + kh * W * (d.brazo ?? 0) / R;
     }
     const fsNuevo = sumResistente / sumMotor;
     if (Math.abs(fsNuevo - fs) < 0.001) return fsNuevo;
