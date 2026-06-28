@@ -14,7 +14,7 @@ function fsCirculo(
   xc: number, yc: number, R: number,
   H: number, pend: number,
   c: number, friccionGrados: number, gamma: number,
-  nivelAgua: number,
+  nivelAgua: number | null,
 ): number | null {
   const pasos = 400;
   const dx = (2 * R) / pasos;
@@ -43,7 +43,7 @@ function fsCirculo(
     const h = Math.max(yTerr(xMid, H, pend) - yBase, 0);
     const sinAlfa = Math.max(-1, Math.min(1, (xMid - xc) / R));
     const alfa = (Math.asin(sinAlfa) * 180) / Math.PI;
-    const profAgua = nivelAgua - yBase;
+    const profAgua = (nivelAgua ?? 0) - yBase;
     const u = profAgua > 0 ? 9.81 * profAgua : 0;
     dovelas.push({ b: ancho, h, alfa, u });
   }
@@ -55,7 +55,7 @@ function fsCirculo(
 export function buscarFSCritico(
   H: number, pend: number,
   c: number, friccionGrados: number, gamma: number,
-  nivelAgua: number,
+  nivelAgua: number | null,
 ): number {
   let fsMin = Infinity;
   let bestXc = 0, bestYc = 0, bestR = 0;

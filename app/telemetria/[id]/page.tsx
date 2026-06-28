@@ -291,7 +291,7 @@ export default function FichaActivoPage() {
               const peso = activo?.pesoEspecifico;
               const tieneMaterial = c != null && fric != null && peso != null;
               const fsTalud = (tieneMaterial && geometria)
-                ? buscarFSCritico(geometria.profundidad, geometria.talud, c!, fric!, peso!, resultados.nivel)
+                ? buscarFSCritico(geometria.profundidad, geometria.talud, c!, fric!, peso!, tipoRevestimiento === 'revestida' ? null : resultados.nivel)
                 : null;
               const color = fsTalud != null ? (fsTalud >= 1.5 ? '#4ade80' : fsTalud >= 1.3 ? '#facc15' : '#f87171') : '#475569';
               const label = fsTalud != null ? (fsTalud >= 1.5 ? 'SEGURO' : fsTalud >= 1.3 ? 'ALERTA' : 'CRÍTICO') : '';
