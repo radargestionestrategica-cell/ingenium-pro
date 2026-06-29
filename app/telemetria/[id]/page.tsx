@@ -82,6 +82,7 @@ export default function FichaActivoPage() {
   const [guardandoMaterial, setGuardandoMaterial] = useState(false);
   const [mensajeMaterial, setMensajeMaterial] = useState('');
   const [tipoRevestimiento, setTipoRevestimiento] = useState<string>('sin_revestir');
+  const [factorSismico, setFactorSismico] = useState(0.5);
   const [paisSismico, setPaisSismico] = useState<string>('Argentina');
   const [zonaSismicaLocal, setZonaSismicaLocal] = useState<string>('');
   const [guardandoZona, setGuardandoZona] = useState(false);
@@ -333,7 +334,7 @@ export default function FichaActivoPage() {
               const label = fsTalud != null ? (fsTalud >= 1.5 ? 'SEGURO' : fsTalud >= 1.3 ? 'ALERTA' : 'CRÍTICO') : '';
               const paisData = PAISES_SISMICOS.find(p => p.nombre === activo?.pais);
               const zonaData = paisData?.zonas.find(z => z.nombre === activo?.zonaSismica);
-              const kh = zonaData ? pgaAKh(zonaData.pga, 0.5) : 0;
+              const kh = zonaData ? pgaAKh(zonaData.pga, factorSismico) : 0;
               const fsTaludSismico = (fsTalud != null && zonaData && geometria)
                 ? buscarFSCritico(geometria.profundidad, geometria.talud, c!, fric!, peso!, tipoRevestimiento === 'revestida' ? null : resultados.nivel, kh)
                 : null;
