@@ -451,9 +451,9 @@ export default function FichaActivoPage() {
                             <option value={1}>Ultra-conservador (1.00)</option>
                           </select>
                           <div style={{ marginTop: 5, fontSize: 10, color: '#475569', fontStyle: 'italic' }}>
-                            {factorSismico === 0.33 && 'Talud flexible o dúctil — recomendado ICOLD para presas de tierra.'}
-                            {factorSismico === 0.5 && 'Práctica estándar WSDOT / análisis general de terraplenes.'}
-                            {factorSismico === 1 && 'Ultra-conservador: Kh = PGA completa (análisis de estado límite).'}
+                            {factorSismico === 0.33 && 'Talud flexible o ductil que admite deformacion sin colapsar. Coeficiente reducido para presas y terraplenes de tierra.'}
+                            {factorSismico === 0.5 && 'Practica estandar WSDOT y Canadian Foundation Engineering Manual. Recomendado para la mayoria de taludes.'}
+                            {factorSismico === 1 && 'Kh igual a la PGA completa. Analisis ultra-conservador de estado limite, sin admitir deformacion.'}
                           </div>
                         </div>
                       )}
