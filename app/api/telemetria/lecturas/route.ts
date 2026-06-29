@@ -73,3 +73,28 @@ export async function GET(req: NextRequest) {
     );
   }
 }
+
+export async function DELETE(req: NextRequest) {
+  const payload = verificarTokenAPI(req);
+  if (!payload) return respuestaNoAutorizado();
+
+  try {
+    const lecturaId = req.nextUrl.searchParams.get('id');
+    if (!lecturaId) return NextResponse.json({ ok: false, error: 'id es obligatorio' }, { status: 400 });
+
+    const lectura = await prisma.lecturaTelemetria.findFirst({
+      where: { id: lecturaId },
+      include: { activo: { select: { usuarioId: true } } },
+    });
+    if (!lectura || lectura.activo.usuarioId !== payload.id)
+      return NextResponse.json({ ok: false, error: 'Lectura no encontrada' }, { status: 403 });
+
+    await prisma.lecturaTelemetria.delete({ where: { id: lecturaId } });
+    return NextResponse.json({ ok: true });
+  } catch (e) {
+    return NextResponse.json(
+      { ok: false, error: e instanceof Error ? e.message : 'Error interno' },
+      { status: 500 },
+    );
+  }
+}
