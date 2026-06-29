@@ -127,6 +127,8 @@ model ActivoTelemetria {
   friccionGrados    Float?
   pesoEspecifico    Float?
   tipoRevestimiento String?
+  pais             String?
+  zonaSismica      String?
   createdAt      DateTime            @default(now())
   lecturas       LecturaTelemetria[]
 }
