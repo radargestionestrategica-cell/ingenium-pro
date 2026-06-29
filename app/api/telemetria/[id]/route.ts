@@ -13,7 +13,7 @@ export async function PATCH(
     const { id } = await params;
     const b = await req.json();
 
-    const data: Record<string, number> = {};
+    const data: Record<string, number | string> = {};
 
     if (b.cohesion !== undefined) {
       if (typeof b.cohesion !== 'number' || b.cohesion < 0 || b.cohesion > 500)
@@ -29,6 +29,24 @@ export async function PATCH(
       if (typeof b.pesoEspecifico !== 'number' || b.pesoEspecifico < 10 || b.pesoEspecifico > 25)
         return NextResponse.json({ ok: false, error: 'pesoEspecifico debe estar entre 10 y 25' }, { status: 400 });
       data.pesoEspecifico = b.pesoEspecifico;
+    }
+
+    if (b.tipoRevestimiento !== undefined) {
+      const vals = ['revestida', 'sin_revestir'];
+      if (typeof b.tipoRevestimiento !== 'string' || !vals.includes(b.tipoRevestimiento))
+        return NextResponse.json({ ok: false, error: 'tipoRevestimiento debe ser revestida o sin_revestir' }, { status: 400 });
+      data.tipoRevestimiento = b.tipoRevestimiento;
+    }
+
+    if (b.pais !== undefined) {
+      if (typeof b.pais !== 'string')
+        return NextResponse.json({ ok: false, error: 'pais debe ser texto' }, { status: 400 });
+      data.pais = b.pais;
+    }
+    if (b.zonaSismica !== undefined) {
+      if (typeof b.zonaSismica !== 'string')
+        return NextResponse.json({ ok: false, error: 'zonaSismica debe ser texto' }, { status: 400 });
+      data.zonaSismica = b.zonaSismica;
     }
 
     if (Object.keys(data).length === 0)
