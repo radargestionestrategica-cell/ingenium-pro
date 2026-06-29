@@ -57,6 +57,9 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ ok: false, error: 'activoId es obligatorio' }, { status: 400 });
     }
 
+    const activo = await prisma.activoTelemetria.findFirst({ where: { id: activoId, usuarioId: payload.id } });
+    if (!activo) return NextResponse.json({ ok: false, error: 'Activo no encontrado' }, { status: 403 });
+
     const lecturas = await prisma.lecturaTelemetria.findMany({
       where: { activoId },
       orderBy: { createdAt: 'desc' },
