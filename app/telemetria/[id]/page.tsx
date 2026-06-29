@@ -61,6 +61,7 @@ interface LecturaHistorial {
   unidad: string;
   fuente: string;
   hash: string | null;
+  factorSeguridad?: number | null;
   createdAt: string;
 }
 
@@ -542,6 +543,37 @@ export default function FichaActivoPage() {
                 </ResponsiveContainer>
               ) : (
                 <div style={{ fontSize: 12, color: '#475569' }}>Se necesitan al menos dos lecturas para ver la evolución.</div>
+              )}
+            </div>
+
+            {/* HISTORIAL DE CÁLCULOS SELLADOS */}
+            <div style={{ border: `1px solid ${BORD}`, borderRadius: 12, background: 'rgba(7,13,26,0.8)', padding: 16, marginTop: 16 }}>
+              <div style={{ fontSize: 9, color: '#334155', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 12 }}>Historial de cálculos sellados</div>
+              {historial.length === 0 ? (
+                <div style={{ fontSize: 12, color: '#475569' }}>Aún no hay cálculos guardados.</div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {historial.slice().reverse().map(l => (
+                    <div key={l.id} style={{ background: '#0a0f1e', borderRadius: 8, padding: '10px 12px', border: '1px solid rgba(99,102,241,0.1)' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                        <span style={{ fontSize: 11, fontWeight: 700, color: '#f1f5f9' }}>
+                          {l.valor} {l.unidad}
+                        </span>
+                        <span style={{ fontSize: 10, color: '#475569' }}>
+                          {new Date(l.createdAt).toLocaleString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      </div>
+                      {l.factorSeguridad != null && (
+                        <div style={{ fontSize: 10, color: '#94a3b8', marginBottom: 4 }}>
+                          FS estático: <strong style={{ color: l.factorSeguridad >= 1.5 ? '#4ade80' : l.factorSeguridad >= 1.3 ? '#facc15' : '#f87171' }}>{l.factorSeguridad.toFixed(3)}</strong>
+                        </div>
+                      )}
+                      {l.hash && (
+                        <div style={{ fontSize: 9, color: '#334155', fontFamily: 'ui-monospace,SFMono-Regular,monospace', wordBreak: 'break-all' }}>{l.hash}</div>
+                      )}
+                    </div>
+                  ))}
+                </div>
               )}
             </div>
           </>
