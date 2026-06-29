@@ -438,6 +438,25 @@ export default function FichaActivoPage() {
                         <div style={{ fontSize: 9, color: '#334155', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 }}>Norma aplicada</div>
                         <div style={{ fontSize: 10, color: '#94a3b8', fontFamily: 'ui-monospace,SFMono-Regular,monospace', wordBreak: 'break-all', fontWeight: 700 }}>USACE EM 1110-2-1902 · Método de Bishop Simplificado</div>
                       </div>
+                      {zonaData && (
+                        <div style={{ marginTop: 12, paddingTop: 10, borderTop: '1px solid rgba(99,102,241,0.1)' }}>
+                          <div style={{ fontSize: 9, color: '#475569', textTransform: 'uppercase', marginBottom: 4 }}>Factor sísmico (α)</div>
+                          <select
+                            value={factorSismico}
+                            onChange={e => setFactorSismico(Number(e.target.value))}
+                            style={{ background: '#0a0f1e', border: '1px solid rgba(99,102,241,0.2)', borderRadius: 8, color: '#f1f5f9', fontSize: 12, padding: '7px 10px', outline: 'none', width: '100%', cursor: 'pointer' }}
+                          >
+                            <option value={0.33}>Talud flexible (0.33)</option>
+                            <option value={0.5}>Estándar WSDOT (0.50)</option>
+                            <option value={1}>Ultra-conservador (1.00)</option>
+                          </select>
+                          <div style={{ marginTop: 5, fontSize: 10, color: '#475569', fontStyle: 'italic' }}>
+                            {factorSismico === 0.33 && 'Talud flexible o dúctil — recomendado ICOLD para presas de tierra.'}
+                            {factorSismico === 0.5 && 'Práctica estándar WSDOT / análisis general de terraplenes.'}
+                            {factorSismico === 1 && 'Ultra-conservador: Kh = PGA completa (análisis de estado límite).'}
+                          </div>
+                        </div>
+                      )}
                       {fsTaludSismico != null && (
                         <>
                           <div style={{ marginTop: 10, display: 'flex', alignItems: 'center', gap: 10 }}>
