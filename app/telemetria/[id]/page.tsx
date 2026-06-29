@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { calcularPileta, calcularEstabilidadPared } from '@/lib/telemetria-calculo';
 import { buscarFSCritico } from '@/lib/bishop-buscador';
-import { PAISES_SISMICOS } from '@/lib/sismica-zonificacion';
+import { PAISES_SISMICOS, pgaAKh } from '@/lib/sismica-zonificacion';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 
 const BG    = '#020609';
@@ -331,6 +331,15 @@ export default function FichaActivoPage() {
                 : null;
               const color = fsTalud != null ? (fsTalud >= 1.5 ? '#4ade80' : fsTalud >= 1.3 ? '#facc15' : '#f87171') : '#475569';
               const label = fsTalud != null ? (fsTalud >= 1.5 ? 'SEGURO' : fsTalud >= 1.3 ? 'ALERTA' : 'CRÍTICO') : '';
+              const paisData = PAISES_SISMICOS.find(p => p.nombre === activo?.pais);
+              const zonaData = paisData?.zonas.find(z => z.nombre === activo?.zonaSismica);
+              const kh = zonaData ? pgaAKh(zonaData.pga, 0.5) : 0;
+              const fsTaludSismico = (fsTalud != null && zonaData && geometria)
+                ? buscarFSCritico(geometria.profundidad, geometria.talud, c!, fric!, peso!, tipoRevestimiento === 'revestida' ? null : resultados.nivel, kh)
+                : null;
+              const colorSismico = fsTaludSismico != null ? (fsTaludSismico >= 1.1 ? '#4ade80' : fsTaludSismico >= 1.0 ? '#facc15' : '#f87171') : '#475569';
+              const labelSismico = fsTaludSismico != null ? (fsTaludSismico >= 1.1 ? 'SEGURO' : fsTaludSismico >= 1.0 ? 'ALERTA' : 'CRÍTICO') : '';
+              const normaSismica = paisData?.norma ?? '';
               return (
                 <div style={{ border: `1px solid ${BORD}`, borderRadius: 12, background: 'rgba(7,13,26,0.8)', padding: 16, marginTop: 16 }}>
                   <div style={{ fontSize: 10, fontWeight: 800, color: GOLD, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 12 }}>
@@ -428,6 +437,20 @@ export default function FichaActivoPage() {
                         <div style={{ fontSize: 9, color: '#334155', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 }}>Norma aplicada</div>
                         <div style={{ fontSize: 10, color: '#94a3b8', fontFamily: 'ui-monospace,SFMono-Regular,monospace', wordBreak: 'break-all', fontWeight: 700 }}>USACE EM 1110-2-1902 · Método de Bishop Simplificado</div>
                       </div>
+                      {fsTaludSismico != null && (
+                        <>
+                          <div style={{ marginTop: 10, display: 'flex', alignItems: 'center', gap: 10 }}>
+                            <div style={{ width: 16, height: 16, borderRadius: '50%', background: colorSismico, boxShadow: `0 0 8px ${colorSismico}`, flexShrink: 0 }} />
+                            <div style={{ fontSize: 11, fontWeight: 700, color: colorSismico }}>
+                              FS sísmico (kh={kh.toFixed(3)}): {fsTaludSismico.toFixed(3)} — {labelSismico}
+                            </div>
+                          </div>
+                          <div style={{ marginTop: 8, paddingTop: 8, borderTop: '1px solid rgba(99,102,241,0.1)' }}>
+                            <div style={{ fontSize: 9, color: '#334155', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 }}>Norma sísmica aplicada</div>
+                            <div style={{ fontSize: 10, color: '#94a3b8', fontFamily: 'ui-monospace,SFMono-Regular,monospace', fontWeight: 700 }}>{normaSismica} · Análisis pseudoestático · USACE EM 1110-2-1902</div>
+                          </div>
+                        </>
+                      )}
                     </>
                   )}
                   {resultados.hash && (
