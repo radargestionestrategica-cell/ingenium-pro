@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { calcularPileta, calcularEstabilidadPared } from '@/lib/telemetria-calculo';
 import { buscarFSCritico } from '@/lib/bishop-buscador';
+import { PAISES_SISMICOS } from '@/lib/sismica-zonificacion';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 
 const BG    = '#020609';
@@ -47,6 +48,8 @@ interface ActivoTelemetria {
   friccionGrados: number | null;
   pesoEspecifico: number | null;
   tipoRevestimiento: string | null;
+  pais: string | null;
+  zonaSismica: string | null;
   proyectoId: string | null;
   createdAt: string;
 }
@@ -79,9 +82,15 @@ export default function FichaActivoPage() {
   const [guardandoMaterial, setGuardandoMaterial] = useState(false);
   const [mensajeMaterial, setMensajeMaterial] = useState('');
   const [tipoRevestimiento, setTipoRevestimiento] = useState<string>('sin_revestir');
+  const [paisSismico, setPaisSismico] = useState<string>('Argentina');
+  const [zonaSismicaLocal, setZonaSismicaLocal] = useState<string>('');
+  const [guardandoZona, setGuardandoZona] = useState(false);
+  const [mensajeZona, setMensajeZona] = useState('');
 
   useEffect(() => {
     if (activo?.tipoRevestimiento) setTipoRevestimiento(activo.tipoRevestimiento);
+    if (activo?.pais) setPaisSismico(activo.pais);
+    if (activo?.zonaSismica) setZonaSismicaLocal(activo.zonaSismica);
   }, [activo]);
 
   const [resultados, setResultados] = useState<{
@@ -145,6 +154,33 @@ export default function FichaActivoPage() {
       setMensajeMaterial('Error de conexión.');
     } finally {
       setGuardandoMaterial(false);
+    }
+  };
+
+  const guardarZonaSismica = async () => {
+    if (!activo) return;
+    setGuardandoZona(true);
+    setMensajeZona('');
+    try {
+      const res = await fetch(`/api/telemetria/${activo.id}`, {
+        method: 'PATCH',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json', ...ipAuthHeader() },
+        body: JSON.stringify({ pais: paisSismico, zonaSismica: zonaSismicaLocal }),
+      });
+      const json = await res.json();
+      if (json?.ok) {
+        setMensajeZona('✅ Zona sísmica guardada.');
+        const r2 = await fetch(`/api/telemetria/${activo.id}`, { credentials: 'include', headers: ipAuthHeader() });
+        const j2 = await r2.json();
+        if (j2?.ok) setActivo(j2.activo);
+      } else {
+        setMensajeZona(json?.error ?? 'Error al guardar.');
+      }
+    } catch {
+      setMensajeZona('Error de conexión.');
+    } finally {
+      setGuardandoZona(false);
     }
   };
 
@@ -400,6 +436,50 @@ export default function FichaActivoPage() {
                       <div style={{ fontSize: 10, color: '#475569', fontFamily: 'ui-monospace,SFMono-Regular,monospace', wordBreak: 'break-all' }}>{resultados.hash}</div>
                     </div>
                   )}
+                  <div style={{ marginTop: 16, paddingTop: 14, borderTop: '1px solid rgba(99,102,241,0.1)' }}>
+                    <div style={{ fontSize: 9, color: '#334155', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 10 }}>Zonificación sísmica</div>
+                    <div style={{ marginBottom: 10 }}>
+                      <div style={{ fontSize: 9, color: '#475569', textTransform: 'uppercase', marginBottom: 4 }}>País</div>
+                      <select
+                        value={paisSismico}
+                        onChange={e => {
+                          const p = e.target.value;
+                          setPaisSismico(p);
+                          const zonas = PAISES_SISMICOS.find(x => x.nombre === p)?.zonas ?? [];
+                          setZonaSismicaLocal(zonas[0]?.nombre ?? '');
+                        }}
+                        style={{ background: '#0a0f1e', border: '1px solid rgba(99,102,241,0.2)', borderRadius: 8, color: '#f1f5f9', fontSize: 12, padding: '7px 10px', outline: 'none', width: '100%', cursor: 'pointer' }}
+                      >
+                        {PAISES_SISMICOS.map(p => (
+                          <option key={p.nombre} value={p.nombre}>{p.nombre}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div style={{ marginBottom: 10 }}>
+                      <div style={{ fontSize: 9, color: '#475569', textTransform: 'uppercase', marginBottom: 4 }}>Zona sísmica</div>
+                      <select
+                        value={zonaSismicaLocal}
+                        onChange={e => setZonaSismicaLocal(e.target.value)}
+                        style={{ background: '#0a0f1e', border: '1px solid rgba(99,102,241,0.2)', borderRadius: 8, color: '#f1f5f9', fontSize: 12, padding: '7px 10px', outline: 'none', width: '100%', cursor: 'pointer' }}
+                      >
+                        {(PAISES_SISMICOS.find(p => p.nombre === paisSismico)?.zonas ?? []).map(z => (
+                          <option key={z.nombre} value={z.nombre}>
+                            {z.nombre} — PGA: {z.pga} g ({PAISES_SISMICOS.find(p => p.nombre === paisSismico)?.norma})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <button
+                      onClick={guardarZonaSismica}
+                      disabled={guardandoZona}
+                      style={{ padding: '8px 16px', background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', border: 'none', borderRadius: 8, color: '#fff', fontSize: 11, fontWeight: 700, cursor: guardandoZona ? 'default' : 'pointer', opacity: guardandoZona ? 0.6 : 1 }}
+                    >
+                      {guardandoZona ? 'Guardando…' : '💾 Guardar zona sísmica'}
+                    </button>
+                    {mensajeZona && (
+                      <div style={{ marginTop: 8, fontSize: 11, fontWeight: 600, color: mensajeZona.startsWith('✅') ? '#4ade80' : '#f87171' }}>{mensajeZona}</div>
+                    )}
+                  </div>
                 </div>
               );
             })()}
