@@ -6,6 +6,7 @@
 
 import { prisma } from '@/lib/prisma';
 import type { Prisma } from '@prisma/client';
+import { verifySignature } from '@/lib/cripto';
 
 export const dynamic = 'force-dynamic';
 
@@ -145,6 +146,9 @@ export default async function VerifyPage({ params }: PageProps) {
     console.error('[verify/hash] Error al consultar cálculo:', error);
     errorConsulta = true;
   }
+
+  const firmaRaw = calculo?.firma ?? lectura?.firma ?? null;
+  const firmaValida = firmaRaw ? verifySignature(hashLimpio, firmaRaw) : false;
 
   return (
     <main className="page">
@@ -468,10 +472,11 @@ export default async function VerifyPage({ params }: PageProps) {
                 </div>
               )}
 
-              <div className="notice">
-                Alcance actual de verificación: existencia del hash y datos asociados en base de datos.
-                La validación HMAC completa requiere incorporar campo de firma en el modelo de datos.
-              </div>
+              {firmaValida ? (
+                <div className="status ok" style={{marginTop:'18px',marginBottom:'0'}}>✓ Verificado criptográficamente</div>
+              ) : (
+                <div className="status err" style={{marginTop:'18px',marginBottom:'0'}}>✗ No verificado</div>
+              )}
             </>
           ) : (
             <>
