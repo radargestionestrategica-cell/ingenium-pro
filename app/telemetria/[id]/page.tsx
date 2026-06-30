@@ -187,6 +187,7 @@ export default function FichaActivoPage() {
   };
 
   const [exportandoId, setExportandoId] = useState<string | null>(null);
+  const [exportandoExcelId, setExportandoExcelId] = useState<string | null>(null);
 
   const exportarPDF = async (lecturaId: string, fecha: string) => {
     setExportandoId(lecturaId);
@@ -213,6 +214,34 @@ export default function FichaActivoPage() {
       alert('Error de conexión al generar el PDF.');
     } finally {
       setExportandoId(null);
+    }
+  };
+
+  const exportarExcel = async (lecturaId: string, fecha: string) => {
+    setExportandoExcelId(lecturaId);
+    try {
+      const res = await fetch('/api/telemetria/exportar/excel', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json', ...ipAuthHeader() },
+        body: JSON.stringify({ lecturaId }),
+      });
+      if (!res.ok) {
+        const json = await res.json().catch(() => ({}));
+        alert(json?.error ?? 'No se pudo generar el Excel.');
+        return;
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `telemetria-${new Date(fecha).toISOString().slice(0, 10)}.xlsx`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      alert('Error de conexión al generar el Excel.');
+    } finally {
+      setExportandoExcelId(null);
     }
   };
 
@@ -634,6 +663,13 @@ export default function FichaActivoPage() {
                           style={{ fontSize: 10, color: '#6366f1', background: 'none', border: '1px solid rgba(99,102,241,0.3)', borderRadius: 6, padding: '3px 10px', cursor: exportandoId === l.id ? 'default' : 'pointer', opacity: exportandoId === l.id ? 0.6 : 1 }}
                         >
                           {exportandoId === l.id ? 'Generando…' : '📄 Exportar PDF'}
+                        </button>
+                        <button
+                          onClick={() => exportarExcel(l.id, l.createdAt)}
+                          disabled={exportandoExcelId === l.id}
+                          style={{ fontSize: 10, color: '#22c55e', background: 'none', border: '1px solid rgba(34,197,94,0.3)', borderRadius: 6, padding: '3px 10px', cursor: exportandoExcelId === l.id ? 'default' : 'pointer', opacity: exportandoExcelId === l.id ? 0.6 : 1 }}
+                        >
+                          {exportandoExcelId === l.id ? 'Generando…' : '📊 Exportar Excel'}
                         </button>
                         <button
                           onClick={() => eliminarLectura(l.id)}
