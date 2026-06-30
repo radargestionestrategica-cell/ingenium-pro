@@ -61,6 +61,7 @@ const GEOMETRIA_VACIA: GeometriaPileta = {
 
 export default function TelemetriaPage() {
   const [nombre, setNombre] = useState('');
+  const [tipoActivo, setTipoActivo] = useState('');
   const [proyectoId, setProyectoId] = useState('');
   const [geometria, setGeometria] = useState<GeometriaPileta>(GEOMETRIA_VACIA);
   const [activos, setActivos] = useState<ActivoTelemetria[]>([]);
@@ -99,6 +100,10 @@ export default function TelemetriaPage() {
       setMensaje('Ingresá un nombre para el activo');
       return;
     }
+    if (!tipoActivo) {
+      setMensaje('Seleccioná un tipo de activo');
+      return;
+    }
     setGuardando(true);
     setMensaje('');
     try {
@@ -108,7 +113,7 @@ export default function TelemetriaPage() {
         headers: { 'Content-Type': 'application/json', ...ipAuthHeader() },
         body: JSON.stringify({
           nombre,
-          tipoActivo: 'pileta',
+          tipoActivo,
           geometriaJson: JSON.stringify(geometria),
           proyectoId: proyectoId || null,
         }),
@@ -117,6 +122,7 @@ export default function TelemetriaPage() {
       if (json?.ok) {
         setMensaje('✅ Activo creado');
         setNombre('');
+        setTipoActivo('');
         setProyectoId('');
         setGeometria(GEOMETRIA_VACIA);
         cargarActivos();
@@ -203,6 +209,18 @@ export default function TelemetriaPage() {
                 {proyectos.map(p => (
                   <option key={p.id} value={p.id} style={{ background: '#0a0f1e' }}>{p.nombre}</option>
                 ))}
+              </select>
+            </div>
+          </div>
+
+          <div style={g2}>
+            <div>
+              <label style={lbl}>Tipo de activo</label>
+              <select value={tipoActivo} onChange={e => setTipoActivo(e.target.value)} style={inp}>
+                <option value="" style={{ background: '#0a0f1e' }}>Seleccioná un tipo</option>
+                <option value="pileta" style={{ background: '#0a0f1e' }}>Pileta</option>
+                <option value="tanque" style={{ background: '#0a0f1e' }}>Tanque</option>
+                <option value="represa" style={{ background: '#0a0f1e' }}>Represa</option>
               </select>
             </div>
           </div>
