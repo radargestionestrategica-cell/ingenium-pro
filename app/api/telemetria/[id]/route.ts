@@ -38,6 +38,22 @@ export async function PATCH(
       data.tipoRevestimiento = b.tipoRevestimiento;
     }
 
+    if (b.pesoEspecificoHormigon !== undefined) {
+      if (typeof b.pesoEspecificoHormigon !== 'number' || b.pesoEspecificoHormigon < 10 || b.pesoEspecificoHormigon > 30)
+        return NextResponse.json({ ok: false, error: 'pesoEspecificoHormigon debe estar entre 10 y 30' }, { status: 400 });
+      data.pesoEspecificoHormigon = b.pesoEspecificoHormigon;
+    }
+    if (b.coeficienteFriccionBase !== undefined) {
+      if (typeof b.coeficienteFriccionBase !== 'number' || b.coeficienteFriccionBase < 0 || b.coeficienteFriccionBase > 2)
+        return NextResponse.json({ ok: false, error: 'coeficienteFriccionBase debe estar entre 0 y 2' }, { status: 400 });
+      data.coeficienteFriccionBase = b.coeficienteFriccionBase;
+    }
+    if (b.permeabilidadRevestimiento !== undefined) {
+      if (typeof b.permeabilidadRevestimiento !== 'number' || b.permeabilidadRevestimiento < 0 || b.permeabilidadRevestimiento > 0.0001)
+        return NextResponse.json({ ok: false, error: 'permeabilidadRevestimiento debe estar entre 0 y 0.0001' }, { status: 400 });
+      data.permeabilidadRevestimiento = b.permeabilidadRevestimiento;
+    }
+
     if (b.pais !== undefined) {
       if (typeof b.pais !== 'string')
         return NextResponse.json({ ok: false, error: 'pais debe ser texto' }, { status: 400 });
