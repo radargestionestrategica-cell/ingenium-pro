@@ -223,7 +223,7 @@ export default function FichaActivoPage() {
       });
       const json = await res.json();
       if (json?.ok) {
-        setMensajeLectura('✅ Lectura guardada y sellada con éxito.');
+        setMensajeLectura('✅ Cálculo guardado y sellado. Archivado en el historial del activo con su sello verificable.');
         if (geometria) {
           const r1 = calcularPileta(geometria, valor);
           const r2 = calcularEstabilidadPared(valor, 9.81, 30, geometria.talud);
