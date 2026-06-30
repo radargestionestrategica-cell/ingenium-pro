@@ -194,7 +194,9 @@ export default function FichaActivoPage() {
     }
     setGuardandoLectura(true);
     setMensajeLectura('');
-    const fsPreview = geometria ? calcularEstabilidadPared(valor, 9.81, 30, geometria.talud).factorSeguridadDeslizamiento : null;
+    const fsPreview = (geometria && activo?.cohesion != null && activo?.friccionGrados != null && activo?.pesoEspecifico != null)
+      ? buscarFSCritico(geometria.profundidad, geometria.talud, activo.cohesion, activo.friccionGrados, activo.pesoEspecifico, tipoRevestimiento === 'revestida' ? null : valor)
+      : null;
     try {
       const res = await fetch('/api/telemetria/lecturas', {
         method: 'POST',
