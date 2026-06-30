@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { verificarTokenAPI, respuestaNoAutorizado } from '@/lib/api-auth';
-import { generarExcel } from '@/lib/generarExcel';
 import type { RegistroHistorial } from '@/lib/generarExcel';
+import { generarExcelTelemetria } from '@/lib/generarExcelTelemetria';
+import type { GeometriaActivoTelemetria } from '@/lib/generarExcelTelemetria';
 
 const NORMATIVA = 'USACE EM 1110-2-1902 · Método de Bishop Simplificado';
 
@@ -56,7 +57,18 @@ export async function POST(req: NextRequest) {
       };
     });
 
-    const buffer = await generarExcel({
+    let geometria: GeometriaActivoTelemetria | null = null;
+    try {
+      const g = JSON.parse(activo.geometriaJson);
+      geometria = {
+        largoCoronamiento: g.largoCoronamiento,
+        anchoCoronamiento: g.anchoCoronamiento,
+        profundidad: g.profundidad,
+        talud: g.talud,
+      };
+    } catch { /* best-effort */ }
+
+    const buffer = await generarExcelTelemetria({
       proyectoNombre: activo.proyecto?.nombre ?? 'Sin proyecto',
       industria: activo.proyecto?.industria ?? 'Geotecnia',
       activoNombre: activo.nombre,
@@ -69,6 +81,13 @@ export async function POST(req: NextRequest) {
       dni: usuario.dni ?? undefined,
       normativa: NORMATIVA,
       historial,
+      cohesion: activo.cohesion,
+      friccionGrados: activo.friccionGrados,
+      pesoEspecifico: activo.pesoEspecifico,
+      tipoRevestimiento: activo.tipoRevestimiento,
+      geometria,
+      paisSismico: activo.pais,
+      zonaSismica: activo.zonaSismica,
     });
 
     const filename = `telemetria-${activo.nombre.replace(/\s+/g, '-')}-${lectura.id.slice(0, 8)}.xlsx`;
