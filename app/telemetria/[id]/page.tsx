@@ -186,6 +186,36 @@ export default function FichaActivoPage() {
     }
   };
 
+  const [exportandoId, setExportandoId] = useState<string | null>(null);
+
+  const exportarPDF = async (lecturaId: string, fecha: string) => {
+    setExportandoId(lecturaId);
+    try {
+      const res = await fetch('/api/telemetria/exportar/pdf', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json', ...ipAuthHeader() },
+        body: JSON.stringify({ lecturaId }),
+      });
+      if (!res.ok) {
+        const json = await res.json().catch(() => ({}));
+        alert(json?.error ?? 'No se pudo generar el PDF.');
+        return;
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `telemetria-${new Date(fecha).toISOString().slice(0, 10)}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      alert('Error de conexión al generar el PDF.');
+    } finally {
+      setExportandoId(null);
+    }
+  };
+
   const eliminarLectura = async (lecturaId: string) => {
     if (!window.confirm('¿Eliminar este cálculo sellado? Esta acción no se puede deshacer.')) return;
     try {
@@ -597,12 +627,21 @@ export default function FichaActivoPage() {
                       {l.hash && (
                         <div style={{ fontSize: 9, color: '#334155', fontFamily: 'ui-monospace,SFMono-Regular,monospace', wordBreak: 'break-all', marginBottom: 6 }}>{l.hash}</div>
                       )}
-                      <button
-                        onClick={() => eliminarLectura(l.id)}
-                        style={{ fontSize: 10, color: '#f87171', background: 'none', border: '1px solid rgba(248,113,113,0.3)', borderRadius: 6, padding: '3px 10px', cursor: 'pointer' }}
-                      >
-                        Eliminar
-                      </button>
+                      <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
+                        <button
+                          onClick={() => exportarPDF(l.id, l.createdAt)}
+                          disabled={exportandoId === l.id}
+                          style={{ fontSize: 10, color: '#6366f1', background: 'none', border: '1px solid rgba(99,102,241,0.3)', borderRadius: 6, padding: '3px 10px', cursor: exportandoId === l.id ? 'default' : 'pointer', opacity: exportandoId === l.id ? 0.6 : 1 }}
+                        >
+                          {exportandoId === l.id ? 'Generando…' : '📄 Exportar PDF'}
+                        </button>
+                        <button
+                          onClick={() => eliminarLectura(l.id)}
+                          style={{ fontSize: 10, color: '#f87171', background: 'none', border: '1px solid rgba(248,113,113,0.3)', borderRadius: 6, padding: '3px 10px', cursor: 'pointer' }}
+                        >
+                          Eliminar
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
