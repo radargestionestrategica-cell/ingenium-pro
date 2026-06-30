@@ -565,11 +565,18 @@ export default function FichaActivoPage() {
                           {new Date(l.createdAt).toLocaleString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                         </span>
                       </div>
-                      {l.factorSeguridad != null && (
-                        <div style={{ fontSize: 10, color: '#94a3b8', marginBottom: 4 }}>
-                          FS estático: <strong style={{ color: l.factorSeguridad >= 1.5 ? '#4ade80' : l.factorSeguridad >= 1.3 ? '#facc15' : '#f87171' }}>{l.factorSeguridad.toFixed(3)}</strong>
-                        </div>
-                      )}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                        {l.factorSeguridad != null ? (
+                          <>
+                            <div style={{ width: 8, height: 8, borderRadius: '50%', background: l.factorSeguridad >= 1.5 ? '#4ade80' : l.factorSeguridad >= 1.3 ? '#facc15' : '#f87171', flexShrink: 0 }} />
+                            <span style={{ fontSize: 10, fontWeight: 700, color: l.factorSeguridad >= 1.5 ? '#4ade80' : l.factorSeguridad >= 1.3 ? '#facc15' : '#f87171' }}>
+                              FS: {l.factorSeguridad.toFixed(3)}
+                            </span>
+                          </>
+                        ) : (
+                          <span style={{ fontSize: 10, color: '#475569', fontStyle: 'italic' }}>Sin datos de suelo</span>
+                        )}
+                      </div>
                       {l.hash && (
                         <div style={{ fontSize: 9, color: '#334155', fontFamily: 'ui-monospace,SFMono-Regular,monospace', wordBreak: 'break-all' }}>{l.hash}</div>
                       )}
