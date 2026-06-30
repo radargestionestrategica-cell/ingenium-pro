@@ -83,6 +83,9 @@ export default function FichaActivoPage() {
   const [guardandoMaterial, setGuardandoMaterial] = useState(false);
   const [mensajeMaterial, setMensajeMaterial] = useState('');
   const [tipoRevestimiento, setTipoRevestimiento] = useState<string>('sin_revestir');
+  const [pesoEspecificoHormigon, setPesoEspecificoHormigon] = useState<number | null>(null);
+  const [coeficienteFriccionBase, setCoeficienteFriccionBase] = useState<number | null>(null);
+  const [permeabilidadRevestimiento, setPermeabilidadRevestimiento] = useState<number | null>(null);
   const [factorSismico, setFactorSismico] = useState(0.5);
   const [paisSismico, setPaisSismico] = useState<string>('Argentina');
   const [zonaSismicaLocal, setZonaSismicaLocal] = useState<string>('');
@@ -491,6 +494,25 @@ export default function FichaActivoPage() {
                       </div>
                     ))}
                   </div>
+                  {activo?.tipoActivo === 'represa' && (
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: 10 }}>
+                      {([
+                        { l: 'Peso espec. hormigón (kN/m³)',     val: pesoEspecificoHormigon,     set: setPesoEspecificoHormigon },
+                        { l: 'Coef. fricción base',               val: coeficienteFriccionBase,    set: setCoeficienteFriccionBase },
+                        { l: 'Permeabilidad revestimiento (m/s)', val: permeabilidadRevestimiento, set: setPermeabilidadRevestimiento },
+                      ] as { l: string; val: number | null; set: (v: number | null) => void }[]).map(f => (
+                        <div key={f.l}>
+                          <div style={{ fontSize: 9, color: '#475569', textTransform: 'uppercase', marginBottom: 3 }}>{f.l}</div>
+                          <input
+                            type="number" step="0.1"
+                            value={f.val ?? ''}
+                            onChange={e => f.set(e.target.value === '' ? null : parseFloat(e.target.value))}
+                            style={{ width: '100%', padding: '7px 8px', background: '#0a0f1e', border: '1px solid rgba(99,102,241,0.2)', borderRadius: 8, color: '#f1f5f9', fontSize: 12, outline: 'none', boxSizing: 'border-box' }}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  )}
                   <button
                     onClick={guardarMaterial}
                     disabled={guardandoMaterial}
