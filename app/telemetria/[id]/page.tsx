@@ -186,6 +186,23 @@ export default function FichaActivoPage() {
     }
   };
 
+  const eliminarLectura = async (lecturaId: string) => {
+    if (!window.confirm('¿Eliminar este cálculo sellado? Esta acción no se puede deshacer.')) return;
+    try {
+      const res = await fetch(`/api/telemetria/lecturas?id=${lecturaId}`, {
+        method: 'DELETE', credentials: 'include', headers: ipAuthHeader(),
+      });
+      const json = await res.json();
+      if (json?.ok) {
+        setHistorial(prev => prev.filter(l => l.id !== lecturaId));
+      } else {
+        alert(json?.error ?? 'No se pudo eliminar la lectura.');
+      }
+    } catch {
+      alert('Error de conexión al eliminar.');
+    }
+  };
+
   const guardarLectura = async () => {
     const valor = parseFloat(nivelMedido);
     if (!activo || isNaN(valor)) {
@@ -578,8 +595,14 @@ export default function FichaActivoPage() {
                         )}
                       </div>
                       {l.hash && (
-                        <div style={{ fontSize: 9, color: '#334155', fontFamily: 'ui-monospace,SFMono-Regular,monospace', wordBreak: 'break-all' }}>{l.hash}</div>
+                        <div style={{ fontSize: 9, color: '#334155', fontFamily: 'ui-monospace,SFMono-Regular,monospace', wordBreak: 'break-all', marginBottom: 6 }}>{l.hash}</div>
                       )}
+                      <button
+                        onClick={() => eliminarLectura(l.id)}
+                        style={{ fontSize: 10, color: '#f87171', background: 'none', border: '1px solid rgba(248,113,113,0.3)', borderRadius: 6, padding: '3px 10px', cursor: 'pointer' }}
+                      >
+                        Eliminar
+                      </button>
                     </div>
                   ))}
                 </div>
