@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { verificarTokenAPI, respuestaNoAutorizado } from '@/lib/api-auth';
-import { hashCalculation } from '@/lib/cripto';
+import { hashCalculation, signHash } from '@/lib/cripto';
 
 export async function POST(req: NextRequest) {
   const payload = verificarTokenAPI(req);
@@ -25,6 +25,8 @@ export async function POST(req: NextRequest) {
       usuarioId: payload.id,
     });
 
+    const firma = signHash(hash);
+
     const lectura = await prisma.lecturaTelemetria.create({
       data: {
         activoId: b.activoId,
@@ -34,6 +36,7 @@ export async function POST(req: NextRequest) {
         fuente: b.fuente,
         usuarioId: payload.id,
         hash,
+        firma,
         factorSeguridad: typeof b.factorSeguridad === 'number' ? b.factorSeguridad : null,
       },
     });
