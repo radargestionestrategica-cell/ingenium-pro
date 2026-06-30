@@ -27,6 +27,18 @@ type CalculoVerificacion = Prisma.CalculoGetPayload<{
   };
 }>;
 
+type LecturaVerificacion = Prisma.LecturaTelemetriaGetPayload<{
+  include: {
+    activo: {
+      include: {
+        usuario: {
+          select: { nombre: true; empresa: true; pais: true; };
+        };
+      };
+    };
+  };
+}>;
+
 function decodificarHash(hash: string): string {
   try {
     return decodeURIComponent(hash || '').trim();
@@ -99,6 +111,7 @@ export default async function VerifyPage({ params }: PageProps) {
   const hashLimpio = decodificarHash(hash);
 
   let calculo: CalculoVerificacion | null = null;
+  let lectura: LecturaVerificacion | null = null;
   let errorConsulta = false;
 
   try {
@@ -115,6 +128,18 @@ export default async function VerifyPage({ params }: PageProps) {
           },
         },
       });
+      if (!calculo) {
+        lectura = await prisma.lecturaTelemetria.findFirst({
+          where: { hash: hashLimpio },
+          include: {
+            activo: {
+              include: {
+                usuario: { select: { nombre: true, empresa: true, pais: true } },
+              },
+            },
+          },
+        });
+      }
     }
   } catch (error) {
     console.error('[verify/hash] Error al consultar cálculo:', error);
@@ -424,7 +449,7 @@ export default async function VerifyPage({ params }: PageProps) {
               </p>
               <div className="hashbox">{hashLimpio || 'Hash vacío'}</div>
             </>
-          ) : calculo ? (
+          ) : calculo || lectura ? (
             <>
               <div className="status ok">✓ Registro encontrado</div>
               <h1>Cálculo registrado en INGENIUM Pro</h1>
@@ -433,13 +458,13 @@ export default async function VerifyPage({ params }: PageProps) {
                 La información mostrada corresponde al registro disponible para verificación documental.
               </p>
 
-              <div className="hashbox">{calculo.hash || hashLimpio}</div>
+              <div className="hashbox">{calculo?.hash || lectura?.hash || hashLimpio}</div>
 
-              {calculo.alerta && (
+              {calculo?.alerta && (
                 <div className="alert">
                   <strong>Alerta técnica detectada:</strong>
                   <br />
-                  {calculo.alertaMsg || 'El cálculo fue marcado con alerta.'}
+                  {calculo?.alertaMsg || 'El cálculo fue marcado con alerta.'}
                 </div>
               )}
 
@@ -522,6 +547,25 @@ export default async function VerifyPage({ params }: PageProps) {
               <TablaDatos titulo="Parámetros de entrada" datos={calculo.parametros} />
               <TablaDatos titulo="Resultado calculado" datos={calculo.resultado} />
             </div>
+          </>
+        )}
+
+        {lectura && (
+          <>
+            <section className="card">
+              <h2>Datos principales — Telemetría</h2>
+              <div className="item"><div className="label">Activo</div><div className="text">{lectura.activo.nombre}</div></div>
+              <div className="item"><div className="label">Tipo</div><div className="text">{lectura.activo.tipoActivo}</div></div>
+              <div className="item"><div className="label">Magnitud</div><div className="text">{lectura.magnitud}</div></div>
+              <div className="item"><div className="label">Valor medido</div><div className="text">{lectura.valor} {lectura.unidad}</div></div>
+              {lectura.factorSeguridad != null && (
+                <div className="item"><div className="label">Factor de seguridad (Bishop)</div><div className="text">{lectura.factorSeguridad.toFixed(3)} — Norma: USACE EM 1110-2-1902</div></div>
+              )}
+              <div className="item"><div className="label">Firmante</div><div className="text">{lectura.activo.usuario.nombre}</div></div>
+              <div className="item"><div className="label">Empresa</div><div className="text">{lectura.activo.usuario.empresa}</div></div>
+              <div className="item"><div className="label">País</div><div className="text">{lectura.activo.usuario.pais}</div></div>
+              <div className="item"><div className="label">Fecha</div><div className="text">{formatearFecha(lectura.createdAt)}</div></div>
+            </section>
           </>
         )}
 
