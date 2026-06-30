@@ -130,6 +130,9 @@ model ActivoTelemetria {
   tipoRevestimiento String?
   pais             String?
   zonaSismica      String?
+  pesoEspecificoHormigon     Float?
+  coeficienteFriccionBase    Float?
+  permeabilidadRevestimiento Float?
   createdAt      DateTime            @default(now())
   lecturas       LecturaTelemetria[]
 }
