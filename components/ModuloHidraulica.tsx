@@ -2,11 +2,18 @@
 import { publicarResultado } from '@/components/ResultadoContexto';
 import BotonesExportar, { DatosExportar } from '@/components/BotonesExportar';
 import { useState, useEffect } from 'react';
+import { parsearGeometriaSegura, calcularCaudalMedido, type ResultadoCaudalMedido } from '@/lib/telemetria-calculo';
 
 interface ActivoTelemetriaOption {
   id: string;
   nombre: string;
   tipoActivo: string;
+  geometriaJson: string;
+}
+
+interface LecturaTelemetriaApi {
+  valor: number;
+  createdAt: string;
 }
 
 function ipAuthHeader(): Record<string, string> {
@@ -106,6 +113,9 @@ export default function ModuloHidraulica() {
   // Activos monitoreados de telemetría — solo para el sub-cálculo Darcy-Weisbach
   const [activosTelemetria, setActivosTelemetria] = useState<ActivoTelemetriaOption[]>([]);
   const [activoElegido, setActivoElegido] = useState<ActivoTelemetriaOption | null>(null);
+  const [calculandoCaudal, setCalculandoCaudal] = useState(false);
+  const [resultadoCaudal, setResultadoCaudal] = useState<ResultadoCaudalMedido | null>(null);
+  const [errorCaudal, setErrorCaudal] = useState('');
 
   useEffect(() => {
     fetch('/api/telemetria', { credentials: 'include', headers: ipAuthHeader() })
@@ -117,6 +127,56 @@ export default function ModuloHidraulica() {
       })
       .catch(() => {});
   }, []);
+
+  const calcularCaudalDelActivo = async () => {
+    if (!activoElegido) return;
+    setCalculandoCaudal(true);
+    setErrorCaudal('');
+    setResultadoCaudal(null);
+    try {
+      const res = await fetch(`/api/telemetria/lecturas?activoId=${activoElegido.id}`, {
+        credentials: 'include',
+        headers: ipAuthHeader(),
+      });
+      const json = await res.json();
+      if (!json?.ok || !Array.isArray(json.data)) {
+        setErrorCaudal('No se pudieron obtener las lecturas del activo.');
+        return;
+      }
+
+      const lecturas = json.data as LecturaTelemetriaApi[];
+      if (lecturas.length < 2) {
+        setErrorCaudal('Se necesitan al menos dos lecturas del activo para calcular el caudal.');
+        return;
+      }
+
+      const geometria = parsearGeometriaSegura(activoElegido.geometriaJson);
+      if (!geometria) {
+        setErrorCaudal('El activo no tiene una geometría válida cargada.');
+        return;
+      }
+
+      const [actual, anterior] = lecturas; // orden desc: [0] es la mas reciente
+      const areaSuperficie_m2 = geometria.largoCoronamiento * geometria.anchoCoronamiento;
+
+      const resultado = calcularCaudalMedido(
+        { nivel: anterior.valor, fecha: new Date(anterior.createdAt) },
+        { nivel: actual.valor, fecha: new Date(actual.createdAt) },
+        areaSuperficie_m2,
+      );
+
+      if (!resultado) {
+        setErrorCaudal('El intervalo de tiempo entre las dos lecturas no es válido.');
+        return;
+      }
+
+      setResultadoCaudal(resultado);
+    } catch {
+      setErrorCaudal('Error de conexión al calcular el caudal.');
+    } finally {
+      setCalculandoCaudal(false);
+    }
+  };
 
   const calcularDW = () => {
     setError('');
@@ -286,6 +346,34 @@ export default function ModuloHidraulica() {
                   <option key={a.id} value={a.id}>{a.nombre}</option>
                 ))}
               </select>
+              {activoElegido && (
+                <>
+                  <button
+                    onClick={calcularCaudalDelActivo}
+                    disabled={calculandoCaudal}
+                    style={{
+                      marginTop: 10, padding: '8px 16px',
+                      background: 'linear-gradient(135deg,#0ea5e9,#0284c7)',
+                      border: 'none', borderRadius: 8, color: '#fff',
+                      fontSize: 12, fontWeight: 700, cursor: calculandoCaudal ? 'default' : 'pointer',
+                      opacity: calculandoCaudal ? 0.6 : 1,
+                    }}
+                  >
+                    {calculandoCaudal ? 'Calculando…' : 'Calcular caudal medido'}
+                  </button>
+                  {errorCaudal && (
+                    <div style={{ marginTop: 10, fontSize: 12, color: '#f87171', fontWeight: 600 }}>{errorCaudal}</div>
+                  )}
+                  {resultadoCaudal && (
+                    <div style={{ marginTop: 10, padding: '10px 14px', background: '#0f172a', borderRadius: 8, fontSize: 13 }}>
+                      <span style={{ color: '#94a3b8' }}>Caudal medido: </span>
+                      <span style={{ color: resultadoCaudal.tipo === 'llenado' ? '#4ade80' : resultadoCaudal.tipo === 'vaciado' ? '#f87171' : '#94a3b8', fontWeight: 800 }}>
+                        {resultadoCaudal.caudalLitrosSegundo.toFixed(3)} L/s — {resultadoCaudal.tipo.toUpperCase()}
+                      </span>
+                    </div>
+                  )}
+                </>
+              )}
             </div>
             <div style={{ color: '#0ea5e9', fontWeight: 700, fontSize: 14, marginBottom: 16, textTransform: 'uppercase' as const }}>
               Parametros Darcy-Weisbach
