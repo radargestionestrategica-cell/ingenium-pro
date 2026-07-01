@@ -370,6 +370,17 @@ export default function ModuloHidraulica() {
                       <span style={{ color: resultadoCaudal.tipo === 'llenado' ? '#4ade80' : resultadoCaudal.tipo === 'vaciado' ? '#f87171' : '#94a3b8', fontWeight: 800 }}>
                         {resultadoCaudal.caudalLitrosSegundo.toFixed(3)} L/s — {resultadoCaudal.tipo.toUpperCase()}
                       </span>
+                      <button
+                        onClick={() => setQ(String(Math.abs(resultadoCaudal.caudalLitrosSegundo)))}
+                        style={{
+                          marginLeft: 12, padding: '4px 12px',
+                          background: 'transparent', border: '1px solid #0ea5e9',
+                          borderRadius: 6, color: '#0ea5e9', fontSize: 11, fontWeight: 700,
+                          cursor: 'pointer',
+                        }}
+                      >
+                        Aplicar a Q
+                      </button>
                     </div>
                   )}
                 </>
