@@ -371,7 +371,7 @@ export default function ModuloHidraulica() {
                         {resultadoCaudal.caudalLitrosSegundo.toFixed(3)} L/s — {resultadoCaudal.tipo.toUpperCase()}
                       </span>
                       <button
-                        onClick={() => setQ(String(Math.abs(resultadoCaudal.caudalLitrosSegundo)))}
+                        onClick={() => setQ(Math.abs(resultadoCaudal.caudalLitrosSegundo).toFixed(2))}
                         style={{
                           marginLeft: 12, padding: '4px 12px',
                           background: 'transparent', border: '1px solid #0ea5e9',
