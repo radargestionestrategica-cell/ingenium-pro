@@ -1,7 +1,19 @@
 ﻿'use client';
 import { publicarResultado } from '@/components/ResultadoContexto';
 import BotonesExportar, { DatosExportar } from '@/components/BotonesExportar';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+
+interface ActivoRepresaOption {
+  id: string;
+  nombre: string;
+  tipoActivo: string;
+}
+
+function ipAuthHeader(): Record<string, string> {
+  if (typeof window === 'undefined') return {};
+  const t = localStorage.getItem('ip_token');
+  return t ? { Authorization: `Bearer ${t}` } : {};
+}
 
 interface ResultadoVertedero {
   Q: number; // m³/s
@@ -151,6 +163,22 @@ export default function ModuloRepresas() {
   const [datosE, setDatosE] = useState<DatosExportar | null>(null);
 
   const [error, setError] = useState('');
+
+  // Activos monitoreados de tipo represa (telemetría) — solo para el sub-cálculo de estabilidad
+  const [activosRepresa, setActivosRepresa] = useState<ActivoRepresaOption[]>([]);
+  const [activoElegido, setActivoElegido] = useState<ActivoRepresaOption | null>(null);
+
+  useEffect(() => {
+    fetch('/api/telemetria', { credentials: 'include', headers: ipAuthHeader() })
+      .then(res => res.ok ? res.json() : null)
+      .then(json => {
+        if (json?.ok && Array.isArray(json.data)) {
+          const soloRepresas = (json.data as ActivoRepresaOption[]).filter(a => a.tipoActivo === 'represa');
+          setActivosRepresa(soloRepresas);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const calcular = () => {
     setError('');
@@ -387,6 +415,23 @@ export default function ModuloRepresas() {
       {/* FORMULARIO ESTABILIDAD */}
       {calculo === 'estabilidad' && (
         <div>
+          <div style={{ marginBottom: 16 }}>
+            <label style={lbl}>Cargar desde activo monitoreado (opcional)</label>
+            <select
+              value={activoElegido?.id ?? ''}
+              onChange={e => {
+                const id = e.target.value;
+                const encontrado = activosRepresa.find(a => a.id === id) ?? null;
+                setActivoElegido(encontrado);
+              }}
+              style={inp}
+            >
+              <option value="">Sin activo — carga manual</option>
+              {activosRepresa.map(a => (
+                <option key={a.id} value={a.id}>{a.nombre}</option>
+              ))}
+            </select>
+          </div>
           <div style={{ fontSize: 11, color: '#06b6d4', fontWeight: 700, letterSpacing: 1, marginBottom: 16, textTransform: 'uppercase' as const }}>
             Parámetros — Estabilidad Presa de Gravedad
           </div>
