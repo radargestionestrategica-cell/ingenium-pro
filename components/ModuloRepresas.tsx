@@ -9,6 +9,13 @@ interface ActivoRepresaOption {
   tipoActivo: string;
 }
 
+interface ActivoRepresaDetalle {
+  geometriaJson: string;
+  pesoEspecificoHormigon: number | null;
+  coeficienteFriccionBase: number | null;
+  lecturas: { valor: number }[];
+}
+
 function ipAuthHeader(): Record<string, string> {
   if (typeof window === 'undefined') return {};
   const t = localStorage.getItem('ip_token');
@@ -167,6 +174,36 @@ export default function ModuloRepresas() {
   // Activos monitoreados de tipo represa (telemetría) — solo para el sub-cálculo de estabilidad
   const [activosRepresa, setActivosRepresa] = useState<ActivoRepresaOption[]>([]);
   const [activoElegido, setActivoElegido] = useState<ActivoRepresaOption | null>(null);
+  const [aplicandoActivo, setAplicandoActivo] = useState(false);
+
+  const aplicarDatosActivo = async () => {
+    if (!activoElegido) return;
+    setAplicandoActivo(true);
+    try {
+      const res = await fetch(`/api/telemetria/${activoElegido.id}`, {
+        credentials: 'include',
+        headers: ipAuthHeader(),
+      });
+      const json = await res.json();
+      if (!json?.ok) return;
+      const activo = json.activo as ActivoRepresaDetalle;
+
+      let geometria: { anchoCoronamiento?: number; profundidad?: number } = {};
+      try { geometria = JSON.parse(activo.geometriaJson); } catch { /* best-effort */ }
+
+      const ultimaLectura = activo.lecturas?.[0]?.valor;
+
+      if (ultimaLectura != null) setHe(String(ultimaLectura));
+      if (geometria.anchoCoronamiento != null) setBe(String(geometria.anchoCoronamiento));
+      if (geometria.profundidad != null) setHdE(String(geometria.profundidad));
+      if (activo.pesoEspecificoHormigon != null) setGammaH(String(activo.pesoEspecificoHormigon));
+      if (activo.coeficienteFriccionBase != null) setMuE(String(activo.coeficienteFriccionBase));
+    } catch {
+      // best-effort — deja los campos como estaban
+    } finally {
+      setAplicandoActivo(false);
+    }
+  };
 
   useEffect(() => {
     fetch('/api/telemetria', { credentials: 'include', headers: ipAuthHeader() })
@@ -431,6 +468,26 @@ export default function ModuloRepresas() {
                 <option key={a.id} value={a.id}>{a.nombre}</option>
               ))}
             </select>
+            {activoElegido && (
+              <button
+                onClick={aplicarDatosActivo}
+                disabled={aplicandoActivo}
+                style={{
+                  marginTop: 10, padding: '8px 16px',
+                  background: 'linear-gradient(135deg,#06b6d4,#0891b2)',
+                  border: 'none', borderRadius: 8, color: '#fff',
+                  fontSize: 12, fontWeight: 700, cursor: aplicandoActivo ? 'default' : 'pointer',
+                  opacity: aplicandoActivo ? 0.6 : 1,
+                }}
+              >
+                {aplicandoActivo ? 'Aplicando…' : 'Aplicar datos del activo'}
+              </button>
+            )}
+            {activoElegido && (
+              <div style={{ marginTop: 6, fontSize: 10, color: '#64748b', fontStyle: 'italic' }}>
+                Be se estima desde el ancho de coronamiento del activo y puede requerir ajuste manual según la geometría real de la estructura.
+              </div>
+            )}
           </div>
           <div style={{ fontSize: 11, color: '#06b6d4', fontWeight: 700, letterSpacing: 1, marginBottom: 16, textTransform: 'uppercase' as const }}>
             Parámetros — Estabilidad Presa de Gravedad
