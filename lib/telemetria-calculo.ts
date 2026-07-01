@@ -125,3 +125,34 @@ export function calcularEstabilidadPared(
 
   return { empujeHidrostatico, puntoAplicacion, factorSeguridadDeslizamiento, norma: 'USACE EM 1110-2-1902' };
 }
+
+export interface LecturaNivelFecha {
+  nivel: number; // metros
+  fecha: Date;
+}
+
+export interface ResultadoCaudalMedido {
+  caudalLitrosSegundo: number;
+  tipo: 'llenado' | 'vaciado' | 'sin_cambio';
+}
+
+// Calcula el caudal medido entre dos lecturas de nivel, a partir de la
+// diferencia de nivel, el area de superficie del activo y el tiempo
+// transcurrido entre ambas lecturas. Devuelve null si el tiempo
+// transcurrido entre las lecturas no es positivo.
+export function calcularCaudalMedido(
+  lecturaAnterior: LecturaNivelFecha,
+  lecturaActual: LecturaNivelFecha,
+  areaSuperficie_m2: number,
+): ResultadoCaudalMedido | null {
+  const deltaTSegundos = (lecturaActual.fecha.getTime() - lecturaAnterior.fecha.getTime()) / 1000;
+  if (deltaTSegundos <= 0) return null;
+
+  const deltaNivel = lecturaActual.nivel - lecturaAnterior.nivel;
+  const deltaVolumenLitros = deltaNivel * areaSuperficie_m2 * 1000;
+  const caudalLitrosSegundo = deltaVolumenLitros / deltaTSegundos;
+
+  const tipo = caudalLitrosSegundo > 0 ? 'llenado' : caudalLitrosSegundo < 0 ? 'vaciado' : 'sin_cambio';
+
+  return { caudalLitrosSegundo, tipo };
+}
