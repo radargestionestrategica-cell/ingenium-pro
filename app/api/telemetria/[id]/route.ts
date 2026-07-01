@@ -96,6 +96,12 @@ export async function GET(
     const { id } = await params;
     const activo = await prisma.activoTelemetria.findFirst({
       where: { id, usuarioId: payload.id },
+      include: {
+        lecturas: {
+          orderBy: { createdAt: 'desc' },
+          take: 1,
+        },
+      },
     });
     if (!activo) {
       return NextResponse.json({ ok: false, error: 'Activo no encontrado' }, { status: 404 });
