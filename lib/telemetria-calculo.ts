@@ -9,6 +9,29 @@ export interface GeometriaPileta {
   talud: number;              // relacion horizontal por cada metro vertical del talud
 }
 
+export function parsearGeometriaSegura(geometriaJson: string | null | undefined): GeometriaPileta | null {
+  if (!geometriaJson) return null;
+  try {
+    const g = JSON.parse(geometriaJson);
+    if (
+      typeof g?.largoCoronamiento !== 'number' ||
+      typeof g?.anchoCoronamiento !== 'number' ||
+      typeof g?.profundidad !== 'number' ||
+      typeof g?.talud !== 'number'
+    ) {
+      return null;
+    }
+    return {
+      largoCoronamiento: g.largoCoronamiento,
+      anchoCoronamiento: g.anchoCoronamiento,
+      profundidad: g.profundidad,
+      talud: g.talud,
+    };
+  } catch {
+    return null;
+  }
+}
+
 export interface ResultadoPileta {
   volumenActual: number;       // metros cubicos contenidos hasta el nivel medido
   capacidadTotal: number;      // metros cubicos totales de la pileta llena
