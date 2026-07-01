@@ -1,7 +1,19 @@
 ﻿'use client';
 import { publicarResultado } from '@/components/ResultadoContexto';
 import BotonesExportar, { DatosExportar } from '@/components/BotonesExportar';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+
+interface ActivoTelemetriaOption {
+  id: string;
+  nombre: string;
+  tipoActivo: string;
+}
+
+function ipAuthHeader(): Record<string, string> {
+  if (typeof window === 'undefined') return {};
+  const t = localStorage.getItem('ip_token');
+  return t ? { Authorization: `Bearer ${t}` } : {};
+}
 
 function calcDarcyWeisbach(Q: number, D: number, L: number, rugosidad: number, K_menor: number) {
   if (Q <= 0 || D <= 0 || L <= 0) return null;
@@ -90,6 +102,21 @@ export default function ModuloHidraulica() {
   const [datosDW, setDatosDW] = useState<DatosExportar | null>(null);
   const [datosWH, setDatosWH] = useState<DatosExportar | null>(null);
   const [error, setError] = useState('');
+
+  // Activos monitoreados de telemetría — solo para el sub-cálculo Darcy-Weisbach
+  const [activosTelemetria, setActivosTelemetria] = useState<ActivoTelemetriaOption[]>([]);
+  const [activoElegido, setActivoElegido] = useState<ActivoTelemetriaOption | null>(null);
+
+  useEffect(() => {
+    fetch('/api/telemetria', { credentials: 'include', headers: ipAuthHeader() })
+      .then(res => res.ok ? res.json() : null)
+      .then(json => {
+        if (json?.ok && Array.isArray(json.data)) {
+          setActivosTelemetria(json.data as ActivoTelemetriaOption[]);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const calcularDW = () => {
     setError('');
@@ -243,6 +270,23 @@ export default function ModuloHidraulica() {
         {/* DARCY-WEISBACH */}
         {tab === 'dw' && (
           <div style={{ background: '#1e293b', border: '1px solid #334155', borderRadius: 12, padding: 24, marginBottom: 20 }}>
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ color: '#94a3b8', fontSize: 12, display: 'block', marginBottom: 6 }}>Cargar desde activo monitoreado (opcional)</label>
+              <select
+                value={activoElegido?.id ?? ''}
+                onChange={e => {
+                  const id = e.target.value;
+                  const encontrado = activosTelemetria.find(a => a.id === id) ?? null;
+                  setActivoElegido(encontrado);
+                }}
+                style={selectStyle}
+              >
+                <option value="">Sin activo — carga manual</option>
+                {activosTelemetria.map(a => (
+                  <option key={a.id} value={a.id}>{a.nombre}</option>
+                ))}
+              </select>
+            </div>
             <div style={{ color: '#0ea5e9', fontWeight: 700, fontSize: 14, marginBottom: 16, textTransform: 'uppercase' as const }}>
               Parametros Darcy-Weisbach
             </div>
