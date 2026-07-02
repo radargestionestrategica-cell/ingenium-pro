@@ -66,12 +66,14 @@ function Dashboard() {
   const { datos, limpiar } = useResultado();
   const [consultasIa, setConsultasIa] = useState<{ plan: string; usadas: number; tope: number; restantes: number } | null>(null);
   const [isMobile, setIsMobile] = useState(false);
+  const [isNarrow, setIsNarrow] = useState(false);
 
   useEffect(() => {
     const checkMobile = () => {
       const mobile = window.innerWidth < 1024;
       setIsMobile(mobile);
       setSidebarOpen(!mobile);
+      setIsNarrow(window.innerWidth < 768);
     };
     checkMobile();
     window.addEventListener('resize', checkMobile);
@@ -128,19 +130,26 @@ function Dashboard() {
           <span style={{
             fontSize: 11, fontWeight: 600,
             color: consultasIa.restantes < 10 ? '#ef4444' : '#64748b',
+            whiteSpace: 'nowrap',
           }}>
-            Consultas IA: {consultasIa.usadas} de {consultasIa.tope} usadas este mes (se renuevan cada mes, no se acumulan)
+            {isNarrow
+              ? `IA ${consultasIa.usadas}/${consultasIa.tope}`
+              : `Consultas IA: ${consultasIa.usadas} de ${consultasIa.tope} usadas este mes (se renuevan cada mes, no se acumulan)`}
           </span>
         )}
-        <button onClick={() => setConversorOpen(o => !o)} style={{ background: conversorOpen ? 'rgba(34,197,94,0.15)' : 'none', border: `1px solid ${conversorOpen ? GREEN : 'rgba(34,197,94,0.2)'}`, borderRadius: 8, color: GREEN, fontSize: 12, fontWeight: 700, cursor: 'pointer', padding: '6px 12px' }}>⇄ CONVERSOR</button>
-        <a href="/planes" style={{ background: `linear-gradient(135deg,${GOLD},#c47a10)`, borderRadius: 8, color: BG, fontSize: 12, fontWeight: 800, padding: '6px 14px', textDecoration: 'none' }}>★ PLANES</a>
-        <SelectorIdioma />
-        <button
-          onClick={cerrarSesion}
-          style={{ background: 'none', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 8, color: '#ef4444', fontSize: 11, fontWeight: 700, cursor: 'pointer', padding: '6px 12px', flexShrink: 0 }}
-        >
-          ↩ SALIR
-        </button>
+        {!isNarrow && (
+          <>
+            <button onClick={() => setConversorOpen(o => !o)} style={{ background: conversorOpen ? 'rgba(34,197,94,0.15)' : 'none', border: `1px solid ${conversorOpen ? GREEN : 'rgba(34,197,94,0.2)'}`, borderRadius: 8, color: GREEN, fontSize: 12, fontWeight: 700, cursor: 'pointer', padding: '6px 12px' }}>⇄ CONVERSOR</button>
+            <a href="/planes" style={{ background: `linear-gradient(135deg,${GOLD},#c47a10)`, borderRadius: 8, color: BG, fontSize: 12, fontWeight: 800, padding: '6px 14px', textDecoration: 'none' }}>★ PLANES</a>
+            <SelectorIdioma />
+            <button
+              onClick={cerrarSesion}
+              style={{ background: 'none', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 8, color: '#ef4444', fontSize: 11, fontWeight: 700, cursor: 'pointer', padding: '6px 12px', flexShrink: 0 }}
+            >
+              ↩ SALIR
+            </button>
+          </>
+        )}
       </header>
 
       {/* BODY */}
@@ -193,6 +202,29 @@ function Dashboard() {
               <span style={{ flexShrink: 0 }}>📁</span>
               <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>Proyectos</span>
             </button>
+            {isNarrow && (
+              <>
+                <div style={{ height: 1, background: BORD, margin: '6px 4px' }} />
+                <button onClick={() => setConversorOpen(o => !o)} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 10, border: `1px solid ${conversorOpen ? GREEN : 'rgba(34,197,94,0.2)'}`, background: conversorOpen ? 'rgba(34,197,94,0.12)' : 'transparent', color: GREEN, fontSize: 12, fontWeight: 700, cursor: 'pointer', textAlign: 'left', width: '100%' }}>
+                  <span style={{ flexShrink: 0 }}>⇄</span>
+                  <span>Conversor</span>
+                </button>
+                <a href="/planes" style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 10, background: `linear-gradient(135deg,${GOLD},#c47a10)`, color: BG, fontSize: 12, fontWeight: 800, textDecoration: 'none' }}>
+                  <span style={{ flexShrink: 0 }}>★</span>
+                  <span>Planes</span>
+                </a>
+                <div style={{ padding: '6px 12px' }}>
+                  <SelectorIdioma />
+                </div>
+                <button
+                  onClick={cerrarSesion}
+                  style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 10, border: '1px solid rgba(239,68,68,0.3)', background: 'transparent', color: '#ef4444', fontSize: 12, fontWeight: 700, cursor: 'pointer', textAlign: 'left', width: '100%' }}
+                >
+                  <span style={{ flexShrink: 0 }}>↩</span>
+                  <span>Salir</span>
+                </button>
+              </>
+            )}
             <div style={{ marginTop: 'auto', padding: '12px 8px 4px', borderTop: `1px solid ${BORD}` }}>
               <div style={{ fontSize: 9, color: '#1e3a5f', textAlign: 'center', letterSpacing: 1 }}>INGENIUM PRO v8.1 · RADAR © 2026</div>
             </div>
