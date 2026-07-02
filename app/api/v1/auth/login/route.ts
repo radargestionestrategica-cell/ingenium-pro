@@ -23,16 +23,28 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Email y contraseña requeridos' }, { status: 400 });
     }
 
+    const userAgent = req.headers.get('user-agent') ?? undefined;
+
     const { prisma } = await import('@/lib/prisma');
     const usuario = await prisma.usuario.findUnique({ where: { email } });
 
     if (!usuario || !(await verificarPassword(password, usuario.password))) {
+      await prisma.registroAcceso.create({
+        data: { email, ip, userAgent, usuarioId: usuario?.id, exitoso: false },
+      });
       return NextResponse.json({ error: 'Credenciales incorrectas' }, { status: 401 });
     }
 
     if (!usuario.activo) {
+      await prisma.registroAcceso.create({
+        data: { email, ip, userAgent, usuarioId: usuario.id, exitoso: false },
+      });
       return NextResponse.json({ error: 'Cuenta desactivada' }, { status: 403 });
     }
+
+    await prisma.registroAcceso.create({
+      data: { email, ip, userAgent, usuarioId: usuario.id, exitoso: true },
+    });
 
     const planFinal = usuario.plan ?? 'pro';
     const token = generarToken({
