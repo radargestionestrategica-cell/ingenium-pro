@@ -1,23 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 
 const BG    = '#020609';
 const PANEL = '#0a0f1e';
 const GOLD  = '#E8A020';
 const BORD  = 'rgba(99,102,241,0.15)';
-const OWNER_EMAIL = 'colombosilvanabelen@gmail.com';
-
-function ipAuthHeader(): Record<string, string> {
-  if (typeof window === 'undefined') return {};
-  const t = localStorage.getItem('ip_token');
-  return t ? { Authorization: `Bearer ${t}` } : {};
-}
-
-function decodePayload(t: string) {
-  try { return JSON.parse(atob(t.split('.')[0])); } catch { return null; }
-}
 
 interface RegistroAcceso {
   id: string;
@@ -30,49 +18,18 @@ interface RegistroAcceso {
 }
 
 export default function AccesosPage() {
-  const router = useRouter();
-  const [autorizado, setAutorizado] = useState(false);
   const [cargando, setCargando] = useState(true);
   const [registros, setRegistros] = useState<RegistroAcceso[]>([]);
 
   useEffect(() => {
-    const verificarYCargar = async () => {
-      try {
-        const res = await fetch('/api/v1/auth/session', { credentials: 'include' });
-        if (!res.ok) { router.replace('/Login'); return; }
+    fetch('/api/admin/accesos', { credentials: 'include' })
+      .then(res => res.ok ? res.json() : null)
+      .then(json => { if (json?.ok) setRegistros(json.data); })
+      .catch(() => {})
+      .finally(() => setCargando(false));
+  }, []);
 
-        const data = await res.json();
-        if (!data.token) { router.replace('/Login'); return; }
-
-        localStorage.setItem('ip_token', data.token);
-        const payload = decodePayload(data.token);
-
-        if (payload?.email?.toLowerCase() !== OWNER_EMAIL) {
-          router.replace('/dashboard');
-          return;
-        }
-
-        setAutorizado(true);
-
-        const resAccesos = await fetch('/api/admin/accesos', {
-          credentials: 'include',
-          headers: ipAuthHeader(),
-        });
-        if (resAccesos.status === 403) { router.replace('/dashboard'); return; }
-
-        const json = await resAccesos.json();
-        if (json?.ok) setRegistros(json.data);
-      } catch {
-        router.replace('/Login');
-      } finally {
-        setCargando(false);
-      }
-    };
-
-    verificarYCargar();
-  }, [router]);
-
-  if (cargando || !autorizado) return null;
+  if (cargando) return null;
 
   return (
     <div style={{ minHeight: '100vh', background: BG, color: '#f1f5f9', fontFamily: 'Inter,sans-serif' }}>
