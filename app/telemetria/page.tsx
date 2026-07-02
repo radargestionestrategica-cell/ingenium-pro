@@ -167,10 +167,10 @@ export default function TelemetriaPage() {
           marginBottom: 24,
         }}>
           {[
-            { icono: '💡', titulo: 'Para qué es', texto: 'Convierte una medición real de campo en un cálculo normativo auditable y sellado criptográficamente.' },
+            { icono: '💡', titulo: 'Para qué es', texto: 'Convierte una medición real de campo en un cálculo normativo auditable y sellado criptográficamente. Los datos del activo monitoreado se cargan con un clic en los módulos Represas e Hidráulica: geometría y nivel alimentan el cálculo estructural y de caudal, sin recargar datos a mano.' },
             { icono: '🚀', titulo: 'Cómo se usa', texto: 'Cargás la geometría una vez, después cada nivel medido se calcula, se sella con firma SHA-256 y queda archivado en el historial.' },
             { icono: '📐', titulo: 'Normas', texto: 'Volumen por prismatoide, estabilidad de talud por Bishop simplificado USACE EM 1110-2-1902, sísmico pseudoestático por país INPRES-CIRSOC 103, NCh433, E.030.' },
-            { icono: '📊', titulo: 'Qué calcula', texto: 'Volumen actual, capacidad restante, camiones equivalentes, empuje hidrostático, factor de seguridad estático y sísmico con semáforo.' },
+            { icono: '📊', titulo: 'Qué calcula', texto: 'Volumen actual, capacidad restante, camiones equivalentes, empuje hidrostático, factor de seguridad estático y sísmico con semáforo. Factor de seguridad estático y sísmico calculado con Bishop simplificado según USACE EM 1110-2-1902, con búsqueda de superficie crítica.' },
             { icono: '🔐', titulo: 'Historial sellado', texto: 'Cada cálculo queda registrado con fecha, datos, factor de seguridad y sello SHA-256 verificable, formando un historial auditable en el tiempo.' },
           ].map(s => (
             <div key={s.titulo} style={{
