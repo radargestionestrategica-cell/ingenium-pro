@@ -17,7 +17,6 @@ type FormatoExportacion = 'excel' | 'pdf';
 
 type SolicitudExportacion = {
   calculoId?: string;
-  usuarioId?: string;
   proyectoId?: string;
   tipo?: string;
   formato?: FormatoExportacion;
@@ -115,9 +114,8 @@ function obtenerNumero(parametros: Record<string, unknown>, claves: string[]): n
   return undefined;
 }
 
-async function buscarCalculos(solicitud: SolicitudExportacion): Promise<CalcConRel[] | Response> {
+async function buscarCalculos(solicitud: SolicitudExportacion, usuarioId: string): Promise<CalcConRel[] | Response> {
   const calculoId = limpiarTexto(solicitud.calculoId);
-  const usuarioId = limpiarTexto(solicitud.usuarioId);
   const proyectoId = limpiarTexto(solicitud.proyectoId);
   const tipo = limpiarTexto(solicitud.tipo);
 
@@ -127,21 +125,14 @@ async function buscarCalculos(solicitud: SolicitudExportacion): Promise<CalcConR
       include: INCLUDE,
     });
 
-    if (!calculo) {
+    if (!calculo || calculo.usuarioId !== usuarioId) {
       return NextResponse.json(
-        { error: 'Cálculo no encontrado' },
-        { status: 404 }
+        { error: 'No autorizado para exportar este cálculo' },
+        { status: 403 }
       );
     }
 
     return [calculo as unknown as CalcConRel];
-  }
-
-  if (!usuarioId) {
-    return NextResponse.json(
-      { error: 'usuarioId es requerido cuando no se envía calculoId' },
-      { status: 400 }
-    );
   }
 
   if (proyectoId) {
@@ -190,9 +181,9 @@ async function buscarCalculos(solicitud: SolicitudExportacion): Promise<CalcConR
   return calculos as unknown as CalcConRel[];
 }
 
-async function generarRespuestaExportacion(solicitud: SolicitudExportacion): Promise<Response> {
+async function generarRespuestaExportacion(solicitud: SolicitudExportacion, usuarioId: string): Promise<Response> {
   const formato = normalizarFormato(solicitud.formato);
-  const calculosOrResponse = await buscarCalculos(solicitud);
+  const calculosOrResponse = await buscarCalculos(solicitud, usuarioId);
 
   if (calculosOrResponse instanceof Response) {
     return calculosOrResponse;
@@ -344,13 +335,12 @@ export async function POST(req: NextRequest): Promise<Response> {
 
     return await generarRespuestaExportacion({
       calculoId: limpiarTexto(body.calculoId),
-      usuarioId: limpiarTexto(body.usuarioId),
       proyectoId: limpiarTexto(body.proyectoId),
       tipo: limpiarTexto(body.tipo),
       formato: normalizarFormato(body.formato),
       fallbackUserId: payload.id,
       analisisIA: limpiarTexto(body.analisisIA),
-    });
+    }, payload.id);
   } catch (error) {
     console.error('[API calculos/exportar][POST]', error);
     return NextResponse.json({ error: 'Error interno al generar archivo' }, { status: 500 });
@@ -364,7 +354,6 @@ export async function GET(req: NextRequest): Promise<Response> {
     const { searchParams } = new URL(req.url);
 
     const id         = limpiarTexto(searchParams.get('id')) ?? limpiarTexto(searchParams.get('calculoId'));
-    const usuarioId  = limpiarTexto(searchParams.get('usuarioId'));
     const proyectoId = limpiarTexto(searchParams.get('proyectoId'));
     const tipoParam  = limpiarTexto(searchParams.get('tipo'));
     const formatoParam = limpiarTexto(searchParams.get('formato'));
@@ -372,12 +361,11 @@ export async function GET(req: NextRequest): Promise<Response> {
 
     return await generarRespuestaExportacion({
       calculoId: id,
-      usuarioId,
       proyectoId,
       tipo:    tipoEsFormato ? undefined : tipoParam,
       formato: normalizarFormato(formatoParam ?? (tipoEsFormato ? tipoParam : undefined)),
       fallbackUserId: payload.id,
-    });
+    }, payload.id);
   } catch (error) {
     console.error('[API calculos/exportar][GET]', error);
     return NextResponse.json({ error: 'Error interno al generar archivo' }, { status: 500 });
