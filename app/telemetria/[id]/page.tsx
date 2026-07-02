@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { calcularPileta, calcularEstabilidadPared } from '@/lib/telemetria-calculo';
 import { buscarFSCritico } from '@/lib/bishop-buscador';
-import { PAISES_SISMICOS, pgaAKh, clasificarZonaMexico } from '@/lib/sismica-zonificacion';
+import { PAISES_SISMICOS, pgaAKh, clasificarZonaMexico, TERRENOS_EC8, calcularKhEurocodigo8, type TipoTerrenoEC8 } from '@/lib/sismica-zonificacion';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 
 const BG    = '#020609';
@@ -90,6 +90,8 @@ export default function FichaActivoPage() {
   const [paisSismico, setPaisSismico] = useState<string>('Argentina');
   const [zonaSismicaLocal, setZonaSismicaLocal] = useState<string>('');
   const [a0rMexico, setA0rMexico] = useState<string>('');
+  const [agrEuropa, setAgrEuropa] = useState<string>('');
+  const [terrenoEuropa, setTerrenoEuropa] = useState<TipoTerrenoEC8>('B');
   const [guardandoZona, setGuardandoZona] = useState(false);
   const [mensajeZona, setMensajeZona] = useState('');
 
@@ -100,6 +102,12 @@ export default function FichaActivoPage() {
     if (activo?.pais === 'Mexico' && activo?.zonaSismica) {
       const a0r = activo.zonaSismica.match(/a0r=([\d.]+)/)?.[1];
       if (a0r) setA0rMexico(a0r);
+    }
+    if (activo?.pais === 'Europa' && activo?.zonaSismica) {
+      const agr = activo.zonaSismica.match(/agR=([\d.]+)/)?.[1];
+      if (agr) setAgrEuropa(agr);
+      const terreno = activo.zonaSismica.match(/Terreno ([A-E])/)?.[1] as TipoTerrenoEC8 | undefined;
+      if (terreno) setTerrenoEuropa(terreno);
     }
   }, [activo]);
 
@@ -178,6 +186,13 @@ export default function FichaActivoPage() {
             if (isNaN(a0r)) return '';
             const c = clasificarZonaMexico(a0r);
             return `${c.zona} (${c.nivel}) — a0r=${a0r} cm/s²`;
+          })()
+        : paisSismico === 'Europa'
+        ? (() => {
+            const agr = parseFloat(agrEuropa);
+            if (isNaN(agr)) return '';
+            const s = TERRENOS_EC8.find(t => t.tipo === terrenoEuropa)?.factorS ?? 1.0;
+            return `Terreno ${terrenoEuropa} (S=${s}) — agR=${agr} g`;
           })()
         : zonaSismicaLocal;
 
@@ -429,18 +444,22 @@ export default function FichaActivoPage() {
               const color = fsTalud != null ? (fsTalud >= 1.5 ? '#4ade80' : fsTalud >= 1.3 ? '#facc15' : '#f87171') : '#475569';
               const label = fsTalud != null ? (fsTalud >= 1.5 ? 'SEGURO' : fsTalud >= 1.3 ? 'ALERTA' : 'CRÍTICO') : '';
               const esMexico = activo?.pais === 'Mexico';
+              const esEuropa = activo?.pais === 'Europa';
               const paisData = PAISES_SISMICOS.find(p => p.nombre === activo?.pais);
               const zonaData = paisData?.zonas.find(z => z.nombre === activo?.zonaSismica);
               const a0rGuardado = esMexico ? activo?.zonaSismica?.match(/a0r=([\d.]+)/)?.[1] : undefined;
               const clasifMexico = a0rGuardado ? clasificarZonaMexico(parseFloat(a0rGuardado)) : null;
-              const pgaAplicable = esMexico ? clasifMexico?.pga : zonaData?.pga;
-              const kh = pgaAplicable != null ? pgaAKh(pgaAplicable, factorSismico) : 0;
-              const fsTaludSismico = (fsTalud != null && pgaAplicable != null && geometria)
+              const agrGuardado = esEuropa ? activo?.zonaSismica?.match(/agR=([\d.]+)/)?.[1] : undefined;
+              const terrenoGuardado = esEuropa ? (activo?.zonaSismica?.match(/Terreno ([A-E])/)?.[1] as TipoTerrenoEC8 | undefined) : undefined;
+              const khEuropa = (agrGuardado && terrenoGuardado) ? calcularKhEurocodigo8(parseFloat(agrGuardado), terrenoGuardado) : undefined;
+              const pgaAplicable = esMexico ? clasifMexico?.pga : (esEuropa ? undefined : zonaData?.pga);
+              const kh = esEuropa ? (khEuropa ?? 0) : (pgaAplicable != null ? pgaAKh(pgaAplicable, factorSismico) : 0);
+              const fsTaludSismico = (fsTalud != null && (pgaAplicable != null || (esEuropa && khEuropa != null)) && geometria)
                 ? buscarFSCritico(geometria.profundidad, geometria.talud, c!, fric!, peso!, tipoRevestimiento === 'revestida' ? null : resultados.nivel, kh)
                 : null;
               const colorSismico = fsTaludSismico != null ? (fsTaludSismico >= 1.1 ? '#4ade80' : fsTaludSismico >= 1.0 ? '#facc15' : '#f87171') : '#475569';
               const labelSismico = fsTaludSismico != null ? (fsTaludSismico >= 1.1 ? 'SEGURO' : fsTaludSismico >= 1.0 ? 'ALERTA' : 'CRÍTICO') : '';
-              const normaSismica = esMexico ? 'CFE MDOC 2015' : (paisData?.norma ?? '');
+              const normaSismica = esMexico ? 'CFE MDOC 2015' : esEuropa ? 'EN 1998' : (paisData?.norma ?? '');
               return (
                 <div style={{ border: `1px solid ${BORD}`, borderRadius: 12, background: 'rgba(7,13,26,0.8)', padding: 16, marginTop: 16 }}>
                   <div style={{ fontSize: 10, fontWeight: 800, color: GOLD, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 12 }}>
@@ -616,6 +635,7 @@ export default function FichaActivoPage() {
                           <option key={p.nombre} value={p.nombre}>{p.nombre}</option>
                         ))}
                         <option value="Mexico">México (CFE MDOC 2015)</option>
+                        <option value="Europa">Europa (Eurocódigo 8 — EN 1998)</option>
                       </select>
                     </div>
                     {paisSismico === 'Mexico' ? (
@@ -638,6 +658,43 @@ export default function FichaActivoPage() {
                             </div>
                           );
                         })()}
+                      </div>
+                    ) : paisSismico === 'Europa' ? (
+                      <div style={{ marginBottom: 10 }}>
+                        <div style={{ fontSize: 9, color: '#475569', textTransform: 'uppercase', marginBottom: 4 }}>agR — aceleración de referencia (fracción de g)</div>
+                        <input
+                          type="number" step="0.01" min="0"
+                          value={agrEuropa}
+                          onChange={e => setAgrEuropa(e.target.value)}
+                          style={{ width: '100%', padding: '7px 10px', background: '#0a0f1e', border: '1px solid rgba(99,102,241,0.2)', borderRadius: 8, color: '#f1f5f9', fontSize: 12, outline: 'none', boxSizing: 'border-box' }}
+                        />
+                        <div style={{ marginTop: 5, fontSize: 10, color: '#475569', fontStyle: 'italic' }}>
+                          Obtenga agR del mapa de zonificación del Anexo Nacional de su país.
+                        </div>
+                        <div style={{ marginTop: 10, fontSize: 9, color: '#475569', textTransform: 'uppercase', marginBottom: 4 }}>Tipo de terreno</div>
+                        <select
+                          value={terrenoEuropa}
+                          onChange={e => setTerrenoEuropa(e.target.value as TipoTerrenoEC8)}
+                          style={{ background: '#0a0f1e', border: '1px solid rgba(99,102,241,0.2)', borderRadius: 8, color: '#f1f5f9', fontSize: 12, padding: '7px 10px', outline: 'none', width: '100%', cursor: 'pointer' }}
+                        >
+                          {TERRENOS_EC8.map(t => (
+                            <option key={t.tipo} value={t.tipo}>Tipo {t.tipo} — S={t.factorS}</option>
+                          ))}
+                        </select>
+                        <div style={{ marginTop: 5, fontSize: 10, color: '#475569', fontStyle: 'italic' }}>
+                          Valores de S recomendados EN 1998, verifique su Anexo Nacional.
+                        </div>
+                        {agrEuropa && !isNaN(parseFloat(agrEuropa)) && (() => {
+                          const khPreview = calcularKhEurocodigo8(parseFloat(agrEuropa), terrenoEuropa);
+                          return (
+                            <div style={{ marginTop: 8, fontSize: 11, fontWeight: 700, color: '#94a3b8' }}>
+                              kh = {khPreview.toFixed(4)} (0.5 × agR × S)
+                            </div>
+                          );
+                        })()}
+                        <div style={{ marginTop: 8, fontSize: 10, color: '#f87171', fontStyle: 'italic' }}>
+                          Método pseudoestático no válido en suelos con alta presión de poros según EN 1998-5.
+                        </div>
                       </div>
                     ) : (
                       <div style={{ marginBottom: 10 }}>
