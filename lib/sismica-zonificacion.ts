@@ -73,3 +73,21 @@ export const PAISES_SISMICOS: PaisSismico[] = [
 export function pgaAKh(pga: number, factor = 0.5): number {
   return pga * factor;
 }
+
+// México — CFE MDOC 2015 no usa zonas de valor fijo: el usuario ingresa la
+// aceleración máxima en roca a0r (cm/s²) obtenida del programa oficial
+// PRODISIS de CFE, y se clasifica según la Tabla 1.3.
+export interface ZonificacionMexico {
+  pga: number;   // fracción de g (a0r / 981)
+  zona: string;
+  nivel: string;
+}
+
+export function clasificarZonaMexico(a0r_cm_s2: number): ZonificacionMexico {
+  const pga = a0r_cm_s2 / 981;
+
+  if (a0r_cm_s2 < 50)  return { pga, zona: 'Zona A', nivel: 'Baja' };
+  if (a0r_cm_s2 < 100) return { pga, zona: 'Zona B', nivel: 'Moderada' };
+  if (a0r_cm_s2 < 200) return { pga, zona: 'Zona C', nivel: 'Alta' };
+  return { pga, zona: 'Zona D', nivel: 'Muy Alta' };
+}
