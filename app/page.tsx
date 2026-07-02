@@ -787,6 +787,22 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* ═══ TELEMETRÍA ══════════════════════════════════════════ */}
+      <section id="telemetria" className="section">
+        <div className="wrap">
+          <div className="section-head">
+            <div className="eyebrow green">Monitoreo continuo</div>
+            <h2>Telemetría — monitoreo de activos con cálculo normativo</h2>
+            <p className="section-sub">
+              Convertí mediciones de campo en cálculos sellados: nivel, volumen y estabilidad de talud con factor
+              de seguridad estático y sísmico según norma oficial de 6 países (Argentina, Chile, Perú, Ecuador,
+              Colombia, México). Historial auditable con sello criptográfico verificable por QR, exportación PDF
+              y Excel, y carga con un clic hacia Represas e Hidráulica.
+            </p>
+          </div>
+        </div>
+      </section>
+
       {/* ═══ PLANES ══════════════════════════════════════════════ */}
       <section id="planes" className="section">
         <div className="wrap">
