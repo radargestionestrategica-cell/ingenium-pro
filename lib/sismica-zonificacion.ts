@@ -91,3 +91,31 @@ export function clasificarZonaMexico(a0r_cm_s2: number): ZonificacionMexico {
   if (a0r_cm_s2 < 200) return { pga, zona: 'Zona C', nivel: 'Alta' };
   return { pga, zona: 'Zona D', nivel: 'Muy Alta' };
 }
+
+// Eurocódigo 8 (EN 1998) — como México, no usa zonas de valor fijo: el
+// usuario ingresa la aceleración de referencia agR (fracción de g) según
+// el Anexo Nacional de su país. El tipo de terreno determina el factor
+// de suelo S del espectro de respuesta.
+export type TipoTerrenoEC8 = 'A' | 'B' | 'C' | 'D' | 'E';
+
+export interface TerrenoEC8 {
+  tipo: TipoTerrenoEC8;
+  factorS: number;
+}
+
+// Valores recomendados EN 1998 para el espectro Tipo 1.
+// Verifique su Anexo Nacional — estos valores pueden variar por país.
+export const TERRENOS_EC8: TerrenoEC8[] = [
+  { tipo: 'A', factorS: 1.0 },
+  { tipo: 'B', factorS: 1.2 },
+  { tipo: 'C', factorS: 1.15 },
+  { tipo: 'D', factorS: 1.35 },
+  { tipo: 'E', factorS: 1.4 },
+];
+
+// Coeficiente sísmico horizontal según EN 1998 parte 5: kh = 0.5 · agR · S
+export function calcularKhEurocodigo8(agR_g: number, tipoTerreno: TipoTerrenoEC8): number {
+  const terreno = TERRENOS_EC8.find(t => t.tipo === tipoTerreno);
+  const S = terreno?.factorS ?? 1.0;
+  return 0.5 * agR_g * S;
+}
