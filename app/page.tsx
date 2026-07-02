@@ -797,7 +797,7 @@ export default function LandingPage() {
               Convertí mediciones de campo en cálculos sellados: nivel, volumen y estabilidad de talud con factor
               de seguridad estático y sísmico según norma oficial de 6 países (Argentina, Chile, Perú, Ecuador,
               Colombia, México). Historial auditable con sello criptográfico verificable por QR, exportación PDF
-              y Excel, y carga con un clic hacia Represas e Hidráulica.
+              y Excel, y carga con un clic hacia Represas, Hidráulica y Geotecnia.
             </p>
           </div>
         </div>
