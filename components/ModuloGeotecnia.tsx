@@ -1,7 +1,27 @@
 ﻿'use client';
 import { publicarResultado } from '@/components/ResultadoContexto';
 import BotonesExportar, { DatosExportar } from '@/components/BotonesExportar';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+
+interface ActivoGeotecniaOption {
+  id: string;
+  nombre: string;
+  tipoActivo: string;
+}
+
+interface ActivoGeotecniaDetalle {
+  geometriaJson: string;
+  cohesion: number | null;
+  friccionGrados: number | null;
+  pesoEspecifico: number | null;
+  lecturas: { valor: number }[];
+}
+
+function ipAuthHeader(): Record<string, string> {
+  if (typeof window === 'undefined') return {};
+  const t = localStorage.getItem('ip_token');
+  return t ? { Authorization: `Bearer ${t}` } : {};
+}
 
 // Capacidad portante - Meyerhof con nivel freatico
 // Referencia: Meyerhof (1963) + Das (2011) Principles of Foundation Engineering
@@ -151,6 +171,63 @@ export default function ModuloGeotecnia() {
   const [resET, setResET] = useState<ReturnType<typeof calcEstabilidadTalud>>(null);
   const [datosET, setDatosET] = useState<DatosExportar | null>(null);
   const [error, setError] = useState('');
+
+  // Activos monitoreados (telemetría) — carga de datos hacia Estabilidad de Taludes
+  const [activosGeo, setActivosGeo] = useState<ActivoGeotecniaOption[]>([]);
+  const [activoElegido, setActivoElegido] = useState<ActivoGeotecniaOption | null>(null);
+  const [aplicandoActivo, setAplicandoActivo] = useState(false);
+  const [mensajeActivo, setMensajeActivo] = useState('');
+
+  useEffect(() => {
+    fetch('/api/telemetria', { credentials: 'include', headers: ipAuthHeader() })
+      .then(res => res.ok ? res.json() : null)
+      .then(json => {
+        if (json?.ok && Array.isArray(json.data)) {
+          setActivosGeo(json.data as ActivoGeotecniaOption[]);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const aplicarDatosActivo = async () => {
+    if (!activoElegido) return;
+    setAplicandoActivo(true);
+    setMensajeActivo('');
+    try {
+      const res = await fetch(`/api/telemetria/${activoElegido.id}`, {
+        credentials: 'include',
+        headers: ipAuthHeader(),
+      });
+      const json = await res.json();
+      if (!json?.ok) { setMensajeActivo('No se pudieron obtener los datos del activo.'); return; }
+      const activo = json.activo as ActivoGeotecniaDetalle;
+
+      let geometria: { profundidad?: number; talud?: number } = {};
+      try { geometria = JSON.parse(activo.geometriaJson); } catch { /* best-effort */ }
+
+      // El talud del activo es horizontal:1 vertical — se convierte a angulo
+      // beta (grados) que espera el motor Bishop de este modulo: beta = atan(1/talud)
+      if (geometria.profundidad != null) setH(String(geometria.profundidad));
+      if (geometria.talud != null && geometria.talud > 0) {
+        const betaDeg = Math.atan(1 / geometria.talud) * 180 / Math.PI;
+        setBeta(betaDeg.toFixed(2));
+      }
+      if (activo.cohesion != null) setC(String(activo.cohesion));
+      if (activo.friccionGrados != null) setPhi(String(activo.friccionGrados));
+      // pesoEspecifico del activo es peso unitario en kN/m3 — se convierte a
+      // densidad en kg/m3 (gamma = peso unitario * 1000 / 9.81) para este modulo
+      if (activo.pesoEspecifico != null) setGamma((activo.pesoEspecifico * 1000 / 9.81).toFixed(1));
+
+      const ultimaLectura = activo.lecturas?.[0]?.valor;
+      if (ultimaLectura != null) setDwT(String(ultimaLectura));
+
+      setMensajeActivo('✅ Datos del activo aplicados.');
+    } catch {
+      setMensajeActivo('Error de conexión al aplicar los datos del activo.');
+    } finally {
+      setAplicandoActivo(false);
+    }
+  };
 
   const calcCP = () => {
     setError('');
@@ -335,6 +412,44 @@ export default function ModuloGeotecnia() {
           <div style={{ background: '#1e293b', border: '1px solid #334155', borderRadius: 12, padding: 24, marginBottom: 20 }}>
             <div style={{ color: '#84cc16', fontWeight: 700, fontSize: 14, marginBottom: 16, textTransform: 'uppercase' as const }}>
               Parametros Talud — Bishop Simplificado
+            </div>
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ color: '#94a3b8', fontSize: 12, display: 'block', marginBottom: 6 }}>Cargar desde activo monitoreado (opcional)</label>
+              <select
+                value={activoElegido?.id ?? ''}
+                onChange={e => {
+                  const id = e.target.value;
+                  const encontrado = activosGeo.find(a => a.id === id) ?? null;
+                  setActivoElegido(encontrado);
+                  setMensajeActivo('');
+                }}
+                style={{ ...inputStyle, fontSize: 14 }}
+              >
+                <option value="">Sin activo — carga manual</option>
+                {activosGeo.map(a => (
+                  <option key={a.id} value={a.id}>{a.nombre}</option>
+                ))}
+              </select>
+              {activoElegido && (
+                <button
+                  onClick={aplicarDatosActivo}
+                  disabled={aplicandoActivo}
+                  style={{
+                    marginTop: 10, padding: '8px 16px',
+                    background: 'linear-gradient(135deg,#06b6d4,#0891b2)',
+                    border: 'none', borderRadius: 8, color: '#fff',
+                    fontSize: 12, fontWeight: 700, cursor: aplicandoActivo ? 'default' : 'pointer',
+                    opacity: aplicandoActivo ? 0.6 : 1,
+                  }}
+                >
+                  {aplicandoActivo ? 'Aplicando…' : 'Aplicar datos del activo'}
+                </button>
+              )}
+              {mensajeActivo && (
+                <div style={{ marginTop: 8, fontSize: 12, fontWeight: 600, color: mensajeActivo.startsWith('✅') ? '#84cc16' : '#f87171' }}>
+                  {mensajeActivo}
+                </div>
+              )}
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
               {[
