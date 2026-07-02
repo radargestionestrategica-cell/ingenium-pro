@@ -19,7 +19,9 @@ export async function POST(req: Request) {
   if (limited) return limited;
 
   try {
-    const { email, password, nombre, empresa, pais, matricula, dni, invitacion } = await req.json();
+    const body = await req.json();
+    const { password, nombre, empresa, pais, matricula, dni, invitacion } = body;
+    const email = typeof body.email === 'string' ? body.email.trim().toLowerCase() : '';
 
     if (!email || !password || !nombre || !empresa) {
       return NextResponse.json({ error: 'Todos los campos son requeridos' }, { status: 400 });
