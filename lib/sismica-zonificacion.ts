@@ -52,6 +52,22 @@ export const PAISES_SISMICOS: PaisSismico[] = [
       { nombre: 'Zona VI (mínimo normativo)', pga: 0.50 },
     ],
   },
+  {
+    nombre: 'Colombia',
+    norma: 'NSR-10 Título A',
+    zonas: [
+      { nombre: 'Aa 0.05 (amenaza baja)',        pga: 0.05 },
+      { nombre: 'Aa 0.10 (amenaza baja)',        pga: 0.10 },
+      { nombre: 'Aa 0.15 (amenaza intermedia)',  pga: 0.15 },
+      { nombre: 'Aa 0.20 (amenaza intermedia)',  pga: 0.20 },
+      { nombre: 'Aa 0.25 (amenaza alta)',        pga: 0.25 },
+      { nombre: 'Aa 0.30 (amenaza alta)',        pga: 0.30 },
+      { nombre: 'Aa 0.35 (amenaza alta)',        pga: 0.35 },
+      { nombre: 'Aa 0.40 (amenaza alta)',        pga: 0.40 },
+      { nombre: 'Aa 0.45 (amenaza alta)',        pga: 0.45 },
+      { nombre: 'Aa 0.50 (amenaza alta)',        pga: 0.50 },
+    ],
+  },
 ];
 
 export function pgaAKh(pga: number, factor = 0.5): number {
