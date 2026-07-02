@@ -154,3 +154,15 @@ model LecturaTelemetria {
   firma            String?
   factorSeguridad  Float?
 }
+
+// ─── REGISTRO DE ACCESO ─────────────────────────────────────────
+// Tabla ya existente en produccion, creada por SQL directo.
+model RegistroAcceso {
+  id        String   @id @default(uuid())
+  usuarioId String?
+  email     String
+  ip        String?
+  userAgent String?
+  exitoso   Boolean
+  createdAt DateTime @default(now())
+}
