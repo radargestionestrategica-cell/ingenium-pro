@@ -60,20 +60,3 @@ export interface MAOPInput {
     const dP = rho * a * v;
     return Math.round(dP / 1000 * 100) / 100;
   }
-  
-  export function calculateBishopSlope(
-    H: number,
-    phi: number,
-    c: number = 0,
-    gamma: number = 19
-  ): { FS: number; safe: boolean } {
-    const phi_rad = (phi * Math.PI) / 180;
-    const tan_phi = Math.tan(phi_rad);
-  
-    const FS = (tan_phi * (1 + 0.1)) / (Math.sin(phi_rad) * Math.cos(phi_rad));
-  
-    return {
-      FS: Math.round(FS * 100) / 100,
-      safe: FS > 1.3,
-    };
-  }
