@@ -1,8 +1,8 @@
 // app/verify/[hash]/page.tsx
 // INGENIUM PRO v8.1 — Verificación pública por hash
 // Server Component — no requiere login
-// Alcance actual real: verifica existencia del hash en base de datos y muestra el cálculo asociado.
-// No promete HMAC completo porque el modelo actual no tiene campo firma.
+// Alcance actual real: verifica existencia del hash en base de datos, valida la firma
+// HMAC-SHA256 contra el campo firma, y muestra el cálculo asociado.
 
 import { prisma } from '@/lib/prisma';
 import type { Prisma } from '@prisma/client';
