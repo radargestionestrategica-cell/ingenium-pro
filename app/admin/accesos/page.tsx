@@ -58,31 +58,48 @@ export default function AccesosPage() {
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {registros.map(r => (
-              <div key={r.id} style={{
-                border: `1px solid ${BORD}`, borderRadius: 10,
-                background: '#0a0f1e', padding: '10px 14px',
-                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-              }}>
-                <div>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: '#f1f5f9' }}>{r.email}</div>
-                  <div style={{ fontSize: 10, color: '#475569', marginTop: 2 }}>
-                    {new Date(r.createdAt).toLocaleString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+            {registros.map(r => {
+              const esRegistro = r.userAgent?.startsWith('[REGISTRO]') ?? false;
+              const dispositivo = esRegistro
+                ? r.userAgent!.replace('[REGISTRO]', '').trim() || 'Dispositivo desconocido'
+                : r.userAgent ?? 'Dispositivo desconocido';
+
+              return (
+                <div key={r.id} style={{
+                  border: `1px solid ${BORD}`, borderRadius: 10,
+                  background: '#0a0f1e', padding: '10px 14px',
+                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                }}>
+                  <div>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: '#f1f5f9' }}>{r.email}</div>
+                    <div style={{ fontSize: 10, color: '#475569', marginTop: 2 }}>
+                      {new Date(r.createdAt).toLocaleString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                    </div>
+                    <div style={{ fontSize: 10, color: '#334155', marginTop: 2 }}>
+                      IP: {r.ip ?? '—'} · {dispositivo}
+                    </div>
                   </div>
-                  <div style={{ fontSize: 10, color: '#334155', marginTop: 2 }}>
-                    IP: {r.ip ?? '—'} · {r.userAgent ?? 'Dispositivo desconocido'}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span style={{
+                      fontSize: 10, fontWeight: 700, padding: '4px 10px', borderRadius: 6,
+                      color: esRegistro ? '#818cf8' : '#94a3b8',
+                      background: esRegistro ? 'rgba(99,102,241,0.1)' : 'rgba(148,163,184,0.1)',
+                      border: `1px solid ${esRegistro ? 'rgba(99,102,241,0.3)' : 'rgba(148,163,184,0.3)'}`,
+                    }}>
+                      {esRegistro ? 'REGISTRO' : 'LOGIN'}
+                    </span>
+                    <span style={{
+                      fontSize: 10, fontWeight: 700, padding: '4px 10px', borderRadius: 6,
+                      color: r.exitoso ? '#4ade80' : '#f87171',
+                      background: r.exitoso ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)',
+                      border: `1px solid ${r.exitoso ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.3)'}`,
+                    }}>
+                      {r.exitoso ? 'EXITOSO' : 'FALLIDO'}
+                    </span>
                   </div>
                 </div>
-                <span style={{
-                  fontSize: 10, fontWeight: 700, padding: '4px 10px', borderRadius: 6,
-                  color: r.exitoso ? '#4ade80' : '#f87171',
-                  background: r.exitoso ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)',
-                  border: `1px solid ${r.exitoso ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.3)'}`,
-                }}>
-                  {r.exitoso ? 'EXITOSO' : 'FALLIDO'}
-                </span>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

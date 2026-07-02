@@ -69,6 +69,17 @@ export async function POST(req: Request) {
       });
     }
 
+    const userAgent = req.headers.get('user-agent');
+    await prisma.registroAcceso.create({
+      data: {
+        email:     usuario.email,
+        ip,
+        userAgent: `[REGISTRO] ${userAgent ?? ''}`.trim(),
+        usuarioId: usuario.id,
+        exitoso:   true,
+      },
+    });
+
     const token = generarToken({
       id:          usuario.id,
       email:       usuario.email,
