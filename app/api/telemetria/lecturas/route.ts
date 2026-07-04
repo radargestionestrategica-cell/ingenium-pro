@@ -18,7 +18,13 @@ export async function POST(req: NextRequest) {
 
     let fechaLectura: Date | undefined;
     if (b.fecha) {
-      const parsed = new Date(b.fecha);
+      const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(b.fecha);
+      if (!match) {
+        return NextResponse.json({ ok: false, error: 'fecha invalida' }, { status: 400 });
+      }
+      const [, anio, mes, dia] = match;
+      // Mediodia local evita que el corrimiento UTC muestre el dia anterior
+      const parsed = new Date(Number(anio), Number(mes) - 1, Number(dia), 12, 0, 0);
       if (isNaN(parsed.getTime())) {
         return NextResponse.json({ ok: false, error: 'fecha invalida' }, { status: 400 });
       }
