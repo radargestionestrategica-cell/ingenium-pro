@@ -375,10 +375,10 @@ export default function FichaActivoPage() {
     try { return activo ? JSON.parse(activo.geometriaJson) : null; } catch { return null; }
   })();
 
+  const lecturasDesplazamiento = historial.filter(l => l.magnitud === 'desplazamiento');
+
   const prediccionFalla = predecirFallaFukuzono(
-    historial
-      .filter(l => l.magnitud === 'desplazamiento')
-      .map(l => ({ fecha: new Date(l.createdAt), desplazamiento: l.valor }))
+    lecturasDesplazamiento.map(l => ({ fecha: new Date(l.createdAt), desplazamiento: l.valor }))
   );
 
   return (
@@ -527,6 +527,35 @@ export default function FichaActivoPage() {
               {mensajeDesplazamiento && (
                 <div style={{ marginTop: 10, fontSize: 12, fontWeight: 600, color: mensajeDesplazamiento.startsWith('✅') ? '#4ade80' : '#f87171' }}>
                   {mensajeDesplazamiento}
+                </div>
+              )}
+            </div>
+
+            {/* LECTURAS DE DESPLAZAMIENTO */}
+            <div style={{ border: `1px solid ${BORD}`, borderRadius: 12, background: 'rgba(7,13,26,0.8)', padding: 16, marginTop: 16 }}>
+              <div style={{ fontSize: 10, fontWeight: 800, color: GOLD, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 12 }}>
+                Lecturas de desplazamiento
+              </div>
+              {lecturasDesplazamiento.length === 0 ? (
+                <div style={{ fontSize: 12, color: '#475569' }}>Aún no hay lecturas de desplazamiento.</div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {lecturasDesplazamiento.slice().reverse().map(l => (
+                    <div key={l.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#0a0f1e', borderRadius: 8, padding: '10px 12px', border: '1px solid rgba(99,102,241,0.1)' }}>
+                      <div>
+                        <span style={{ fontSize: 11, fontWeight: 700, color: '#f1f5f9' }}>{l.valor} mm</span>
+                        <span style={{ fontSize: 10, color: '#475569', marginLeft: 10 }}>
+                          {new Date(l.createdAt).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => eliminarLectura(l.id)}
+                        style={{ fontSize: 10, color: '#f87171', background: 'none', border: '1px solid rgba(248,113,113,0.3)', borderRadius: 6, padding: '3px 10px', cursor: 'pointer' }}
+                      >
+                        Eliminar
+                      </button>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
