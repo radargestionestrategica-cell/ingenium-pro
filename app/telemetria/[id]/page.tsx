@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { calcularPileta, calcularEstabilidadPared } from '@/lib/telemetria-calculo';
 import { buscarFSCritico } from '@/lib/bishop-buscador';
 import { PAISES_SISMICOS, pgaAKh, clasificarZonaMexico, TERRENOS_EC8, calcularKhEurocodigo8, type TipoTerrenoEC8 } from '@/lib/sismica-zonificacion';
+import { predecirFallaFukuzono } from '@/lib/velocidad-inversa';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 
 const BG    = '#020609';
@@ -373,6 +374,12 @@ export default function FichaActivoPage() {
   const geometria: GeometriaPileta | null = (() => {
     try { return activo ? JSON.parse(activo.geometriaJson) : null; } catch { return null; }
   })();
+
+  const prediccionFalla = predecirFallaFukuzono(
+    historial
+      .filter(l => l.magnitud === 'desplazamiento')
+      .map(l => ({ fecha: new Date(l.createdAt), desplazamiento: l.valor }))
+  );
 
   return (
     <div style={{ minHeight: '100vh', background: BG, color: '#f1f5f9', fontFamily: 'Inter,sans-serif' }}>
@@ -833,6 +840,33 @@ export default function FichaActivoPage() {
                 </ResponsiveContainer>
               ) : (
                 <div style={{ fontSize: 12, color: '#475569' }}>Se necesitan al menos dos lecturas para ver la evolución.</div>
+              )}
+            </div>
+
+            {/* PREDICCION DE FALLA — VELOCIDAD INVERSA FUKUZONO 1985 */}
+            <div style={{ border: `1px solid ${BORD}`, borderRadius: 12, background: 'rgba(7,13,26,0.8)', padding: 16, marginTop: 16 }}>
+              <div style={{ fontSize: 9, color: '#334155', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 12 }}>
+                Predicción de falla — velocidad inversa (Fukuzono 1985)
+              </div>
+              {prediccionFalla.estado === 'DATOS_INSUFICIENTES' && (
+                <div style={{ fontSize: 12, color: '#94a3b8' }}>
+                  Se necesitan al menos 5 lecturas de desplazamiento para estimar la falla.
+                </div>
+              )}
+              {prediccionFalla.estado === 'SIN_TENDENCIA_FALLA' && (
+                <div style={{ background: '#0a2a1a', border: '1px solid #4ade80', borderRadius: 8, padding: 14, color: '#4ade80', fontWeight: 700, fontSize: 13 }}>
+                  Sin tendencia de falla detectable.
+                </div>
+              )}
+              {prediccionFalla.estado === 'FALLA_ESTIMADA' && prediccionFalla.fechaEstimadaFalla && (
+                <div style={{ background: '#2a0a0a', border: '1px solid #dc2626', borderRadius: 8, padding: 14 }}>
+                  <div style={{ color: '#f87171', fontWeight: 800, fontSize: 15 }}>
+                    Fecha estimada de falla: {prediccionFalla.fechaEstimadaFalla.toLocaleDateString('es-AR')}
+                  </div>
+                  <div style={{ color: '#f87171', fontSize: 11, marginTop: 6 }}>
+                    ⚠ Válido solo con desplazamiento acelerante — Fukuzono 1985.
+                  </div>
+                </div>
               )}
             </div>
 
