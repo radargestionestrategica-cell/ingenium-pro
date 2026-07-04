@@ -6,7 +6,7 @@ import { calcularPileta, calcularEstabilidadPared } from '@/lib/telemetria-calcu
 import { buscarFSCritico } from '@/lib/bishop-buscador';
 import { PAISES_SISMICOS, pgaAKh, clasificarZonaMexico, TERRENOS_EC8, calcularKhEurocodigo8, type TipoTerrenoEC8 } from '@/lib/sismica-zonificacion';
 import { predecirFallaFukuzono } from '@/lib/velocidad-inversa';
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, CartesianGrid } from 'recharts';
 
 const BG    = '#020609';
 const PANEL = '#0a0f1e';
@@ -854,17 +854,25 @@ export default function FichaActivoPage() {
               );
             })()}
 
-            {/* EVOLUCIÓN DEL NIVEL */}
+            {/* EVOLUCIÓN EN EL TIEMPO */}
             <div style={{ border: `1px solid ${BORD}`, borderRadius: 12, background: 'rgba(7,13,26,0.8)', padding: 16, marginTop: 16 }}>
-              <div style={{ fontSize: 9, color: '#334155', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 12 }}>Evolución del nivel en el tiempo</div>
+              <div style={{ fontSize: 9, color: '#334155', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 12 }}>Evolución en el tiempo</div>
               {historial.length >= 2 ? (
                 <ResponsiveContainer width="100%" height={200}>
-                  <LineChart data={historial.map(l => ({ fecha: new Date(l.createdAt).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit' }), nivel: l.valor }))}>
+                  <LineChart data={historial
+                    .filter(l => l.magnitud === 'nivel' || l.magnitud === 'desplazamiento')
+                    .map(l => ({
+                      fecha: new Date(l.createdAt).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit' }),
+                      nivel: l.magnitud === 'nivel' ? l.valor : undefined,
+                      desplazamiento: l.magnitud === 'desplazamiento' ? l.valor : undefined,
+                    }))}>
                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
                     <XAxis dataKey="fecha" tick={{ fontSize: 10, fill: '#475569' }} axisLine={false} tickLine={false} />
                     <YAxis tick={{ fontSize: 10, fill: '#475569' }} axisLine={false} tickLine={false} width={36} />
                     <Tooltip contentStyle={{ background: '#0a0f1e', border: '1px solid rgba(99,102,241,0.2)', borderRadius: 8, fontSize: 11, color: '#f1f5f9' }} />
-                    <Line type="monotone" dataKey="nivel" stroke={GOLD} strokeWidth={2} dot={{ fill: GOLD, r: 4 }} activeDot={{ r: 6 }} />
+                    <Legend wrapperStyle={{ fontSize: 11 }} />
+                    <Line type="monotone" dataKey="nivel" name="Nivel (m)" stroke={GOLD} strokeWidth={2} dot={{ fill: GOLD, r: 4 }} activeDot={{ r: 6 }} connectNulls />
+                    <Line type="monotone" dataKey="desplazamiento" name="Desplazamiento (mm)" stroke="#6366f1" strokeWidth={2} dot={{ fill: '#6366f1', r: 4 }} activeDot={{ r: 6 }} connectNulls />
                   </LineChart>
                 </ResponsiveContainer>
               ) : (
