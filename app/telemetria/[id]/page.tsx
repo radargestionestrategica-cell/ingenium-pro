@@ -75,6 +75,10 @@ export default function FichaActivoPage() {
   const [guardandoLectura, setGuardandoLectura] = useState(false);
   const [mensajeLectura, setMensajeLectura] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
+  const [fechaDesplazamiento, setFechaDesplazamiento] = useState('');
+  const [desplazamientoMedido, setDesplazamientoMedido] = useState('');
+  const [guardandoDesplazamiento, setGuardandoDesplazamiento] = useState(false);
+  const [mensajeDesplazamiento, setMensajeDesplazamiento] = useState('');
   const [historial, setHistorial] = useState<LecturaHistorial[]>([]);
   const [tipoSuelo, setTipoSuelo] = useState<string>('propio');
   const [cohesionSuelo, setCohesionSuelo] = useState<number | null>(null);
@@ -332,6 +336,40 @@ export default function FichaActivoPage() {
     }
   };
 
+  const guardarDesplazamiento = async () => {
+    const valor = parseFloat(desplazamientoMedido);
+    if (!activo || isNaN(valor)) {
+      setMensajeDesplazamiento('Ingresá un valor numérico válido para el desplazamiento.');
+      return;
+    }
+    if (!fechaDesplazamiento) {
+      setMensajeDesplazamiento('Ingresá la fecha de la lectura.');
+      return;
+    }
+    setGuardandoDesplazamiento(true);
+    setMensajeDesplazamiento('');
+    try {
+      const res = await fetch('/api/telemetria/lecturas', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json', ...ipAuthHeader() },
+        body: JSON.stringify({ activoId: activo.id, magnitud: 'desplazamiento', valor, unidad: 'mm', fuente: 'manual', fecha: fechaDesplazamiento }),
+      });
+      const json = await res.json();
+      if (json?.ok) {
+        setMensajeDesplazamiento('✅ Lectura de desplazamiento guardada y sellada.');
+        setDesplazamientoMedido('');
+        setFechaDesplazamiento('');
+      } else {
+        setMensajeDesplazamiento(json?.error ?? 'No se pudo guardar la lectura.');
+      }
+    } catch {
+      setMensajeDesplazamiento('Error de conexión. Intentá de nuevo.');
+    } finally {
+      setGuardandoDesplazamiento(false);
+    }
+  };
+
   const geometria: GeometriaPileta | null = (() => {
     try { return activo ? JSON.parse(activo.geometriaJson) : null; } catch { return null; }
   })();
@@ -429,6 +467,59 @@ export default function FichaActivoPage() {
               {mensajeLectura && (
                 <div style={{ marginTop: 10, fontSize: 12, fontWeight: 600, color: mensajeLectura.startsWith('✅') ? '#4ade80' : '#f87171' }}>
                   {mensajeLectura}
+                </div>
+              )}
+            </div>
+
+            {/* FORMULARIO LECTURA DESPLAZAMIENTO SUPERFICIAL */}
+            <div style={{
+              border: `1px solid ${BORD}`, borderRadius: 12,
+              background: 'rgba(7,13,26,0.8)', padding: 16, marginTop: 16,
+            }}>
+              <div style={{ fontSize: 10, fontWeight: 800, color: GOLD, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 12 }}>
+                📐 Cargar lectura — desplazamiento superficial
+              </div>
+              <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' as const }}>
+                <input
+                  type="date"
+                  value={fechaDesplazamiento}
+                  onChange={e => setFechaDesplazamiento(e.target.value)}
+                  style={{
+                    padding: '8px 10px',
+                    background: '#0a0f1e', border: '1px solid rgba(99,102,241,0.2)',
+                    borderRadius: 8, color: '#f1f5f9', fontSize: 13, outline: 'none',
+                  }}
+                />
+                <input
+                  type="number"
+                  step="0.01"
+                  value={desplazamientoMedido}
+                  onChange={e => setDesplazamientoMedido(e.target.value)}
+                  placeholder="Ej: 12.50"
+                  style={{
+                    width: 140, padding: '8px 10px',
+                    background: '#0a0f1e', border: '1px solid rgba(99,102,241,0.2)',
+                    borderRadius: 8, color: '#f1f5f9', fontSize: 13, outline: 'none',
+                  }}
+                />
+                <span style={{ fontSize: 12, color: '#475569' }}>mm</span>
+                <button
+                  onClick={guardarDesplazamiento}
+                  disabled={guardandoDesplazamiento}
+                  style={{
+                    padding: '9px 18px',
+                    background: 'linear-gradient(135deg,#6366f1,#8b5cf6)',
+                    border: 'none', borderRadius: 8, color: '#fff',
+                    fontSize: 12, fontWeight: 700, cursor: guardandoDesplazamiento ? 'default' : 'pointer',
+                    opacity: guardandoDesplazamiento ? 0.6 : 1,
+                  }}
+                >
+                  {guardandoDesplazamiento ? 'Guardando…' : '💾 Guardar lectura'}
+                </button>
+              </div>
+              {mensajeDesplazamiento && (
+                <div style={{ marginTop: 10, fontSize: 12, fontWeight: 600, color: mensajeDesplazamiento.startsWith('✅') ? '#4ade80' : '#f87171' }}>
+                  {mensajeDesplazamiento}
                 </div>
               )}
             </div>

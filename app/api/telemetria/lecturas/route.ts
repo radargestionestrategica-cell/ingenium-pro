@@ -16,6 +16,15 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    let fechaLectura: Date | undefined;
+    if (b.fecha) {
+      const parsed = new Date(b.fecha);
+      if (isNaN(parsed.getTime())) {
+        return NextResponse.json({ ok: false, error: 'fecha invalida' }, { status: 400 });
+      }
+      fechaLectura = parsed;
+    }
+
     const hash = hashCalculation({
       activoId: b.activoId,
       magnitud: b.magnitud,
@@ -23,6 +32,7 @@ export async function POST(req: NextRequest) {
       unidad: b.unidad,
       fuente: b.fuente,
       usuarioId: payload.id,
+      ...(fechaLectura ? { fecha: fechaLectura.toISOString() } : {}),
     });
 
     const firma = signHash(hash);
@@ -38,6 +48,7 @@ export async function POST(req: NextRequest) {
         hash,
         firma,
         factorSeguridad: typeof b.factorSeguridad === 'number' ? b.factorSeguridad : null,
+        ...(fechaLectura ? { createdAt: fechaLectura } : {}),
       },
     });
 
