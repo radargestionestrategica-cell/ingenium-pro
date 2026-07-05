@@ -25,6 +25,9 @@ model Usuario {
   createdAt          DateTime            @default(now())
   resetToken         String?             @unique
   resetTokenExpira   DateTime?
+  emailVerificado    Boolean             @default(false)
+  tokenVerificacion  String?
+  tokenVerificacionExpira DateTime?
   consultasIaUsadas  Int                 @default(0)
   consultasIaResetEn DateTime?
   equipoId           String?
