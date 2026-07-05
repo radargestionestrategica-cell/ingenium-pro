@@ -56,6 +56,15 @@ function formatearFecha(fecha: Date): string {
   }).format(fecha);
 }
 
+// Lecturas de telemetria: solo fecha (sin hora) en UTC, para evitar que
+// medianoche UTC se muestre como el dia anterior al convertir a Buenos Aires
+function formatearFechaLecturaTelemetria(fecha: Date): string {
+  return new Intl.DateTimeFormat('es-AR', {
+    dateStyle: 'long',
+    timeZone: 'UTC',
+  }).format(fecha);
+}
+
 function esObjetoPlano(valor: unknown): valor is Record<string, unknown> {
   return typeof valor === 'object' && valor !== null && !Array.isArray(valor);
 }
@@ -569,7 +578,7 @@ export default async function VerifyPage({ params }: PageProps) {
               <div className="item"><div className="label">Firmante</div><div className="text">{lectura.activo.usuario.nombre}</div></div>
               <div className="item"><div className="label">Empresa</div><div className="text">{lectura.activo.usuario.empresa}</div></div>
               <div className="item"><div className="label">País</div><div className="text">{lectura.activo.usuario.pais}</div></div>
-              <div className="item"><div className="label">Fecha</div><div className="text">{formatearFecha(lectura.createdAt)}</div></div>
+              <div className="item"><div className="label">Fecha</div><div className="text">{formatearFechaLecturaTelemetria(lectura.createdAt)}</div></div>
             </section>
           </>
         )}
