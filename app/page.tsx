@@ -800,6 +800,17 @@ export default function LandingPage() {
               y Excel, y carga con un clic hacia Represas, Hidráulica y Geotecnia.
             </p>
           </div>
+
+          <div className="trust-box">
+            <h3>Predicción de falla</h3>
+            <p style={{ color:LIGHT, lineHeight:1.8, fontSize:14 }}>
+              Método de velocidad inversa de Fukuzono (1985) sobre las lecturas de desplazamiento superficial
+              del activo: estima la fecha probable de falla y genera un informe PDF sellado con hash SHA-256,
+              con verificación pública por QR. Válido únicamente cuando el desplazamiento muestra una tendencia
+              acelerante — con menos de 5 lecturas o sin aceleración detectada, el sistema lo informa en lugar
+              de forzar una fecha.
+            </p>
+          </div>
         </div>
       </section>
 
