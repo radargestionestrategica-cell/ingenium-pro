@@ -6,6 +6,7 @@ import { use } from 'react';
 export default function VerificarEmailPage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = use(params);
   const [resultado, setResultado] = useState<'ok' | 'error' | null>(null);
+  const [mensaje, setMensaje] = useState('');
 
   useEffect(() => {
     let activo = true;
@@ -16,9 +17,19 @@ export default function VerificarEmailPage({ params }: { params: Promise<{ token
           headers: { 'Content-Type': 'application/json' },
           body:    JSON.stringify({ token }),
         });
-        if (activo) setResultado(res.ok ? 'ok' : 'error');
+        const data = await res.json().catch(() => ({}));
+        if (!activo) return;
+        if (res.ok) {
+          setResultado('ok');
+        } else {
+          setResultado('error');
+          setMensaje(data?.error || 'El enlace de verificación es inválido o venció.');
+        }
       } catch {
-        if (activo) setResultado('error');
+        if (activo) {
+          setResultado('error');
+          setMensaje('Error de conexión. Intentá de nuevo.');
+        }
       }
     })();
     return () => { activo = false; };
@@ -107,7 +118,7 @@ export default function VerificarEmailPage({ params }: { params: Promise<{ token
               lineHeight:   '1.6',
               marginBottom: '24px',
             }}>
-              El enlace de verificación es inválido o venció.
+              {mensaje}
             </div>
             <div style={{ textAlign: 'center' }}>
               <a href="/Login" style={{
