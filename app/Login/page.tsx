@@ -48,6 +48,9 @@ export default function LoginPage() {
   const [verPass, setVerPass] = useState(false);
   const [aceptoTerminos, setAceptoTerminos] = useState(false);
   const [aceptoCookies, setAceptoCookies]   = useState(false);
+  const [emailNoVerificado, setEmailNoVerificado] = useState(false);
+  const [reenviando, setReenviando] = useState(false);
+  const [mensajeReenvio, setMensajeReenvio] = useState('');
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -56,7 +59,7 @@ export default function LoginPage() {
   const handleSubmit = async () => {
     if (loading) return;
     if (!aceptoTerminos || !aceptoCookies) return;
-    setLoading(true); setError(''); setExito('');
+    setLoading(true); setError(''); setExito(''); setEmailNoVerificado(false); setMensajeReenvio('');
     try {
       const url = modo === 'login' ? '/api/v1/auth/login' : '/api/v1/auth/signup';
       const body = modo === 'login'
@@ -73,6 +76,7 @@ export default function LoginPage() {
 
       if (!res.ok) {
         setError(data.error || 'Error al procesar la solicitud');
+        if (data.code === 'EMAIL_NO_VERIFICADO') setEmailNoVerificado(true);
         return;
       }
 
@@ -90,6 +94,23 @@ export default function LoginPage() {
       setError('Error de conexión. Verificá tu internet.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleReenviarVerificacion = async () => {
+    if (reenviando) return;
+    setReenviando(true); setMensajeReenvio('');
+    try {
+      await fetch('/api/v1/auth/reenviar-verificacion', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: form.email }),
+      });
+      setMensajeReenvio('Si el email existe y no está verificado, te enviamos un nuevo enlace.');
+    } catch {
+      setMensajeReenvio('Error de conexión. Intentá de nuevo.');
+    } finally {
+      setReenviando(false);
     }
   };
 
@@ -203,6 +224,17 @@ export default function LoginPage() {
         {error && (
           <div style={{ padding:'10px 14px', borderRadius:10, marginBottom:14, background:'rgba(239,68,68,0.08)', border:'1px solid rgba(239,68,68,0.3)', color:'#f87171', fontSize:13 }}>
             {error}
+            {emailNoVerificado && (
+              <div style={{ marginTop:10 }}>
+                <button onClick={handleReenviarVerificacion} disabled={reenviando}
+                  style={{ padding:'8px 14px', borderRadius:8, border:'1px solid rgba(239,68,68,0.4)', background:'transparent', color:'#f87171', fontSize:12, fontWeight:700, cursor: reenviando ? 'default' : 'pointer', opacity: reenviando ? 0.6 : 1 }}>
+                  {reenviando ? 'Enviando…' : 'Reenviar email de verificación'}
+                </button>
+                {mensajeReenvio && (
+                  <div style={{ marginTop:8, fontSize:12, color:'#cbd5e1' }}>{mensajeReenvio}</div>
+                )}
+              </div>
+            )}
           </div>
         )}
         {exito && (

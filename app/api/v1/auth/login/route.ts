@@ -42,6 +42,16 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Cuenta desactivada' }, { status: 403 });
     }
 
+    if (!usuario.emailVerificado && email !== 'colombosilvanabelen@gmail.com') {
+      await prisma.registroAcceso.create({
+        data: { email, ip, userAgent, usuarioId: usuario.id, exitoso: false },
+      });
+      return NextResponse.json(
+        { error: 'Tu email no está verificado, revisá tu correo o solicitá un nuevo enlace', code: 'EMAIL_NO_VERIFICADO' },
+        { status: 403 },
+      );
+    }
+
     await prisma.registroAcceso.create({
       data: { email, ip, userAgent, usuarioId: usuario.id, exitoso: true },
     });
