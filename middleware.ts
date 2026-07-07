@@ -11,6 +11,8 @@ const PUBLIC_API = [
   '/api/v1/auth/logout',
   '/api/v1/auth/recuperar',  // pública — usuario sin sesión solicita reset
   '/api/v1/auth/reset',      // pública — usuario sin sesión confirma nueva password
+  '/api/v1/auth/verificar-email',      // pública — usuario sin sesión verifica su email
+  '/api/v1/auth/reenviar-verificacion', // pública — usuario sin sesión reenvía verificación
   '/api/pagos/webhook',
   '/planes',
   '/api/planes/elegir',
