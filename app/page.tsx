@@ -422,7 +422,7 @@ export default function LandingPage() {
             Para ingenieros que necesitan velocidad, precisión y trazabilidad sin concesiones.
           </p>
           <p className="hero-note">
-            <strong>Regla profesional:</strong> Si ahorra 2 horas de un ingenieiro senior al mes, ya se pagó solo.
+            <strong>Regla profesional:</strong> Si ahorra 2 horas de un ingeniero senior al mes, ya se pagó solo.
           </p>
 
           <div className="actions">
@@ -735,7 +735,8 @@ export default function LandingPage() {
             <h2>Inteligencia Cruzada entre módulos</h2>
             <p className="section-sub">
               La IA no analiza cada módulo por separado. Cruza los resultados de distintos módulos para detectar
-              riesgos encadenados que un cálculo aislado nunca puede ver. Ninguna otra plataforma del mercado hace esto.
+              riesgos encadenados que un cálculo aislado nunca puede ver. Una de las diferencias centrales de INGENIUM PRO
+              es la inteligencia cruzada entre módulos, pensada para detectar riesgos que un cálculo aislado puede no mostrar.
             </p>
           </div>
 
@@ -833,7 +834,7 @@ export default function LandingPage() {
                 <div className="plan-name" style={{ color:p.color }}>{p.nombre}</div>
                 <div className="price-row">
                   <span className="price">{p.precio}</span>
-                  <span className="period">/{p.periodo}</span>
+                  <span className="period">{p.periodo}</span>
                 </div>
                 <div className="plan-sub">{p.bajada}</div>
                 <div className="plan-divider" />
