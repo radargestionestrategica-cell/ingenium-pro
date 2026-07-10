@@ -26,6 +26,12 @@
   </url>
 
   <url>
+    <loc>https://ingeniumpro.store/modulos/petroleo-gas</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
     <loc>https://ingeniumpro.store/register</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
