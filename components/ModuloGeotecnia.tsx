@@ -75,7 +75,7 @@ function calcCapacidadPortante(
 }
 
 // Estabilidad de taludes - motor buscarFSCritico (lib/bishop-buscador)
-// Verificado contra benchmark ACADS EX1. Referencia: Bishop (1955) - CIRSOC 102
+// Verificado contra benchmark ACADS EX1. Referencia: Bishop (1955) - práctica geotécnica estándar (FS mínimo 1.5 para taludes permanentes)
 function calcEstabilidadTalud(
   H: number, beta_deg: number, c: number,
   phi_deg: number, gamma: number, Dw: number
@@ -213,7 +213,7 @@ export default function ModuloGeotecnia() {
     const sueloLabel = SUELOS.find(s => s.id === suelo)?.label ?? suelo;
     const payload: DatosExportar = {
       tipo: 'CAPACIDAD_PORTANTE',
-      normativa: 'CIRSOC 102 | Meyerhof 1963 | Das 2011',
+      normativa: 'Meyerhof 1963 | Das 2011',
       parametros: {
         'Tipo de suelo': sueloLabel,
         'Ancho B (m)': B,
@@ -260,7 +260,7 @@ export default function ModuloGeotecnia() {
     setResET(r);
     const payload: DatosExportar = {
       tipo: 'ESTABILIDAD_TALUD',
-      normativa: 'Bishop 1955 | CIRSOC 102',
+      normativa: 'Bishop 1955 | práctica geotécnica estándar (FS mínimo 1.5)',
       parametros: {
         'Altura H (m)': H,
         'Angulo beta (grados)': beta,
@@ -317,7 +317,7 @@ export default function ModuloGeotecnia() {
             </div>
           </div>
           <div style={{ background: '#0f172a', borderRadius: 8, padding: '10px 14px', fontSize: 12, color: '#64748b' }}>
-            Normativa: CIRSOC 102 | Meyerhof 1963 | Bishop 1955 | Das 2011 | ASCE 7
+            Normativa: Meyerhof 1963 | Bishop 1955 | Das 2011 | ASCE 7 | práctica geotécnica estándar (FS mín. 1.5)
           </div>
         </div>
 
@@ -486,7 +486,7 @@ export default function ModuloGeotecnia() {
               <div style={{ color: '#84cc16', marginBottom: 4, fontWeight: 700 }}>FORMULA MEYERHOF:</div>
               qu = c·Nc·sc + q·Nq·sq + 0.5·gamma·B·Ng·sg
               <div style={{ marginTop: 4, color: '#475569' }}>{resCP.freatic}</div>
-              <div style={{ marginTop: 4, color: '#475569' }}>Meyerhof 1963 | CIRSOC 102 | {new Date().toLocaleDateString('es-AR')}</div>
+              <div style={{ marginTop: 4, color: '#475569' }}>Meyerhof 1963 | {new Date().toLocaleDateString('es-AR')}</div>
             </div>
           </div>
         )}
@@ -511,7 +511,7 @@ export default function ModuloGeotecnia() {
                   <div style={{ color: riskColor[resET.riesgo], fontWeight: 800, fontSize: 14 }}>{resET.estado}</div>
                   <div style={{ color: '#475569', fontSize: 11, marginTop: 8 }}>
                     {resET.FS >= 1.5
-                      ? 'Cumple norma CIRSOC 102'
+                      ? 'Cumple práctica geotécnica estándar (FS mín. 1.5)'
                       : resET.FS >= 1.3
                         ? 'Revisar y monitorear'
                         : 'Requiere mejoramiento inmediato'}
@@ -522,7 +522,7 @@ export default function ModuloGeotecnia() {
             <div style={{ background: '#0f172a', borderRadius: 8, padding: 14, fontSize: 12, color: '#94a3b8', fontFamily: 'monospace' }}>
               <div style={{ color: '#84cc16', marginBottom: 4, fontWeight: 700 }}>METODO BISHOP SIMPLIFICADO:</div>
               FS = Sum[(c·b + (W-u·b)·tan(phi)) / m_alpha] / Sum[W·sin(alpha)]
-              <div style={{ marginTop: 4, color: '#475569' }}>Bishop 1955 | CIRSOC 102 | {new Date().toLocaleDateString('es-AR')}</div>
+              <div style={{ marginTop: 4, color: '#475569' }}>Bishop 1955 | práctica geotécnica estándar (FS mín. 1.5) | {new Date().toLocaleDateString('es-AR')}</div>
             </div>
           </div>
         )}

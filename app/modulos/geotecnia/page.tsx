@@ -4,7 +4,8 @@ export const metadata: Metadata = {
   title: 'Cálculo de estabilidad de taludes método de Bishop online — INGENIUM PRO',
   description:
     'Calculadora online de estabilidad de taludes por el método simplificado de Bishop (1955), con búsqueda ' +
-    'automática de círculo de falla crítico según CIRSOC 102, más capacidad portante de fundaciones por ' +
+    'automática de círculo de falla crítico según práctica geotécnica estándar (FS mínimo 1.5 para taludes ' +
+    'permanentes), más capacidad portante de fundaciones por ' +
     'Meyerhof con nivel freático, informe PDF sellado con hash SHA-256 y QR de verificación pública, más ' +
     'exportación Excel y DXF.',
   alternates: {
@@ -44,8 +45,9 @@ export default function ModuloGeotecniaPage() {
           </h1>
           <p style={{ fontSize: 16, color: LIGHT, lineHeight: 1.8 }}>
             Cálculo normativo de geotecnia: obtené el Factor de Seguridad (FS) de un talud por el método
-            simplificado de Bishop con búsqueda automática del círculo de falla más crítico, según CIRSOC 102,
-            con informe sellado y verificable, en un flujo de trabajo profesional.
+            simplificado de Bishop con búsqueda automática del círculo de falla más crítico, según práctica
+            geotécnica estándar (FS mínimo 1.5 para taludes permanentes), con informe sellado y verificable,
+            en un flujo de trabajo profesional.
           </p>
         </div>
 
@@ -104,7 +106,7 @@ export default function ModuloGeotecniaPage() {
         <section style={{ marginBottom: 36 }}>
           <h2 style={{ fontSize: 20, fontWeight: 800, marginBottom: 12, color: '#f1f5f9' }}>Normas aplicadas</h2>
           <p style={{ fontSize: 15, color: LIGHT, lineHeight: 1.8 }}>
-            CIRSOC 102 (acciones sobre estructuras — criterios de seguridad geotécnica), método de Bishop
+            Práctica geotécnica estándar (FS mínimo 1.5 para taludes permanentes), método de Bishop
             simplificado (1955) para estabilidad de taludes, capacidad portante de Meyerhof (1963) y Das (2011,
             Principles of Foundation Engineering) para los factores de capacidad de carga y de forma de zapatas.
           </p>
@@ -120,7 +122,7 @@ export default function ModuloGeotecniaPage() {
           </p>
           <div style={{ background: PANEL, border: `1px solid ${BORD}`, borderRadius: 8, padding: 18, fontFamily: 'monospace', fontSize: 13, color: '#94a3b8', lineHeight: 1.9, marginBottom: 24 }}>
             Búsqueda del círculo crítico sobre grilla de centros y radios, 20 dovelas por círculo<br />
-            <span style={{ color: GOLD }}>FS ≈ 2.13</span> → talud ESTABLE, cumple FS mínimo de 1.5 exigido por CIRSOC 102
+            <span style={{ color: GOLD }}>FS ≈ 2.13</span> → talud ESTABLE, cumple FS mínimo de 1.5 exigido por práctica geotécnica estándar
           </div>
 
           <p style={{ fontSize: 15, color: LIGHT, lineHeight: 1.8, marginBottom: 14 }}>
