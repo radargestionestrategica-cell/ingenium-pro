@@ -24,7 +24,7 @@ const REGLAS: { id: string; titulo: string; normativa: string }[] = [
   { id: 'CRUCE-001', titulo: 'Erosión-corrosión: presión elevada + velocidad alta', normativa: 'API RP 14E-2007 §2.3: V_max = C/√ρ' },
   { id: 'CRUCE-002', titulo: 'Golpe de ariete sobre cañería al límite de espesor', normativa: 'AWWA M11 · ASME B31.3 §302.2.4' },
   { id: 'CRUCE-003', titulo: 'Riesgo SCC: servicio H₂S + Carbono Equivalente elevado en soldadura', normativa: 'NACE MR0175/ISO 15156-2:2020 §7.2' },
-  { id: 'CRUCE-004', titulo: 'Talud inestable próximo a excavación profunda', normativa: 'FS mín. permanente = 1.5 · OHSAS 18001 §4.4.6' },
+  { id: 'CRUCE-004', titulo: 'Talud inestable próximo a excavación profunda', normativa: 'Práctica geotécnica estándar (FS mín. 1.5) · OHSAS 18001 §4.4.6' },
   { id: 'CRUCE-005', titulo: 'Fundación al límite + columna con alta carga axial', normativa: 'ACI 318-19 §13.3 · CIRSOC 201-2002 §15' },
   { id: 'CRUCE-006', titulo: 'Roca muy fracturada + ventilación deficiente', normativa: 'MSHA 30 CFR §57.5005: V_min = 0.25 m/s' },
   { id: 'CRUCE-007', titulo: 'Demanda sísmica alta: verificar elementos resistentes', normativa: 'CIRSOC 103:2013 §8 · ASCE 7-22 §12.12' },

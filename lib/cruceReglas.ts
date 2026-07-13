@@ -160,7 +160,7 @@ export function aplicarReglasDecruce(snaps: CalculoSnap[]): RiesgoDetectado[] {
         titulo:      'Talud inestable próximo a excavación profunda',
         descripcion: `FS=${FS.toFixed(2)} (Bishop) con excavación de ${prof.toFixed(1)} m de profundidad en el mismo proyecto.`,
         modulos:     [talud.tipo, excav.tipo],
-        normativa:   'CIRSOC 102-1982: FS mín. permanente = 1.5. OHSAS 18001 §4.4.6: apuntalamiento obligatorio H > 1.2 m.',
+        normativa:   'Práctica geotécnica estándar: FS mínimo 1.5 para taludes permanentes. OHSAS 18001 §4.4.6: apuntalamiento obligatorio H > 1.2 m.',
         accion:      'Instalar apuntalamiento o entibación antes de excavar. Monitoreo de desplazamientos con hitos topográficos.',
         evidencia:   { 'FS Bishop': +FS.toFixed(2), 'Prof. excavación (m)': prof },
       });
