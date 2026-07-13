@@ -605,7 +605,7 @@ ASCE 7-22 §2.3: Combinaciones LRFD — 1.2D + 1.6L combinación más crítica h
 ACI 318-19 §22.4.2.1: φPn_máx = 0.80·φ·[0.85·f'c·(Ag-Ast) + fy·Ast] — φ=0.65.
 ACI 318-19 §10.6.1.1: Cuantía longitudinal ρ entre 1% y 8% del área bruta Ag.
 ACI 318-19 §22.6: Excentricidad mínima e = max(15 mm, 0.03h) — siempre aplicar.
-CIRSOC 201-2002: Resistencias características y factores de reducción equivalentes al ACI.`,
+CIRSOC 201-2005: Resistencias características y factores de reducción equivalentes al ACI.`,
 
   RMR_BIENIAWSKI: `NORMATIVAS APLICABLES — VERIFICADAS:
 Bieniawski (1989): RMR = P1+P2+P3+P4+P5+ajuste orientación — escala 0–100, 5 parámetros.
@@ -650,14 +650,14 @@ ASME Sección IX QW-406: Precalentamiento como variable esencial — cambio >55�
 EN ISO 13916:2017: Medición y control temperatura precalentamiento e interpase durante soldadura.`,
 
   HORMIGON_MMO: `NORMATIVAS APLICABLES — VERIFICADAS:
-CIRSOC 201-2002: Dosificación hormigón estructural — relación a/c máxima según condición de exposición.
+CIRSOC 201-2005: Dosificación hormigón estructural — relación a/c máxima según condición de exposición.
 IRAM 1524:2004: Hormigones de uso corriente — áridos, agua y cemento aptos para uso estructural.
 ISO 45001:2018 §8.1: Gestión de riesgos en tareas de hormigonado — EPP y protocolo de manejo.
 ACI 318-19 §26.4: Requisitos de dosificación y consistencia para colocación en elementos estructurales.`,
 
   HIERRO_MMO: `NORMATIVAS APLICABLES — VERIFICADAS:
 IRAM IAS U500-528:2013: Barras de acero para hormigón armado — categorías ADN 420 y ADN 500.
-CIRSOC 201-2002 §6.3: Acero de refuerzo — cuantías mínimas y máximas para elementos estructurales.
+CIRSOC 201-2005 §6.3: Acero de refuerzo — cuantías mínimas y máximas para elementos estructurales.
 ASTM A615/A615M-20: Barras de acero deformado Grado 60 — equivalente al ADN 420 argentino.
 ISO 45001:2018 §8.1.3: Trazabilidad de materiales — control de recepción y almacenamiento en obra.`,
 
@@ -669,7 +669,7 @@ NCh 2369:2003: Mampostería armada y no armada — aplicable en Chile y zona de 
 
   LOSA_MMO: `NORMATIVAS APLICABLES — VERIFICADAS:
 ACI 318-19 §8.3.1.1: Espesor mínimo losa maciza — L/20 (empotrada-empotrada) a L/10 (voladizo).
-CIRSOC 201-2002 §13: Cuantía mínima temperatura y retracción = 0.0018 para fy=420 MPa.
+CIRSOC 201-2005 §13: Cuantía mínima temperatura y retracción = 0.0018 para fy=420 MPa.
 ASCE 7-22 §4.3: Cargas mínimas de diseño para losas de entrepiso según uso del edificio.
 ISO 45001:2018 §8.1.2: Identificación de peligros en encofrado y hormigonado — caídas en altura.`,
 
@@ -686,19 +686,19 @@ ISO 45001:2018 §8.1: Control operacional en colocación de revestimientos — p
 RCDF-17: Norma técnica de pisos y pavimentos — adherencia mínima para circulación pública.`,
 
   CONTRAPISO_MMO: `NORMATIVAS APLICABLES — VERIFICADAS:
-CIRSOC 201-2002 §10: Contrapiso de cascote — espesor mínimo 8cm bajo pisos de habitación.
+CIRSOC 201-2005 §10: Contrapiso de cascote — espesor mínimo 8cm bajo pisos de habitación.
 IRAM 1524:2004: Dosificación morteros y contrapisos — relación cemento:arena y agua/cemento.
 ISO 45001:2018 §8.1.3: Gestión de materiales en obra — almacenamiento y manipulación de áridos.
 NSR-10 Título C §C.7.1: Requisitos generales para losas y contrapisos en contacto con el suelo.`,
 
   ZAPATA_MMO: `NORMATIVAS APLICABLES — VERIFICADAS:
-CIRSOC 201-2002 §15: Fundaciones — espesor mínimo zapata aislada 200mm para Pu ≤ 300 kN.
+CIRSOC 201-2005 §15: Fundaciones — espesor mínimo zapata aislada 200mm para Pu ≤ 300 kN.
 ACI 318-19 §13.3.1: Verificación punzonado y flexión en zapatas — ancho de banda crítico.
 ASTM D2487-17: Capacidad admisible de suelo según clasificación USCS — base de diseño fundaciones.
 ISO 45001:2018 §8.1: Control excavación y armado de fundaciones — apuntalamiento y EPP.`,
 
   EXCAVACION_MMO: `NORMATIVAS APLICABLES — VERIFICADAS:
-OHSAS 18001:2007 §4.4.6: Procedimiento de trabajo seguro en excavaciones — apuntalamiento H>1.20m.
+ISO 45001:2018 cláusula 8.1: Procedimiento de trabajo seguro en excavaciones — apuntalamiento H>1.20m.
 ISO 45001:2018 §8.1.3: Excavaciones y zanjas — inspección diaria antes del ingreso de personal.
 CIRSOC 102-1982: Ángulo talud natural de reposo — 45° arena suelta, 90° roca sana.
 IRAM 2568: Señalización perimetral de excavaciones — balizamiento y cerco de seguridad obligatorio.`,
@@ -730,7 +730,7 @@ DNC Argentina: Secciones mínimas de cunetas según categoría de ruta y cuenca 
   VERTEDERO_FRANCIS: `NORMATIVAS APLICABLES — VERIFICADAS:
 USACE EM 1110-2-1603: Q = Cd·L·H^(3/2) — Cd=0.611 cresta delgada; verificar sin contracciones.
 ICOLD Bulletin 58: Caudal diseño vertedero — período de retorno mín. 1000 años o PMF proyecto.
-CIRSOC 201-2002: Estructuras de hormigón del vertedero — requisitos de durabilidad y resistencia.
+CIRSOC 201-2005: Estructuras de hormigón del vertedero — requisitos de durabilidad y resistencia.
 USACE EM 1110-2-1603 §3-5: Fr < 1 régimen subcrítico (estable); Fr > 1 supercrítico (erosión potencial).`,
 
   FILTRACION_DARCY: `NORMATIVAS APLICABLES — VERIFICADAS:

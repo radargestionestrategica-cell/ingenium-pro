@@ -160,7 +160,7 @@ export function aplicarReglasDecruce(snaps: CalculoSnap[]): RiesgoDetectado[] {
         titulo:      'Talud inestable próximo a excavación profunda',
         descripcion: `FS=${FS.toFixed(2)} (Bishop) con excavación de ${prof.toFixed(1)} m de profundidad en el mismo proyecto.`,
         modulos:     [talud.tipo, excav.tipo],
-        normativa:   'Práctica geotécnica estándar: FS mínimo 1.5 para taludes permanentes. OHSAS 18001 §4.4.6: apuntalamiento obligatorio H > 1.2 m.',
+        normativa:   'Práctica geotécnica estándar: FS mínimo 1.5 para taludes permanentes. ISO 45001:2018 cláusula 8.1: apuntalamiento obligatorio H > 1.2 m.',
         accion:      'Instalar apuntalamiento o entibación antes de excavar. Monitoreo de desplazamientos con hitos topográficos.',
         evidencia:   { 'FS Bishop': +FS.toFixed(2), 'Prof. excavación (m)': prof },
       });
@@ -179,7 +179,7 @@ export function aplicarReglasDecruce(snaps: CalculoSnap[]): RiesgoDetectado[] {
         titulo:      'Fundación al límite + columna con alta carga axial',
         descripcion: `Suelo al ${util_geo.toFixed(0)}% de utilización con columna al ${((Pu/phi_Pn)*100).toFixed(0)}% de phi.Pn.`,
         modulos:     [geoCP.tipo, colHorm.tipo],
-        normativa:   'ACI 318-19 §13.3: distribución de presiones bajo zapata con excentricidad. CIRSOC 201-2002 §15.',
+        normativa:   'ACI 318-19 §13.3: distribución de presiones bajo zapata con excentricidad. CIRSOC 201-2005 §15.',
         accion:      'Ampliar zapata (B, L o Df). Verificar combinaciones de carga sísmicas y de viento sobre la columna.',
         evidencia:   { 'Util. suelo (%)': +util_geo.toFixed(0), 'Pu (kN)': Pu, 'phi.Pn (kN)': +phi_Pn.toFixed(0) },
       });
