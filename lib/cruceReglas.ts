@@ -193,11 +193,11 @@ export function aplicarReglasDecruce(snaps: CalculoSnap[]): RiesgoDetectado[] {
     if (rmr > 0 && rmr < 40 && V_gal > 0 && V_gal < 0.5) {
       alertas.push({
         id:          'CRUCE-006',
-        nivel:       rmr < 21 && V_gal < 0.25 ? 'CRITICO' : 'ALTO',
+        nivel:       rmr < 21 && V_gal < 0.33 ? 'CRITICO' : 'ALTO',
         titulo:      'Roca muy fracturada + ventilación deficiente',
         descripcion: `RMR=${rmr} (${str(rmrCalc.resultado, 'Clase de roca') || 'Clase III-IV'}) con V_galería=${V_gal.toFixed(2)} m/s.`,
         modulos:     [rmrCalc.tipo, ventCalc.tipo],
-        normativa:   'MSHA 30 CFR §57.5005: V_min = 0.25 m/s. Clase IV/V requiere sostenimiento inmediato y ventilación reforzada.',
+        normativa:   'DS 024-2016-EM (Perú) — Reglamento de Seguridad y Salud Ocupacional en Minería: velocidad de aire mínima 20 m/min (0.33 m/s), 25 m/min con uso de ANFO. Bieniawski (1989): RMR < 21 Clase V, 21–40 Clase IV. Umbral ALTO (V < 0.5 m/s) es criterio conservador de la plataforma.',
         accion:      'Aumentar caudal hasta V ≥ 0.5 m/s. Instalar sostenimiento en zonas Clase IV/V. Monitoreo continuo CO/CH4.',
         evidencia:   { 'RMR': rmr, 'V galería (m/s)': +V_gal.toFixed(2) },
       });

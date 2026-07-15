@@ -614,7 +614,7 @@ MSHA 30 CFR Part 57.3461: Evaluación estabilidad techo y costado antes de cada 
 IRAM 2568: Señalización de seguridad en espacios subterráneos — balizamiento de zonas críticas.`,
 
   VENTILACION_SUBTERRANEA: `NORMATIVAS APLICABLES — VERIFICADAS:
-MSHA 30 CFR §57.5005: Velocidad mínima de aire en labores: 0.25 m/s (50 fpm) en frente activo.
+DS 024-2016-EM (Perú) — Reglamento SSO Minería: velocidad de aire mínima 20 m/min (0.33 m/s), 25 m/min con uso de ANFO en frente activo.
 MSHA 30 CFR §57.5060: Caudal mínimo = 0.06 m3/s por trabajador + 0.06 m3/s por kW diesel.
 NIOSH (2010): Límite CO — TWA=25 ppm, STEL=35 ppm, IDLH=1200 ppm — evacuación inmediata si IDLH.
 IRAM 2568: Señalización de evacuación y zonas de riesgo en galerías subterráneas.`,
