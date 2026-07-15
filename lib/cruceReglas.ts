@@ -142,7 +142,7 @@ export function aplicarReglasDecruce(snaps: CalculoSnap[]): RiesgoDetectado[] {
         titulo:      'Riesgo SCC: servicio H₂S + CE elevado en soldadura',
         descripcion: `H₂S=${h2s.toFixed(0)} ppm en perforación y CE(IIW)=${CE.toFixed(3)}. Combinación de riesgo de Stress Corrosion Cracking.`,
         modulos:     [perfo.tipo, suelda.tipo],
-        normativa:   'NACE MR0175/ISO 15156-2:2020 §7.2: H₂S parcial > 0.0003 MPa define sour service. CE > 0.35 → dureza ZAC ≤ 22 HRC.',
+        normativa:   'NACE MR0175/ISO 15156-2:2020 cláusula 7.3: dureza máxima 22 HRC (250 HV10) en metal base, soldadura y zona afectada por el calor. Umbrales CE > 0.35 y CE > 0.45 son criterio conservador de la plataforma.',
         accion:      'Aplicar NACE MR0175. Verificar dureza ZAC ≤ 22 HRC (250 HBW). Considerar PWHT. Inhibidor de H₂S activo.',
         evidencia:   { 'H₂S (ppm)': h2s, 'CE IIW': +CE.toFixed(3) },
       });
@@ -218,7 +218,7 @@ export function aplicarReglasDecruce(snaps: CalculoSnap[]): RiesgoDetectado[] {
         titulo:      'Demanda sísmica alta: verificar elementos resistentes',
         descripcion: `Cs=${Cs.toFixed(3)}${vigaCalc ? ` con vigas al ${util_v.toFixed(0)}% de utilización` : ' — sin verificación de elementos resistentes en historial'}.`,
         modulos:     [sismoCalc.tipo, ...(vigaCalc ? [vigaCalc.tipo] : [])],
-        normativa:   'CIRSOC 103:2013 §8: diseño sismorresistente — ductilidad y redundancia. ASCE 7-22 §12.12: derivas admisibles.',
+        normativa:   'INPRES-CIRSOC 103 Parte I (2013) · ASCE 7-22 §12.8: definición del coeficiente sísmico de diseño Cs.',
         accion:      'Análisis modal espectral completo obligatorio para Cs > 0.20. Verificar ductilidad de uniones.',
         evidencia:   { 'Cs': +Cs.toFixed(4), ...(vigaCalc ? { 'Util. viga (%)': +util_v.toFixed(0) } : {}) },
       });

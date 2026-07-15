@@ -23,11 +23,11 @@ const BORD  = 'rgba(232,160,32,0.15)'
 const REGLAS: { id: string; titulo: string; normativa: string }[] = [
   { id: 'CRUCE-001', titulo: 'Erosión-corrosión: presión elevada + velocidad alta', normativa: 'API RP 14E, 5ª ed. (1991): V_e = C/√ρ_m' },
   { id: 'CRUCE-002', titulo: 'Golpe de ariete sobre cañería al límite de espesor', normativa: 'AWWA M11 · ASME B31.3 §302.2.4' },
-  { id: 'CRUCE-003', titulo: 'Riesgo SCC: servicio H₂S + Carbono Equivalente elevado en soldadura', normativa: 'NACE MR0175/ISO 15156-2:2020 §7.2' },
+  { id: 'CRUCE-003', titulo: 'Riesgo SCC: servicio H₂S + Carbono Equivalente elevado en soldadura', normativa: 'NACE MR0175/ISO 15156-2:2020 cl. 7.3' },
   { id: 'CRUCE-004', titulo: 'Talud inestable próximo a excavación profunda', normativa: 'Práctica geotécnica estándar (FS mín. 1.5) · ISO 45001:2018 cláusula 8.1' },
   { id: 'CRUCE-005', titulo: 'Fundación al límite + columna con alta carga axial', normativa: 'ACI 318-19 §13.3 · CIRSOC 201-2005 §15' },
   { id: 'CRUCE-006', titulo: 'Roca muy fracturada + ventilación deficiente', normativa: 'DS 024-2016-EM (Perú): V_min = 0.33 m/s (20 m/min), 25 m/min con ANFO' },
-  { id: 'CRUCE-007', titulo: 'Demanda sísmica alta: verificar elementos resistentes', normativa: 'CIRSOC 103:2013 §8 · ASCE 7-22 §12.12' },
+  { id: 'CRUCE-007', titulo: 'Demanda sísmica alta: verificar elementos resistentes', normativa: 'INPRES-CIRSOC 103 Parte I (2013) · ASCE 7-22 §12.8' },
   { id: 'CRUCE-008', titulo: 'Dilatación térmica significativa en tubería de pared delgada', normativa: 'ASME B31.3 §319.2.1' },
   { id: 'CRUCE-009', titulo: 'Gradiente hidráulico + excavación profunda → sifonamiento', normativa: 'Terzaghi (1943) · USACE EM 1110-2-1901' },
   { id: 'CRUCE-010', titulo: 'Carga de viento alta en zona con pavimento de bajo SN', normativa: 'ASCE 7-22 §27 · AASHTO 1993' },
