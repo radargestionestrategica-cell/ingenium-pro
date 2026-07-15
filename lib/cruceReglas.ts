@@ -124,7 +124,7 @@ export function aplicarReglasDecruce(snaps: CalculoSnap[]): RiesgoDetectado[] {
         titulo:      'Golpe de ariete sobre cañería al límite de espesor',
         descripcion: `Sobrepresión transitoria=${dP_bar.toFixed(1)} bar sobre tubería con utilización al ${util_pct.toFixed(0)}%.`,
         modulos:     [ariete.tipo, caneria.tipo],
-        normativa:   'AWWA M11: sobrepresión máx. admisible = 1.5× presión trabajo. ASME B31.3 §302.2.4: transitorios ≤ 1.33× diseño.',
+        normativa:   'AWWA M11: sobrepresión máx. admisible = 1.5× presión trabajo. ASME B31.3 §302.2.4: transitorios ≤ 1.33× diseño. Umbrales de disparo: criterio conservador de la plataforma.',
         accion:      'Instalar VRP o bypass. Revisar tiempo de cierre de válvulas (Tc ≥ 2L/a). Verificar espesor bajo carga combinada estática + transitoria.',
         evidencia:   { 'ΔP ariete (bar)': +dP_bar.toFixed(1), 'Util. espesor (%)': +util_pct.toFixed(0) },
       });
@@ -239,7 +239,7 @@ export function aplicarReglasDecruce(snaps: CalculoSnap[]): RiesgoDetectado[] {
           titulo:      'Dilatación térmica significativa en tubería de pared delgada',
           descripcion: `ΔL=${dL_mm.toFixed(1)} mm con t/OD=${t_OD.toFixed(1)}% — riesgo de pandeo o rotura en puntos de anclaje.`,
           modulos:     [termCalc.tipo, caneria.tipo],
-          normativa:   'ASME B31.3 §319.2.1: análisis de flexibilidad obligatorio cuando ΔT > 50°C o ΔL supera deformación admisible.',
+          normativa:   'ASME B31.3 §319: análisis de flexibilidad — obligatorio cuando ΔT > 50°C o ΔL supera deformación admisible. Umbrales de disparo: criterio conservador de la plataforma.',
           accion:      'Verificar análisis de flexibilidad (Caesar II / AutoPIPE). Instalar lira de expansión o junta de dilatación.',
           evidencia:   { 'ΔL (mm)': +dL_mm.toFixed(1), 'OD (mm)': OD_mm, 't (mm)': t_mm, 't/OD (%)': +t_OD.toFixed(1) },
         });
@@ -258,7 +258,7 @@ export function aplicarReglasDecruce(snaps: CalculoSnap[]): RiesgoDetectado[] {
         titulo:      'Gradiente hidráulico + excavación profunda → sifonamiento',
         descripcion: `Gradiente i=${grad.toFixed(3)} (límite Terzaghi ≈ 0.5) con excavación de ${prof.toFixed(1)} m en zona con flujo subterráneo.`,
         modulos:     [filtCalc.tipo, excav.tipo],
-        normativa:   'Terzaghi (1943): ic = (Gs-1)/(1+e) ≈ 0.5 arena media. USACE EM 1110-2-1901: filtro requerido si i > 0.15.',
+        normativa:   'Terzaghi (1943): ic = (Gs-1)/(1+e) ≈ 0.5 arena media. USACE EM 1110-2-1901: filtro requerido si i > 0.15. Umbrales de disparo: criterio conservador de la plataforma.',
         accion:      'Instalar wellpoints para bajar nivel freático antes de excavar. Filtro de drenaje perimetral en zanja.',
         evidencia:   { 'Gradiente i': +grad.toFixed(4), 'Prof. excavación (m)': prof },
       });
@@ -276,7 +276,7 @@ export function aplicarReglasDecruce(snaps: CalculoSnap[]): RiesgoDetectado[] {
         titulo:      'Carga de viento alta en zona con pavimento de bajo SN',
         descripcion: `Presión de diseño=${p_kPa.toFixed(2)} kPa con SN=${SN.toFixed(2)} — vía de acceso puede ser insuficiente para equipos de montaje pesados.`,
         modulos:     [vientoCalc.tipo, pavCalc.tipo],
-        normativa:   'ASCE 7-22 §27: cargas de viento de diseño. AASHTO 1993: SN mínimo según tránsito y vehículos de servicio.',
+        normativa:   'ASCE 7-22 §27: cargas de viento de diseño. AASHTO 1993: SN mínimo según tránsito y vehículos de servicio. Umbrales de disparo: criterio conservador de la plataforma.',
         accion:      'Verificar capacidad portante de vía de acceso. Considerar mejoramiento de base granular si se requiere maquinaria pesada.',
         evidencia:   { 'P viento (kPa)': +p_kPa.toFixed(2), 'SN pavimento': +SN.toFixed(2) },
       });
