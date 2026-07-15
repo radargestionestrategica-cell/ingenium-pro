@@ -30,7 +30,7 @@ const NORMAS = [
   'NACE MR0175','ISO 15156','AWS D1.1','AISC 360-16','ACI 318-19',
   'AASHTO 93','ASCE 7-22','CIRSOC 101','CIRSOC 201','CIRSOC 301',
   'NEC 2023','TEMA','USACE EM','ICOLD','ISA 75.01',
-  'Bieniawski 89','MSHA 30 CFR','Bishop 1955','HEC-22','EN 12464',
+  'Bieniawski 89','DS 024-2016-EM','Bishop 1955','HEC-22','EN 12464',
 ];
 
 const modulos = [

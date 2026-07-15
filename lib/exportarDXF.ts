@@ -2946,7 +2946,7 @@ export function exportarDXFMineria(p: Record<string, any>): string {
     datos.forEach((d, i) => {
       ents.push(_texto(0, 20-i*6, 3.5, d, 'DATOS', i===0?2:(i===2?rColor:3)));
     });
-    ents.push(_bloqueTitle(`RMR BIENIAWSKI — GALERIA CLASE ${clase} / SOSTENIMIENTO`, 'Bieniawski 1989 / ISRM / MSHA 30 CFR §57',
+    ents.push(_bloqueTitle(`RMR BIENIAWSKI — GALERIA CLASE ${clase} / SOSTENIMIENTO`, 'Bieniawski 1989 / ISRM',
       p.proyecto||'', p.ingeniero||'', fecha, 0, -60, _usrData(p)));
 
   } else {
@@ -3011,7 +3011,7 @@ export function exportarDXFMineria(p: Record<string, any>): string {
     datos.forEach((d, i) => {
       ents.push(_texto(0, 20-i*6, 3.5, d, 'DATOS', i===0?2:(i===5?rColor:3)));
     });
-    ents.push(_bloqueTitle('VENTILACION SUBTERRANEA — GALERIA / FLUJO DE AIRE', 'NIOSH 2010 / MSHA 30 CFR Part 57 / IRAM 2568',
+    ents.push(_bloqueTitle('VENTILACION SUBTERRANEA — GALERIA / FLUJO DE AIRE', 'DS 024-2016-EM (Peru) / DS 132 (Chile)',
       p.proyecto||'', p.ingeniero||'', fecha, 0, -60, _usrData(p)));
   }
 
