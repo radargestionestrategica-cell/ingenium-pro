@@ -104,7 +104,7 @@ export function aplicarReglasDecruce(snaps: CalculoSnap[]): RiesgoDetectado[] {
         titulo:      'Erosión-corrosión: presión elevada + velocidad alta',
         descripcion: `MAOP=${p_bar.toFixed(1)} bar con velocidad=${v_ms.toFixed(2)} m/s supera el umbral combinado de erosión-corrosión.`,
         modulos:     [maop.tipo, hidra.tipo],
-        normativa:   'API RP 14E-2007 §2.3: V_max = C/√ρ — C=100 fluido no corrosivo, C=125 con inhibidor.',
+        normativa:   'API RP 14E, 5ª edición (1991): velocidad erosional V_e = C/√ρ_m — C=100 servicio continuo, C=125 servicio intermitente (fluidos sin sólidos); con corrosión controlada por inhibidor o aleaciones resistentes, C=150–200. Umbrales de la regla (40 bar y 2 m/s) son criterio conservador de la plataforma.',
         accion:      'Verificar protección anticorrosión activa. Reducir velocidad a < 2.0 m/s o tratar con inhibidor. Inspección PIG en 6 meses.',
         evidencia:   { 'MAOP (bar)': +p_bar.toFixed(1), 'V (m/s)': +v_ms.toFixed(2) },
       });

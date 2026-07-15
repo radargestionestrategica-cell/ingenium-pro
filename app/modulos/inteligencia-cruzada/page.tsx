@@ -21,7 +21,7 @@ const LIGHT = '#94a3b8'
 const BORD  = 'rgba(232,160,32,0.15)'
 
 const REGLAS: { id: string; titulo: string; normativa: string }[] = [
-  { id: 'CRUCE-001', titulo: 'Erosión-corrosión: presión elevada + velocidad alta', normativa: 'API RP 14E-2007 §2.3: V_max = C/√ρ' },
+  { id: 'CRUCE-001', titulo: 'Erosión-corrosión: presión elevada + velocidad alta', normativa: 'API RP 14E, 5ª ed. (1991): V_e = C/√ρ_m' },
   { id: 'CRUCE-002', titulo: 'Golpe de ariete sobre cañería al límite de espesor', normativa: 'AWWA M11 · ASME B31.3 §302.2.4' },
   { id: 'CRUCE-003', titulo: 'Riesgo SCC: servicio H₂S + Carbono Equivalente elevado en soldadura', normativa: 'NACE MR0175/ISO 15156-2:2020 §7.2' },
   { id: 'CRUCE-004', titulo: 'Talud inestable próximo a excavación profunda', normativa: 'Práctica geotécnica estándar (FS mín. 1.5) · ISO 45001:2018 cláusula 8.1' },
@@ -106,7 +106,9 @@ export default function ModuloInteligenciaCruzadaPage() {
           <div style={{ background: PANEL, border: `1px solid ${BORD}`, borderRadius: 8, padding: 18, fontFamily: 'monospace', fontSize: 13, color: '#94a3b8', lineHeight: 1.9 }}>
             <span style={{ color: GOLD }}>Nivel: ALTO</span> (CRÍTICO si MAOP &gt; 70 bar y V &gt; 3.0 m/s)<br />
             Título: Erosión-corrosión: presión elevada + velocidad alta<br />
-            Normativa: API RP 14E-2007 §2.3: V_max = C/√ρ — C=100 fluido no corrosivo, C=125 con inhibidor.<br />
+            Normativa: API RP 14E, 5ª edición (1991): V_e = C/√ρ_m — C=100 servicio continuo, C=125 servicio
+            intermitente (fluidos sin sólidos); con corrosión controlada por inhibidor o aleaciones, C=150–200.
+            Umbrales 40 bar y 2 m/s: criterio conservador de la plataforma.<br />
             Acción: Verificar protección anticorrosión activa. Reducir velocidad a &lt; 2.0 m/s o tratar con
             inhibidor. Inspección PIG en 6 meses.
           </div>
