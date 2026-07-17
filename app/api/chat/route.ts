@@ -584,13 +584,13 @@ IEC 60909-0:2016: Ik'' = c·Un/(√3·Zk) — c=1.0-1.1, Zk=impedancia total cor
 API RP 500 4a ed. 2023: División 1=vapores normalmente presentes. División 2=solo condiciones anormales. División 1 y 2 se definen en NEC 500.5(B).`,
 
   CAPACIDAD_PORTANTE: `NORMATIVAS APLICABLES — VERIFICADAS:
-CIRSOC 102-1982: FS mín. = 3.0 edificios, 2.0 estructuras provisorias — qa = qu / FS.
+Práctica geotécnica estándar: FS mín. = 3.0 edificios, 2.0 estructuras provisorias — qa = qu / FS.
 Meyerhof (1963): qu = c·Nc·sc + q·Nq·sq + 0.5·γ·B·Nγ·sγ — factores forma incluidos.
 Eurocode 7 §6.5.2 (EN 1997-1): GEO verificación capacidad portante — R/γR ≥ Vd.
 ASTM D2487-17: Clasificación USCS del suelo — base para selección de parámetros c y φ.`,
 
   ESTABILIDAD_TALUD: `NORMATIVAS APLICABLES — VERIFICADAS:
-CIRSOC 102-1982: FS mín. permanente = 1.5, transitorio = 1.3, condición sísmica = 1.1.
+USACE EM 1110-2-1902: FS mín. permanente = 1.5, transitorio = 1.3, condición sísmica = 1.1.
 Bishop Simplificado (1955): FS = Σ[(c'b + (W-ub)·tanφ') / mα] / Σ[W·sinα] — círculo crítico.
 Eurocode 7 §11 (EN 1997-1): Verificación GEO taludes — partial factor design approach.
 ASTM D2487-17: Clasificación USCS — base para parámetros c y φ de diseño del talud.`,
@@ -611,13 +611,13 @@ CIRSOC 201-2005: Resistencias características y factores de reducción equivale
 Bieniawski (1989): RMR = P1+P2+P3+P4+P5+ajuste orientación — escala 0–100, 5 parámetros.
 Clase I (81-100): sin soporte; II (61-80): pernos 3m; III (41-60): shotcrete+malla; IV (21-40): cerchas; V (<21): soporte inmediato.
 MSHA 30 CFR Part 57.3461: Evaluación estabilidad techo y costado antes de cada turno de trabajo.
-IRAM 2568: Señalización de seguridad en espacios subterráneos — balizamiento de zonas críticas.`,
+DS 024-2016-EM (Perú): Señalización y código de colores en minería — balizamiento de zonas críticas.`,
 
   VENTILACION_SUBTERRANEA: `NORMATIVAS APLICABLES — VERIFICADAS:
 DS 024-2016-EM (Perú) — Reglamento SSO Minería: velocidad de aire mínima 20 m/min (0.33 m/s), 25 m/min con uso de ANFO en frente activo.
 MSHA 30 CFR §57.5060: Caudal mínimo = 0.06 m3/s por trabajador + 0.06 m3/s por kW diesel.
 NIOSH (2010): Límite CO — TWA=25 ppm, STEL=35 ppm, IDLH=1200 ppm — evacuación inmediata si IDLH.
-IRAM 2568: Señalización de evacuación y zonas de riesgo en galerías subterráneas.`,
+DS 024-2016-EM (Perú): Señalización y código de colores en minería — evacuación y zonas de riesgo en galerías.`,
 
   SELECTOR_SOLDADURA: `NORMATIVAS APLICABLES — VERIFICADAS:
 AWS D1.1:2020 §4.1: Procesos precalificados — SMAW, FCAW, GMAW, SAW — condiciones de aplicación.
@@ -700,8 +700,8 @@ ISO 45001:2018 §8.1: Control excavación y armado de fundaciones — apuntalami
   EXCAVACION_MMO: `NORMATIVAS APLICABLES — VERIFICADAS:
 ISO 45001:2018 cláusula 8.1: Procedimiento de trabajo seguro en excavaciones — apuntalamiento H>1.20m.
 ISO 45001:2018 §8.1.3: Excavaciones y zanjas — inspección diaria antes del ingreso de personal.
-CIRSOC 102-1982: Ángulo talud natural de reposo — 45° arena suelta, 90° roca sana.
-IRAM 2568: Señalización perimetral de excavaciones — balizamiento y cerco de seguridad obligatorio.`,
+Práctica geotécnica estándar: Ángulo talud natural de reposo — 45° arena suelta, 90° roca sana.
+Decreto 911/96 (Argentina): Higiene y seguridad en la construcción — señalización perimetral, balizamiento y cerco de seguridad obligatorio.`,
 
   MORTERO_MMO: `NORMATIVAS APLICABLES — VERIFICADAS:
 IRAM 1570:2014: Morteros para albañilería — proporción en volumen 1:1:6 (cemento:cal:arena) a 1:0:4.
