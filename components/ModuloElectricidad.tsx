@@ -32,12 +32,12 @@ const CABLES: Record<string, { R_cu: number; R_al: number; Iz_cu: number; Iz_al:
 
 // ═══ LUX MÍNIMOS — IES/IESNA, EN 12464-1, API RP 54, ISO 8995 ═══
 const LUX_APP: Record<string, { lux: number; norma: string; sector: string }> = {
-  emergencia:        { lux: 10,  norma: 'IEC 60364-5-55',  sector: 'Todas' },
+  emergencia:        { lux: 10,  norma: 'IEC 60364-5-56 servicios de seguridad',  sector: 'Todas' },
   almacen:           { lux: 200, norma: 'EN 12464-1',       sector: 'MMO/Civil' },
   galeria_minera:    { lux: 200, norma: 'MSHA / ISO 8995',  sector: 'Minería' },
   drill_floor:       { lux: 300, norma: 'API RP 54 §5.9',   sector: 'Perforación' },
-  turbinas_represa:  { lux: 300, norma: 'USACE EM 1110-2',  sector: 'Represas' },
-  sala_control:      { lux: 500, norma: 'IEC 61511',        sector: 'Petróleo/Gas' },
+  turbinas_represa:  { lux: 300, norma: 'práctica industrial',  sector: 'Represas' },
+  sala_control:      { lux: 500, norma: 'EN 12464-1',        sector: 'Petróleo/Gas' },
   taller:            { lux: 500, norma: 'EN 12464-1',       sector: 'Industrial' },
   oficina:           { lux: 500, norma: 'EN 12464-1',       sector: 'Todas' },
   laboratorio:       { lux: 750, norma: 'EN 12464-1',       sector: 'Civil/Petróleo' },
@@ -650,7 +650,7 @@ export default function ModuloElectricidad() {
     const S = P / (FP * eta);
     const Ip = (S * 1000) / (Math.sqrt(3) * Vp);
     const Is = (S * 1000) / (Math.sqrt(3) * Vs);
-    const Iarr = 10 * Is; // Inrush IEC 60076: 8-12 × I_nom, típico 10×
+    const Iarr = 10 * Is; // Inrush 8-12 × I_nom, valor típico de ingeniería 10×
 
     const resultadoTrafo = {
       S: Math.round(S * 10) / 10,
@@ -751,7 +751,7 @@ export default function ModuloElectricidad() {
         <div style={{ flex:1 }}>
           <div style={{ fontSize:20, fontWeight:800 }}>Electricidad Industrial</div>
           <div style={{ fontSize:12, color:'#64748b' }}>Perforación · Petróleo · Minería · Represas · MMO · Civil — Calibre · Caída · CC · FP · Motor · Área Peligrosa · Iluminación · Transformador</div>
-          <div style={{ fontSize:11, color:COLOR, marginTop:4 }}>NEC 2023 · IEC 60228 · IEC 60364 · IEC 60909 · IEC 60079 · API RP 500 · IEEE 80 · IES/IESNA · EN 12464-1 · API RP 54 · IEC 60076</div>
+          <div style={{ fontSize:11, color:COLOR, marginTop:4 }}>NEC 2023 · IEC 60228 · IEC 60364 · IEC 60909 · IEC 60079 · API RP 500 · IES/IESNA · EN 12464-1 · API RP 54 · IEC 60076</div>
         </div>
       </div>
 
@@ -1267,7 +1267,7 @@ export default function ModuloElectricidad() {
             </div>
           </div>
 
-          <Info t="S = P / (FP × η) kVA | I_p = S / (√3 × Vp) | I_s = S / (√3 × Vs) | I_inrush ≈ 10 × I_s (IEC 60076)" />
+          <Info t="S = P / (FP × η) kVA | I_p = S / (√3 × Vp) | I_s = S / (√3 × Vs) | I_inrush ≈ 10 × I_s (valor típico de ingeniería, 8-12×)" />
 
           <Btn onClick={calcTrafo} text="Dimensionar transformador" />
 
@@ -1279,7 +1279,7 @@ export default function ModuloElectricidad() {
                 <Card label="Potencia aparente S" val={`${resTr.S} kVA`} sub="Seleccionar comercial ≥ este valor" />
                 <Card label="Corriente primaria" val={`${resTr.Ip} A`} sub={`${(parseInt(trVp) / 1000).toFixed(1)} kV`} />
                 <Card label="Corriente secundaria" val={`${resTr.Is} A`} sub={`${trVs} V nominal`} />
-                <Card label="Corriente inrush" val={`${resTr.Iarr} A`} color="#f59e0b" sub="≈10 × I_sec — IEC 60076" />
+                <Card label="Corriente inrush" val={`${resTr.Iarr} A`} color="#f59e0b" sub="≈10 × I_sec — valor típico de ingeniería" />
               </div>
 
               <Warn t="⚠️ Seleccionar potencia comercial estándar inmediatamente superior. Proteger con interruptor termomagnético y relé diferencial. Verificar cortocircuito en secundario." />
