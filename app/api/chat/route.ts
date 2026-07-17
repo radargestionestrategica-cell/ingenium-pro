@@ -610,13 +610,13 @@ CIRSOC 201-2005: Resistencias características y factores de reducción equivale
   RMR_BIENIAWSKI: `NORMATIVAS APLICABLES — VERIFICADAS:
 Bieniawski (1989): RMR = P1+P2+P3+P4+P5+ajuste orientación — escala 0–100, 5 parámetros.
 Clase I (81-100): sin soporte; II (61-80): pernos 3m; III (41-60): shotcrete+malla; IV (21-40): cerchas; V (<21): soporte inmediato.
-MSHA 30 CFR Part 57.3461: Evaluación estabilidad techo y costado antes de cada turno de trabajo.
+MSHA 30 CFR 57.3401 (Examination of ground conditions): Evaluación estabilidad techo y costado antes de cada turno de trabajo.
 DS 024-2016-EM (Perú): Señalización y código de colores en minería — balizamiento de zonas críticas.`,
 
   VENTILACION_SUBTERRANEA: `NORMATIVAS APLICABLES — VERIFICADAS:
 DS 024-2016-EM (Perú) — Reglamento SSO Minería: velocidad de aire mínima 20 m/min (0.33 m/s), 25 m/min con uso de ANFO en frente activo.
-MSHA 30 CFR §57.5060: Caudal mínimo = 0.06 m3/s por trabajador + 0.06 m3/s por kW diesel.
-NIOSH (2010): Límite CO — TWA=25 ppm, STEL=35 ppm, IDLH=1200 ppm — evacuación inmediata si IDLH.
+DS 024-2016-EM (Perú): Caudal mínimo = 3 m3/min por persona a nivel del mar, hasta 6 m3/min sobre 4000 m, más 3 m3/min por HP diesel.
+CO: límite 25 ppm TWA según ACGIH TLV adoptado por DS 024-2016-EM; IDLH 1200 ppm según NIOSH — evacuación inmediata si IDLH.
 DS 024-2016-EM (Perú): Señalización y código de colores en minería — evacuación y zonas de riesgo en galerías.`,
 
   SELECTOR_SOLDADURA: `NORMATIVAS APLICABLES — VERIFICADAS:
