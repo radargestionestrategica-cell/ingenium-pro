@@ -10,7 +10,7 @@ import { useState, type CSSProperties, type ReactNode } from 'react';
 
 const COLOR = '#22c55e';
 
-// ═══ RESISTENCIA IEC 60228 + AMPACIDAD NEC 310.15(B)(16) ═══
+// ═══ RESISTENCIA IEC 60228 + AMPACIDAD NEC Tabla 310.16 ═══
 // R a 20°C en Ω/km — Ampacidad a 75°C en conduit, Cu y Al
 const CABLES: Record<string, { R_cu: number; R_al: number; Iz_cu: number; Iz_al: number }> = {
   '1.5 mm²':  { R_cu: 12.10, R_al: 0,     Iz_cu: 15,  Iz_al: 0   },
@@ -43,7 +43,7 @@ const LUX_APP: Record<string, { lux: number; norma: string; sector: string }> = 
   laboratorio:       { lux: 750, norma: 'EN 12464-1',       sector: 'Civil/Petróleo' },
 };
 
-// ═══ ZONAS PELIGROSAS — IEC 60079-10-1 / API RP 500:2012 ═══
+// ═══ ZONAS PELIGROSAS — IEC 60079-10-1 / API RP 500 4a ed. 2023 ═══
 const ZONAS = {
   zona0: { iec:'Zona 0', api:'División 1', desc:'Atmósfera explosiva CONTINUA (>1000 h/año)', equipo:'Ex ia — Categoría 1G', color:'#ef4444' },
   zona1: { iec:'Zona 1', api:'División 1', desc:'Atmósfera explosiva OCASIONAL (10-1000 h/año)', equipo:'Ex d, Ex e, Ex ib — Categoría 2G', color:'#f59e0b' },
@@ -283,7 +283,7 @@ export default function ModuloElectricidad() {
     setResCable(resultadoCable);
     const payloadCable: DatosExportar = {
       tipo: 'ELECTRICIDAD_CABLE',
-      normativa: 'NEC 2023 §310.15(B)(16) / IEC 60364-5-52 / IEC 60228',
+      normativa: 'NEC 2023 Tabla 310.16 / IEC 60364-5-52 / IEC 60228',
       parametros: {
         'Tipo circuito': cTipo === 'trif' ? 'Trifasico' : 'Monofasico',
         'Corriente diseno (A)': cI,
@@ -350,7 +350,7 @@ export default function ModuloElectricidad() {
     setResCd(resultadoCaida);
     const payloadCaida: DatosExportar = {
       tipo: 'ELECTRICIDAD_CAIDA_TENSION',
-      normativa: 'IEC 60364-5-52 / NEC 210.19 / CIRSOC 900',
+      normativa: 'IEC 60364-5-52 / NEC 210.19 / AEA 90364-7-771 cláusula 771.13.b',
       parametros: {
         'Cable seleccionado': cdCable,
         'Longitud (m)': cdL,
@@ -419,7 +419,7 @@ export default function ModuloElectricidad() {
     setResCc(resultadoCC);
     const payloadCC: DatosExportar = {
       tipo: 'ELECTRICIDAD_CORTOCIRCUITO',
-      normativa: 'IEC 60909 / IRAM 2299',
+      normativa: 'IEC 60909',
       parametros: {
         'Potencia transformador (kVA)': ccS,
         'Impedancia cc uk (%)': ccUk,
@@ -708,7 +708,7 @@ export default function ModuloElectricidad() {
 
     const payloadPeligrosa: DatosExportar = {
       tipo: 'ELECTRICIDAD_AREA_PELIGROSA',
-      normativa: 'IEC 60079-10-1 / API RP 500:2012 / NEC Art. 500-505',
+      normativa: 'IEC 60079-10-1 / API RP 500 4a ed. 2023 / NEC 500.5(B)',
       parametros: {
         'Industria aplicacion': apInd,
         'Gas polvo vapor': apGas,
@@ -729,7 +729,7 @@ export default function ModuloElectricidad() {
         L_circuito:       0,
         caida_tension:    0,
         num_conductores:  3,
-        norma:            'IEC 60079-10-1 / API RP 500',
+        norma:            'IEC 60079-10-1 / API RP 500 4a ed. 2023',
         zona_exp:         resultadoArea.zonaIEC,
       },
     };
@@ -785,7 +785,7 @@ export default function ModuloElectricidad() {
       {/* ══ CALIBRE CABLE ══ */}
       {sub === 'cable' && (
         <div>
-          <Tit t="Selección de calibre de cable — NEC 310.15(B)(16) / IEC 60364-5-52" />
+          <Tit t="Selección de calibre de cable — NEC Tabla 310.16 / IEC 60364-5-52" />
 
           <div style={g3}>
             <div>
@@ -810,7 +810,7 @@ export default function ModuloElectricidad() {
             </div>
           </div>
 
-          <Info t="Ampacidades a 75°C en conduit, temperatura ambiente 30°C — NEC 310.15(B)(16) / IEC 60364-5-52 Tabla B.52.4" />
+          <Info t="Ampacidades a 75°C en conduit, temperatura ambiente 30°C — NEC Tabla 310.16 / IEC 60364-5-52 Tabla B.52.4" />
 
           <Btn onClick={calcCable} text="Seleccionar calibre mínimo" />
 
@@ -847,7 +847,7 @@ export default function ModuloElectricidad() {
       {/* ══ CAÍDA DE TENSIÓN ══ */}
       {sub === 'caida' && (
         <div>
-          <Tit t="Caída de tensión — IEC 60364-5-52 / NEC 210.19 / CIRSOC 900" />
+          <Tit t="Caída de tensión — IEC 60364-5-52 / NEC 210.19 / AEA 90364-7-771 cláusula 771.13.b (3% iluminación, 5% motores régimen, 15% arranque)" />
 
           <div style={g2}>
             <div>
@@ -915,7 +915,7 @@ export default function ModuloElectricidad() {
       {/* ══ CORTOCIRCUITO ══ */}
       {sub === 'cc' && (
         <div>
-          <Tit t="Corriente de cortocircuito — IEC 60909 / IRAM 2299" />
+          <Tit t="Corriente de cortocircuito — IEC 60909" />
 
           <div style={g2}>
             <div>
@@ -1081,7 +1081,7 @@ export default function ModuloElectricidad() {
                 <Card label="Cable mínimo" val={resMot.calibre} sub="1.25 × I_nom" />
               </div>
 
-              <Warn t="⚠️ En Zona 1/2 (IEC 60079) o División 1/2 (API RP 500): motor EX certificado obligatorio. VFD reduce Iarranque a ≈1.1 × I_nom." />
+              <Warn t="⚠️ En Zona 1/2 (IEC 60079) o División 1/2 (API RP 500 / NEC 500.5(B)): motor EX certificado obligatorio. VFD reduce Iarranque a ≈1.1 × I_nom." />
             </ResBox>
           )}
         </div>
@@ -1090,7 +1090,7 @@ export default function ModuloElectricidad() {
       {/* ══ ÁREA PELIGROSA ══ */}
       {sub === 'peligrosa' && (
         <div>
-          <Tit t="Clasificación de áreas peligrosas — IEC 60079-10-1 / API RP 500:2012 / NEC Art. 500-505" />
+          <Tit t="Clasificación de áreas peligrosas — IEC 60079-10-1 / API RP 500 4a ed. 2023 / NEC 500.5(B)" />
 
           <div style={g3}>
             <div>
@@ -1159,7 +1159,7 @@ export default function ModuloElectricidad() {
             ))}
           </div>
 
-          <Warn t="⚠️ La clasificación definitiva de áreas peligrosas requiere ingeniero matriculado y estudio de riesgo según API RP 500 / IEC 60079-10-1. Este módulo es orientativo." />
+          <Warn t="⚠️ La clasificación definitiva de áreas peligrosas requiere ingeniero matriculado y estudio de riesgo según API RP 500 4a ed. 2023 / IEC 60079-10-1. Este módulo es orientativo." />
         </div>
       )}
 

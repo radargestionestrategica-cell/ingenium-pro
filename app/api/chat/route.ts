@@ -579,9 +579,9 @@ API RP 13D-2017 §6: ECD = ρ_lodo + (ΔP_anular/(0.0981×prof)) — puede exced
 API RP 59-2006: Margen control mínimo = 3.5 kPa/m sobre presión de poro.`,
 
   ELECTRICIDAD: `NORMATIVAS APLICABLES — VERIFICADAS:
-IEC 60228-2004: I ≤ I_admisible conductor. ΔV ≤ 3% fuerza (IEC 60364-5-52).
+IEC 60228-2004: I ≤ I_admisible conductor. IEC 60364-5-52 Anexo G recomienda ΔV ≤ 3% iluminación y 5% otros usos.
 IEC 60909-0:2016: Ik'' = c·Un/(√3·Zk) — c=1.0-1.1, Zk=impedancia total cortocircuito.
-API RP 500-2012: División 1=vapores normalmente presentes. División 2=solo condiciones anormales.`,
+API RP 500 4a ed. 2023: División 1=vapores normalmente presentes. División 2=solo condiciones anormales. División 1 y 2 se definen en NEC 500.5(B).`,
 
   CAPACIDAD_PORTANTE: `NORMATIVAS APLICABLES — VERIFICADAS:
 CIRSOC 102-1982: FS mín. = 3.0 edificios, 2.0 estructuras provisorias — qa = qu / FS.
