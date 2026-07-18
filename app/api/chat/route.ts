@@ -602,9 +602,9 @@ AISC 360-16 §L3: Deflexión máx. L/360 cargas vivas, L/240 carga total de serv
 ASCE 7-22 §2.3: Combinaciones LRFD — 1.2D + 1.6L combinación más crítica habitual.`,
 
   COLUMNA_HORMIGON_ACI: `NORMATIVAS APLICABLES — VERIFICADAS:
-ACI 318-19 §22.4.2.1: φPn_máx = 0.80·φ·[0.85·f'c·(Ag-Ast) + fy·Ast] — φ=0.65.
+ACI 318-19 §22.4.2: φPn_máx = 0.80·φ·[0.85·f'c·(Ag-Ast) + fy·Ast] — φ=0.65.
 ACI 318-19 §10.6.1.1: Cuantía longitudinal ρ entre 1% y 8% del área bruta Ag.
-ACI 318-19 §22.6: Excentricidad mínima e = max(15 mm, 0.03h) — siempre aplicar.
+ACI 318-19 §6.6.4.5.4: Momento mínimo por excentricidad accidental M2mín = Pu·(15 + 0.03h) en mm.
 CIRSOC 201-2005: Resistencias características y factores de reducción equivalentes al ACI.`,
 
   RMR_BIENIAWSKI: `NORMATIVAS APLICABLES — VERIFICADAS:

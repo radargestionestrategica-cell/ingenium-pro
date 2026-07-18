@@ -205,7 +205,7 @@ export default function ModuloCivil() {
     setResViga(r);
     const payload: DatosExportar = {
       tipo: 'VIGA_ACERO_AISC',
-      normativa: 'AISC 360-16 LRFD | ASCE 7-22',
+      normativa: 'AISC 360-22 LRFD | ASCE 7-22',
       parametros: {
         'Momento ultimo Mu (kN.m)': Mu,
         'Cortante ultimo Vu (kN)': Vu,

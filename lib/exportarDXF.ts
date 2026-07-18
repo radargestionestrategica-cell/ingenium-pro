@@ -2384,7 +2384,7 @@ export function exportarDXFCivil(p: Record<string, any>): string {
     datos.forEach((d, i) => {
       ents.push(_texto(0, 20-i*6, 3.5, d, 'DATOS', i===0?2:(i===6?rCol:3)));
     });
-    ents.push(_bloqueTitle(`VIGA ${perfil} — SECCION I / ALZADO / DEFLEXION`, 'AISC 360-16 LRFD / ASCE 7-22',
+    ents.push(_bloqueTitle(`VIGA ${perfil} — SECCION I / ALZADO / DEFLEXION`, 'AISC 360-22 LRFD / ASCE 7-22',
       p.proyecto||'', p.ingeniero||'', fecha, 0, -60, _usrData(p)));
 
   } else {
