@@ -132,7 +132,7 @@ export const MODULOS_INTRO: Record<string, ModuloIntroData> = {
     },
     que_calcula: ['RMR total (0-100): suma de 6 parámetros de Bieniawski 1989', 'Clase del macizo: I (muy buena) a V (muy mala) con tiempo de auto-sostenimiento', 'Tipo de sostenimiento: pernos, malla, shotcrete, cerchas metálicas', 'Resistencia a compresión uniaxial (UCS) del macizo rocoso', 'Módulo de deformación del macizo rocoso estimado'],
     que_calcula_en: ['Total RMR (0-100): sum of 6 Bieniawski 1989 parameters', 'Rock mass class: I (very good) to V (very poor) with stand-up time', 'Support type: rock bolts, mesh, shotcrete, steel sets', 'Uniaxial compressive strength (UCS) of the rock mass', 'Estimated rock mass deformation modulus'],
-    normativas: ['Bieniawski (1989) — Rock Mass Rating System', 'ISRM — International Society for Rock Mechanics', 'MSHA — Mine Safety and Health Administration'],
+    normativas: ['Bieniawski (1989) — Rock Mass Rating System', 'ISRM — International Society for Rock Mechanics'],
     como_usar: ['Ingresá los 6 parámetros RMR: resistencia roca, RQD, espaciado, condición y orientación de discontinuidades, agua', 'El sistema suma automáticamente la puntuación total RMR', 'Revisá la clasificación del macizo (Clase I a V) y el tiempo de auto-sostenimiento', 'Consultá el tipo de sostenimiento recomendado según el RMR obtenido'],
     como_usar_en: ['Enter the 6 RMR parameters: rock strength, RQD, spacing, condition and orientation of discontinuities, groundwater', 'The system automatically sums the total RMR score', 'Review rock mass class (Class I to V) and stand-up time', 'Check the recommended support type based on the obtained RMR'],
   },

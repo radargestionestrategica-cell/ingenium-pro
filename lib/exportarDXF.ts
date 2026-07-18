@@ -3001,7 +3001,7 @@ export function exportarDXFMineria(p: Record<string, any>): string {
     ents.push(_cotaVert(cx+galW+5, cy-galH, cy, `${(galH/12*Math.sqrt(sec)).toFixed(1)}m`, 12));
 
     const datos = [
-      `MODULO: MINERIA — VENTILACION SUBTERRANEA NIOSH / MSHA`,
+      `MODULO: MINERIA — VENTILACION SUBTERRANEA DS 024-2016-EM / DS 132 CHILE`,
       `Trabajadores=${trab} | Diesel=${dkW} kW | L galeria=${lon} m | Sec.=${sec} m2`,
       `Q requerido=${Q.toFixed(3)} m3/s | V galeria=${V.toFixed(3)} m/s`,
       `Tiempo renovacion aire: ${tren.toFixed(1)} min`,

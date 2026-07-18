@@ -34,7 +34,7 @@ const CABLES: Record<string, { R_cu: number; R_al: number; Iz_cu: number; Iz_al:
 const LUX_APP: Record<string, { lux: number; norma: string; sector: string }> = {
   emergencia:        { lux: 10,  norma: 'IEC 60364-5-56 servicios de seguridad',  sector: 'Todas' },
   almacen:           { lux: 200, norma: 'EN 12464-1',       sector: 'MMO/Civil' },
-  galeria_minera:    { lux: 200, norma: 'MSHA / ISO 8995',  sector: 'Minería' },
+  galeria_minera:    { lux: 200, norma: 'DS 024-2016-EM (Perú) / ISO 8995',  sector: 'Minería' },
   drill_floor:       { lux: 300, norma: 'API RP 54 §5.9',   sector: 'Perforación' },
   turbinas_represa:  { lux: 300, norma: 'práctica industrial',  sector: 'Represas' },
   sala_control:      { lux: 500, norma: 'EN 12464-1',        sector: 'Petróleo/Gas' },
