@@ -334,12 +334,17 @@ export function calcHeatInputSoldadura(
   return { hi: +hi.toFixed(3), riesgo };
 }
 
-// C, Mn, Cr, Mo, Ni en % en peso (IIW formula)
+// C, Mn, Cr, Mo, Ni, V, Cu, Si en % en peso
+// IIW:      CE = C + Mn/6 + (Cr+Mo+V)/5 + (Ni+Cu)/15
+// AWS D1.1: CE = C + (Mn+Si)/6 + (Cr+Mo+V)/5 + (Ni+Cu)/15  (si Si > 0)
 export function calcCarbonoEquivalente(
   C: number, Mn: number, Cr: number, Mo: number, Ni: number,
+  V = 0, Cu = 0, Si = 0,
 ) {
-  if (C < 0 || Mn < 0 || Cr < 0 || Mo < 0 || Ni < 0) return null;
-  const CE = C + Mn / 6 + (Cr + Mo) / 5 + Ni / 15;
+  if (C < 0 || Mn < 0 || Cr < 0 || Mo < 0 || Ni < 0 || V < 0 || Cu < 0 || Si < 0) return null;
+  const CE = Si > 0
+    ? C + (Mn + Si) / 6 + (Cr + Mo + V) / 5 + (Ni + Cu) / 15
+    : C + Mn / 6 + (Cr + Mo + V) / 5 + (Ni + Cu) / 15;
   const grupo =
     CE < 0.35 ? 'I' : CE < 0.45 ? 'II' : CE < 0.60 ? 'III' : 'IV';
   return { CE: +CE.toFixed(3), grupo };
