@@ -54,16 +54,17 @@ export function calcDarcyWeisbach(
   const D_m = D / 1000;
   const A   = Math.PI / 4 * D_m * D_m;
   const V   = (Q / 1000) / A;
+  const G   = 9.81;                               // aceleración de la gravedad m/s²
   const nu  = 1.004e-6;                           // cinemática agua 20°C
   const Re  = V * D_m / nu;
   const er  = (rugosidad / 1000) / D_m;           // rugosidad relativa
   const f   = Re < 2300
     ? 64 / Re
     : 0.25 / Math.pow(Math.log10(er / 3.7 + 5.74 / Math.pow(Re, 0.9)), 2);
-  const hf_mayor = f * (L / D_m) * V * V / (2 * 9.81);
-  const hf_menor = K_menor * V * V / (2 * 9.81);
+  const hf_mayor = f * (L / D_m) * V * V / (2 * G);
+  const hf_menor = K_menor * V * V / (2 * G);
   const hf_total = hf_mayor + hf_menor;
-  const dP_Pa    = 998 * 9.81 * hf_total;
+  const dP_Pa    = 998 * G * hf_total;            // 998 kg/m³ = densidad del agua a 20 °C
   const regimen  = Re < 2300 ? 'LAMINAR' : Re < 4000 ? 'TRANSICION' : 'TURBULENTO';
   const riesgo   = V > 3 ? 'CRITICAL' : V > 2 ? 'HIGH' : V > 1.5 ? 'MEDIUM' : 'LOW';
   return {
@@ -87,12 +88,14 @@ export function calcGolpeAriete(
   Q: number, D: number, t_mm: number,
   L: number, E_GPa: number, dV: number,
 ) {
+  // Q se valida como dato de contexto de la instalación; no interviene en el cálculo
+  // de celeridad, sobrepresión ni tiempo crítico, que dependen de dV.
   if (Q <= 0 || D <= 0 || L <= 0) return null;
   const D_m   = D / 1000;
   const t_m   = t_mm / 1000;
   const K_agua = 2.2e9;                           // módulo volumétrico agua
   const E      = E_GPa * 1e9;
-  const rho    = 998;
+  const rho    = 998;                             // densidad del agua a 20 °C
   const a      = Math.sqrt(K_agua / rho / (1 + K_agua * D_m / (E * t_m)));
   const dP_MPa = rho * a * dV / 1e6;
   const Tc     = 2 * L / a;
