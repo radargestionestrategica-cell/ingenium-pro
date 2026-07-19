@@ -611,9 +611,9 @@ export default function ModuloRepresas() {
               { label: 'Empuje horizontal Pw', value: `${resE.Pw_kN} kN/m`, ok: null },
               { label: 'Peso propio W', value: `${resE.W_kN} kN/m`, ok: null },
               { label: 'Subpresion U', value: `${resE.U_kN} kN/m`, ok: null },
-              { label: 'FS deslizamiento', value: `${resE.FS_deslizamiento}${resE.FS_deslizamiento >= 1.5 ? ' ✅ Cumple' : ' ⚠️ No cumple'}`, ok: resE.FS_deslizamiento >= 1.5 },
+              { label: 'FS deslizamiento', value: `${resE.FS_deslizamiento}${resE.FS_deslizamiento >= 2.0 ? ' ✅ Cumple' : ' ⚠️ No cumple'}`, ok: resE.FS_deslizamiento >= 2.0 },
               { label: 'FS vuelco', value: `${resE.FS_volcamiento}${resE.FS_volcamiento >= 1.5 ? ' ✅ Cumple' : ' ⚠️ No cumple'}`, ok: resE.FS_volcamiento >= 1.5 },
-              { label: 'FS minimo aceptable', value: '1.5 (USACE EM 1110-2-2100)', ok: null },
+              { label: 'FS minimo aceptable', value: 'FS deslizamiento minimo 2.0 (USACE EM 1110-2-2200, tercio medio); vuelco: criterio conservador de plataforma, USACE verifica por ubicacion de la resultante, no por FS separado', ok: null },
             ].map((r, i) => (
               <div key={i} style={{ background: '#0a0f1e', borderRadius: 10, padding: 12 }}>
                 <div style={{ fontSize: 10, color: '#475569', marginBottom: 4, textTransform: 'uppercase' as const }}>{r.label}</div>
