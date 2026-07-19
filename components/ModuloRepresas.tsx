@@ -137,7 +137,7 @@ function calcularEstabilidad(Hw: number, B: number, Hd: number, gammaH: number, 
     sigma_max: Math.round(sigma_max * 100) / 100,
     sigma_min: Math.round(sigma_min * 100) / 100,
     riesgo,
-    normativa: 'USACE EM 1110-2-2100 Stability Analysis of Concrete Structures — FS min. deslizamiento y vuelco = 1.5',
+    normativa: 'USACE EM 1110-2-2200 Tabla 4-1: FS mínimo deslizamiento 2.0 si la resultante cae en el tercio medio de la base, condición de carga usual; el vuelco se verifica por ubicación de la resultante dentro de la base, no por un factor de seguridad separado',
   };
 }
 
