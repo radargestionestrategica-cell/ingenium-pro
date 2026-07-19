@@ -54,7 +54,7 @@ interface ResultadoEstabilidad {
 function calcularVertedero(L: number, H: number, Cd: number): ResultadoVertedero {
   // Fórmula de Francis — USACE EM 1110-2-1603
   const g = 9.81;
-  const Q = Cd * L * Math.pow(H, 1.5) * Math.sqrt(2 * g);
+  const Q = Cd * L * Math.pow(H, 1.5);
   const A = L * H;
   const v = Q / A;
   const Fr = v / Math.sqrt(g * H);
