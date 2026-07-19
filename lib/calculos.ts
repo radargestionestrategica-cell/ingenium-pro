@@ -158,6 +158,13 @@ export function calcMudWeight(porePresGrad: number, safetyFactor = 0.5) {
 }
 
 // ── GEOTECNIA — Meyerhof (1963) ───────────────────────────────────
+// Factores Nq/Nc/Ng precalculados según Meyerhof (1963); cada fila corresponde a un
+// ángulo de fricción interno φ específico:
+//   arena_suelta   → φ ≈ 25°  (Nq=10.66)
+//   arena_compacta → φ = 35°  (Nq=33.30, Nc=46.12, Ng=48.03)
+//   grava          → φ = 35°, mismos factores que arena_compacta: criterio CONSERVADOR
+//                    de plataforma, dado que la grava real suele tener φ > 35°
+//   arcillas       → φ = 0 (condición no drenada; Nc=5.14=2+π, Nq=1, Ng=0)
 type SueloId = 'arena_suelta'|'arena_compacta'|'arcilla_blanda'|'arcilla_media'|'arcilla_firme'|'grava';
 const SUELOS: Record<SueloId, { Nq:number; Nc:number; Ng:number; c:number; gamma:number }> = {
   arena_suelta:   { Nq:10.66, Nc:25.80, Ng:9.70,  c:0,   gamma:16 },
@@ -181,6 +188,8 @@ export function calcCapacidadPortante(
   const sc = 1 + 0.2 * (B / L);
   const sq = 1 + 0.1 * (B / L);
   const sg = 1 - 0.4 * (B / L);
+  // Reducción por napa: el factor 2 (γ/2) es una SIMPLIFICACIÓN de plataforma, no la
+  // formulación rigurosa de Meyerhof con peso específico efectivo γ' = γ_sat − γ_w.
   const gamma_ef = Dw < Df ? s.gamma / 2 : s.gamma;
   const q  = s.gamma * Df;
   const qu = s.c * s.Nc * sc + q * s.Nq * sq + 0.5 * gamma_ef * B * s.Ng * sg;
