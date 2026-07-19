@@ -72,18 +72,18 @@ function calcularFiltracion(H: number, k: number, L: number, d: number): Resulta
   // Ley de Darcy — USACE EM 1110-2-1901
   const gradiente = H / L;
   const q = k * gradiente * d;
-  const seguro = gradiente < 0.5; // Gradiente crítico según Terzaghi
+  const seguro = gradiente < 0.5; // Gradiente admisible de diseño (crítico de Terzaghi aproximadamente 1.0, con factor de seguridad 2)
   return {
     q: Math.round(q * 1e6) / 1e6,
     gradiente: Math.round(gradiente * 1000) / 1000,
     seguro,
-    normativa: 'USACE EM 1110-2-1901 · Ley de Darcy · Terzaghi',
+    normativa: 'USACE EM 1110-2-1901 · Ley de Darcy · Gradiente admisible FS 2 sobre crítico de Terzaghi',
   };
 }
 
 // Estabilidad de presa de gravedad (sección triangular, cara vertical aguas arriba)
 // Referencia: USACE EM 1110-2-2200 · ICOLD Bulletin 117 — Regla del tercio medio
-// Incluye subpresión (uplift) en la base — FS mínimo aceptable: deslizamiento ≥ 1.5, vuelco ≥ 1.5
+// Incluye subpresión (uplift) en la base — FS mínimo aceptable: deslizamiento ≥ 2.0, vuelco ≥ 1.5
 function calcularEstabilidad(Hw: number, B: number, Hd: number, gammaH: number, gammaW: number, mu: number): ResultadoEstabilidad {
   // Empuje hidrostático horizontal — actúa a Hw/3 desde la base
   const Pw = 0.5 * gammaW * Hw * Hw;
