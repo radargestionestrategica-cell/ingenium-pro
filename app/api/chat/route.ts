@@ -116,10 +116,12 @@ function preCalcular(ctx: ContextoCalculo): ResultadosDerivados {
 
     notas.push(`MAOP: ${maop_bar > 0 ? maop_bar + ' bar' : maop_mpa + ' MPa'}`);
 
-    // Fórmula real API 579-1/ASME FFS-1 §4: VR = (t_actual - t_mínimo) / tasa_corrosión
+    // VR = (t_actual - t_mínimo) / tasa_corrosión — API 570 §7.1.1 / API 579-1 §4.5.
+    // NOTA: en el contexto MAOP el payload no incluye el espesor medido hoy; se usa
+    // t_nom como aproximación de plataforma hasta conectar el dato medido en campo.
     if (t_nom > 0 && t_min > 0 && tasa_cor > 0) {
       resultado.vida_remanente_anios = +((t_nom - t_min) / tasa_cor).toFixed(1);
-      notas.push(`Vida remanente (API 579-1 §4): ${resultado.vida_remanente_anios} años a ${tasa_cor} mm/año`);
+      notas.push(`Vida remanente (API 570 §7.1.1 / API 579-1 §4.5): ${resultado.vida_remanente_anios} años a ${tasa_cor} mm/año`);
       if (resultado.vida_remanente_anios < 2)       nivel_riesgo = 'CRITICO';
       else if (resultado.vida_remanente_anios < 5)  nivel_riesgo = 'ALTO';
       else if (resultado.vida_remanente_anios < 10) nivel_riesgo = 'MEDIO';
