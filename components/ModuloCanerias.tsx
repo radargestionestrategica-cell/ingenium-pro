@@ -5,7 +5,7 @@ import { useState } from 'react';
 
 // ═══════════════════════════════════════════════════════════════
 //  MÓDULO CAÑERÍAS E INTEGRIDAD DE DUCTOS — INGENIUM PRO v8.1
-//  NORMATIVAS VERIFICADAS 100% REALES:
+//  Citas normativas con sección específica (ver auditoría manual, sesión julio 2026 — sin test automatizado en este archivo):
 //  ASME B31.8-2020 §841.1.1 · ASME B31.4-2019 §403.2.1
 //  API 579-1/ASME FFS-1 · Joukowsky (1898)
 // ═══════════════════════════════════════════════════════════════
