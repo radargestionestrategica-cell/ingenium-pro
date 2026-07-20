@@ -600,7 +600,11 @@ export default function ModuloValvulas() {
     publicarResultado(payload);
   };
 
-  // ── CÁLCULO 4: COEFICIENTE Cv (ISA 75.01.01) ─────────────────
+  // ── CÁLCULO 4: COEFICIENTE Cv ──────────────────────────────────
+  // ISA-75.01.01/IEC 60534-2-1, ecuacion basica liquido no bloqueado sin
+  // accesorios (N1=1 para GPM/psi, Tabla 1). No incluye Fp (geometria de
+  // tuberia), Fk (gases) ni chequeo de flujo critico - valido para
+  // dimensionamiento preliminar.
   // Para líquidos: Cv = Q(GPM) × √(SG / ΔP_psi)
   // Kv = Cv / 1.1561 (conversión ISA verificada)
   const calcCv = () => {
