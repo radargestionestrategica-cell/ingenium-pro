@@ -2467,7 +2467,7 @@ export function exportarDXFCivil(p: Record<string, any>): string {
 }
 
 // ═══════════════════════════════════════════════════════════
-//  MÓDULO VIALIDAD — PAVIMENTO AASHTO 93 / DRENAJE HEC-22
+//  MÓDULO VIALIDAD — PAVIMENTO AASHTO 93 / DRENAJE HEC-22 4th Ed.
 //  tipo:'pavimento' → sección 3 capas acotadas AASHTO
 //  tipo:'drenaje'   → cuneta trapezoidal con lámina de agua
 // ═══════════════════════════════════════════════════════════
@@ -2582,17 +2582,17 @@ export function exportarDXFVialidad(p: Record<string, any>): string {
 
     const rCol = (!ok||riesgo==='CRITICAL'||riesgo==='HIGH') ? 1 : 3;
     const datos = [
-      `MODULO: VIALIDAD — DRENAJE HEC-22 / METODO RACIONAL`,
+      `MODULO: VIALIDAD — DRENAJE HEC-22 4th Ed. / METODO RACIONAL`,
       `Q diseno=${Q.toFixed(4)} m3/s = ${Qlps.toFixed(1)} L/s`,
       `Tirante y=${y_m.toFixed(3)} m | Ancho superficial T=${T.toFixed(2)} m`,
       `V=${V.toFixed(3)} m/s | S=${(S*100).toFixed(2)}% | Z1=${Z1} Z2=${Z2}`,
-      `Velocidad dentro limite FHWA HEC-22: ${ok?'SI':'NO — riesgo erosion'}`,
+      `Velocidad dentro limite FHWA HEC-22 4th Ed.: ${ok?'SI':'NO — riesgo erosion'}`,
       `ESTADO: ${riesgo==='CRITICAL'?'CRITICO':riesgo==='HIGH'?'REVISAR EROSION':'CUNETA APTA HEC-22'}`,
     ];
     datos.forEach((d, i) => {
       ents.push(_texto(0, 20-i*6, 3.5, d, 'DATOS', i===0?2:(i===5?rCol:3)));
     });
-    ents.push(_bloqueTitle('DRENAJE VIAL — CUNETA TRAPEZOIDAL / HEC-22', 'FHWA HEC-22 3rd Ed. / Metodo Racional / Manning',
+    ents.push(_bloqueTitle('DRENAJE VIAL — CUNETA TRAPEZOIDAL / HEC-22', 'FHWA HEC-22 4th Ed. (2024) / Metodo Racional / Manning',
       p.proyecto||'', p.ingeniero||'', fecha, 0, -60, _usrData(p)));
   }
 

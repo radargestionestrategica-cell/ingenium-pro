@@ -69,7 +69,7 @@ function calcPavimento(
 }
 
 // Drenaje vial - Metodo Racional + cuneta triangular
-// Referencia: HEC-22 FHWA + AASHTO Drainage Manual
+// Referencia: HEC-22 FHWA 4th Ed. (2024) + AASHTO Drainage Manual
 function calcDrenajeVial(
   A_ha: number, // Area cuenca (ha)
   C: number, // Coef. escorrentia
@@ -104,7 +104,7 @@ function calcDrenajeVial(
   const V_cuneta = Q_m3s / A_cuneta;
   const T_superficie = (Z1 + Z2) * y;
 
-  // Verificacion velocidad erosion (HEC-22: max 1.5 m/s cuneta sin revestir)
+  // Verificacion velocidad erosion (HEC-22 4th Ed.: max 1.5 m/s cuneta sin revestir)
   const v_max = 1.5;
   const riesgo = V_cuneta > 3.0 ? 'CRITICAL' : V_cuneta > v_max ? 'HIGH' : V_cuneta > 1.0 ? 'MEDIUM' : 'LOW';
 
@@ -233,7 +233,7 @@ export default function ModuloVialidad() {
     setResDren(r);
     const payload: DatosExportar = {
       tipo: 'DRENAJE_VIAL_HEC22',
-      normativa: 'HEC-22 FHWA | Metodo Racional | Manning',
+      normativa: 'HEC-22 FHWA 4th Ed. | Metodo Racional | Manning',
       parametros: {
         'Area cuenca A (ha)': A_ha,
         'Coef. escorrentia C': C_val,
@@ -297,7 +297,7 @@ export default function ModuloVialidad() {
             </div>
           </div>
           <div style={{ background: '#0f172a', borderRadius: 8, padding: '10px 14px', fontSize: 12, color: '#64748b' }}>
-            Normativa: AASHTO 93 | HEC-22 FHWA | AASHTO Drainage Manual | DNV Argentina
+            Normativa: AASHTO 93 | HEC-22 FHWA 4th Ed. | AASHTO Drainage Manual
           </div>
         </div>
 
