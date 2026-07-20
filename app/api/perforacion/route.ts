@@ -8,6 +8,7 @@ function calcBHP(TVD: number, mudWeight: number, cuttingsLoad = 0) {
 }
 
 function calcFractureGradient(depth: number, overburdenGrad: number, poissonRatio = 0.25) {
+  // Método de gradiente de fractura de Eaton (1969), Journal of Petroleum Technology.
   const fracGrad = (poissonRatio / (1 - poissonRatio)) * (overburdenGrad - 0.433) + 0.433;
   const fracPressure = fracGrad * depth;
   return { fracGrad: +fracGrad.toFixed(3), fracPressure: +fracPressure.toFixed(0) };

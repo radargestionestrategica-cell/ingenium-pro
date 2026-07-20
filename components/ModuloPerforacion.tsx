@@ -139,6 +139,8 @@ export default function ModuloPerforacion() {
     let vSlip = 1;
     let Rep = 0;
     let regimen = 'intermedio';
+    // Slip velocity de recortes — correlacion de Moore (1974), Drilling Practices Manual;
+    // constantes 174/175 y exponentes 0.667/0.333 segun esa correlacion.
     if (hid.PV !== undefined) {
       // Bingham Plastic — Lyons, Formulas and Calculations, cap. 5.5, Metodo 1 (usa PV directo, sin iteracion)
       regimen = 'method1';
