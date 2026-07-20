@@ -124,7 +124,10 @@ function calcSismo(
 
   // Amplificación máxima espectral η = 2.5 (zona de meseta)
   const eta  = 2.5;
-  const Tc   = 0.60;  // período de esquina típico (suelo C–D)
+  // período de esquina típico (suelo C–D); valor típico para suelo C-D, zona sísmica
+  // intermedia — el cálculo riguroso completo requiere coeficientes Ca/Cv por zona y tipo
+  // de suelo según Tabla 3.1 del reglamento, no implementado aún; aproximación de plataforma.
+  const Tc   = 0.60;
 
   // Coeficiente sísmico Cs (CIRSOC 103:2013 § 4.2.1)
   const Sa   = T <= Tc
@@ -367,7 +370,7 @@ export default function ModuloArquitectura() {
     setResSismo(r);
 
     const advertencias: string[] = [
-      'Resultado preliminar — método simplificado CIRSOC 103:2013 § 4.2.',
+      'Resultado preliminar — método espectral de fuerza lateral equivalente, INPRES-CIRSOC 103:2013 (análogo a Capítulo 6, método estático).',
       'La determinación definitiva requiere análisis modal espectral por profesional habilitado.',
     ];
     if (r.riesgo === 'HIGH') advertencias.push('Cs > 0.20 — estructura en zona de alta demanda sísmica. Diseño detallado obligatorio.');
