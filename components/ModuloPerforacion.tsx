@@ -160,6 +160,8 @@ export default function ModuloPerforacion() {
       ? Math.min(Math.max(1 - vslMoore / hid.Va, 0), 1)
       : (isNaN(trv) ? 0.55 : trv);
 
+    // CCA — concentración de recortes en anular = ROP·diámetro² / (1471·caudal·relación de transporte);
+    // constante 1471 = conversión de unidades de campo.
     const ccaRaw = (ropVal * Dh * Dh) / (1471 * Q * trVal);                // CCA — API RP 13D, concentración de recortes en anular
     const ccaVal = Math.min(Math.max(ccaRaw, 0), 1);                       // acotado a [0, 1] por seguridad
     const mwEfectiva = mw * (1 - ccaVal) + drVal * ccaVal;                 // densidad efectiva de la mezcla lodo + recortes

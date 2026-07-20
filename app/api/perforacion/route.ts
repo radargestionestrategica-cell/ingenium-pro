@@ -16,6 +16,7 @@ function calcFractureGradient(depth: number, overburdenGrad: number, poissonRati
 
 function calcMudWeight(porePresGrad: number, safetyFactor = 0.5) {
   const mudWeight = porePresGrad + safetyFactor;
+  // Factor 1.02 = margen de seguridad 2%, criterio conservador de plataforma, no proviene de norma especifica.
   const ecd = mudWeight * 1.02;
   const risk = mudWeight > 18 ? 'CRITICAL' : mudWeight > 15 ? 'HIGH' : mudWeight > 12 ? 'MEDIUM' : 'LOW';
   return { mudWeight: +mudWeight.toFixed(2), ecd: +ecd.toFixed(2), risk };
