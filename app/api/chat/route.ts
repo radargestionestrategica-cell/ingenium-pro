@@ -217,7 +217,7 @@ function preCalcular(ctx: ContextoCalculo): ResultadosDerivados {
     // espesor: r tiene 'Espesor mínimo por presión (mm)', 'Espesor de diseño con CA (mm)'
     const t_medido = findNum(p, 'Espesor medido hoy (mm)');
     // Prioriza el espesor medido hoy; cae al nominal solo si no hay medición de campo.
-    const t_nom  = findNum(p, 'Espesor medido hoy (mm)', 'Espesor nominal original (mm)', 't_nom_mm', 't_dis_mm');
+    const t_para_vr = findNum(p, 'Espesor medido hoy (mm)', 'Espesor nominal original (mm)', 't_nom_mm', 't_dis_mm');
     const t_min  = findNum(r, 't_min_mm', 'Espesor mínimo por presión (mm)')
                 || findNum(p, 't_min', 'Espesor mínimo requerido (mm)');
     const tasa   = findNum(p, 'tasa_corrosion_mm_anio', 'Tasa de corrosión (mm/año)', 'tasa') || 0;
@@ -225,17 +225,17 @@ function preCalcular(ctx: ContextoCalculo): ResultadosDerivados {
     const P_adm  = findNum(r, 'MAWP_bar', 'P_adm', 'Límite admisible S·F·E·T (MPa)');
 
     // VR = (t_medido - t_mínimo) / tasa_corrosión — API 570 §7.1.1 / API 579-1 §4.5.
-    if (t_nom > 0 && t_min > 0 && tasa > 0) {
-      resultado.vida_remanente_anios       = +((t_nom - t_min) / tasa).toFixed(1);
+    if (t_para_vr > 0 && t_min > 0 && tasa > 0) {
+      resultado.vida_remanente_anios       = +((t_para_vr - t_min) / tasa).toFixed(1);
       resultado.intervalo_inspeccion_meses = Math.min(Math.round(resultado.vida_remanente_anios / 2 * 12), 60);
       notas.push(`Vida remanente (API 570 §7.1.1 / API 579-1 §4.5): ${resultado.vida_remanente_anios} años a ${tasa} mm/año`);
       if (!(t_medido > 0)) notas.push('Espesor nominal usado como aproximación por falta de medición de campo (medir espesor actual para VR según API 570 §7.1.1).');
       if (resultado.vida_remanente_anios < 2)       nivel_riesgo = 'CRITICO';
       else if (resultado.vida_remanente_anios < 5)  nivel_riesgo = 'ALTO';
       else if (resultado.vida_remanente_anios < 10) nivel_riesgo = 'MEDIO';
-    } else if (t_nom > 0 && t_min > 0) {
+    } else if (t_para_vr > 0 && t_min > 0) {
       // Tasa no disponible: reportar datos de espesor
-      const margen = +((t_nom - t_min) / t_nom * 100).toFixed(1);
+      const margen = +((t_para_vr - t_min) / t_para_vr * 100).toFixed(1);
       notas.push(`Margen de espesor: ${margen}% sobre mínimo requerido`);
     }
 
