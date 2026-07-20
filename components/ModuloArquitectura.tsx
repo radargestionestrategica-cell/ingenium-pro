@@ -109,10 +109,10 @@ function calcSismo(
   const Ct = CtMap[estructura] ?? 0.075;
   const T  = +(Ct * Math.pow(hn_m, 0.75)).toFixed(3);
 
-  // Aceleración de diseño a0 — CIRSOC 103:2013 Tabla 2.1
+  // INPRES-CIRSOC 103, Mapa de Zonificación Sísmica, aceleración máxima del suelo as
   const a0Map: Record<string, number> = {
-    zona0: 0.00, zona1: 0.05, zona2: 0.10,
-    zona3: 0.20, zona4: 0.35, zona5: 0.45,
+    zona0: 0.04, zona1: 0.10, zona2: 0.18,
+    zona3: 0.25, zona4: 0.35,
   };
   const a0 = a0Map[zona] ?? 0.10;
 
@@ -161,12 +161,11 @@ const USOS_LOCAL = [
   { id: 'hospitalario', label: 'Hospitalario — FLD req. 2.0%' },
 ];
 const ZONAS_SISMICAS = [
-  { id: 'zona0', label: 'Zona 0 — a₀=0.00g (mínima / sin peligro)' },
-  { id: 'zona1', label: 'Zona 1 — a₀=0.05g (baja)' },
-  { id: 'zona2', label: 'Zona 2 — a₀=0.10g (moderada)' },
-  { id: 'zona3', label: 'Zona 3 — a₀=0.20g (media-alta)' },
-  { id: 'zona4', label: 'Zona 4 — a₀=0.35g (alta — Cuyo, NOA)' },
-  { id: 'zona5', label: 'Zona 5 — a₀=0.45g (muy alta — Mendoza)' },
+  { id: 'zona0', label: 'Zona 0 — a₀=0.04g (muy reducida)' },
+  { id: 'zona1', label: 'Zona 1 — a₀=0.10g (reducida)' },
+  { id: 'zona2', label: 'Zona 2 — a₀=0.18g (moderada)' },
+  { id: 'zona3', label: 'Zona 3 — a₀=0.25g (elevada)' },
+  { id: 'zona4', label: 'Zona 4 — a₀=0.35g (muy elevada — Cuyo, NOA, Mendoza)' },
 ];
 const TIPOS_SUELO = [
   { id: 'A', label: 'A — Roca dura (S=1.0)' },
