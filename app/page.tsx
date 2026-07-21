@@ -3,6 +3,7 @@
 import type { Metadata } from 'next';
 import ModulosCarrusel from '@/components/ModulosCarrusel';
 import ExportacionCarrusel from '@/components/ExportacionCarrusel';
+import DemoMAOP from '@/components/DemoMAOP';
 
 export const metadata: Metadata = {
   title: 'INGENIUM Pro | Plataforma de cálculo técnico, auditoría IA y documentación profesional',
@@ -215,6 +216,7 @@ export default function LandingPage() {
         .preview-field{background:rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:10px 12px}
         .preview-field-lbl{font-size:9px;color:${GRAY};text-transform:uppercase;letter-spacing:.6px;margin-bottom:3px;font-weight:700}
         .preview-field-val{font-size:14px;color:${WHITE};font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-weight:700}
+        .preview-field input{background:transparent;border:none;outline:none;width:100%;font-size:14px;color:${WHITE};font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-weight:700;padding:0}
         .preview-btn{background:linear-gradient(135deg,${GOLD},${GOLD2});border-radius:8px;padding:10px 20px;font-size:12px;font-weight:800;color:${BG};width:100%;text-align:center;margin-bottom:16px}
         .preview-results{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
         .preview-res-card{background:rgba(34,197,94,.06);border:1px solid rgba(34,197,94,.2);border-radius:10px;padding:12px;text-align:center}
@@ -568,46 +570,7 @@ export default function LandingPage() {
                     <div className="preview-module-norm">ASME B31.8-2022 · API 5L · Factor de diseño E×T×F</div>
                   </div>
                 </div>
-                <div className="preview-inputs">
-                  {[
-                    { lbl:'SMYS (psi)', val:'52,000' },
-                    { lbl:'Diámetro ext. (in)', val:'16.00' },
-                    { lbl:'Espesor pared (in)', val:'0.375' },
-                    { lbl:'Factor diseño F', val:'0.72' },
-                    { lbl:'Factor junta E', val:'1.00' },
-                    { lbl:'Factor temp. T', val:'1.00' },
-                  ].map(({ lbl, val }) => (
-                    <div key={lbl} className="preview-field">
-                      <div className="preview-field-lbl">{lbl}</div>
-                      <div className="preview-field-val">{val}</div>
-                    </div>
-                  ))}
-                </div>
-                <div className="preview-btn">▶ CALCULAR MAOP — ASME B31.8</div>
-                <div className="preview-results">
-                  <div className="preview-res-card">
-                    <div className="preview-res-lbl">MAOP</div>
-                    <div className="preview-res-val">1,404 psi</div>
-                    <div className="preview-res-sub">97.2 bar</div>
-                  </div>
-                  <div className="preview-res-card">
-                    <div className="preview-res-lbl">Presión Barlow</div>
-                    <div className="preview-res-val">1,950 psi</div>
-                    <div className="preview-res-sub">134.5 bar</div>
-                  </div>
-                  <div className="preview-res-card">
-                    <div className="preview-res-lbl">Estado</div>
-                    <div className="preview-res-val" style={{ color: GREEN }}>SEGURO</div>
-                    <div className="preview-res-sub">Margen: 28%</div>
-                  </div>
-                </div>
-                <div className="preview-export-row">
-                  <div className="preview-exp-btn pdf">PDF</div>
-                  <div className="preview-exp-btn xls">Excel</div>
-                  <div className="preview-exp-btn dxf">DXF</div>
-                  <div className="preview-exp-btn qr">QR</div>
-                </div>
-                <div className="preview-norm-tag">ASME B31.8-2022 § 841.1.1 — Fórmula: MAOP = 2S × t × F × E × T / D</div>
+                <DemoMAOP />
               </div>
             </div>
           </div>
