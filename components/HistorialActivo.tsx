@@ -60,6 +60,11 @@ export default function HistorialActivo({ usuarioId, proyectoId, activoNombre, m
   const [error,     setError]     = useState<string | null>(null);
   const [exportando, setExportando] = useState<'excel' | 'pdf' | null>(null);
   const [calcSelec, setCalcSelec] = useState<Calculo | null>(null);
+  const [seleccionados, setSeleccionados] = useState<string[]>([]);
+
+  const toggleSeleccion = (id: string) => {
+    setSeleccionados(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  };
 
   // ── Cargar historial ──────────────────────────────────────────────────────
   const cargarHistorial = useCallback(async () => {
@@ -279,6 +284,21 @@ export default function HistorialActivo({ usuarioId, proyectoId, activoNombre, m
         </div>
       )}
 
+      {/* ── EXPORTAR SELECCIONADOS ────────────────────────────────────────── */}
+      {seleccionados.length > 0 && (
+        <div className="bg-slate-900 border border-cyan-700 rounded-xl p-3 flex items-center justify-between gap-3">
+          <span className="text-cyan-300 text-xs font-bold">
+            {seleccionados.length} cálculo(s) seleccionado(s)
+          </span>
+          <button
+            onClick={() => console.log('Exportar seleccionados:', seleccionados)}
+            className="px-3 py-2 bg-cyan-700 hover:bg-cyan-600 text-white text-xs font-bold rounded-lg transition-colors"
+          >
+            Exportar seleccionados ({seleccionados.length})
+          </button>
+        </div>
+      )}
+
       {/* ── LÍNEA DE TIEMPO ────────────────────────────────────────────────── */}
       <div className="bg-slate-900 border border-slate-700 rounded-xl overflow-hidden">
         <div className="px-4 py-3 bg-slate-800 border-b border-slate-700">
@@ -308,6 +328,14 @@ export default function HistorialActivo({ usuarioId, proyectoId, activoNombre, m
                   <div className="flex items-center justify-between gap-2">
                     {/* Fecha + módulo */}
                     <div className="flex items-center gap-3 min-w-0">
+                      <input
+                        type="checkbox"
+                        checked={seleccionados.includes(calc.id)}
+                        onClick={e => e.stopPropagation()}
+                        onChange={() => toggleSeleccion(calc.id)}
+                        className="w-4 h-4 accent-cyan-500 cursor-pointer flex-shrink-0"
+                        title="Seleccionar para exportar en lote"
+                      />
                       <span className="text-gray-500 text-xs whitespace-nowrap">
                         {new Date(calc.createdAt).toLocaleDateString('es-AR', {
                           day: '2-digit', month: 'short', year: '2-digit',
