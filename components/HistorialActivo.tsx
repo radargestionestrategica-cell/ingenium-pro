@@ -61,9 +61,39 @@ export default function HistorialActivo({ usuarioId, proyectoId, activoNombre, m
   const [exportando, setExportando] = useState<'excel' | 'pdf' | null>(null);
   const [calcSelec, setCalcSelec] = useState<Calculo | null>(null);
   const [seleccionados, setSeleccionados] = useState<string[]>([]);
+  const [exportandoLote, setExportandoLote] = useState(false);
 
   const toggleSeleccion = (id: string) => {
     setSeleccionados(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  };
+
+  const exportarLote = async () => {
+    if (seleccionados.length === 0) return;
+    setExportandoLote(true);
+    setError(null);
+    try {
+      const res = await fetch('/api/calculos/exportar-lote', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json', ...ipAuthHeader() },
+        body:    JSON.stringify({ calculoIds: seleccionados }),
+      });
+      if (!res.ok) throw new Error(`Error ${res.status}`);
+
+      const blob   = await res.blob();
+      const url    = URL.createObjectURL(blob);
+      const a      = document.createElement('a');
+      const fecha  = new Date().toISOString().slice(0, 10);
+      a.href       = url;
+      a.download   = `INGENIUM_PRO_LOTE_${fecha}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Error al exportar en lote');
+    } finally {
+      setExportandoLote(false);
+    }
   };
 
   // ── Cargar historial ──────────────────────────────────────────────────────
@@ -291,10 +321,11 @@ export default function HistorialActivo({ usuarioId, proyectoId, activoNombre, m
             {seleccionados.length} cálculo(s) seleccionado(s)
           </span>
           <button
-            onClick={() => console.log('Exportar seleccionados:', seleccionados)}
-            className="px-3 py-2 bg-cyan-700 hover:bg-cyan-600 text-white text-xs font-bold rounded-lg transition-colors"
+            onClick={exportarLote}
+            disabled={exportandoLote}
+            className="px-3 py-2 bg-cyan-700 hover:bg-cyan-600 disabled:opacity-50 text-white text-xs font-bold rounded-lg transition-colors"
           >
-            Exportar seleccionados ({seleccionados.length})
+            {exportandoLote ? '⏳ Generando...' : `Exportar seleccionados (${seleccionados.length})`}
           </button>
         </div>
       )}
