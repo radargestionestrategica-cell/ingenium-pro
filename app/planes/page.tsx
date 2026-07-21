@@ -121,6 +121,7 @@ const PLANES = [
       'Historial compartido de proyectos',
       'Panel de administración de equipo',
       'Proyectos compartidos entre miembros de equipo',
+      'Exportación masiva de informes',
       'Onboarding dedicado',
       'Factura electrónica',
       '1.500 consultas IA por mes',
