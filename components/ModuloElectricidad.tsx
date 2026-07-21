@@ -207,7 +207,8 @@ export default function ModuloElectricidad() {
   const [ccV, setCcv] = useState('400');
   const [ccL, setCcl] = useState('50');
   const [ccCable, setCccable] = useState('25 mm²');
-  const [resCc, setResCc] = useState<null|{Imax:number;Imin:number;Pcc:number}>(null);
+  const [ccTolerancia, setCctolerancia] = useState<'6'|'10'>('6');
+  const [resCc, setResCc] = useState<null|{Imax:number;Imin:number;Pcc:number;cMax:number;cMin:number}>(null);
 
   // FP STATE
   const [fpP, setFpp] = useState('500');
@@ -405,19 +406,20 @@ export default function ModuloElectricidad() {
     const R75 = c.R_cu * 1.216 / 1000;
     const Zc = R75 * L;
 
-    // Icc_max: c=1.1, Icc_min: c=0.95 (IEC 60909-0:2016 Tabla 1, clausula 5.3.1)
-    // LIMITACION CONOCIDA: la Tabla 1 aparea c_max/c_min por clase de tolerancia de red BT
-    // (±6%: 1.05/0.95 · ±10%: 1.10/0.90) y no permite mezclarlos. Este calculo usa c_max=1.1
-    // (col. ±10%) junto con c_min=0.95 (col. ±6%), combinacion que no corresponde a una unica
-    // fila de la norma. Verificar con la clase de tolerancia real de la red antes de uso critico.
-    const Imax = (1.1 * V) / (Math.sqrt(3) * (Zt + Zc));
-    const Imin = (0.95 * V) / (Math.sqrt(3) * (Zt + 2 * Zc));
+    // Icc_max/Icc_min segun clase de tolerancia de red BT (IEC 60909-0:2016 Tabla 1, clausula 5.3.1)
+    // ±6%: c_max=1.05, c_min=0.95 · ±10%: c_max=1.10, c_min=0.90
+    const cMax = ccTolerancia === '10' ? 1.10 : 1.05;
+    const cMin = ccTolerancia === '10' ? 0.90 : 0.95;
+    const Imax = (cMax * V) / (Math.sqrt(3) * (Zt + Zc));
+    const Imin = (cMin * V) / (Math.sqrt(3) * (Zt + 2 * Zc));
     const Pcc = Math.sqrt(3) * V * Imax / 1000;
 
     const resultadoCC = {
       Imax: Math.round(Imax / 10) * 10,
       Imin: Math.round(Imin / 10) * 10,
       Pcc: Math.round(Pcc),
+      cMax,
+      cMin,
     };
 
     setResCc(resultadoCC);
@@ -430,10 +432,11 @@ export default function ModuloElectricidad() {
         'Tension secundaria (V)': ccV,
         'Longitud cable (m)': ccL,
         'Cable al tablero': ccCable,
+        'Clase de tolerancia de red': `±${ccTolerancia}%`,
       },
       resultado: {
-        'Icc maximo c=1.1 (A)': resultadoCC.Imax,
-        'Icc minimo c=0.95 (A)': resultadoCC.Imin,
+        [`Icc maximo c=${resultadoCC.cMax} (A)`]: resultadoCC.Imax,
+        [`Icc minimo c=${resultadoCC.cMin} (A)`]: resultadoCC.Imin,
         'Potencia cortocircuito (kVA)': resultadoCC.Pcc,
       },
       dxfParams: {
@@ -955,9 +958,17 @@ export default function ModuloElectricidad() {
               <label style={lbl}>Longitud cable al tablero (m)</label>
               <input value={ccL} onChange={(e) => setCcl(e.target.value)} style={inp} type="number" min="1" step="1" />
             </div>
+
+            <div>
+              <label style={lbl}>Clase de tolerancia de red</label>
+              <select value={ccTolerancia} onChange={(e) => setCctolerancia(e.target.value as '6'|'10')} style={inp}>
+                <option value="6" style={{ background:'#0a0f1e' }}>±6% (default, más común en instalaciones típicas)</option>
+                <option value="10" style={{ background:'#0a0f1e' }}>±10%</option>
+              </select>
+            </div>
           </div>
 
-          <Info t="IEC 60909: Icc = (c × Un) / (√3 × Z_total) | c=1.1 máximo (selección interruptores) | c=0.95 mínimo (verificar disparo)" />
+          <Info t="IEC 60909-0:2016 Tabla 1: Icc = (c × Un) / (√3 × Z_total) | ±6%: c_max=1.05 / c_min=0.95 | ±10%: c_max=1.10 / c_min=0.90" />
 
           <Btn onClick={calcCC} text="Calcular corriente de cortocircuito" />
 
@@ -966,8 +977,8 @@ export default function ModuloElectricidad() {
               <div style={{ fontSize:12, color:COLOR, fontWeight:700, marginBottom:14 }}>RESULTADO — CORTOCIRCUITO TRIFÁSICO (IEC 60909)</div>
 
               <div style={g3}>
-                <Card label="Icc máximo (c=1.1)" val={`${resCc.Imax.toLocaleString()} A`} color="#ef4444" sub="Poder corte interruptores" />
-                <Card label="Icc mínimo (c=0.95)" val={`${resCc.Imin.toLocaleString()} A`} sub="Verificar disparo protecciones" />
+                <Card label={`Icc máximo (c=${resCc.cMax})`} val={`${resCc.Imax.toLocaleString()} A`} color="#ef4444" sub="Poder corte interruptores" />
+                <Card label={`Icc mínimo (c=${resCc.cMin})`} val={`${resCc.Imin.toLocaleString()} A`} sub="Verificar disparo protecciones" />
                 <Card label="Potencia cortocircuito" val={`${resCc.Pcc.toLocaleString()} kVA`} />
               </div>
 
