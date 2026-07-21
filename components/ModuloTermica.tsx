@@ -42,7 +42,7 @@ function calcIntercambiador(
   );
   const efectividad = (T_hot_in - T_hot_out) / (T_hot_in - T_cold_in);
 
-  // Verificacion presion de diseno ASME VIII (simplificada)
+  // Heuristico interno por area de intercambio (m2) — no es una verificacion de presion de diseno ni corresponde a ASME VIII Div.1
   const riesgo = A_m2 > 500 ? 'HIGH' : A_m2 > 200 ? 'MEDIUM' : 'LOW';
 
   return {
