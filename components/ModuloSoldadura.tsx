@@ -436,7 +436,7 @@ export default function ModuloSoldadura() {
     const t = parseFloat(prEsp);
     if ([C2, Mn, Si, Cr, Ni, Mo, V, Cu, t].some(isNaN)) { setErr('Valores inválidos'); return; }
     // IIW - formula original del Instituto Internacional de Soldadura, sin silicio: CE = C + Mn/6 + (Cr+Mo+V)/5 + (Ni+Cu)/15
-    // AWS D1.1 Anexo B, clausula B6.1.1 (variante con Si agregado a Mn): CE = C + (Mn+Si)/6 + (Cr+Mo+V)/5 + (Ni+Cu)/15
+    // AWS D1.1 Anexo B (variante con Si agregado a Mn; sub-clausula sin verificar contra texto primario del standard): CE = C + (Mn+Si)/6 + (Cr+Mo+V)/5 + (Ni+Cu)/15
     const CE = prFormula === 'IIW'
       ? Math.round((C2 + Mn / 6 + (Cr + Mo + V) / 5 + (Ni + Cu) / 15) * 1000) / 1000
       : Math.round((C2 + (Mn + Si) / 6 + (Cr + Mo + V) / 5 + (Ni + Cu) / 15) * 1000) / 1000;
