@@ -730,3 +730,19 @@ describe('calcVidaRemanente', () => {
     expect(calcVidaRemanente(9.3, 7.8, 5.5, 0)).toBeNull();
   });
 });
+
+// ════════════════════════════════════════════════════════════════
+// CORTOCIRCUITO TRIFÁSICO — IEC 60909 §4.3.1 (ModuloElectricidad.tsx calcCC,
+// funcion inline no exportada; formula reproducida aqui: Zt=(uk%×V²)/(100×S_VA),
+// Imax=(1.1×V)/(√3×(Zt+Zc)), Imin=(0.95×V)/(√3×(Zt+2×Zc)))
+// ════════════════════════════════════════════════════════════════
+describe('cortocircuito trifasico (IEC 60909)', () => {
+  it('transformador 500 kVA, 400V, uk=4%, sin cable (Zc=0)', () => {
+    const S_kVA = 500, uk = 4, V = 400, Zc = 0;
+    const Zt = (uk / 100) * (V * V) / (S_kVA * 1000);
+    const Imax = (1.1 * V) / (Math.sqrt(3) * (Zt + Zc));
+    const Imin = (0.95 * V) / (Math.sqrt(3) * (Zt + 2 * Zc));
+    expect(Math.abs(Imax / 1000 - 19.85)).toBeLessThanOrEqual(0.1);
+    expect(Math.abs(Imin / 1000 - 17.14)).toBeLessThanOrEqual(0.1);
+  });
+});
