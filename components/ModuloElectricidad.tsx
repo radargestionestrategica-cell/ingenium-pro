@@ -406,6 +406,10 @@ export default function ModuloElectricidad() {
     const Zc = R75 * L;
 
     // Icc_max: c=1.1, Icc_min: c=0.95 (IEC 60909-0:2016 Tabla 1, clausula 5.3.1)
+    // LIMITACION CONOCIDA: la Tabla 1 aparea c_max/c_min por clase de tolerancia de red BT
+    // (±6%: 1.05/0.95 · ±10%: 1.10/0.90) y no permite mezclarlos. Este calculo usa c_max=1.1
+    // (col. ±10%) junto con c_min=0.95 (col. ±6%), combinacion que no corresponde a una unica
+    // fila de la norma. Verificar con la clase de tolerancia real de la red antes de uso critico.
     const Imax = (1.1 * V) / (Math.sqrt(3) * (Zt + Zc));
     const Imin = (0.95 * V) / (Math.sqrt(3) * (Zt + 2 * Zc));
     const Pcc = Math.sqrt(3) * V * Imax / 1000;
