@@ -287,6 +287,21 @@ export default function LandingPage() {
         .plan-cta-paypal{display:block;text-align:center;padding:12px 12px;margin-top:8px;border-radius:13px;background:#003087;border:none;color:#fff;font-weight:800;font-size:13px;text-decoration:none;letter-spacing:.3px;transition:opacity .2s}
         .plan-cta-paypal:hover{opacity:.85}
 
+        /* ── COMPARATIVA ── */
+        .compare-wrap{background:${PANEL};border:1px solid rgba(255,255,255,.06);border-radius:22px;overflow:hidden}
+        .compare-scroll{overflow-x:auto}
+        .compare-table{width:100%;border-collapse:collapse;font-size:13px;min-width:640px}
+        .compare-table th,.compare-table td{padding:16px 18px;text-align:left;border-bottom:1px solid rgba(255,255,255,.055);white-space:nowrap}
+        .compare-table thead th{font-size:11px;font-weight:900;letter-spacing:1px;text-transform:uppercase;color:${LIGHT};background:rgba(255,255,255,.02)}
+        .compare-table td:first-child,.compare-table th:first-child{color:${GRAY};font-weight:700;white-space:normal}
+        .compare-table td{color:${LIGHT}}
+        .compare-table tbody tr:last-child td{border-bottom:none}
+        .compare-col-featured{background:rgba(232,160,32,.055)}
+        .compare-table thead th.compare-col-featured{background:linear-gradient(135deg,rgba(232,160,32,.16),rgba(232,160,32,.05));color:${GOLD}}
+        .compare-yes{color:${GREEN};font-weight:800}
+        .compare-no{color:${GRAY}}
+        .compare-highlight{color:${GOLD};font-weight:800}
+
         /* ── INTELIGENCIA CRUZADA ── */
         .cruce-flow{display:grid;grid-template-columns:1fr 40px 1fr 40px 1fr;align-items:center;gap:0;margin-top:40px}
         .cruce-arrow{display:flex;align-items:center;justify-content:center;color:rgba(232,160,32,.5);font-size:22px;font-weight:300}
@@ -357,6 +372,7 @@ export default function LandingPage() {
           .hero-stats{border-radius:14px}
           .section{padding:64px 0}
           .workflow,.plans-grid{grid-template-columns:1fr}
+          .compare-table th,.compare-table td{padding:12px 14px;font-size:12px}
           .modules-grid,.diff-grid,.industrias-grid,.normas-grid{grid-template-columns:1fr}
           .normas-grid{grid-template-columns:repeat(2,1fr)}
           .nc-val{font-size:28px}
@@ -811,6 +827,74 @@ export default function LandingPage() {
               acelerante — con menos de 5 lecturas o sin aceleración detectada, el sistema lo informa en lugar
               de forzar una fecha.
             </p>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══ COMPARATIVA ═════════════════════════════════════════ */}
+      <section id="comparativa" className="section section-alt">
+        <div className="wrap">
+          <div className="section-head">
+            <div className="eyebrow">Comparativa</div>
+            <h2>Por qué INGENIUM PRO</h2>
+            <p className="section-sub">
+              Excel resuelve una planilla, CAESAR II una disciplina de tuberías, STAAD.Pro una disciplina
+              estructural. INGENIUM PRO reemplaza el flujo completo: cálculo normativo multidisciplina,
+              sellado criptográfico verificable y telemetría conectada, en una sola plataforma.
+            </p>
+          </div>
+
+          <div className="compare-wrap">
+            <div className="compare-scroll">
+              <table className="compare-table">
+                <thead>
+                  <tr>
+                    <th></th>
+                    <th>Excel / planillas</th>
+                    <th>CAESAR II</th>
+                    <th>STAAD.Pro</th>
+                    <th className="compare-col-featured">INGENIUM PRO</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Precio anual</td>
+                    <td>Gratis</td>
+                    <td>USD 12.000 – 15.000</td>
+                    <td>USD 3.200</td>
+                    <td className="compare-col-featured compare-highlight">Desde plan actual</td>
+                  </tr>
+                  <tr>
+                    <td>Disciplinas cubiertas</td>
+                    <td>Ninguna específica</td>
+                    <td>Solo tuberías</td>
+                    <td>Solo estructural</td>
+                    <td className="compare-col-featured compare-highlight">15 disciplinas</td>
+                  </tr>
+                  <tr>
+                    <td>Sellado criptográfico verificable</td>
+                    <td className="compare-no">✕</td>
+                    <td className="compare-no">✕</td>
+                    <td className="compare-no">✕</td>
+                    <td className="compare-col-featured compare-yes">✓ Con QR público</td>
+                  </tr>
+                  <tr>
+                    <td>Normas LatAm nativas</td>
+                    <td className="compare-no">✕</td>
+                    <td className="compare-no">✕</td>
+                    <td className="compare-no">✕</td>
+                    <td className="compare-col-featured compare-yes">✓</td>
+                  </tr>
+                  <tr>
+                    <td>Telemetría conectada a cálculo</td>
+                    <td className="compare-no">✕</td>
+                    <td className="compare-no">✕</td>
+                    <td className="compare-no">✕</td>
+                    <td className="compare-col-featured compare-yes">✓</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       </section>
