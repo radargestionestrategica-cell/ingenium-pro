@@ -23,7 +23,10 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ ok: false, error: 'fecha invalida' }, { status: 400 });
       }
       const [, anio, mes, dia] = match;
-      // Mediodia local evita que el corrimiento UTC muestre el dia anterior
+      // Mediodia local evita que el corrimiento UTC muestre el dia anterior.
+      // Elegido especificamente para ser robusto sea cual sea el TZ del runtime de
+      // Vercel (UTC por defecto): a las 12:00 ningun huso horario real desplaza la
+      // fecha al dia anterior o siguiente, sin necesidad de fijar TZ explicitamente.
       const parsed = new Date(Number(anio), Number(mes) - 1, Number(dia), 12, 0, 0);
       if (isNaN(parsed.getTime())) {
         return NextResponse.json({ ok: false, error: 'fecha invalida' }, { status: 400 });
