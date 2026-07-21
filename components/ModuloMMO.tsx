@@ -318,7 +318,7 @@ const calcHierro = () => {
     const m2 = parseFloat(revM2);
   if (isNaN(m2) || m2 <= 0) { setError('Ingresá m² válidos'); return; }
    if (revTipo === 'grueso') {
-     // e=2cm: 6 kg cemento/m² + 0.016 m³ arena/m² (dato verificado IRAM / Servidos.ar)
+     // e=2cm: 6 kg cemento/m² + 0.016 m³ arena/m² (rendimiento de practica/proveedor, no normado por IRAM)
      const cementoKg = Math.round(6 * m2);
      const arenaM3 = Math.round(0.016 * m2 * 100) / 100;
       const bolsas = Math.ceil(cementoKg / cfg.cementoBolsaKg);
@@ -722,7 +722,7 @@ const calcMortero = () => {
       {/* ══ REVOQUE ══ */}
       {sub === 'revoque' && (
         <div>
-          <Tit text="Cálculo de Revoque — Datos IRAM verificados" />
+          <Tit text="Cálculo de Revoque — Práctica de obra Argentina" />
           <div style={grid2}>
             <div><label style={lbl}>Tipo de revoque</label>
               <select value={revTipo} onChange={e => setRevTipo(e.target.value as 'grueso' | 'fino')} style={inp}>
@@ -734,7 +734,7 @@ const calcMortero = () => {
               <input value={revM2} onChange={e => setRevM2(e.target.value)} style={inp} type="number" min="0.1" step="1" />
             </div>
           </div>
-          <InfoBox text={revTipo === 'grueso' ? 'Mezcla 1:1:4 (cemento:cal:arena) — estándar IRAM Argentina. La cal mejora plasticidad y adherencia.' : 'Mezcla 1:2 (cemento:arena fina). Espesor 0.5 cm sobre revoque grueso.'} />
+          <InfoBox text={revTipo === 'grueso' ? 'Mezcla 1:1:4 (cemento:cal:arena) — práctica habitual de obra, no normada por número específico de IRAM. La cal mejora plasticidad y adherencia.' : 'Mezcla 1:2 (cemento:arena fina). Espesor 0.5 cm sobre revoque grueso.'} />
           <Btn onClick={calcRevoque} text="Calcular materiales" />
           {resRev && <ResBox>
             <ResTit text={`MATERIALES PARA ${revM2} m² REVOQUE ${revTipo.toUpperCase()}`} />
