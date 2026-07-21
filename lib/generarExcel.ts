@@ -532,4 +532,152 @@ export async function generarExcel(datos: DatosExcel): Promise<Buffer> {
   // ── Serializar a Buffer ───────────────────────────────────────
   const buffer = await wb.xlsx.writeBuffer();
   return Buffer.from(buffer);
-} 
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  EXPORTACIÓN EN LOTE — un workbook, una hoja por cálculo
+//  Reutiliza los mismos estilos (headerStyle/dataStyle/labelStyle)
+//  y el formato label/valor de la Hoja 1 del builder individual,
+//  sin modificar generarExcel().
+// ═══════════════════════════════════════════════════════════════
+
+export interface CalculoLote {
+  tipo:         string;
+  submodulo?:   string | null;
+  activoNombre: string;
+  parametros:   Record<string, unknown>;
+  resultado:    Record<string, unknown>;
+  alerta:       boolean;
+  alertaMsg?:   string | null;
+  normativa?:   string | null;
+  hash?:        string | null;
+  usuario:      string;
+  fecha:        Date;
+}
+
+export interface DatosExcelLote {
+  ingeniero:  string;
+  email:      string;
+  empresa:    string;
+  pais:       string;
+  matricula?: string;
+  dni?:       string;
+  calculos:   CalculoLote[];
+}
+
+function sanitizarNombreHoja(nombre: string, usados: Set<string>): string {
+  const limpio = (nombre.replace(/[\\/?*[\]:]/g, '-').trim() || 'Calculo').slice(0, 31);
+  let final = limpio;
+  let n = 2;
+  while (usados.has(final.toLowerCase())) {
+    const sufijo = ` (${n})`;
+    final = `${limpio.slice(0, 31 - sufijo.length)}${sufijo}`;
+    n++;
+  }
+  usados.add(final.toLowerCase());
+  return final;
+}
+
+function valorCelda(v: unknown): string | number {
+  return typeof v === 'number' && Number.isFinite(v) ? v : String(v ?? '—');
+}
+
+export async function generarExcelLote(datos: DatosExcelLote): Promise<Buffer> {
+  const wb = new ExcelJS.Workbook();
+
+  wb.creator  = 'INGENIUM PRO v8.1';
+  wb.created  = new Date();
+  wb.modified = new Date();
+
+  const tz = obtenerTimezoneXls(datos.pais);
+  const nombresUsados = new Set<string>();
+
+  datos.calculos.forEach((calc) => {
+    const fechaHoja = new Intl.DateTimeFormat('es-AR', {
+      timeZone: tz, day: '2-digit', month: '2-digit', year: 'numeric',
+    }).format(calc.fecha);
+    const fechaCompleta = new Intl.DateTimeFormat('es-AR', {
+      timeZone: tz, day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit',
+    }).format(calc.fecha);
+
+    const nombreHoja = sanitizarNombreHoja(`${calc.tipo} ${fechaHoja}`, nombresUsados);
+    const hoja = wb.addWorksheet(nombreHoja, { properties: { tabColor: { argb: C.primario } } });
+
+    hoja.columns = [{ width: 28 }, { width: 50 }];
+
+    hoja.mergeCells('A1:B1');
+    hoja.getCell('A1').value = `INGENIUM PRO v8.1 — ${calc.tipo}`;
+    hoja.getCell('A1').style = headerStyle(C.primario);
+    hoja.getRow(1).height   = 26;
+
+    hoja.mergeCells('A2:B2');
+    hoja.getCell('A2').value = `${fechaCompleta} — ${datos.ingeniero}`;
+    hoja.getCell('A2').style = {
+      font: { color: { argb: C.gris }, size: 9, italic: true },
+      fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: C.fondo_dark } },
+    };
+    hoja.getRow(2).height = 18;
+
+    let fila = 4;
+
+    const filasBase: [string, string | number][] = [
+      ['Activo / Equipo',       calc.activoNombre],
+      ['Sub-cálculo',           calc.submodulo || '—'],
+      ['Normativa aplicada',    calc.normativa || '—'],
+      ['Ingeniero responsable', datos.ingeniero],
+      ['Matrícula profesional', datos.matricula || '—'],
+      ['DNI / Documento',       datos.dni || '—'],
+      ['Empresa',               datos.empresa],
+      ['País',                  datos.pais],
+      ['Alerta',                calc.alerta ? '⚠ SÍ' : '✓ NO'],
+      ['Detalle alerta',        calc.alertaMsg || '—'],
+      ['Hash SHA-256',          calc.hash || '—'],
+    ];
+
+    filasBase.forEach(([label, valor], i) => {
+      const row = hoja.getRow(fila++);
+      row.height = 20;
+      row.getCell(1).value = label;
+      row.getCell(1).style = labelStyle();
+      row.getCell(2).value = valor;
+      row.getCell(2).style = dataStyle(i % 2 === 0 ? C.fondo_dark : C.fondo_med);
+    });
+
+    fila++;
+    const paramHeaderRow = hoja.getRow(fila++);
+    paramHeaderRow.getCell(1).value = 'PARÁMETROS';
+    paramHeaderRow.getCell(1).style = headerStyle(C.amarillo);
+    paramHeaderRow.getCell(2).value = '';
+    paramHeaderRow.getCell(2).style = headerStyle(C.amarillo);
+    paramHeaderRow.height = 20;
+
+    Object.entries(calc.parametros).forEach(([k, v], i) => {
+      const row = hoja.getRow(fila++);
+      row.height = 18;
+      row.getCell(1).value = k;
+      row.getCell(1).style = labelStyle();
+      row.getCell(2).value = valorCelda(v);
+      row.getCell(2).style = dataStyle(i % 2 === 0 ? C.fondo_dark : C.fondo_med);
+    });
+
+    fila++;
+    const resHeaderRow = hoja.getRow(fila++);
+    resHeaderRow.getCell(1).value = 'RESULTADO';
+    resHeaderRow.getCell(1).style = headerStyle(C.verde);
+    resHeaderRow.getCell(2).value = '';
+    resHeaderRow.getCell(2).style = headerStyle(C.verde);
+    resHeaderRow.height = 20;
+
+    Object.entries(calc.resultado).forEach(([k, v], i) => {
+      const row = hoja.getRow(fila++);
+      row.height = 18;
+      row.getCell(1).value = k;
+      row.getCell(1).style = labelStyle();
+      row.getCell(2).value = valorCelda(v);
+      row.getCell(2).style = dataStyle(i % 2 === 0 ? C.fondo_dark : C.fondo_med);
+    });
+  });
+
+  const buffer = await wb.xlsx.writeBuffer();
+  return Buffer.from(buffer);
+}
