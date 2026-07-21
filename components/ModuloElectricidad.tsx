@@ -35,7 +35,7 @@ const LUX_APP: Record<string, { lux: number; norma: string; sector: string }> = 
   emergencia:        { lux: 10,  norma: 'IEC 60364-5-56 servicios de seguridad',  sector: 'Todas' },
   almacen:           { lux: 200, norma: 'EN 12464-1',       sector: 'MMO/Civil' },
   galeria_minera:    { lux: 200, norma: 'DS 024-2016-EM (Perú) / ISO 8995',  sector: 'Minería' },
-  drill_floor:       { lux: 300, norma: 'API RP 54 §5.9',   sector: 'Perforación' },
+  drill_floor:       { lux: 300, norma: 'API RP 54 §5.9 (seccion no confirmada contra texto primario)',   sector: 'Perforación' },
   turbinas_represa:  { lux: 300, norma: 'práctica industrial',  sector: 'Represas' },
   sala_control:      { lux: 500, norma: 'EN 12464-1',        sector: 'Petróleo/Gas' },
   taller:            { lux: 500, norma: 'EN 12464-1',       sector: 'Industrial' },
@@ -350,7 +350,7 @@ export default function ModuloElectricidad() {
     setResCd(resultadoCaida);
     const payloadCaida: DatosExportar = {
       tipo: 'ELECTRICIDAD_CAIDA_TENSION',
-      normativa: 'IEC 60364-5-52 / NEC 210.19 / AEA 90364-7-771 cláusula 771.13.b',
+      normativa: 'IEC 60364-5-52 / NEC 210.19 / AEA 90364-7-771 (sub-clausula 771.13.b no confirmada, documento AEA 90364-7-771 si es real)',
       parametros: {
         'Cable seleccionado': cdCable,
         'Longitud (m)': cdL,
@@ -405,7 +405,7 @@ export default function ModuloElectricidad() {
     const R75 = c.R_cu * 1.216 / 1000;
     const Zc = R75 * L;
 
-    // Icc_max: c=1.1, Icc_min: c=0.95 (IEC 60909 §4.3.1)
+    // Icc_max: c=1.1, Icc_min: c=0.95 (IEC 60909-0:2016 Tabla 1, clausula 5.3.1)
     const Imax = (1.1 * V) / (Math.sqrt(3) * (Zt + Zc));
     const Imin = (0.95 * V) / (Math.sqrt(3) * (Zt + 2 * Zc));
     const Pcc = Math.sqrt(3) * V * Imax / 1000;
@@ -847,7 +847,7 @@ export default function ModuloElectricidad() {
       {/* ══ CAÍDA DE TENSIÓN ══ */}
       {sub === 'caida' && (
         <div>
-          <Tit t="Caída de tensión — IEC 60364-5-52 / NEC 210.19 / AEA 90364-7-771 cláusula 771.13.b (3% iluminación, 5% motores régimen, 15% arranque)" />
+          <Tit t="Caída de tensión — IEC 60364-5-52 / NEC 210.19 / AEA 90364-7-771 (sub-clausula 771.13.b no confirmada, documento AEA 90364-7-771 si es real) (3% iluminación, 5% motores régimen, 15% arranque)" />
 
           <div style={g2}>
             <div>
