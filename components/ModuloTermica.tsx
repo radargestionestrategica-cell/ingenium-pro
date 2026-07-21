@@ -102,9 +102,13 @@ function calcDilatacion(
     ? Math.sqrt(3 * E_GPa * 1e9 * D_m * (dL_mm / 1000) / (200e6))
     : 0;
 
-  // Limite tension admisible acero A36 = 150 MPa
+  // Limite tension admisible acero A36 = 150 MPa — solo aplica si el material es acero_carbono
+  const sigmaAdmAplica = material === 'acero_carbono';
   const sigma_adm = 150;
-  const riesgo = sigma_MPa > 200 ? 'CRITICAL' : sigma_MPa > sigma_adm ? 'HIGH' : sigma_MPa > 100 ? 'MEDIUM' : 'LOW';
+  const riesgo = sigma_MPa > 200 ? 'CRITICAL' : (sigmaAdmAplica && sigma_MPa > sigma_adm) ? 'HIGH' : sigma_MPa > 100 ? 'MEDIUM' : 'LOW';
+  const advertenciaMaterial = !sigmaAdmAplica
+    ? 'Esfuerzo admisible mostrado es de referencia para acero A36 - para este material consultar tabla especifica antes de decisiones de diseno'
+    : null;
 
   return {
     dL_mm: +dL_mm.toFixed(1),
@@ -113,7 +117,9 @@ function calcDilatacion(
     dT: +dT.toFixed(1),
     alpha,
     riesgo,
-    ok: sigma_MPa <= sigma_adm || !restringido
+    sigmaAdmAplica,
+    advertenciaMaterial,
+    ok: sigmaAdmAplica ? (sigma_MPa <= sigma_adm || !restringido) : true
   };
 }
 
@@ -229,8 +235,9 @@ export default function ModuloTermica() {
         'Alpha (x10-6/C)': r.alpha,
         'Tension termica (MPa)': r.sigma_MPa,
         'Longitud lira U (m)': r.L_lira_m,
-        'Estado': r.ok ? 'APTO' : 'REQUIERE LIRA',
+        'Estado': r.advertenciaMaterial ? 'VER ADVERTENCIA' : (r.ok ? 'APTO' : 'REQUIERE LIRA'),
         'Riesgo': r.riesgo,
+        ...(r.advertenciaMaterial ? { 'Advertencia': r.advertenciaMaterial } : {}),
       },
       dxfParams: {
         D:         parseFloat(OD),
@@ -374,7 +381,7 @@ export default function ModuloTermica() {
                 { label: 'Alpha material', value: resDil.alpha + ' x10-6/C' },
                 { label: 'Tension termica', value: resDil.sigma_MPa + ' MPa' },
                 { label: 'Longitud lira U', value: resDil.L_lira_m + ' m' },
-                { label: 'Estado', value: resDil.ok ? 'APTO' : 'REQUIERE LIRA' },
+                { label: 'Estado', value: resDil.advertenciaMaterial ? 'VER ADVERTENCIA' : (resDil.ok ? 'APTO' : 'REQUIERE LIRA') },
               ].map((r, i) => (
                 <div key={i} style={{ background: '#0f172a', borderRadius: 8, padding: 12, textAlign: 'center' as const }}>
                   <div style={{ color: '#64748b', fontSize: 11, marginBottom: 4 }}>{r.label}</div>
@@ -382,6 +389,11 @@ export default function ModuloTermica() {
                 </div>
               ))}
             </div>
+            {resDil.advertenciaMaterial && (
+              <div style={{ background: '#450a0a', border: '1px solid #dc2626', borderRadius: 8, padding: 12, color: '#fca5a5', fontSize: 13, marginBottom: 16 }}>
+                ⚠️ {resDil.advertenciaMaterial}
+              </div>
+            )}
             <div style={{ background: '#0f172a', borderRadius: 8, padding: 14, fontSize: 12, color: '#94a3b8', fontFamily: 'monospace' }}>
               <div style={{ color: '#ef4444', marginBottom: 4, fontWeight: 700 }}>FORMULA ASME B31.3:</div>
               dL = alpha x L x dT | sigma = E x alpha x dT (si restringido)
