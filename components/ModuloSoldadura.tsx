@@ -139,7 +139,7 @@ const ACEROS: Record<string, {
 };
 
 // ═══════════════════════════════════════════════════
-// FILETE MÍNIMO — AWS D1.1:2020 Tabla 8.8
+// FILETE MÍNIMO — AWS D1.1:2020 (numero de tabla sin verificar contra texto primario del standard)
 // ═══════════════════════════════════════════════════
 const FILETE_MIN: { espesorMax: number; filMm: number }[] = [
   { espesorMax: 6, filMm: 3 }, { espesorMax: 12, filMm: 5 },
@@ -297,7 +297,7 @@ export default function ModuloSoldadura() {
     const V = parseFloat(hiV); const I = parseFloat(hiI); const v = parseFloat(hiVel);
     if ([V, I, v].some(n => isNaN(n) || n <= 0)) { setErr('Valores inválidos'); return; }
     const ef = EFICIENCIA_PROCESO[hiProc] || 0.80;
-    // ASME Sec. IX / AWS D1.1 §6.8.5: HI = (V×I×60×η) / (v_mm/min × 1000) kJ/mm
+    // ASME Sec. IX / AWS D1.1 (numero de clausula sin verificar contra texto primario del standard): HI = (V×I×60×η) / (v_mm/min × 1000) kJ/mm
     const hi = Math.round((V * I * 60 * ef) / (v * 1000) * 1000) / 1000;
     let clase = '';
     if (hi < 0.5) clase = '⚠️ Muy bajo — riesgo falta de fusión';
@@ -309,7 +309,7 @@ export default function ModuloSoldadura() {
     setResHI(r);
     const payload: DatosExportar = {
       tipo: 'HEAT_INPUT',
-      normativa: 'ASME Sec. IX | AWS D1.1 §6.8.5',
+      normativa: 'ASME Sec. IX | AWS D1.1',
       parametros: {
         'Voltaje V (V)': hiV,
         'Corriente I (A)': hiI,
@@ -468,7 +468,7 @@ export default function ModuloSoldadura() {
       resultado: {
         [`Carbono Equivalente CE (${prFormula})`]: CE,
         'Temperatura minima Tp (C)': Tp === 0 ? 'No requerido' : Tp,
-        'Categoria AWS D1.1': cat,
+        'Categoria (guia CE tipo IIW)': cat,
         'Recomendacion': rec,
       },
       dxfParams: {
@@ -657,7 +657,7 @@ export default function ModuloSoldadura() {
       {/* ══ HEAT INPUT ══ */}
       {sub === 'heat_input' && (
         <div>
-          <T text="Calor Aportado (Heat Input) — ASME Sec. IX / AWS D1.1 §6.8.5" />
+          <T text="Calor Aportado (Heat Input) — ASME Sec. IX / AWS D1.1" />
           <div style={g2}>
             <div><label style={lbl}>Voltaje del arco (V)</label>
               <input value={hiV} onChange={e => setHiV(e.target.value)} style={inp} type="number" min="10" step="0.1" />
@@ -793,7 +793,7 @@ export default function ModuloSoldadura() {
               <option value="D1.1" style={{ background: '#0a0f1e' }}>AWS D1.1 — C + (Mn+Si)/6 + (Cr+Mo+V)/5 + (Ni+Cu)/15  (incluye Si)</option>
             </select>
           </div>
-          <Info text="Grupos de precalentamiento según AWS D1.1 Tabla 4.2. AWS D1.1 incluye Si en el segundo término, dando CE ligeramente mayor para aceros con >0.3% Si." />
+          <Info text="Grupos de precalentamiento por rango de CE — guia generica tipo IIW, no corresponde a una tabla especifica de AWS D1.1 verificada. AWS D1.1 incluye Si en el segundo término, dando CE ligeramente mayor para aceros con >0.3% Si." />
           <Btn onClick={calcPrecalentamiento} text="Calcular precalentamiento" />
           {resPre && <ResBox>
             <div style={{ fontSize: 12, color: C, fontWeight: 700, marginBottom: 14 }}>RESULTADO — PRECALENTAMIENTO</div>
@@ -803,7 +803,7 @@ export default function ModuloSoldadura() {
             <div style={g3}>
               <Card label={`Carbono Equiv. CE (${prFormula})`} val={`${resPre.CE}`} />
               <Card label="Temperatura mínima Tp" val={resPre.Tp === 0 ? 'No requerido' : `${resPre.Tp} °C`} color={resPre.Tp === 0 ? '#4ade80' : resPre.Tp >= 150 ? '#ef4444' : C} />
-              <Card label="Categoría AWS D1.1" val={resPre.cat} />
+              <Card label="Categoría (guía CE tipo IIW)" val={resPre.cat} />
             </div>
             <div style={{ fontSize: 12, color: '#f1f5f9', padding: '10px 14px', background: '#0a0f1e', borderRadius: 8, marginTop: 8 }}>
               <span style={{ color: C, fontWeight: 700 }}>Recomendación: </span>{resPre.rec}
