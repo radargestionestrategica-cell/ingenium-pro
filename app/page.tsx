@@ -941,7 +941,7 @@ export default function LandingPage() {
           </div>
 
           <p className="disclaimer">
-            Pagos internacionales vía Payoneer · MercadoPago disponible para América Latina
+            Pagos internacionales vía PayPal · MercadoPago disponible para América Latina
             · Sin permanencia mínima · Cancelás cuando querés · Facturación disponible
           </p>
         </div>
