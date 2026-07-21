@@ -120,7 +120,7 @@ const PLANES = [
       'Todo lo del plan Pro',
       'Historial compartido de proyectos',
       'Panel de administración de equipo',
-      'Exportación masiva de informes',
+      'Proyectos compartidos entre miembros de equipo',
       'Onboarding dedicado',
       'Factura electrónica',
       '1.500 consultas IA por mes',
@@ -142,7 +142,6 @@ const PLANES = [
     features: [
       'Usuarios ilimitados',
       'Módulos de cálculo personalizados',
-      'Integración API REST propia',
       'SLA de uptime garantizado',
       'Capacitación in-company',
       'Soporte técnico 24/7',
