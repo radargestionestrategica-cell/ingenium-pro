@@ -255,6 +255,7 @@ const calcHierro = () => {
   setError(''); setResMamp(null);
     const m2 = parseFloat(m2Mamp);
    if (isNaN(m2) || m2 <= 0) { setError('Ingresá m² válidos'); return; }
+  // Rendimiento ladrillos/bloques por m2: valores de rendimiento de fabricante/practica de plataforma, no normados por unica fuente
   const base = tipoMamp === 'soga' ? cfg.ladrillosM2Soga : tipoMamp === 'tizon' ? cfg.ladrillosM2Tizon : cfg.bloquesM2;
     const unidades = Math.round(base * m2);
     const morteroM3 = Math.round(m2 * 0.025 * 100) / 100;
@@ -262,7 +263,7 @@ const calcHierro = () => {
     setResMamp(rMamp);
     const payload: DatosExportar = {
       tipo: 'MAMPOSTERIA_MMO',
-      normativa: cfg.normativa,
+      normativa: 'Valores de rendimiento de fabricante/practica de plataforma, no normados por unica fuente',
       parametros: { 'Pais': cfg.nombre, 'Tipo aparejo': tipoMamp, 'Superficie (m2)': m2Mamp },
       resultado: {
         'Unidades netas': rMamp.unidades,
@@ -285,8 +286,10 @@ const calcHierro = () => {
    setError(''); setResLosa(null);
   const luz = parseFloat(losaLuz); const m2 = parseFloat(losaM2);
   if (isNaN(luz) || luz <= 0 || isNaN(m2) || m2 <= 0) { setError('Valores inválidos'); return; }
+    // ACI 318 Tabla 7.3.1.1 (ex 9.5a), losas simplemente apoyadas/un extremo continuo/ambos extremos continuos
     const div = losaTipo === 'simple' ? 20 : losaTipo === 'continua' ? 24 : 28;
    const espesor = Math.max(Math.round(luz / div * 100) / 100, 0.10);
+    // Estimacion preliminar de campo, no valor normativo fijo
     const hierroKgM2 = losaTipo === 'simple' ? 18 : 15;
     const rLosa = { espesor, hierroKgM2, hormigonTotal: Math.round(espesor * m2 * 100) / 100, hierroTotal: Math.round(hierroKgM2 * m2) };
     setResLosa(rLosa);
