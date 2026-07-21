@@ -823,8 +823,8 @@ export default function LandingPage() {
                   <tr>
                     <td>Precio anual</td>
                     <td>Gratis</td>
-                    <td>USD 12.000 – 15.000</td>
-                    <td>USD 3.200</td>
+                    <td>Licencia premium anual</td>
+                    <td>Licencia anual</td>
                     <td className="compare-col-featured compare-highlight">Desde plan actual</td>
                   </tr>
                   <tr>
