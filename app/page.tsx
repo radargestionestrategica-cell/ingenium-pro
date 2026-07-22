@@ -3,7 +3,7 @@
 import type { Metadata } from 'next';
 import ModulosCarrusel from '@/components/ModulosCarrusel';
 import ExportacionCarrusel from '@/components/ExportacionCarrusel';
-import DemoMAOP from '@/components/DemoMAOP';
+import DemoMAOPAutoplay from '@/components/DemoMAOPAutoplay';
 
 export const metadata: Metadata = {
   title: 'INGENIUM Pro | Plataforma de cálculo técnico, auditoría IA y documentación profesional',
@@ -570,7 +570,7 @@ export default function LandingPage() {
                     <div className="preview-module-norm">ASME B31.8-2022 · API 5L · Factor de diseño E×T×F</div>
                   </div>
                 </div>
-                <DemoMAOP />
+                <DemoMAOPAutoplay />
               </div>
             </div>
           </div>
