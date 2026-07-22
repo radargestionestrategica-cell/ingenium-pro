@@ -452,6 +452,7 @@ export default function ModuloSoldadura() {
     if (t > 38 && Tp < 65) Tp = 65;
     const r = { CE, Tp, cat, rec, formula: formulaLabel };
     setResPre(r);
+    const grupoNivel = cat.match(/Grupo (\w+)/)?.[1] ?? '';
     const payload: DatosExportar = {
       tipo: 'PRECALENTAMIENTO',
       normativa: prFormula === 'IIW' ? 'CE IIW | AWS D1.1 | ASME Sec. IX' : 'CE AWS D1.1 | ASME Sec. IX',
@@ -471,6 +472,8 @@ export default function ModuloSoldadura() {
         'Categoria (guia CE tipo IIW)': cat,
         'Recomendacion': rec,
       },
+      nivel:  grupoNivel,
+      alerta: grupoNivel === 'IV' || grupoNivel === 'V',
       dxfParams: {
         material_base:    `C=${prC} Mn=${prMn}`,
         espesor:          parseFloat(prEsp),
