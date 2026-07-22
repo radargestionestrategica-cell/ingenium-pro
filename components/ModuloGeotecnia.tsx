@@ -234,6 +234,8 @@ export default function ModuloGeotecnia() {
         'Apta': r.ok ? 'SI' : 'NO',
         'Estado': r.riesgo,
       },
+      nivel:  r.riesgo,
+      alerta: r.riesgo === 'HIGH' || r.riesgo === 'CRITICAL',
       dxfParams: {
         B:     parseFloat(B),
         L_cim: parseFloat(L2),
@@ -274,6 +276,8 @@ export default function ModuloGeotecnia() {
         'Estado': r.estado,
         'Riesgo': r.riesgo,
       },
+      nivel:  r.riesgo,
+      alerta: r.riesgo === 'HIGH' || r.riesgo === 'CRITICAL',
       dxfParams: {
         H:     parseFloat(H),
         beta:  parseFloat(beta),

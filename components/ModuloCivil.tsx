@@ -233,6 +233,8 @@ export default function ModuloCivil() {
         'Advertencia': `Flexion verificada segun AISC 360 Cap. F2, Tramo ${r.tramo} (Cb = ${r.Cb}, conservador). phi.Mn ya incluye la reduccion por pandeo lateral-torsional segun Lb ingresado (Lp = ${r.Lp_m} m, Lr = ${r.Lr_m} m).`,
         'Estado': r.riesgo,
       },
+      nivel:  r.riesgo,
+      alerta: r.riesgo === 'HIGH' || r.riesgo === 'CRITICAL',
       dxfParams: {
         tipo:           'viga',
         perfil,
@@ -287,6 +289,8 @@ export default function ModuloCivil() {
         'Advertencia': 'Capacidad axial pura (ACI 22.4.2.1) — no contempla interaccion flexo-compresion P-M; Mu solo informa excentricidad',
         'Estado': r.riesgo,
       },
+      nivel:  r.riesgo,
+      alerta: r.riesgo === 'HIGH' || r.riesgo === 'CRITICAL',
       dxfParams: {
         tipo:      'columna',
         b_mm:      parseFloat(b),

@@ -201,6 +201,8 @@ export default function ModuloVialidad() {
         'Factor Zr': r.Zr,
         'Estado': r.riesgo,
       },
+      nivel:  r.riesgo,
+      alerta: r.riesgo === 'HIGH' || r.riesgo === 'CRITICAL',
       dxfParams: {
         tipo:   'pavimento',
         SN:     r.SN,
@@ -253,6 +255,8 @@ export default function ModuloVialidad() {
         'Velocidad dentro de limite': r.ok_velocidad ? 'SI' : 'NO',
         'Estado': r.riesgo,
       },
+      nivel:  r.riesgo,
+      alerta: r.riesgo === 'HIGH' || r.riesgo === 'CRITICAL',
       dxfParams: {
         tipo:         'drenaje',
         Q_m3s:        r.Q_m3s,

@@ -110,6 +110,8 @@ export default function ModuloPetroleo() {
         'Factor T (Tabla 841.1.18-1 ASME B31.8)': r.T_factor,
         'Estado':                  riskLabel[r.risk],
       },
+      nivel:  r.risk,
+      alerta: r.risk === 'HIGH' || r.risk === 'CRITICAL',
       dxfParams: {
         OD:   parseFloat(OD),
         t:    parseFloat(t),

@@ -215,6 +215,8 @@ export default function ModuloMineria() {
         'Soporte recomendado': r.soporte,
         'Estado': r.riesgo,
       },
+      nivel:  r.riesgo,
+      alerta: r.riesgo === 'HIGH' || r.riesgo === 'CRITICAL',
       dxfParams: {
         tipo: 'rmr',
         ucs_mpa: parseFloat(ucs), rqd_pct: parseFloat(rqd),
@@ -261,6 +263,8 @@ export default function ModuloMineria() {
         'Estado CO': r.riesgo_co,
         'Estado': r.riesgo,
       },
+      nivel:  r.riesgo,
+      alerta: r.riesgo === 'HIGH' || r.riesgo === 'CRITICAL',
       dxfParams: {
         tipo: 'ventilacion',
         trabajadores: parseFloat(trabajadores), diesel_kW: parseFloat(diesel_kW),

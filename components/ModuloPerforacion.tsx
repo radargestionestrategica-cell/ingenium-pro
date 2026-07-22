@@ -179,6 +179,8 @@ export default function ModuloPerforacion() {
       : r.hid.ty !== undefined
         ? { 'τy - Esfuerzo de cedencia (lbf/100ft²)': r.hid.ty, 'n - Índice de flujo': r.hid.na ?? 0, 'k - Factor de consistencia': r.hid.ka ?? 0 }
         : { 'n - Índice de flujo': r.hid.na ?? 0, 'k - Factor de consistencia': r.hid.ka ?? 0 };
+    const RANGO_RIESGO: Record<RiskLevel, number> = { LOW: 0, MEDIUM: 1, HIGH: 2, CRITICAL: 3 };
+    const nivelCombinado: RiskLevel = RANGO_RIESGO[r.bhp.risk] >= RANGO_RIESGO[r.mud.risk] ? r.bhp.risk : r.mud.risk;
     const payload: DatosExportar = {
       tipo: 'PERFORACION',
       normativa: 'API RP 13D | API RP 7G',
@@ -213,6 +215,8 @@ export default function ModuloPerforacion() {
         'Estado BHP':                        r.bhp.risk,
         'Estado lodo':                       r.mud.risk,
       },
+      nivel:  nivelCombinado,
+      alerta: nivelCombinado === 'HIGH' || nivelCombinado === 'CRITICAL',
       dxfParams: {
         OD:   244.5,
         t:    11.05,

@@ -26,6 +26,8 @@ export interface DatosExportar {
   };
   nivelPrecision?: 1 | 2 | 3;
   advertencias?:   string[];
+  nivel?:          string;
+  alerta?:         boolean;
 }
 
 interface Props {
@@ -69,6 +71,8 @@ export default function BotonesExportar({ datos, visible }: Props) {
           normativa:    datos.normativa    ?? null,
           parametros:   datos.parametros,
           resultado:    datos.resultado,
+          nivel:        datos.nivel  ?? null,
+          alerta:       datos.alerta ?? false,
           usuarioId:    usr?.id     ?? null,
           usuario:      usr?.nombre ?? usr?.email ?? null,
         }),

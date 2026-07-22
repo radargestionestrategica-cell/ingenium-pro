@@ -209,6 +209,8 @@ export default function ModuloHidraulica() {
         'Presion (Pa)': r.dP_Pa,
         'Estado': r.riesgo,
       },
+      nivel:  r.riesgo,
+      alerta: r.riesgo === 'HIGH' || r.riesgo === 'CRITICAL',
       dxfParams: {
         D:  parseFloat(D),
         L:  parseFloat(L),
@@ -250,6 +252,8 @@ export default function ModuloHidraulica() {
         'Tiempo critico Tc (s)': r.Tc,
         'Estado': r.riesgo,
       },
+      nivel:  r.riesgo,
+      alerta: r.riesgo === 'HIGH' || r.riesgo === 'CRITICAL',
       dxfParams: {
         D:    parseFloat(D),
         t:    parseFloat(t),

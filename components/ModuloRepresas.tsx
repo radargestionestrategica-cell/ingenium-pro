@@ -327,6 +327,8 @@ export default function ModuloRepresas() {
             'Tension maxima (kN/m2)': re.sigma_max,
             'Tension minima (kN/m2)': re.sigma_min,
           },
+          nivel:  re.riesgo,
+          alerta: re.riesgo === 'HIGH' || re.riesgo === 'CRITICAL',
           dxfParams: {
             tipo:      'estabilidad_presa',
             Hw:        he,
