@@ -294,6 +294,8 @@ export default function ModuloArquitectura() {
         'P total diseno (kPa)':       r.p_total_kPa,
         'Estado':                     riskLabel[r.riesgo],
       },
+      nivel:  r.riesgo,
+      alerta: r.riesgo === 'HIGH',
       dxfParams: {
         tipo: 'viento',
         V_mph: parseFloat(V_mph), V_kmh: r.V_kmh,
@@ -347,6 +349,8 @@ export default function ModuloArquitectura() {
         'RVP en rango 15-40%':        r.ok_rvp ? 'SI' : 'NO',
         'Estado':                     riskLabel[r.riesgo],
       },
+      nivel:  r.riesgo,
+      alerta: r.riesgo === 'HIGH',
       dxfParams: {
         tipo: 'iluminacion',
         ancho_m: parseFloat(ancho), largo_m: parseFloat(largo),
@@ -402,6 +406,8 @@ export default function ModuloArquitectura() {
         'Cortante basal V (kN)':        r.V_kN,
         'Estado':                       riskLabel[r.riesgo],
       },
+      nivel:  r.riesgo,
+      alerta: r.riesgo === 'HIGH',
       dxfParams: {
         tipo: 'sismo',
         W_kN: parseFloat(W_kN), hn_m: parseFloat(hn_m),

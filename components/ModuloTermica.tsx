@@ -193,6 +193,8 @@ export default function ModuloTermica() {
         'Efectividad (%)': r.efectividad,
         'Estado': r.riesgo,
       },
+      nivel:  r.riesgo,
+      alerta: r.riesgo === 'HIGH' || r.riesgo === 'CRITICAL',
       dxfParams: {
         D:         219.1,
         t:         8.18,
@@ -239,6 +241,8 @@ export default function ModuloTermica() {
         'Riesgo': r.riesgo,
         ...(r.advertenciaMaterial ? { 'Advertencia': r.advertenciaMaterial } : {}),
       },
+      nivel:  r.riesgo,
+      alerta: r.riesgo === 'HIGH' || r.riesgo === 'CRITICAL',
       dxfParams: {
         D:         parseFloat(OD),
         t:         parseFloat(t_esp),
