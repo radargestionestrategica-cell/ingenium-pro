@@ -418,6 +418,7 @@ export default function ModuloCanerias() {
     const r = { a_ms: Math.round(a * 10) / 10, t_seg_s, t_ing_s: tc, ok, dP_bar, P_total_bar: P_total, riesgo };
     setResCi(r);
 
+    const nivelCierre = riesgo.includes('CRÍTICO') ? 'CRITICO' : riesgo.includes('ALTO') ? 'ALTO' : 'SEGURO';
     const payload: DatosExportar = {
       tipo:      'CANERIAS_CIERRE',
       normativa: 'Joukowsky (1898) / ASME B31.8',
@@ -440,6 +441,8 @@ export default function ModuloCanerias() {
         'Estado':                           r.ok ? 'CIERRE SEGURO' : 'CIERRE PELIGROSO',
         'Diagnóstico':                      r.riesgo.replace(/[^\x20-\x7EÀ-ɏ]/g, '').trim(),
       },
+      nivel:  nivelCierre,
+      alerta: nivelCierre === 'CRITICO' || nivelCierre === 'ALTO',
       dxfParams: {
         OD:       parseFloat(cDmm),
         t:        parseFloat(cTmm),
