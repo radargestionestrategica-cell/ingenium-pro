@@ -71,11 +71,11 @@ return <div style={{ background: 'rgba(16,185,129,0.08)', border: '1px solid rgb
 function ResTit({ text }: { text: string }) {
   return <div style={{ fontSize: 12, color: COLOR, fontWeight: 700, marginBottom: 14 }}>{text}</div>;
 }
-function Card({ label, val, sub }: { label: string; val: string; sub?: string }) {
+function Card({ label, val, sub, color }: { label: string; val: string; sub?: string; color?: string }) {
   return (
     <div style={{ background: '#0a0f1e', borderRadius: 10, padding: 14 }}>
     <div style={{ fontSize: 10, color: '#475569', marginBottom: 4, textTransform: 'uppercase' as const, letterSpacing: 0.4 }}>{label}</div>
-      <div style={{ fontSize: 18, fontWeight: 800, color: COLOR }}>{val}</div>
+      <div style={{ fontSize: 18, fontWeight: 800, color: color ?? COLOR }}>{val}</div>
      {sub && <div style={{ fontSize: 11, color: '#334155', marginTop: 2 }}>{sub}</div>}
    </div>
   );
@@ -728,6 +728,19 @@ const calcMortero = () => {
               <Card label={`Cemento mortero (${cfg.cementoBolsaKg}kg)`} val={`${resMamp.cementoBolsas} bolsas`} />
               <Card label="Arena para mortero" val={`${resMamp.arenaM3} m³`} />
             </div>
+            {resMamp.nivel !== undefined && (
+              <div style={grid2}>
+                {resMamp.nivel === 'SIN DATOS' ? (
+                  <InfoBox text={resMamp.mensajeVerificacion ?? ''} />
+                ) : (
+                  <>
+                    <Card label="Tension aplicada" val={`${resMamp.sigma} MPa`} />
+                    <Card label="Tension admisible" val={`${resMamp.fa} MPa`} />
+                    <Card label="Nivel" val={resMamp.nivel} color={resMamp.alerta ? '#ef4444' : '#22c55e'} />
+                  </>
+                )}
+              </div>
+            )}
           </ResBox>}
         </div>
       )}
