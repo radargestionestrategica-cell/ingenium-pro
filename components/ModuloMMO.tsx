@@ -109,11 +109,11 @@ const [resHierro, setResHierro] = useState<null | { kgBarra: number; kgTotal: nu
   // Mampostería
 const [tipoMamp, setTipoMamp] = useState<'soga' | 'tizon' | 'bloque'>('soga');
 const [m2Mamp, setM2Mamp] = useState('10');
-// Inputs sin conectar aun a ningun calculo (ver instrucciones — no tocar calcMamposteria/resMamp)
+// Verificacion de tension admisible sobre seccion bruta (CIRSOC 501-E Tabla 6.3)
 const [cargaP, setCargaP] = useState('');
 const [espesorMuro, setEspesorMuro] = useState('');
 const [tipoMortero, setTipoMortero] = useState<'EI' | 'N'>('EI');
-  const [resMamp, setResMamp] = useState<null | { unidades: number; conDesperdicio: number; morteroM3: number; cementoBolsas: number; arenaM3: number }>(null);
+  const [resMamp, setResMamp] = useState<null | { unidades: number; conDesperdicio: number; morteroM3: number; cementoBolsas: number; arenaM3: number; sigma?: number; fa?: number; nivel?: string; alerta?: boolean }>(null);
 
   // Losa
   const [losaLuz, setLosaLuz] = useState('4');
@@ -263,11 +263,31 @@ const calcHierro = () => {
   const base = tipoMamp === 'soga' ? cfg.ladrillosM2Soga : tipoMamp === 'tizon' ? cfg.ladrillosM2Tizon : cfg.bloquesM2;
     const unidades = Math.round(base * m2);
     const morteroM3 = Math.round(m2 * 0.025 * 100) / 100;
-    const rMamp = { unidades, conDesperdicio: Math.ceil(unidades * 1.10), morteroM3, cementoBolsas: Math.ceil(morteroM3 * 6), arenaM3: Math.round(morteroM3 * 1.05 * 100) / 100 };
+    const rMamp: typeof resMamp = { unidades, conDesperdicio: Math.ceil(unidades * 1.10), morteroM3, cementoBolsas: Math.ceil(morteroM3 * 6), arenaM3: Math.round(morteroM3 * 1.05 * 100) / 100 };
+
+    // Verificacion de tension admisible sobre seccion bruta (CIRSOC 501-E Tabla 6.3)
+    const cargaPNum = parseFloat(cargaP);
+    const espesorMuroNum = parseFloat(espesorMuro);
+    const hayDatosVerificacion = !isNaN(cargaPNum) && cargaPNum > 0 && !isNaN(espesorMuroNum) && espesorMuroNum > 0;
+    if (hayDatosVerificacion) {
+      const areaBrutaM2 = espesorMuroNum / 1000; // espesor de muro (mm) a m — area bruta por metro lineal de muro
+      const sigma = (cargaPNum * 1000) / (espesorMuroNum * 1000); // MPa
+      const fa = tipoMortero === 'EI' ? 0.40 : 0.30;
+      const nivel = sigma <= fa ? 'OK' : 'ALTO';
+      const alerta = sigma > fa;
+      rMamp.sigma = sigma;
+      rMamp.fa = fa;
+      rMamp.nivel = nivel;
+      rMamp.alerta = alerta;
+      // areaBrutaM2 calculada por trazabilidad — no participa en sigma (se cancela algebraicamente)
+    }
+
     setResMamp(rMamp);
     const payload: DatosExportar = {
       tipo: 'MAMPOSTERIA_MMO',
-      normativa: 'Valores de rendimiento de fabricante/practica de plataforma, no normados por unica fuente',
+      normativa: hayDatosVerificacion
+        ? 'CIRSOC 501-E Tabla 6.3 - tension admisible sobre seccion bruta'
+        : 'Valores de rendimiento de fabricante/practica de plataforma, no normados por unica fuente',
       parametros: { 'Pais': cfg.nombre, 'Tipo aparejo': tipoMamp, 'Superficie (m2)': m2Mamp },
       resultado: {
         'Unidades netas': rMamp.unidades,
@@ -275,7 +295,14 @@ const calcHierro = () => {
         'Mortero 1:4 (m3)': rMamp.morteroM3,
         [`Cemento mortero (bolsas ${cfg.cementoBolsaKg}kg)`]: rMamp.cementoBolsas,
         'Arena mortero (m3)': rMamp.arenaM3,
+        ...(hayDatosVerificacion ? {
+          'Tension aplicada sigma (MPa)': rMamp.sigma,
+          'Tension admisible fa (MPa)': rMamp.fa,
+          'Nivel': rMamp.nivel,
+        } : {}),
       },
+      nivel:  rMamp.nivel,
+      alerta: rMamp.alerta,
       dxfParams: {
         tipo: 'mamposteria', subtipo: tipoMamp, m2,
         unidades: rMamp.unidades, con_desperdicio: rMamp.conDesperdicio,
