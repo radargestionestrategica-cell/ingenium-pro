@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
       tipo:b.tipo,moduloId:b.moduloId??null,submodulo:b.submodulo??null,
       activoNombre:b.activoNombre??null,parametros:b.parametros,resultado:b.resultado,
       normativa:b.normativa??null,hash,firma,alerta:b.alerta??false,
-      alertaMsg:b.alertaMsg??null,usuario:b.usuario??'anonimo',
+      alertaMsg:b.alertaMsg??null,nivel:b.nivel??null,usuario:b.usuario??'anonimo',
       usuarioId:payload.id,proyectoId:b.proyectoId??null}
     const c=await prisma.calculo.upsert({where:{hash},create:data,update:{usuarioId:payload.id}})
     return NextResponse.json({ok:true,id:c.id,hash})

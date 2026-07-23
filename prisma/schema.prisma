@@ -108,6 +108,7 @@ model Calculo {
   firma        String?
   alerta       Boolean   @default(false)
   alertaMsg    String?
+  nivel        String?
   usuario      String    @default("anonimo")
   usuarioId    String?
   proyectoId   String?
