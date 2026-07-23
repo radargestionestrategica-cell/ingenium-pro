@@ -598,7 +598,7 @@ const calcMortero = () => {
        <div style={{ flex: 1 }}>
           <div style={{ fontSize: 20, fontWeight: 800 }}>Maestro Mayor de Obra</div>
           <div style={{ fontSize: 12, color: '#64748b' }}>Hormigón · Hierro · Mampostería · Losa · Revoque · Cerámico · Contrapiso · Zapata · Excavación · Mortero · Rendimientos</div>
-         <div style={{ fontSize: 11, color: COLOR, marginTop: 4 }}>{cfg.normativa}</div>
+         <div style={{ fontSize: 11, color: COLOR, marginTop: 4 }}>{sub === 'mamposteria' ? 'CIRSOC 501-E - Tabla 6.3 (tension admisible)' : cfg.normativa}</div>
         </div>
         <div>
           <label style={{ ...lbl, display: 'block', marginBottom: 4 }}>País</label>
