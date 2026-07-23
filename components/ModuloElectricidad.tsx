@@ -365,6 +365,8 @@ export default function ModuloElectricidad() {
         'Caida (%)': resultadoCaida.pct,
         'Cumple limite 4%': resultadoCaida.ok ? 'SI' : 'NO',
       },
+      nivel:  resultadoCaida.ok ? 'OK' : 'CRITICAL',
+      alerta: !resultadoCaida.ok,
       dxfParams: {
         conductor:        'Cu',
         seccion:          parseFloat(cdCable) || 4,
@@ -623,6 +625,8 @@ export default function ModuloElectricidad() {
         'Iluminancia real (lux)': resultadoLuz.luxReal,
         'Cumple normativa': resultadoLuz.ok ? 'SI' : 'NO',
       },
+      nivel:  resultadoLuz.ok ? 'OK' : 'CRITICAL',
+      alerta: !resultadoLuz.ok,
       dxfParams: {
         conductor:        'Cu',
         seccion:          2.5,
