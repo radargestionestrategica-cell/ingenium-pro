@@ -113,7 +113,7 @@ const [m2Mamp, setM2Mamp] = useState('10');
 const [cargaP, setCargaP] = useState('');
 const [espesorMuro, setEspesorMuro] = useState('');
 const [tipoMortero, setTipoMortero] = useState<'EI' | 'N'>('EI');
-  const [resMamp, setResMamp] = useState<null | { unidades: number; conDesperdicio: number; morteroM3: number; cementoBolsas: number; arenaM3: number; sigma?: number; fa?: number; nivel?: string; alerta?: boolean }>(null);
+  const [resMamp, setResMamp] = useState<null | { unidades: number; conDesperdicio: number; morteroM3: number; cementoBolsas: number; arenaM3: number; sigma?: number; fa?: number; nivel: string; alerta: boolean; mensajeVerificacion?: string }>(null);
 
   // Losa
   const [losaLuz, setLosaLuz] = useState('4');
@@ -263,7 +263,7 @@ const calcHierro = () => {
   const base = tipoMamp === 'soga' ? cfg.ladrillosM2Soga : tipoMamp === 'tizon' ? cfg.ladrillosM2Tizon : cfg.bloquesM2;
     const unidades = Math.round(base * m2);
     const morteroM3 = Math.round(m2 * 0.025 * 100) / 100;
-    const rMamp: typeof resMamp = { unidades, conDesperdicio: Math.ceil(unidades * 1.10), morteroM3, cementoBolsas: Math.ceil(morteroM3 * 6), arenaM3: Math.round(morteroM3 * 1.05 * 100) / 100 };
+    const rMamp: typeof resMamp = { unidades, conDesperdicio: Math.ceil(unidades * 1.10), morteroM3, cementoBolsas: Math.ceil(morteroM3 * 6), arenaM3: Math.round(morteroM3 * 1.05 * 100) / 100, nivel: 'SIN DATOS', alerta: false };
 
     // Verificacion de tension admisible sobre seccion bruta (CIRSOC 501-E Tabla 6.3)
     const cargaPNum = parseFloat(cargaP);
@@ -273,13 +273,13 @@ const calcHierro = () => {
       const areaBrutaM2 = espesorMuroNum / 1000; // espesor de muro (mm) a m — area bruta por metro lineal de muro
       const sigma = (cargaPNum * 1000) / (espesorMuroNum * 1000); // MPa
       const fa = tipoMortero === 'EI' ? 0.40 : 0.30;
-      const nivel = sigma <= fa ? 'OK' : 'ALTO';
-      const alerta = sigma > fa;
       rMamp.sigma = sigma;
       rMamp.fa = fa;
-      rMamp.nivel = nivel;
-      rMamp.alerta = alerta;
+      rMamp.nivel = sigma <= fa ? 'OK' : 'ALTO';
+      rMamp.alerta = sigma > fa;
       // areaBrutaM2 calculada por trazabilidad — no participa en sigma (se cancela algebraicamente)
+    } else {
+      rMamp.mensajeVerificacion = 'Cargar peso y espesor del muro para verificar seguridad estructural';
     }
 
     setResMamp(rMamp);
@@ -299,7 +299,10 @@ const calcHierro = () => {
           'Tension aplicada sigma (MPa)': rMamp.sigma,
           'Tension admisible fa (MPa)': rMamp.fa,
           'Nivel': rMamp.nivel,
-        } : {}),
+        } : {
+          'Nivel': rMamp.nivel,
+          'Verificacion estructural': rMamp.mensajeVerificacion,
+        }),
       },
       nivel:  rMamp.nivel,
       alerta: rMamp.alerta,
