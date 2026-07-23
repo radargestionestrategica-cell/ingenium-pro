@@ -352,6 +352,7 @@ export default function ModuloValvulas() {
 
     setResCl(resultadoClase);
 
+    const margenPct = (Prating / P - 1) * 100;
     const payloadClase: DatosExportar = {
       tipo: 'VALVULAS_CLASE_B16_34',
       normativa: 'ASME B16.34-2017',
@@ -366,6 +367,8 @@ export default function ModuloValvulas() {
         'Temp max material (C)': resultadoClase.maxTempMat,
         'Advertencia': resultadoClase.advertencia,
       },
+      nivel:  margenPct >= 10 ? 'OK' : 'ALTO',
+      alerta: margenPct < 10,
       dxfParams: {
         DN:    100,
         tipo:  'bt',
