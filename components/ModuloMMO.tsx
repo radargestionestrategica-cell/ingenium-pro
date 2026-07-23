@@ -109,6 +109,10 @@ const [resHierro, setResHierro] = useState<null | { kgBarra: number; kgTotal: nu
   // Mampostería
 const [tipoMamp, setTipoMamp] = useState<'soga' | 'tizon' | 'bloque'>('soga');
 const [m2Mamp, setM2Mamp] = useState('10');
+// Inputs sin conectar aun a ningun calculo (ver instrucciones — no tocar calcMamposteria/resMamp)
+const [cargaP, setCargaP] = useState('');
+const [espesorMuro, setEspesorMuro] = useState('');
+const [tipoMortero, setTipoMortero] = useState<'EI' | 'N'>('EI');
   const [resMamp, setResMamp] = useState<null | { unidades: number; conDesperdicio: number; morteroM3: number; cementoBolsas: number; arenaM3: number }>(null);
 
   // Losa
@@ -669,6 +673,18 @@ const calcMortero = () => {
             </div>
             <div><label style={lbl}>Superficie de muro (m²)</label>
               <input value={m2Mamp} onChange={e => setM2Mamp(e.target.value)} style={inp} type="number" min="0.1" step="0.5" />
+            </div>
+            <div><label style={lbl}>Carga axial P (kN/m lineal de muro)</label>
+              <input value={cargaP} onChange={e => setCargaP(e.target.value)} style={inp} type="number" min="0" step="1" />
+            </div>
+            <div><label style={lbl}>Espesor real del muro (mm)</label>
+              <input value={espesorMuro} onChange={e => setEspesorMuro(e.target.value)} style={inp} type="number" min="0" step="1" />
+            </div>
+            <div><label style={lbl}>Tipo de mortero</label>
+              <select value={tipoMortero} onChange={e => setTipoMortero(e.target.value as 'EI' | 'N')} style={inp}>
+                <option value="EI" style={{ background: '#0a0f1e' }}>EI</option>
+                <option value="N" style={{ background: '#0a0f1e' }}>N</option>
+              </select>
             </div>
           </div>
           <InfoBox text={`Dimensión: ${tipoMamp === 'bloque' ? cfg.bloque : cfg.ladrilloComun} · Mortero 1:4 · Incluye 10% desperdicio`} />
