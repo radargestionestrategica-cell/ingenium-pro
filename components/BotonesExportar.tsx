@@ -49,6 +49,7 @@ export default function BotonesExportar({ datos, visible }: Props) {
   const [msgOk,      setMsgOk]      = useState('');
   const [msgErr,     setMsgErr]     = useState('');
   const [mostrarModalDatos, setMostrarModalDatos] = useState(false);
+  const [activoNombreInput, setActivoNombreInput] = useState('');
 
   if (!visible) return null;
 
@@ -67,10 +68,10 @@ export default function BotonesExportar({ datos, visible }: Props) {
           tipo:         datos.tipo,
           moduloId:     datos.moduloId    ?? datos.tipo,
           submodulo:    datos.submodulo   ?? null,
-          activoNombre: datos.activoNombre ?? null,
           normativa:    datos.normativa    ?? null,
           parametros:   datos.parametros,
           resultado:    datos.resultado,
+          activoNombre: activoNombreInput.trim() ? activoNombreInput.trim() : null,
           nivel:        datos.nivel  ?? null,
           alerta:       datos.alerta ?? false,
           usuarioId:    usr?.id     ?? null,
@@ -302,6 +303,19 @@ export default function BotonesExportar({ datos, visible }: Props) {
       <div style={{ fontSize: 11, color: '#6366f1', fontWeight: 700, letterSpacing: 1, marginBottom: 16, textTransform: 'uppercase' }}>
         📤 Exportar resultado
       </div>
+
+      {/* NOMBRE DEL ACTIVO */}
+      {!calculoId && (
+        <div style={{ marginBottom: 14 }}>
+          <label style={{ display: 'block', fontSize: 11, color: '#94a3b8', marginBottom: 6 }}>Nombre del activo (opcional)</label>
+          <input
+            value={activoNombreInput}
+            onChange={e => setActivoNombreInput(e.target.value)}
+            placeholder="Ej: Cañeria km 12 o Válvula V-034"
+            style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.1)', background: '#0f172a', color: '#f1f5f9', fontSize: 13, boxSizing: 'border-box' }}
+          />
+        </div>
+      )}
 
       {/* BOTONES */}
       <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
