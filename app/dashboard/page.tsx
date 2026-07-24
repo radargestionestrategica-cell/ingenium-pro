@@ -202,6 +202,10 @@ function Dashboard() {
               <span style={{ flexShrink: 0 }}>📁</span>
               <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>Proyectos</span>
             </button>
+            <button onClick={() => router.push('/activos')} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 10, border: `1px solid ${GOLD}`, background: 'rgba(232,160,32,0.12)', color: GOLD, fontSize: 12, fontWeight: 800, cursor: 'pointer', textAlign: 'left', width: '100%' }}>
+              <span style={{ flexShrink: 0 }}>🏷️</span>
+              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>Ver Activos</span>
+            </button>
             {isNarrow && (
               <>
                 <div style={{ height: 1, background: BORD, margin: '6px 4px' }} />
