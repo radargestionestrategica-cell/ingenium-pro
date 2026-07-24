@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { verificarTokenAPI, respuestaNoAutorizado } from '@/lib/api-auth'
 
 const PLAN_IDS: Record<string, string> = {
   modulo: 'e13b7ec1809545f0965ff3ac21b06291',
@@ -10,6 +11,9 @@ const PLAN_IDS: Record<string, string> = {
 const BASE = process.env.NEXT_PUBLIC_APP_URL ?? 'https://ingeniumpro.store'
 
 export async function POST(req: NextRequest) {
+  const payload = verificarTokenAPI(req);
+  if (!payload) return respuestaNoAutorizado();
+
   const accessToken = process.env.MP_ACCESS_TOKEN
   if (!accessToken) {
     console.error('[pagos/checkout] MP_ACCESS_TOKEN no configurado')

@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { verificarTokenAPI, respuestaNoAutorizado } from '@/lib/api-auth';
 
 function calcBHP(TVD: number, mudWeight: number, cuttingsLoad = 0) {
   const hydrostaticPsi = 0.052 * mudWeight * TVD;
@@ -23,6 +24,8 @@ function calcMudWeight(porePresGrad: number, safetyFactor = 0.5) {
 }
 
 export async function POST(req: Request) {
+  const payload = verificarTokenAPI(req);
+  if (!payload) return respuestaNoAutorizado();
   try {
     const body = await req.json();
     const TVD       = Number(body.TVD)       || 0;
