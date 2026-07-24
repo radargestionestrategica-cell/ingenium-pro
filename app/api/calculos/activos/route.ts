@@ -26,13 +26,19 @@ export async function GET(req: NextRequest) {
 
     const porActivo = new Map<string, ActivoResumen>();
 
+    // Clave de agrupacion normalizada (minusculas, espacios colapsados) para
+    // no duplicar el mismo activo por variaciones de tipeo; el nombre mostrado
+    // sigue siendo el original del calculo mas reciente de ese grupo.
+    const normalizar = (s: string) => s.trim().toLowerCase().replace(/\s+/g, ' ');
+
     // data viene ordenado desc (mas reciente primero), asi que el primer
     // registro visto por activo es el ultimo cronologicamente.
     for (const c of data) {
       const nombre = c.activoNombre as string;
-      const existente = porActivo.get(nombre);
+      const clave = normalizar(nombre);
+      const existente = porActivo.get(clave);
       if (!existente) {
-        porActivo.set(nombre, {
+        porActivo.set(clave, {
           nombre,
           ultimoTipo: c.tipo,
           ultimaAlerta: c.alerta,
