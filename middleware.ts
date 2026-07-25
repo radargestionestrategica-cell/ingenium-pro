@@ -14,6 +14,7 @@ const PUBLIC_API = [
   '/api/v1/auth/verificar-email',      // pública — usuario sin sesión verifica su email
   '/api/v1/auth/reenviar-verificacion', // pública — usuario sin sesión reenvía verificación
   '/api/pagos/webhook',
+  '/api/v1/health',
   '/planes',
   '/api/planes/elegir',
 ];
