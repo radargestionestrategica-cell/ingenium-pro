@@ -347,7 +347,7 @@ export default function LandingPage() {
 
         /* ── RESPONSIVE ── */
         @media(max-width:1000px){
-          .nav-link:not(.login-btn){display:none}
+          .nav-link:not(.login-btn):not(.modulos-link){display:none}
           .hero-stats{grid-template-columns:repeat(2,1fr)}
           .h-stat:nth-child(2){border-right:none}
           .h-stat:nth-child(3){border-right:1px solid rgba(255,255,255,.06);border-top:1px solid rgba(255,255,255,.06)}
@@ -396,7 +396,7 @@ export default function LandingPage() {
           </a>
           <nav className="nav" aria-label="Navegación principal">
             <a href="#problema"     className="nav-link">Problema</a>
-            <a href="#modulos"      className="nav-link">Módulos</a>
+            <a href="/modulos"      className="nav-link modulos-link">Módulos</a>
             <a href="#normas"       className="nav-link">Normativas</a>
             <a href="#diferenciales"className="nav-link">Diferenciales</a>
             <a href="#cruce"        className="nav-link">Cruce IA</a>
@@ -617,6 +617,10 @@ export default function LandingPage() {
           </div>
 
           <ModulosCarrusel modulos={modulos} />
+
+          <div style={{ textAlign: 'center', marginTop: 28 }}>
+            <a href="/modulos" className="btn-secondary">Ver el detalle técnico de los 15 módulos →</a>
+          </div>
         </div>
       </section>
 
@@ -972,7 +976,7 @@ export default function LandingPage() {
           </div>
           <div className="footer-links">
             <a href="#planes">Planes</a>
-            <a href="#modulos">Módulos</a>
+            <a href="/modulos">Módulos</a>
             <a href="#normas">Normativas</a>
             <a href="/terminos">Términos de uso</a>
             <a href="/privacidad">Privacidad</a>

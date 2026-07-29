@@ -153,6 +153,16 @@ export default function ModuloGeotecniaPage() {
           </p>
         </div>
 
+        {/* MÓDULOS RELACIONADOS */}
+        <section style={{ marginBottom: 40 }}>
+          <h2 style={{ fontSize: 20, fontWeight: 800, marginBottom: 12, color: '#f1f5f9' }}>Módulos relacionados</h2>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12 }}>
+            <a href="/modulos/telemetria" style={{ display: 'block', background: PANEL, border: `1px solid ${BORD}`, borderRadius: 10, padding: '14px 16px', textDecoration: 'none', color: '#f1f5f9', fontSize: 14, fontWeight: 700 }}>Telemetría de activos →</a>
+            <a href="/modulos/mineria" style={{ display: 'block', background: PANEL, border: `1px solid ${BORD}`, borderRadius: 10, padding: '14px 16px', textDecoration: 'none', color: '#f1f5f9', fontSize: 14, fontWeight: 700 }}>Minería →</a>
+            <a href="/modulos/inteligencia-cruzada" style={{ display: 'block', background: PANEL, border: `1px solid ${BORD}`, borderRadius: 10, padding: '14px 16px', textDecoration: 'none', color: '#f1f5f9', fontSize: 14, fontWeight: 700 }}>Inteligencia Cruzada →</a>
+          </div>
+        </section>
+
         {/* CTA */}
         <div style={{ textAlign: 'center' }}>
           <a href="/planes" style={{
