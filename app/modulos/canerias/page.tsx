@@ -1,12 +1,10 @@
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Cálculo de espesor mínimo y vida remanente de cañerías online — INGENIUM PRO',
+  title: 'Espesor mínimo y vida remanente de cañerías — INGENIUM PRO',
   description:
-    'Cálculo normativo de integridad de cañerías: espesor mínimo por presión según ASME B31.8/B31.4 ' +
-    '(fórmula de Barlow), hoop stress y vida remanente estimada por tasa de corrosión medida según ' +
-    'API 579-1/ASME FFS-1 y API 570. Informe PDF sellado con hash SHA-256 y QR de verificación pública, ' +
-    'más exportación Excel y DXF.',
+    'Cálculo de espesor mínimo por presión (ASME B31.8/B31.4, Barlow), hoop stress y vida remanente ' +
+    'por corrosión según API 579-1. PDF sellado, Excel y DXF.',
   alternates: {
     canonical: 'https://ingeniumpro.store/modulos/canerias',
   },

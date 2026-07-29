@@ -3,9 +3,8 @@ import type { Metadata } from 'next'
 export const metadata: Metadata = {
   title: 'Calculadora MAOP ASME B31.8 online — INGENIUM PRO',
   description:
-    'Calculadora online de MAOP (Máxima Presión Operativa Admisible) para cañerías de petróleo y gas: ' +
-    'cálculo normativo de petróleo y gas según ASME B31.8 §841.11, fórmula de Barlow, materiales API 5L, ' +
-    'informe PDF sellado con hash SHA-256 y QR de verificación pública, más exportación Excel y DXF.',
+    'Calculadora de MAOP para petróleo y gas según ASME B31.8 §841.11, fórmula de Barlow y API 5L. ' +
+    'Informe PDF sellado con QR de verificación, Excel y DXF.',
   alternates: {
     canonical: 'https://ingeniumpro.store/modulos/petroleo-gas',
   },

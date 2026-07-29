@@ -1,11 +1,10 @@
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Calculadora estructural online — columnas ACI 318-19 y vigas AISC 360-22 — INGENIUM PRO',
+  title: 'Columnas ACI 318-19 y vigas AISC 360-22 — INGENIUM PRO',
   description:
-    'Calculadora estructural online: columnas de hormigón armado según ACI 318-19 §22.4.2 (φ=0.65) con ' +
-    'cuantía longitudinal 1–8% y momento mínimo por excentricidad accidental, y vigas de acero según ' +
-    'AISC 360-22 LRFD con combinaciones ASCE 7-22, con informe PDF sellado, Excel y DXF.',
+    'Columnas de hormigón armado según ACI 318-19 §22.4.2 y vigas de acero según AISC 360-22 LRFD ' +
+    'con combinaciones ASCE 7-22. Informe PDF sellado, Excel y DXF.',
   alternates: {
     canonical: 'https://ingeniumpro.store/modulos/civil',
   },

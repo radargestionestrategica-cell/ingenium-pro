@@ -1,11 +1,10 @@
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Calculadora de arquitectura online — viento ASCE 7-22, iluminación IRAM 11601 y sismo CIRSOC 103 — INGENIUM PRO',
+  title: 'Viento ASCE 7-22 e iluminación IRAM 11601 — INGENIUM PRO',
   description:
-    'Calculadora de arquitectura online: carga de viento según ASCE 7-22, iluminación natural y ventilación ' +
-    'según IRAM 11601 / ASHRAE 62.1, y cortante basal sísmico por fuerza lateral equivalente ' +
-    'INPRES-CIRSOC 103:2013, con informe PDF sellado, Excel y DXF.',
+    'Carga de viento según ASCE 7-22, iluminación natural según IRAM 11601 y cortante basal sísmico ' +
+    'según INPRES-CIRSOC 103:2013. Informe PDF sellado, Excel y DXF.',
   alternates: {
     canonical: 'https://ingeniumpro.store/modulos/arquitectura',
   },

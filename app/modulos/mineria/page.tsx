@@ -1,11 +1,10 @@
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Calculadora de minería online — RMR Bieniawski y ventilación subterránea — INGENIUM PRO',
+  title: 'RMR Bieniawski y ventilación subterránea — INGENIUM PRO',
   description:
-    'Calculadora de minería online: clasificación geomecánica RMR de Bieniawski (1989) con las clases I a V y ' +
-    'tiempo de auto-sostenimiento, y ventilación subterránea según DS 024-2016-EM (Perú) y DS 132 (Chile) — ' +
-    'velocidad y caudal de aire mínimos y límite de CO, con informe PDF sellado, Excel y DXF.',
+    'Clasificación geomecánica RMR de Bieniawski (1989) y ventilación subterránea según DS 024-2016-EM ' +
+    '(Perú) y DS 132 (Chile). Informe PDF sellado, Excel y DXF.',
   alternates: {
     canonical: 'https://ingeniumpro.store/modulos/mineria',
   },

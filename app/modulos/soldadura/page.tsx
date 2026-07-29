@@ -1,12 +1,10 @@
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Cálculo de soldadura AWS D1.1 y ASME IX online — INGENIUM PRO',
+  title: 'Soldadura AWS D1.1 y ASME IX online — INGENIUM PRO',
   description:
-    'Calculadora online de soldadura metalúrgica: selector de electrodo AWS A5.1, calor aportado (heat input) ' +
-    'según ASME Sec. IX / AWS D1.1 §6.8.5, resistencia de filete AWS D1.1 / AISC-360 y carbono equivalente con ' +
-    'temperatura de precalentamiento según AWS D1.1 y API 1104, informe PDF sellado con hash SHA-256 y QR de ' +
-    'verificación pública, más exportación Excel y DXF.',
+    'Selector de electrodo AWS A5.1, calor aportado según ASME Sec. IX / AWS D1.1 y carbono equivalente ' +
+    'con precalentamiento AWS D1.1 / API 1104. PDF, Excel y DXF.',
   alternates: {
     canonical: 'https://ingeniumpro.store/modulos/soldadura',
   },

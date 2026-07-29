@@ -1,11 +1,10 @@
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Calculadora de perforación online — BHP, gradiente de fractura y reología API RP 13D — INGENIUM PRO',
+  title: 'BHP, gradiente de fractura y reología — INGENIUM PRO',
   description:
-    'Calculadora de perforación online: presión de fondo (BHP), gradiente de fractura (Eaton), peso de lodo ' +
-    'y ECD, y reología del lodo (Bingham, Power Law, Herschel-Bulkley) según API RP 13D, con verificación de ' +
-    'limpieza del pozo, informe PDF sellado, Excel y DXF.',
+    'Presión de fondo (BHP), gradiente de fractura de Eaton, peso de lodo y ECD, y reología del lodo ' +
+    'según API RP 13D (Bingham, Power Law). PDF sellado, Excel y DXF.',
   alternates: {
     canonical: 'https://ingeniumpro.store/modulos/perforacion',
   },

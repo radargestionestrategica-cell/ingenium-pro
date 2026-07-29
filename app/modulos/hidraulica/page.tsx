@@ -1,12 +1,10 @@
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Cálculo de golpe de ariete y pérdida de carga online — INGENIUM PRO',
+  title: 'Golpe de ariete y pérdida de carga online — INGENIUM PRO',
   description:
-    'Cálculo normativo de hidráulica de cañerías: pérdida de carga por fricción con Darcy-Weisbach y ' +
-    'Swamee-Jain (aproximación de Colebrook-White), y sobrepresión transitoria por golpe de ariete según ' +
-    'Joukowsky (1898) y AWWA M11. Informe PDF sellado con hash SHA-256 y QR de verificación pública, más ' +
-    'exportación Excel y DXF.',
+    'Pérdida de carga por fricción (Darcy-Weisbach, Swamee-Jain) y sobrepresión por golpe de ariete ' +
+    'según Joukowsky y AWWA M11. Informe PDF sellado, Excel y DXF.',
   alternates: {
     canonical: 'https://ingeniumpro.store/modulos/hidraulica',
   },

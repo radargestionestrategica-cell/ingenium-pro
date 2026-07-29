@@ -1,11 +1,10 @@
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Calculadora vial online — pavimento AASHTO 93 y drenaje HEC-22 — INGENIUM PRO',
+  title: 'Pavimento AASHTO 93 y drenaje HEC-22 — INGENIUM PRO',
   description:
-    'Calculadora vial online: número estructural SN de pavimento flexible por la ecuación empírica ' +
-    'AASHTO 1993 (ESAL W18) y drenaje de cuneta por método Racional + Manning verificado contra ' +
-    'FHWA HEC-22 4th Ed. (2024), con informe PDF sellado, Excel y DXF.',
+    'Número estructural SN de pavimento flexible por AASHTO 1993 (ESAL W18) y drenaje de cuneta por ' +
+    'método Racional + Manning (FHWA HEC-22). PDF, Excel y DXF.',
   alternates: {
     canonical: 'https://ingeniumpro.store/modulos/vialidad',
   },

@@ -1,11 +1,10 @@
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Calculadora de represas online — vertedero Francis, filtración Darcy y estabilidad — INGENIUM PRO',
+  title: 'Vertedero Francis, filtración Darcy — INGENIUM PRO',
   description:
-    'Calculadora de represas online: caudal de vertedero por fórmula de Francis (USACE EM 1110-2-1603), ' +
-    'filtración por Ley de Darcy (USACE EM 1110-2-1901) y estabilidad de presa de gravedad ' +
-    '(USACE EM 1110-2-2200), con informe PDF sellado, Excel y DXF.',
+    'Caudal de vertedero por fórmula de Francis, filtración por Ley de Darcy y estabilidad de presa de ' +
+    'gravedad (USACE EM 1110-2). Informe PDF sellado, Excel y DXF.',
   alternates: {
     canonical: 'https://ingeniumpro.store/modulos/represas',
   },

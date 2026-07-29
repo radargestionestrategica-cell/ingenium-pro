@@ -1,11 +1,10 @@
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Calculadora Cv de válvulas industriales online — INGENIUM PRO',
+  title: 'Calculadora Cv de válvulas online — INGENIUM PRO',
   description:
-    'Calculadora online del coeficiente de flujo Cv y Kv de válvulas industriales según ISA 75.01.01: ' +
-    'cálculo normativo de válvulas con selección de clase ASME B16.34, material NACE MR0175/ISO 15156 y ' +
-    'bridas ASME B16.5, informe PDF sellado con hash SHA-256 y QR de verificación pública, más Excel y DXF.',
+    'Calculadora del coeficiente Cv y Kv de válvulas industriales según ISA 75.01.01, clase ASME B16.34 ' +
+    'y material NACE MR0175. Informe PDF sellado, Excel y DXF.',
   alternates: {
     canonical: 'https://ingeniumpro.store/modulos/valvulas',
   },

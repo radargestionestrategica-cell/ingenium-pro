@@ -1,13 +1,10 @@
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Cálculo de estabilidad de taludes método de Bishop online — INGENIUM PRO',
+  title: 'Estabilidad de taludes método Bishop online — INGENIUM PRO',
   description:
-    'Calculadora online de estabilidad de taludes por el método simplificado de Bishop (1955), con búsqueda ' +
-    'automática de círculo de falla crítico según práctica geotécnica estándar (FS mínimo 1.5 para taludes ' +
-    'permanentes), más capacidad portante de fundaciones por ' +
-    'Meyerhof con nivel freático, informe PDF sellado con hash SHA-256 y QR de verificación pública, más ' +
-    'exportación Excel y DXF.',
+    'Estabilidad de taludes por método de Bishop (1955) con círculo de falla crítico, y capacidad ' +
+    'portante según Meyerhof. Informe PDF sellado, Excel y DXF.',
   alternates: {
     canonical: 'https://ingeniumpro.store/modulos/geotecnia',
   },

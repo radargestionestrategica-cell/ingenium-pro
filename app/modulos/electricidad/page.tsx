@@ -1,11 +1,10 @@
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Calculadora eléctrica online — ampacidad, caída de tensión y cortocircuito — INGENIUM PRO',
+  title: 'Ampacidad, caída de tensión y cortocircuito — INGENIUM PRO',
   description:
-    'Calculadora eléctrica online: selección de calibre por ampacidad NEC Tabla 310.16 con correcciones, ' +
-    'caída de tensión (IEC 60364-5-52 Anexo G y AEA 90364-7-771), corriente de cortocircuito IEC 60909-0:2016 ' +
-    'y clasificación de áreas peligrosas IEC 60079-10-1 / API RP 500, con informe PDF sellado, Excel y DXF.',
+    'Calibre por ampacidad NEC Tabla 310.16, caída de tensión IEC 60364-5-52, cortocircuito IEC 60909-0 ' +
+    'y áreas peligrosas IEC 60079-10-1. PDF sellado, Excel y DXF.',
   alternates: {
     canonical: 'https://ingeniumpro.store/modulos/electricidad',
   },

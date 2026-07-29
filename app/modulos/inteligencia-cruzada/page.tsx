@@ -1,12 +1,10 @@
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Inteligencia Cruzada entre cálculos de ingeniería — INGENIUM PRO',
+  title: 'Inteligencia Cruzada entre cálculos técnicos — INGENIUM PRO',
   description:
-    'Motor de Inteligencia Cruzada: 10 reglas determinísticas que cruzan los cálculos guardados de distintos ' +
-    'módulos de un mismo proyecto (MAOP, hidráulica, geotecnia, soldadura, estructuras, minería) y detectan ' +
-    'riesgos combinados con normativa real citada — erosión-corrosión, SCC, deslizamiento, sifonamiento y más. ' +
-    'Sin IA que invente valores: cada alerta traza a datos reales del historial.',
+    'Motor de 10 reglas determinísticas que cruzan cálculos de módulos (MAOP, hidráulica, geotecnia, ' +
+    'soldadura, minería) y detectan riesgos con normativa citada.',
   alternates: {
     canonical: 'https://ingeniumpro.store/modulos/inteligencia-cruzada',
   },

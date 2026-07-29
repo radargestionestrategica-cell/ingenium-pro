@@ -1,12 +1,10 @@
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Telemetría de activos con predicción de falla de taludes Fukuzono online — INGENIUM PRO',
+  title: 'Telemetría de taludes y predicción Fukuzono — INGENIUM PRO',
   description:
-    'Módulo de telemetría de activos geotécnicos: carga de lecturas de campo (nivel y desplazamiento superficial), ' +
-    'Factor de Seguridad de talud automático por Bishop simplificado con búsqueda del círculo crítico, predicción ' +
-    'de fecha de falla por velocidad inversa de Fukuzono (1985) con su advertencia de aplicabilidad, e informes ' +
-    'sellados con hash SHA-256 y QR de verificación pública.',
+    'Telemetría geotécnica: Factor de Seguridad de talud por Bishop y predicción de falla por velocidad ' +
+    'inversa de Fukuzono (1985). Informes sellados con QR.',
   alternates: {
     canonical: 'https://ingeniumpro.store/modulos/telemetria',
   },
