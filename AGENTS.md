@@ -212,13 +212,11 @@ UPSTASH_REDIS_REST_URL (opcional), UPSTASH_REDIS_REST_TOKEN (opcional)
 | JSON-LD `SoftwareApplication` | ✅ |
 | JSON-LD `Organization` | ✅ RADAR Gestión Estratégica |
 | Favicon | ✅ `app/icon.tsx` — Ω dorado 64×64 |
-| Google Search Console | ⚠️ Pendiente enviar sitemap manualmente |
+| Google Search Console | ✅ Sitemap enviado (2026-07-28) |
 
 ## 7. Próximos pasos pendientes
 
-| # | Tarea | Prioridad |
-|---|---|---|
-| 1 | Enviar sitemap en Google Search Console (`search.google.com/search-console`) | Media |
+Ninguno registrado.
 
 ---
 
