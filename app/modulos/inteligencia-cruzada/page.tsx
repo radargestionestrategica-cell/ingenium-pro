@@ -11,6 +11,24 @@ export const metadata: Metadata = {
   robots: { index: true, follow: true },
 }
 
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'SoftwareApplication',
+  name: 'Inteligencia Cruzada entre cálculos técnicos — INGENIUM PRO',
+  description:
+    'Motor de 10 reglas determinísticas que cruzan cálculos de módulos (MAOP, hidráulica, geotecnia, ' +
+    'soldadura, minería) y detectan riesgos con normativa citada.',
+  url: 'https://ingeniumpro.store/modulos/inteligencia-cruzada',
+  applicationCategory: 'EngineeringApplication',
+  operatingSystem: 'Web',
+  inLanguage: 'es',
+  author: {
+    '@type': 'Organization',
+    name: 'INGENIUM PRO',
+    url: 'https://ingeniumpro.store',
+  },
+}
+
 const BG    = '#020609'
 const PANEL = '#0a0f1e'
 const GOLD  = '#E8A020'
@@ -34,6 +52,10 @@ const REGLAS: { id: string; titulo: string; normativa: string }[] = [
 export default function ModuloInteligenciaCruzadaPage() {
   return (
     <div style={{ minHeight: '100vh', background: BG, color: '#f1f5f9', fontFamily: 'Inter,sans-serif' }}>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
 
       {/* HEADER */}
       <header style={{ background: PANEL, borderBottom: `1px solid ${BORD}`, padding: '16px 24px', display: 'flex', alignItems: 'center', gap: 12 }}>

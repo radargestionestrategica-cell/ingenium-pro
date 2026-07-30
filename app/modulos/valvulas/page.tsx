@@ -11,6 +11,31 @@ export const metadata: Metadata = {
   robots: { index: true, follow: true },
 }
 
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'SoftwareApplication',
+  name: 'Calculadora Cv de válvulas online — INGENIUM PRO',
+  description:
+    'Calculadora del coeficiente Cv y Kv de válvulas industriales según ISA 75.01.01, clase ASME B16.34 ' +
+    'y material NACE MR0175. Informe PDF sellado, Excel y DXF.',
+  url: 'https://ingeniumpro.store/modulos/valvulas',
+  applicationCategory: 'EngineeringApplication',
+  operatingSystem: 'Web',
+  inLanguage: 'es',
+  author: {
+    '@type': 'Organization',
+    name: 'INGENIUM PRO',
+    url: 'https://ingeniumpro.store',
+  },
+  offers: {
+    '@type': 'Offer',
+    price: '45000',
+    priceCurrency: 'ARS',
+    url: 'https://ingeniumpro.store/planes/modulo-unico',
+    availability: 'https://schema.org/InStock',
+  },
+}
+
 const BG    = '#020609'
 const PANEL = '#0a0f1e'
 const GOLD  = '#E8A020'
@@ -21,6 +46,10 @@ const BORD  = 'rgba(232,160,32,0.15)'
 export default function ModuloValvulasPage() {
   return (
     <div style={{ minHeight: '100vh', background: BG, color: '#f1f5f9', fontFamily: 'Inter,sans-serif' }}>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
 
       {/* HEADER */}
       <header style={{ background: PANEL, borderBottom: `1px solid ${BORD}`, padding: '16px 24px', display: 'flex', alignItems: 'center', gap: 12 }}>
