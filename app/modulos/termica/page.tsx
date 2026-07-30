@@ -130,10 +130,8 @@ export default function ModuloTermicaPage() {
         <section style={{ marginBottom: 36 }}>
           <h2 style={{ fontSize: 20, fontWeight: 800, marginBottom: 12, color: '#f1f5f9' }}>Normas aplicadas</h2>
           <p style={{ fontSize: 15, color: LIGHT, lineHeight: 1.8 }}>
-            ASME VIII Div.1, TEMA Standards y Kern (1950) — Process Heat Transfer, para el dimensionamiento
-            de intercambiadores. ASME B31.3-2022 Appendix C para la dilatación térmica de cañerías. El
-            esfuerzo admisible de referencia (150 MPa) aplica al acero al carbono tipo A36; para el resto de
-            los materiales se muestra una advertencia para verificar con la tabla específica correspondiente.
+            Método LMTD y correlaciones de Kern para la estimación térmica. La verificación mecánica debe
+            realizarse según ASME VIII y TEMA cuando corresponda.
           </p>
         </section>
 

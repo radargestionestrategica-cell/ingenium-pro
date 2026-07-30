@@ -67,7 +67,7 @@ export default function ModuloMMOPage() {
             Módulo MMO — Maestro Mayor de Obra
           </div>
           <h1 style={{ fontSize: 32, fontWeight: 900, lineHeight: 1.2, marginBottom: 16 }}>
-            Cómputo de materiales de obra — CIRSOC 201
+            Cómputo y dosificación de materiales de obra
           </h1>
           <p style={{ fontSize: 16, color: LIGHT, lineHeight: 1.8 }}>
             Cómputo y dosificación de materiales para 11 rubros de obra — hormigón, hierro, mampostería,
