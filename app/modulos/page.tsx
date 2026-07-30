@@ -29,6 +29,7 @@ const CLUSTERS: { titulo: string; modulos: Modulo[] }[] = [
       { slug: 'canerias',     nombre: 'Cañerías & Integridad', norma: 'ASME B31.8/B31.4 · API 579' },
       { slug: 'valvulas',     nombre: 'Válvulas Industriales', norma: 'ISA 75.01.01 · ASME B16.34' },
       { slug: 'perforacion',  nombre: 'Perforación',           norma: 'API RP 13D' },
+      { slug: 'termica',      nombre: 'Térmica',                norma: 'ASME VIII · TEMA' },
     ],
   },
   {
@@ -54,6 +55,7 @@ const CLUSTERS: { titulo: string; modulos: Modulo[] }[] = [
       { slug: 'arquitectura',  nombre: 'Arquitectura Técnica', norma: 'ASCE 7-22 · CIRSOC 103' },
       { slug: 'soldadura',     nombre: 'Soldadura',            norma: 'AWS D1.1 · ASME Sec. IX' },
       { slug: 'electricidad',  nombre: 'Electricidad',         norma: 'NEC 310.16 · IEC 60909' },
+      { slug: 'mmo',           nombre: 'MMO — Maestro Mayor de Obra', norma: 'CIRSOC 201 · CIRSOC 501-E' },
     ],
   },
   {
