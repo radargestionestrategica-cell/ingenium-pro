@@ -58,7 +58,7 @@ export default function OGImage() {
         <div style={{
           display: 'flex', gap: 16, marginTop: 32,
         }}>
-          {['ASME B31.8', 'API 6D', 'ISO', 'IEC', '15 MÓDULOS'].map(tag => (
+          {['ASME B31.8', 'API 6D', 'ISO', 'IEC', '17 MÓDULOS'].map(tag => (
             <div
               key={tag}
               style={{

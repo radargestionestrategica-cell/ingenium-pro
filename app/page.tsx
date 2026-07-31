@@ -619,7 +619,7 @@ export default function LandingPage() {
           <ModulosCarrusel modulos={modulos} />
 
           <div style={{ textAlign: 'center', marginTop: 28 }}>
-            <a href="/modulos" className="btn-secondary">Ver el detalle técnico de los 15 módulos →</a>
+            <a href="/modulos" className="btn-secondary">Ver el detalle técnico de los 17 módulos →</a>
           </div>
         </div>
       </section>
