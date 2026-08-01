@@ -3,9 +3,8 @@ import type { Metadata } from 'next'
 export const metadata: Metadata = {
   title: 'Módulos técnicos de ingeniería — INGENIUM PRO',
   description:
-    'Los 17 módulos de cálculo normativo de INGENIUM PRO: petróleo y gas, cañerías, válvulas, perforación, ' +
-    'hidráulica, geotecnia, minería, telemetría, electricidad, soldadura, civil, arquitectura, represas, ' +
-    'vialidad e inteligencia cruzada. Informe PDF sellado, Excel y DXF en cada módulo.',
+    'Los 17 módulos de cálculo normativo de INGENIUM PRO: petróleo y gas, cañerías, hidráulica, geotecnia, ' +
+    'MMO y térmica, entre otros. PDF sellado, Excel y DXF.',
   alternates: {
     canonical: 'https://ingeniumpro.store/modulos',
   },
