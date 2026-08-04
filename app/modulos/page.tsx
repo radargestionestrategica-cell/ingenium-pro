@@ -3,8 +3,7 @@ import type { Metadata } from 'next'
 export const metadata: Metadata = {
   title: 'Módulos técnicos de ingeniería — INGENIUM PRO',
   description:
-    'Los 17 módulos de cálculo normativo de INGENIUM PRO: petróleo y gas, cañerías, hidráulica, geotecnia, ' +
-    'MMO y térmica, entre otros. PDF sellado, Excel y DXF.',
+    '15 módulos técnicos de INGENIUM PRO (petróleo, cañerías, hidráulica, MMO, térmica y más) y 2 capacidades avanzadas: Telemetría e Inteligencia Cruzada.',
   alternates: {
     canonical: 'https://ingeniumpro.store/modulos',
   },
@@ -85,7 +84,7 @@ export default function ModulosIndexPage() {
             Módulos técnicos
           </div>
           <h1 style={{ fontSize: 32, fontWeight: 900, lineHeight: 1.2, marginBottom: 16 }}>
-            17 módulos de cálculo normativo
+            15 módulos técnicos
           </h1>
           <p style={{ fontSize: 16, color: LIGHT, lineHeight: 1.8, maxWidth: 720 }}>
             Cada módulo aplica fórmulas y normas identificables — ASME, API, AWS, ACI, AISC, AASHTO, NEC, IEC
