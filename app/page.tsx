@@ -426,7 +426,7 @@ export default function LandingPage() {
         <div className="wrap">
           <div className="hero-badge">
             <span className="dot-live" aria-hidden="true" />
-            Plataforma activa · cálculo · auditoría IA · trazabilidad profesional
+            Plataforma activa · 15 módulos + 2 capacidades avanzadas · trazabilidad profesional
           </div>
 
           <h1>
@@ -435,9 +435,10 @@ export default function LandingPage() {
           </h1>
 
           <p className="hero-copy">
-            INGENIUM Pro centraliza 15 módulos de cálculo técnico con más de 130 normativas internacionales verificadas,
-            auditoría IA, exportación PDF · Excel · DXF y firma QR en un único flujo de trabajo profesional.
-            Para ingenieros que necesitan velocidad, precisión y trazabilidad sin concesiones.
+            INGENIUM Pro centraliza 15 módulos técnicos y 2 capacidades avanzadas —Telemetría e Inteligencia
+            Cruzada— que conectan los cálculos de un mismo proyecto, con más de 130 normativas verificadas,
+            exportación PDF · Excel · DXF y firma QR. No es una calculadora aislada: es un único flujo de
+            trabajo profesional, verificable de punta a punta.
           </p>
           <p className="hero-note">
             <strong>Regla profesional:</strong> Si ahorra 2 horas de un ingeniero senior al mes, ya se pagó solo.
@@ -445,7 +446,7 @@ export default function LandingPage() {
 
           <div className="actions">
             <a href="/register" className="btn-primary">Probar demo profesional →</a>
-            <a href="#modulos" className="btn-secondary">Ver módulos técnicos</a>
+            <a href="#modulos" className="btn-secondary">Ver módulos y capacidades →</a>
           </div>
 
           <div className="hero-stats" aria-label="Indicadores clave de INGENIUM Pro">
