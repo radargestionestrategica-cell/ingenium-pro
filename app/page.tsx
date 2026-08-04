@@ -451,7 +451,7 @@ export default function LandingPage() {
 
           <div className="hero-stats" aria-label="Indicadores clave de INGENIUM Pro">
             {[
-              { val:'15',          lbl:'Módulos técnicos activos' },
+              { val:'15 + 2',      lbl:'Módulos + capacidades' },
               { val:'130+',        lbl:'Normativas internacionales integradas' },
               { val:'PDF·XLS·DXF', lbl:'Formatos de exportación profesional' },
               { val:'IA + QR',     lbl:'Auditoría y trazabilidad verificable' },
