@@ -31,10 +31,9 @@ const CLUSTERS: { titulo: string; modulos: Modulo[] }[] = [
     ],
   },
   {
-    titulo: 'Geomecánica & monitoreo de activos',
+    titulo: 'Geotecnia & Minería',
     modulos: [
       { slug: 'geotecnia',  nombre: 'Geotecnia — Estabilidad de taludes', norma: 'Bishop 1955 · Meyerhof' },
-      { slug: 'telemetria', nombre: 'Telemetría de activos',              norma: 'Fukuzono 1985 · Bishop' },
       { slug: 'mineria',    nombre: 'Minería',                            norma: 'Bieniawski 1989' },
     ],
   },
@@ -56,12 +55,12 @@ const CLUSTERS: { titulo: string; modulos: Modulo[] }[] = [
       { slug: 'mmo',           nombre: 'MMO — Maestro Mayor de Obra', norma: 'CIRSOC 201 · CIRSOC 501-E' },
     ],
   },
-  {
-    titulo: 'Transversal',
-    modulos: [
-      { slug: 'inteligencia-cruzada', nombre: 'Inteligencia Cruzada', norma: 'Motor determinístico multi-módulo' },
-    ],
-  },
+]
+
+// Sección independiente, fuera de los clústeres técnicos
+const CAPACIDADES_AVANZADAS: Modulo[] = [
+  { slug: 'telemetria',           nombre: 'Telemetría de activos', norma: 'Fukuzono 1985 · Bishop' },
+  { slug: 'inteligencia-cruzada', nombre: 'Inteligencia Cruzada',  norma: 'Motor determinístico multi-módulo' },
 ]
 
 export default function ModulosIndexPage() {
@@ -126,6 +125,40 @@ export default function ModulosIndexPage() {
             </div>
           </section>
         ))}
+
+        {/* CAPACIDADES AVANZADAS — sección independiente, visualmente separada de los 15 módulos técnicos */}
+        <div style={{ borderTop: `1px solid ${BORD}`, paddingTop: 40, marginTop: 8 }}>
+          <section style={{ marginBottom: 40 }}>
+            <h2 style={{ fontSize: 13, fontWeight: 800, letterSpacing: 1.5, textTransform: 'uppercase', color: GRAY, marginBottom: 16 }}>
+              Capacidades avanzadas
+            </h2>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 14 }}>
+              {CAPACIDADES_AVANZADAS.map(m => (
+                <a
+                  key={m.slug}
+                  href={`/modulos/${m.slug}`}
+                  style={{
+                    display: 'block',
+                    background: PANEL,
+                    border: `1px solid ${BORD}`,
+                    borderRadius: 12,
+                    padding: '18px 20px',
+                    textDecoration: 'none',
+                    color: '#f1f5f9',
+                  }}
+                >
+                  <div style={{ fontSize: 15, fontWeight: 800, marginBottom: 8 }}>{m.nombre}</div>
+                  <div style={{
+                    fontSize: 11, fontWeight: 700, letterSpacing: .2, color: GOLD,
+                    fontFamily: 'ui-monospace,SFMono-Regular,Menlo,monospace',
+                  }}>
+                    {m.norma}
+                  </div>
+                </a>
+              ))}
+            </div>
+          </section>
+        </div>
 
         {/* CTA */}
         <div style={{ textAlign: 'center', marginTop: 8 }}>
