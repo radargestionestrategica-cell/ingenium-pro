@@ -136,3 +136,83 @@ export function linealizarRTD(r0: TipoRTD, resistenciaOhms: number): ResultadoRT
     norma: `IEC 60751 — Callendar-Van Dusen, Pt${r0}`,
   };
 }
+
+// ═══════════════════════════════════════════════════════════════
+// Verificación de clase de tolerancia de fábrica.
+//
+// La banda de tolerancia depende solo de la clase y de |t| — no del
+// tipo de aleación (K/J) ni del R0 (Pt100/Pt1000), que por eso no son
+// parámetros de esta función: IEC 60584-1 define la misma fórmula por
+// clase para K y J, e IEC 60751:2022 la misma fórmula por clase (en °C)
+// para Pt100 y Pt1000.
+//
+// Termocupla — IEC 60584-1:
+//   Clase 1: ±1.5°C hasta 375°C, luego ±0.004·|t|
+//   Clase 2: ±2.5°C hasta 333°C, luego ±0.0075·|t|
+//
+// RTD — IEC 60751:2022:
+//   Clase AA: ±(0.10 + 0.0017·|t|)   Clase A: ±(0.15 + 0.002·|t|)
+//   Clase B:  ±(0.30 + 0.005·|t|)    Clase C: ±(0.60 + 0.01·|t|)
+// ═══════════════════════════════════════════════════════════════
+
+export type ClaseTermocupla = 1 | 2;
+export type ClaseRTD = 'AA' | 'A' | 'B' | 'C';
+
+export type SensorTolerancia =
+  | { familia: 'termocupla'; clase: ClaseTermocupla }
+  | { familia: 'rtd'; clase: ClaseRTD };
+
+export interface ResultadoTolerancia {
+  familia: 'termocupla' | 'rtd';
+  clase: ClaseTermocupla | ClaseRTD;
+  temperaturaEsperadaC: number;
+  temperaturaMedidaC: number;
+  toleranciaC: number;
+  desviacionC: number;
+  dentroDeTolerancia: boolean;
+  norma: string;
+}
+
+function toleranciaTermocupla(clase: ClaseTermocupla, t: number): number {
+  const tAbs = Math.abs(t);
+  if (clase === 1) return tAbs <= 375 ? 1.5 : 0.004 * tAbs;
+  return tAbs <= 333 ? 2.5 : 0.0075 * tAbs;
+}
+
+const TABLA_TOLERANCIA_RTD: Record<ClaseRTD, { base: number; coef: number }> = {
+  AA: { base: 0.10, coef: 0.0017 },
+  A:  { base: 0.15, coef: 0.002 },
+  B:  { base: 0.30, coef: 0.005 },
+  C:  { base: 0.60, coef: 0.01 },
+};
+
+function toleranciaRTD(clase: ClaseRTD, t: number): number {
+  const { base, coef } = TABLA_TOLERANCIA_RTD[clase];
+  return base + coef * Math.abs(t);
+}
+
+export function evaluarTolerancia(
+  sensor: SensorTolerancia,
+  temperaturaEsperadaC: number,
+  temperaturaMedidaC: number,
+): ResultadoTolerancia {
+  const toleranciaC = sensor.familia === 'termocupla'
+    ? toleranciaTermocupla(sensor.clase, temperaturaEsperadaC)
+    : toleranciaRTD(sensor.clase, temperaturaEsperadaC);
+
+  const desviacionC = temperaturaMedidaC - temperaturaEsperadaC;
+  const dentroDeTolerancia = Math.abs(desviacionC) <= toleranciaC;
+
+  return {
+    familia: sensor.familia,
+    clase: sensor.clase,
+    temperaturaEsperadaC,
+    temperaturaMedidaC,
+    toleranciaC,
+    desviacionC,
+    dentroDeTolerancia,
+    norma: sensor.familia === 'termocupla'
+      ? `IEC 60584-1 — Clase ${sensor.clase}`
+      : `IEC 60751:2022 — Clase ${sensor.clase}`,
+  };
+}

@@ -2,7 +2,10 @@
 import { publicarResultado } from '@/components/ResultadoContexto';
 import BotonesExportar, { DatosExportar } from '@/components/BotonesExportar';
 import { useState } from 'react';
-import { linealizarTermocupla, TipoTermocupla, linealizarRTD, TipoRTD } from '@/lib/calculosInstrumentacion';
+import {
+  linealizarTermocupla, TipoTermocupla, linealizarRTD, TipoRTD,
+  evaluarTolerancia, SensorTolerancia, ClaseTermocupla, ClaseRTD,
+} from '@/lib/calculosInstrumentacion';
 
 type SensorInstrumentacion =
   | { kind: 'termocupla'; tipo: TipoTermocupla; label: string; tipoCalculo: string }
@@ -13,6 +16,18 @@ const TIPOS_SENSOR: SensorInstrumentacion[] = [
   { kind: 'termocupla', tipo: 'J',   label: 'Tipo J — Hierro/Constantán (0°C a 760°C)',  tipoCalculo: 'INSTRUMENTACION_TERMOCUPLA_J' },
   { kind: 'rtd',        r0: 100,     label: 'RTD Pt100 — IEC 60751 (-200°C a 850°C)',    tipoCalculo: 'INSTRUMENTACION_RTD_PT100' },
   { kind: 'rtd',        r0: 1000,    label: 'RTD Pt1000 — IEC 60751 (-200°C a 850°C)',   tipoCalculo: 'INSTRUMENTACION_RTD_PT1000' },
+];
+
+const CLASES_TERMOCUPLA: { label: string; value: ClaseTermocupla }[] = [
+  { label: 'Clase 1 — ±1.5°C hasta 375°C, luego ±0.004·|t|',  value: 1 },
+  { label: 'Clase 2 — ±2.5°C hasta 333°C, luego ±0.0075·|t|', value: 2 },
+];
+
+const CLASES_RTD: { label: string; value: ClaseRTD }[] = [
+  { label: 'Clase AA — ±(0.10 + 0.0017·|t|)°C', value: 'AA' },
+  { label: 'Clase A — ±(0.15 + 0.002·|t|)°C',   value: 'A' },
+  { label: 'Clase B — ±(0.30 + 0.005·|t|)°C',   value: 'B' },
+  { label: 'Clase C — ±(0.60 + 0.01·|t|)°C',    value: 'C' },
 ];
 
 const TEAL = '#2dd4bf';
@@ -30,11 +45,18 @@ export default function ModuloInstrumentacion() {
   const [datos,   setDatos]   = useState<DatosExportar | null>(null);
   const [error,   setError]   = useState('');
 
+  const [claseIdx,        setClaseIdx]        = useState(0);
+  const [tempEsperada,    setTempEsperada]    = useState('');
+  const [resTolerancia,   setResTolerancia]   = useState<ReturnType<typeof evaluarTolerancia> | null>(null);
+  const [errorTolerancia, setErrorTolerancia] = useState('');
+
   const sensor = TIPOS_SENSOR[tipoIdx];
   const unidadSenal = sensor.kind === 'termocupla' ? 'mV' : 'Ω';
+  const clasesDisponibles = sensor.kind === 'termocupla' ? CLASES_TERMOCUPLA : CLASES_RTD;
 
   const calcular = () => {
     setError('');
+    setResTolerancia(null);
     const valor = parseFloat(senal);
     if (isNaN(valor)) {
       setError(`Ingresá un valor numérico válido de señal (${unidadSenal}).`);
@@ -64,6 +86,22 @@ export default function ModuloInstrumentacion() {
     publicarResultado(payload);
   };
 
+  const verificarTolerancia = () => {
+    setErrorTolerancia('');
+    if (!res) return;
+    const esperada = parseFloat(tempEsperada);
+    if (isNaN(esperada)) {
+      setErrorTolerancia('Ingresá la temperatura esperada / de referencia (°C).');
+      return;
+    }
+    const claseSeleccionada = clasesDisponibles[claseIdx].value;
+    const sensorTolerancia: SensorTolerancia = sensor.kind === 'termocupla'
+      ? { familia: 'termocupla', clase: claseSeleccionada as ClaseTermocupla }
+      : { familia: 'rtd', clase: claseSeleccionada as ClaseRTD };
+    const rt = evaluarTolerancia(sensorTolerancia, esperada, res.celsius);
+    setResTolerancia(rt);
+  };
+
   return (
     <div style={{ minHeight: '100vh', background: '#0f172a', padding: '24px 16px', fontFamily: 'system-ui, sans-serif' }}>
       <div style={{ maxWidth: 800, margin: '0 auto' }}>
@@ -88,7 +126,11 @@ export default function ModuloInstrumentacion() {
 
           <div style={{ marginBottom: 16 }}>
             <label style={{ color: '#94a3b8', fontSize: 12, display: 'block', marginBottom: 6 }}>Tipo de sensor</label>
-            <select value={tipoIdx} onChange={e => setTipoIdx(+e.target.value)}
+            <select value={tipoIdx} onChange={e => {
+                setTipoIdx(+e.target.value);
+                setClaseIdx(0);
+                setResTolerancia(null);
+              }}
               style={{ ...inputStyle, fontSize: 14 }}>
               {TIPOS_SENSOR.map((tp, i) => <option key={i} value={i}>{tp.label}</option>)}
             </select>
@@ -150,6 +192,65 @@ export default function ModuloInstrumentacion() {
                 Rango válido: {res.rango.min}°C a {res.rango.max}°C
               </div>
               <div style={{ marginTop: 4, color: '#475569' }}>{res.norma} — {new Date().toLocaleDateString('es-AR')}</div>
+            </div>
+
+            {/* VERIFICACIÓN DE TOLERANCIA DE FÁBRICA */}
+            <div style={{ marginTop: 20, paddingTop: 16, borderTop: '1px solid #334155' }}>
+              <div style={{ color: '#a78bfa', fontWeight: 700, fontSize: 14, marginBottom: 12, textTransform: 'uppercase', letterSpacing: 1 }}>
+                Verificación de clase de tolerancia de fábrica
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
+                <div>
+                  <label style={{ color: '#94a3b8', fontSize: 12, display: 'block', marginBottom: 6 }}>Clase de tolerancia</label>
+                  <select value={claseIdx} onChange={e => setClaseIdx(+e.target.value)}
+                    style={{ ...inputStyle, fontSize: 13 }}>
+                    {clasesDisponibles.map((c, i) => <option key={i} value={i}>{c.label}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label style={{ color: '#94a3b8', fontSize: 12, display: 'block', marginBottom: 6 }}>Temperatura esperada / referencia (°C)</label>
+                  <input value={tempEsperada} onChange={e => setTempEsperada(e.target.value)}
+                    style={inputStyle} placeholder="Ej: 100" />
+                </div>
+              </div>
+
+              {errorTolerancia && (
+                <div style={{ background: '#450a0a', border: '1px solid #dc2626', borderRadius: 8, padding: '10px 14px', color: '#fca5a5', fontSize: 13, marginBottom: 16 }}>
+                  {errorTolerancia}
+                </div>
+              )}
+
+              <button onClick={verificarTolerancia}
+                style={{ width: '100%', background: 'transparent', border: `1px solid ${TEAL}`, borderRadius: 10, padding: '12px 0', color: TEAL, fontWeight: 800, fontSize: 14, cursor: 'pointer', letterSpacing: 0.5, marginBottom: resTolerancia ? 16 : 0 }}>
+                🎯 VERIFICAR TOLERANCIA
+              </button>
+
+              {resTolerancia && (
+                <div style={{ background: '#0f172a', border: `1px solid ${resTolerancia.dentroDeTolerancia ? TEAL : '#ef4444'}`, borderRadius: 8, padding: 16 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                    <div style={{ color: '#f8fafc', fontWeight: 700, fontSize: 13 }}>Clase {resTolerancia.clase}</div>
+                    <div style={{ background: resTolerancia.dentroDeTolerancia ? TEAL : '#ef4444', color: '#000', borderRadius: 20, padding: '4px 12px', fontWeight: 800, fontSize: 11 }}>
+                      {resTolerancia.dentroDeTolerancia ? '✅ DENTRO DE TOLERANCIA' : '❌ FUERA DE TOLERANCIA'}
+                    </div>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginBottom: 10 }}>
+                    <div>
+                      <div style={{ color: '#64748b', fontSize: 10 }}>Tolerancia permitida</div>
+                      <div style={{ color: '#f8fafc', fontWeight: 700, fontSize: 13 }}>±{resTolerancia.toleranciaC.toFixed(4)} °C</div>
+                    </div>
+                    <div>
+                      <div style={{ color: '#64748b', fontSize: 10 }}>Desviación medida</div>
+                      <div style={{ color: resTolerancia.dentroDeTolerancia ? TEAL : '#ef4444', fontWeight: 700, fontSize: 13 }}>{resTolerancia.desviacionC.toFixed(4)} °C</div>
+                    </div>
+                    <div>
+                      <div style={{ color: '#64748b', fontSize: 10 }}>Ref. vs. medida</div>
+                      <div style={{ color: '#f8fafc', fontWeight: 700, fontSize: 13 }}>{resTolerancia.temperaturaEsperadaC}°C / {resTolerancia.temperaturaMedidaC.toFixed(2)}°C</div>
+                    </div>
+                  </div>
+                  <div style={{ fontSize: 10, color: '#475569', fontFamily: 'ui-monospace,SFMono-Regular,monospace' }}>{resTolerancia.norma}</div>
+                </div>
+              )}
             </div>
           </div>
         )}
