@@ -64,7 +64,7 @@ function Dashboard() {
   const [sidebarOpen, setSidebarOpen]   = useState(true);
   const [conversorOpen, setConversorOpen] = useState(false);
   const { datos, limpiar } = useResultado();
-  const [consultasIa, setConsultasIa] = useState<{ plan: string; usadas: number; tope: number; restantes: number } | null>(null);
+  const [consultasIa, setConsultasIa] = useState<{ plan: string; usadas: number; tope: number; restantes: number; modulosElegidos: string[] } | null>(null);
   const [isMobile, setIsMobile] = useState(false);
   const [isNarrow, setIsNarrow] = useState(false);
 
@@ -99,8 +99,16 @@ function Dashboard() {
     ? MODULOS.find(m => m.id === moduloActivo)?.component ?? null
     : null;
 
+  // Planes "modulo" (único) y "duo" solo ven los módulos elegidos al contratar;
+  // pro/team/enterprise siguen viendo el catálogo completo, sin cambios.
+  const esPlanLimitado = consultasIa?.plan === 'modulo' || consultasIa?.plan === 'duo';
+  const modulosVisibles = esPlanLimitado
+    ? MODULOS.filter(m => (consultasIa?.modulosElegidos ?? []).includes(m.id))
+    : MODULOS;
+
   // Limpiar resultado al cambiar de módulo
   const cambiarModulo = (id: string | null) => {
+    if (id !== null && esPlanLimitado && !modulosVisibles.some(m => m.id === id)) return;
     limpiar();
     setModuloActivo(id);
   };
@@ -173,12 +181,19 @@ function Dashboard() {
               <span>🏠</span> Inicio
             </button>
             <div style={{ height: 1, background: BORD, margin: '6px 4px' }} />
-            {MODULOS.map(m => (
-              <button key={m.id} onClick={() => cambiarModulo(m.id)} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 10, border: 'none', borderLeft: moduloActivo === m.id ? `3px solid ${GREEN}` : '3px solid transparent', background: moduloActivo === m.id ? 'rgba(34,197,94,0.12)' : 'transparent', color: moduloActivo === m.id ? GREEN : '#94a3b8', fontSize: 12, fontWeight: moduloActivo === m.id ? 700 : 400, cursor: 'pointer', textAlign: 'left', width: '100%' }}>
-                <span style={{ flexShrink: 0 }}>{m.icon}</span>
-                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.label}</span>
-              </button>
-            ))}
+            {modulosVisibles.length > 0 ? (
+              modulosVisibles.map(m => (
+                <button key={m.id} onClick={() => cambiarModulo(m.id)} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 10, border: 'none', borderLeft: moduloActivo === m.id ? `3px solid ${GREEN}` : '3px solid transparent', background: moduloActivo === m.id ? 'rgba(34,197,94,0.12)' : 'transparent', color: moduloActivo === m.id ? GREEN : '#94a3b8', fontSize: 12, fontWeight: moduloActivo === m.id ? 700 : 400, cursor: 'pointer', textAlign: 'left', width: '100%' }}>
+                  <span style={{ flexShrink: 0 }}>{m.icon}</span>
+                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.label}</span>
+                </button>
+              ))
+            ) : esPlanLimitado ? (
+              <div style={{ padding: '10px 12px', fontSize: 12, color: '#64748b', lineHeight: 1.6 }}>
+                Todavía no elegiste tu módulo.{' '}
+                <a href="/planes" style={{ color: GOLD, fontWeight: 700 }}>Elegí uno acá →</a>
+              </div>
+            ) : null}
             <div style={{ height: 1, background: BORD, margin: '6px 4px' }} />
             <button onClick={() => router.push('/cruce')} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 10, border: `1px solid ${GOLD}`, background: 'rgba(232,160,32,0.12)', color: GOLD, fontSize: 12, fontWeight: 800, cursor: 'pointer', textAlign: 'left', width: '100%' }}>
               <span style={{ flexShrink: 0 }}>🧠</span>

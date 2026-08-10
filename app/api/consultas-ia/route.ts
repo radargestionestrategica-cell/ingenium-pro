@@ -12,7 +12,7 @@ export async function GET(req: NextRequest) {
   try {
     const usuario = await prisma.usuario.findUnique({
       where: { id: payload.id },
-      select: { plan: true, consultasIaUsadas: true, consultasIaResetEn: true },
+      select: { plan: true, consultasIaUsadas: true, consultasIaResetEn: true, modulosElegidos: true },
     });
     if (!usuario) return respuestaNoAutorizado();
 
@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
     const usadas = pasoUnMes ? 0 : usuario.consultasIaUsadas;
     const restantes = Math.max(tope - usadas, 0);
 
-    return NextResponse.json({ ok: true, plan: usuario.plan, usadas, tope, restantes });
+    return NextResponse.json({ ok: true, plan: usuario.plan, usadas, tope, restantes, modulosElegidos: usuario.modulosElegidos });
   } catch (e) {
     return NextResponse.json({ ok: false, error: e instanceof Error ? e.message : 'Error interno' }, { status: 500 });
   }

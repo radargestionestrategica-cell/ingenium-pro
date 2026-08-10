@@ -21,6 +21,7 @@ model Usuario {
   plan               String              @default("demo")
   demoStartAt        DateTime?
   planElegido        Boolean             @default(false)
+  modulosElegidos    String[]            @default([])
   activo             Boolean             @default(true)
   createdAt          DateTime            @default(now())
   resetToken         String?             @unique
