@@ -17,6 +17,7 @@ import ModuloCivil from '@/components/ModuloCivil';
 import ModuloElectricidad from '@/components/ModuloElectricidad';
 import ModuloGeotecnia from '@/components/ModuloGeotecnia';
 import ModuloHidraulica from '@/components/ModuloHidraulica';
+import ModuloInstrumentacion from '@/app/modulos/ModuloInstrumentacion';
 import ModuloMineria from '@/components/ModuloMineria';
 import ModuloMMO from '@/components/ModuloMMO';
 import ModuloPerforacion from '@/components/ModuloPerforacion';
@@ -43,6 +44,7 @@ const MODULOS = [
   { id: 'mineria',      label: 'Minería',           icon: '⛏️', component: ModuloMineria     },
   { id: 'termica',      label: 'Térmica',           icon: '🌡️', component: ModuloTermica     },
   { id: 'arquitectura', label: 'Arquitectura',      icon: '🏛️', component: ModuloArquitectura},
+  { id: 'instrumentacion', label: 'Electrónica e Instrumentación', icon: '📟', component: ModuloInstrumentacion, cluster: 'Electrónica e Instrumentación' },
 ];
 
 function ipAuthHeader(): Record<string, string> {
