@@ -4,8 +4,9 @@ import BotonesExportar, { DatosExportar } from '@/components/BotonesExportar';
 import { useState } from 'react';
 import { linealizarTermocupla, TipoTermocupla } from '@/lib/calculosInstrumentacion';
 
-const TIPOS_TERMOCUPLA: { label: string; value: TipoTermocupla }[] = [
-  { label: 'Tipo K — Cromel/Alumel (0°C a 500°C)', value: 'K' },
+const TIPOS_TERMOCUPLA: { label: string; value: TipoTermocupla; tipoCalculo: string }[] = [
+  { label: 'Tipo K — Cromel/Alumel (0°C a 500°C)',    value: 'K', tipoCalculo: 'INSTRUMENTACION_TERMOCUPLA_K' },
+  { label: 'Tipo J — Hierro/Constantán (0°C a 760°C)', value: 'J', tipoCalculo: 'INSTRUMENTACION_TERMOCUPLA_J' },
 ];
 
 const TEAL = '#2dd4bf';
@@ -35,7 +36,7 @@ export default function ModuloInstrumentacion() {
     setRes(r);
 
     const payload: DatosExportar = {
-      tipo:       'INSTRUMENTACION_TERMOCUPLA_K',
+      tipo:       TIPOS_TERMOCUPLA[tipoIdx].tipoCalculo,
       moduloId:   'instrumentacion',
       normativa:  r.norma,
       parametros: {

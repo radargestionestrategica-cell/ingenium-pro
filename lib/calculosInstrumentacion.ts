@@ -3,7 +3,7 @@
 // Primera capacidad: linealización de termocuplas por el polinomio inverso
 // NIST ITS-90 (milivoltios de señal -> grados Celsius).
 
-export type TipoTermocupla = 'K';
+export type TipoTermocupla = 'K' | 'J';
 
 interface CoeficientesTermocupla {
   rangoMin: number; // °C
@@ -27,6 +27,20 @@ const COEFICIENTES_NIST_ITS90: Record<TipoTermocupla, CoeficientesTermocupla> = 
       -0.00004413030,
       0.000001057734,
       -0.00000001052755,
+    ],
+  },
+  J: {
+    rangoMin: 0,
+    rangoMax: 760,
+    d: [
+      0,
+      19.78425,
+      -0.2001204,
+      0.01036969,
+      -0.0002549687,
+      0.000003585153,
+      -0.00000005344285,
+      0.0000000005099890,
     ],
   },
 };
