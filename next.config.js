@@ -10,6 +10,7 @@ const nextConfig = {
       "font-src 'self' data: https:",
       "connect-src 'self' https://api.anthropic.com",
       "worker-src 'self' blob:",
+      "frame-src 'self' https://www.youtube-nocookie.com",
       "frame-ancestors 'none'",
       "base-uri 'self'",
       "form-action 'self'",

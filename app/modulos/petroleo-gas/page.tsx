@@ -92,6 +92,29 @@ export default function ModuloPetroleoGasPage() {
           </p>
         </section>
 
+        {/* DEMOSTRACIÓN EN VIDEO */}
+        <section style={{ marginBottom: 36 }}>
+          <h2 style={{ fontSize: 20, fontWeight: 800, marginBottom: 12, color: '#f1f5f9' }}>Demostración en video</h2>
+          <div style={{
+            position: 'relative',
+            width: '100%',
+            aspectRatio: '16 / 9',
+            background: PANEL,
+            border: `1px solid ${BORD}`,
+            borderRadius: 8,
+            overflow: 'hidden',
+          }}>
+            <iframe
+              src="https://www.youtube-nocookie.com/embed/4B2r5OOEwWY"
+              title="Demostración de IngeniumPro MAOP"
+              loading="lazy"
+              allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowFullScreen
+              style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 'none' }}
+            />
+          </div>
+        </section>
+
         {/* FÓRMULA DE BARLOW */}
         <section style={{ marginBottom: 36 }}>
           <h2 style={{ fontSize: 20, fontWeight: 800, marginBottom: 12, color: '#f1f5f9' }}>Fórmula de Barlow aplicada</h2>
