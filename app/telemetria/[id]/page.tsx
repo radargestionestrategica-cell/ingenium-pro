@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { calcularPileta, calcularEstabilidadPared } from '@/lib/telemetria-calculo';
 import { buscarFSCritico } from '@/lib/bishop-buscador';
+import { calcularEstabilidadMuroRepresa } from '@/lib/represa-estabilidad';
 import { PAISES_SISMICOS, pgaAKh, clasificarZonaMexico, TERRENOS_EC8, calcularKhEurocodigo8, type TipoTerrenoEC8 } from '@/lib/sismica-zonificacion';
 import { predecirFallaFukuzono } from '@/lib/velocidad-inversa';
 import { LineChart, Line, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, CartesianGrid } from 'recharts';
@@ -49,6 +50,9 @@ interface ActivoTelemetria {
   friccionGrados: number | null;
   pesoEspecifico: number | null;
   tipoRevestimiento: string | null;
+  pesoEspecificoHormigon: number | null;
+  coeficienteFriccionBase: number | null;
+  permeabilidadRevestimiento: number | null;
   pais: string | null;
   zonaSismica: string | null;
   proyectoId: string | null;
@@ -102,6 +106,9 @@ export default function FichaActivoPage() {
 
   useEffect(() => {
     if (activo?.tipoRevestimiento) setTipoRevestimiento(activo.tipoRevestimiento);
+    if (activo?.pesoEspecificoHormigon != null) setPesoEspecificoHormigon(activo.pesoEspecificoHormigon);
+    if (activo?.coeficienteFriccionBase != null) setCoeficienteFriccionBase(activo.coeficienteFriccionBase);
+    if (activo?.permeabilidadRevestimiento != null) setPermeabilidadRevestimiento(activo.permeabilidadRevestimiento);
     if (activo?.pais) setPaisSismico(activo.pais);
     if (activo?.zonaSismica) setZonaSismicaLocal(activo.zonaSismica);
     if (activo?.pais === 'Mexico' && activo?.zonaSismica) {
@@ -162,7 +169,12 @@ export default function FichaActivoPage() {
         method: 'PATCH',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json', ...ipAuthHeader() },
-        body: JSON.stringify({ cohesion: cohesionSuelo, friccionGrados: friccionSuelo, pesoEspecifico: pesoSuelo, tipoRevestimiento }),
+        body: JSON.stringify({
+          cohesion: cohesionSuelo, friccionGrados: friccionSuelo, pesoEspecifico: pesoSuelo, tipoRevestimiento,
+          ...(activo.tipoActivo === 'represa' && pesoEspecificoHormigon != null ? { pesoEspecificoHormigon } : {}),
+          ...(activo.tipoActivo === 'represa' && coeficienteFriccionBase != null ? { coeficienteFriccionBase } : {}),
+          ...(activo.tipoActivo === 'represa' && permeabilidadRevestimiento != null ? { permeabilidadRevestimiento } : {}),
+        }),
       });
       const json = await res.json();
       if (json?.ok) {
@@ -738,6 +750,51 @@ export default function FichaActivoPage() {
                       )}
                     </>
                   )}
+                  {activo?.tipoActivo === 'represa' && (() => {
+                    const gammaH = activo?.pesoEspecificoHormigon;
+                    const fricBase = activo?.coeficienteFriccionBase;
+                    const tieneDatosMuro = gammaH != null && fricBase != null && geometria != null;
+                    const estMuro = tieneDatosMuro
+                      ? calcularEstabilidadMuroRepresa(geometria!, {
+                          pesoEspecificoHormigon: gammaH!, coeficienteFriccionBase: fricBase!, nivelAgua: resultados.nivel,
+                        })
+                      : null;
+                    const colorMuro = estMuro
+                      ? (estMuro.semaforo === 'verde' ? '#4ade80' : estMuro.semaforo === 'amarillo' ? '#facc15' : '#f87171')
+                      : '#475569';
+                    return (
+                      <div style={{ marginTop: 12, paddingTop: 10, borderTop: '1px solid rgba(99,102,241,0.1)' }}>
+                        <div style={{ fontSize: 9, color: '#334155', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>
+                          Estabilidad del muro de hormigón
+                        </div>
+                        {!tieneDatosMuro ? (
+                          <div style={{ fontSize: 11, color: '#475569', fontStyle: 'italic' }}>
+                            Faltan datos de hormigón (peso específico, coeficiente de fricción de base) para el factor de seguridad al deslizamiento.
+                          </div>
+                        ) : (
+                          <>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                              <div style={{ width: 16, height: 16, borderRadius: '50%', background: colorMuro, boxShadow: `0 0 8px ${colorMuro}`, flexShrink: 0 }} />
+                              <div style={{ fontSize: 11, fontWeight: 700, color: colorMuro }}>
+                                FS deslizamiento: {estMuro!.factorSeguridadDeslizamiento.toFixed(3)} — {estMuro!.semaforo.toUpperCase()}
+                              </div>
+                            </div>
+                            <div style={{ marginTop: 8, fontSize: 11, color: estMuro!.resultanteEnTercioMedio ? '#4ade80' : '#f87171' }}>
+                              Resultante {estMuro!.resultanteEnTercioMedio ? 'dentro' : 'fuera'} del tercio medio de la base
+                              {' '}(e = {estMuro!.excentricidad.toFixed(3)} m, L/6 = {(estMuro!.baseAncho / 6).toFixed(3)} m)
+                            </div>
+                            <div style={{ marginTop: 8, fontSize: 10, color: '#94a3b8' }}>
+                              W = {estMuro!.pesoMuro.toFixed(1)} kN/m · H = {estMuro!.empujeHidrostatico.toFixed(1)} kN/m · U = {estMuro!.subpresion.toFixed(1)} kN/m · L = {estMuro!.baseAncho.toFixed(2)} m
+                            </div>
+                            <div style={{ marginTop: 12, paddingTop: 10, borderTop: '1px solid rgba(99,102,241,0.1)' }}>
+                              <div style={{ fontSize: 9, color: '#334155', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 }}>Norma aplicada</div>
+                              <div style={{ fontSize: 10, color: '#94a3b8', fontFamily: 'ui-monospace,SFMono-Regular,monospace', fontWeight: 700 }}>{estMuro!.norma}</div>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    );
+                  })()}
                   {resultados.hash && (
                     <div style={{ marginTop: 12, paddingTop: 10, borderTop: '1px solid rgba(99,102,241,0.1)' }}>
                       <div style={{ fontSize: 9, color: '#334155', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 }}>Sello SHA-256 verificable</div>
