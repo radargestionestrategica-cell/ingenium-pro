@@ -70,3 +70,69 @@ export function linealizarTermocupla(tipo: TipoTermocupla, milivoltios: number):
     norma: 'NIST ITS-90 Thermocouple Database — Tipo K, polinomio inverso 0°C a 500°C',
   };
 }
+
+// ═══════════════════════════════════════════════════════════════
+// RTD — linealización Callendar-Van Dusen (IEC 60751), Pt100 / Pt1000.
+// Recibe la resistencia medida en ohms y devuelve la temperatura en °C.
+//
+// T ≥ 0°C  (R ≥ R0): cuadrática directa
+//   R = R0·(1 + A·T + B·T²)  →  se despeja T con la fórmula cuadrática.
+//
+// T < 0°C  (R < R0): se agrega el término C·(T−100)·T³ y se resuelve
+//   por Newton-Raphson (no tiene solución cerrada), hasta converger
+//   a 0.001°C.
+// ═══════════════════════════════════════════════════════════════
+
+export type TipoRTD = 100 | 1000;
+
+const RTD_A = 0.0039083;
+const RTD_B = -0.0000005775;
+const RTD_C = -4.183e-12; // IEC 60751 / Callendar-Van Dusen, válido solo para T < 0°C
+
+const RTD_RANGO = { min: -200, max: 850 }; // IEC 60751, curva α=0.00385 (Pt100/Pt1000)
+
+export interface ResultadoRTD {
+  r0: TipoRTD;
+  resistenciaOhms: number;
+  celsius: number;
+  dentroDeRango: boolean;
+  rango: { min: number; max: number };
+  norma: string;
+}
+
+export function linealizarRTD(r0: TipoRTD, resistenciaOhms: number): ResultadoRTD {
+  let celsius: number;
+
+  if (resistenciaOhms >= r0) {
+    // T ≥ 0 — B·T² + A·T + (1 − R/R0) = 0
+    const a = RTD_B;
+    const b = RTD_A;
+    const c = 1 - resistenciaOhms / r0;
+    const discriminante = b * b - 4 * a * c;
+    celsius = (-b + Math.sqrt(discriminante)) / (2 * a);
+  } else {
+    // T < 0 — Newton-Raphson sobre Callendar-Van Dusen completa
+    const f  = (T: number) => r0 * (1 + RTD_A * T + RTD_B * T * T + RTD_C * (T - 100) * T * T * T) - resistenciaOhms;
+    const fp = (T: number) => r0 * (RTD_A + 2 * RTD_B * T + RTD_C * (4 * T * T * T - 300 * T * T));
+
+    let T = (resistenciaOhms / r0 - 1) / RTD_A; // semilla: aproximación lineal
+    for (let i = 0; i < 50; i++) {
+      const Tnext = T - f(T) / fp(T);
+      const convergio = Math.abs(Tnext - T) < 0.001;
+      T = Tnext;
+      if (convergio) break;
+    }
+    celsius = T;
+  }
+
+  const dentroDeRango = celsius >= RTD_RANGO.min && celsius <= RTD_RANGO.max;
+
+  return {
+    r0,
+    resistenciaOhms,
+    celsius,
+    dentroDeRango,
+    rango: { ...RTD_RANGO },
+    norma: `IEC 60751 — Callendar-Van Dusen, Pt${r0}`,
+  };
+}
