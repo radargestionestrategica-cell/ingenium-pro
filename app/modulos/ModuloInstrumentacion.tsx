@@ -5,6 +5,7 @@ import { useState } from 'react';
 import {
   linealizarTermocupla, TipoTermocupla, linealizarRTD, TipoRTD,
   evaluarTolerancia, SensorTolerancia, ClaseTermocupla, ClaseRTD,
+  calcularErrorCableRTD, CantidadHilosRTD,
 } from '@/lib/calculosInstrumentacion';
 
 type SensorInstrumentacion =
@@ -30,6 +31,12 @@ const CLASES_RTD: { label: string; value: ClaseRTD }[] = [
   { label: 'Clase C — ±(0.60 + 0.01·|t|)°C',    value: 'C' },
 ];
 
+const OPCIONES_HILOS: { label: string; value: CantidadHilosRTD }[] = [
+  { label: '2 hilos', value: 2 },
+  { label: '3 hilos', value: 3 },
+  { label: '4 hilos', value: 4 },
+];
+
 const TEAL = '#2dd4bf';
 
 const inputStyle: React.CSSProperties = {
@@ -49,6 +56,12 @@ export default function ModuloInstrumentacion() {
   const [tempEsperada,    setTempEsperada]    = useState('');
   const [resTolerancia,   setResTolerancia]   = useState<ReturnType<typeof evaluarTolerancia> | null>(null);
   const [errorTolerancia, setErrorTolerancia] = useState('');
+
+  const [hilos,          setHilos]          = useState<CantidadHilosRTD>(2);
+  const [awgCable,       setAwgCable]       = useState('22');
+  const [longitudCable,  setLongitudCable]  = useState('100');
+  const [resErrorCable,  setResErrorCable]  = useState<ReturnType<typeof calcularErrorCableRTD> | null>(null);
+  const [errorCable,     setErrorCable]     = useState('');
 
   const sensor = TIPOS_SENSOR[tipoIdx];
   const unidadSenal = sensor.kind === 'termocupla' ? 'mV' : 'Ω';
@@ -102,6 +115,19 @@ export default function ModuloInstrumentacion() {
     setResTolerancia(rt);
   };
 
+  const calcularErrorCable = () => {
+    setErrorCable('');
+    if (sensor.kind !== 'rtd') return;
+    const awgNum = parseFloat(awgCable);
+    const longNum = parseFloat(longitudCable);
+    if (isNaN(awgNum) || isNaN(longNum)) {
+      setErrorCable('Ingresá AWG y longitud numéricos válidos.');
+      return;
+    }
+    const r = calcularErrorCableRTD(hilos, awgNum, longNum, sensor.r0);
+    setResErrorCable(r);
+  };
+
   return (
     <div style={{ minHeight: '100vh', background: '#0f172a', padding: '24px 16px', fontFamily: 'system-ui, sans-serif' }}>
       <div style={{ maxWidth: 800, margin: '0 auto' }}>
@@ -130,6 +156,7 @@ export default function ModuloInstrumentacion() {
                 setTipoIdx(+e.target.value);
                 setClaseIdx(0);
                 setResTolerancia(null);
+                setResErrorCable(null);
               }}
               style={{ ...inputStyle, fontSize: 14 }}>
               {TIPOS_SENSOR.map((tp, i) => <option key={i} value={i}>{tp.label}</option>)}
@@ -144,6 +171,56 @@ export default function ModuloInstrumentacion() {
               style={{ ...inputStyle, width: '50%' }}
               placeholder={sensor.kind === 'termocupla' ? 'Ej: 4.096' : 'Ej: 138.5050'} />
           </div>
+
+          {sensor.kind === 'rtd' && (
+            <div style={{ marginBottom: 20, paddingTop: 16, borderTop: '1px solid #334155' }}>
+              <div style={{ color: '#a78bfa', fontWeight: 700, fontSize: 13, marginBottom: 12, textTransform: 'uppercase', letterSpacing: 1 }}>
+                Error de cable (opcional)
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 12 }}>
+                <div>
+                  <label style={{ color: '#94a3b8', fontSize: 12, display: 'block', marginBottom: 6 }}>Hilos</label>
+                  <select value={hilos} onChange={e => setHilos(+e.target.value as CantidadHilosRTD)}
+                    style={{ ...inputStyle, fontSize: 13 }}>
+                    {OPCIONES_HILOS.map(h => <option key={h.value} value={h.value}>{h.label}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label style={{ color: '#94a3b8', fontSize: 12, display: 'block', marginBottom: 6 }}>AWG del cable</label>
+                  <input value={awgCable} onChange={e => setAwgCable(e.target.value)} style={inputStyle} placeholder="Ej: 22" />
+                </div>
+                <div>
+                  <label style={{ color: '#94a3b8', fontSize: 12, display: 'block', marginBottom: 6 }}>Longitud del tramo (m)</label>
+                  <input value={longitudCable} onChange={e => setLongitudCable(e.target.value)} style={inputStyle} placeholder="Ej: 100" />
+                </div>
+              </div>
+
+              {errorCable && (
+                <div style={{ background: '#450a0a', border: '1px solid #dc2626', borderRadius: 8, padding: '10px 14px', color: '#fca5a5', fontSize: 13, marginBottom: 12 }}>
+                  {errorCable}
+                </div>
+              )}
+
+              <button onClick={calcularErrorCable}
+                style={{ width: '100%', background: 'transparent', border: '1px solid #475569', borderRadius: 10, padding: '10px 0', color: '#94a3b8', fontWeight: 700, fontSize: 13, cursor: 'pointer', letterSpacing: 0.5, marginBottom: resErrorCable ? 12 : 0 }}>
+                🔌 CALCULAR ERROR DE CABLE
+              </button>
+
+              {resErrorCable && (
+                <div style={{ background: '#0f172a', border: `1px solid ${resErrorCable.errorC > 0 ? '#ef4444' : TEAL}`, borderRadius: 8, padding: 14 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                    <div style={{ color: '#64748b', fontSize: 10 }}>Error estimado por cableado</div>
+                    <div style={{ color: resErrorCable.errorC > 0 ? '#ef4444' : TEAL, fontWeight: 800, fontSize: 15 }}>±{resErrorCable.errorC.toFixed(3)} °C</div>
+                  </div>
+                  <div style={{ fontSize: 10, color: '#64748b', marginBottom: 8 }}>
+                    AWG{resErrorCable.awg}: {(resErrorCable.diametroM * 1000).toFixed(4)} mm · {resErrorCable.resistenciaPorMetro.toFixed(5)} Ω/m · {resErrorCable.longitudM} m · {resErrorCable.hilos} hilos
+                  </div>
+                  <div style={{ fontSize: 11, color: '#94a3b8', fontStyle: 'italic', marginBottom: 8 }}>{resErrorCable.nota}</div>
+                  <div style={{ fontSize: 10, color: '#475569', fontFamily: 'ui-monospace,SFMono-Regular,monospace' }}>{resErrorCable.norma}</div>
+                </div>
+              )}
+            </div>
+          )}
 
           {error && (
             <div style={{ background: '#450a0a', border: '1px solid #dc2626', borderRadius: 8, padding: '10px 14px', color: '#fca5a5', fontSize: 13, marginBottom: 16 }}>

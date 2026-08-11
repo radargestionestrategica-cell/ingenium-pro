@@ -138,6 +138,85 @@ export function linealizarRTD(r0: TipoRTD, resistenciaOhms: number): ResultadoRT
 }
 
 // ═══════════════════════════════════════════════════════════════
+// Error de cable RTD por resistencia de los conductores de cobre.
+//
+// Diámetro del conductor — ASTM B258 (en pulgadas, convertido a metros):
+//   d = 0.005 · 92^((36−AWG)/39)
+//
+// Resistencia por metro de conductor (cobre):
+//   r = ρ / área,  ρ = 1.724×10⁻⁸ Ω·m
+//
+// 2 hilos: la resistencia de ambos conductores (ida y vuelta) se suma
+//   directamente a la lectura del puente/instrumento. Error estimado con
+//   el coeficiente promedio α=0.00385 °C⁻¹ de la curva Pt100/Pt1000:
+//     errorC = (2 · longitud · r) / (0.00385 · R0)
+//
+// 3 hilos: error de cable compensado — no hay término cerrado, se
+//   informa 0°C asumiendo los 3 conductores idénticos (IEC 60751).
+//
+// 4 hilos: elimina el error de cable por medición Kelvin (excitación y
+//   sensado en pares separados) — error 0°C.
+// ═══════════════════════════════════════════════════════════════
+
+export type CantidadHilosRTD = 2 | 3 | 4;
+
+const RESISTIVIDAD_COBRE = 1.724e-8; // Ω·m
+
+function diametroConductorAWG(awg: number): number {
+  const diametroPulgadas = 0.005 * Math.pow(92, (36 - awg) / 39);
+  return diametroPulgadas * 0.0254; // metros
+}
+
+export interface ResultadoErrorCableRTD {
+  hilos: CantidadHilosRTD;
+  awg: number;
+  longitudM: number;
+  r0: TipoRTD;
+  diametroM: number;
+  resistenciaPorMetro: number;
+  errorC: number;
+  nota: string;
+  norma: string;
+}
+
+export function calcularErrorCableRTD(
+  hilos: CantidadHilosRTD,
+  awg: number,
+  longitudM: number,
+  r0: TipoRTD,
+): ResultadoErrorCableRTD {
+  const diametroM = diametroConductorAWG(awg);
+  const area = Math.PI * (diametroM / 2) ** 2;
+  const resistenciaPorMetro = RESISTIVIDAD_COBRE / area;
+
+  let errorC: number;
+  let nota: string;
+
+  if (hilos === 2) {
+    errorC = (2 * longitudM * resistenciaPorMetro) / (0.00385 * r0);
+    nota = 'Configuración 2 hilos: la resistencia de ambos conductores (ida y vuelta) se suma directamente a la lectura.';
+  } else if (hilos === 3) {
+    errorC = 0;
+    nota = 'Configuración 3 hilos: error de cable compensado, asumiendo los 3 conductores idénticos según IEC 60751.';
+  } else {
+    errorC = 0;
+    nota = 'Configuración 4 hilos: elimina el error de cable por medición Kelvin (excitación y sensado en pares separados).';
+  }
+
+  return {
+    hilos,
+    awg,
+    longitudM,
+    r0,
+    diametroM,
+    resistenciaPorMetro,
+    errorC,
+    nota,
+    norma: 'ASTM B258 (diámetro AWG) · IEC 60751:2022 (coeficiente α=0.00385)',
+  };
+}
+
+// ═══════════════════════════════════════════════════════════════
 // Verificación de clase de tolerancia de fábrica.
 //
 // La banda de tolerancia depende solo de la clase y de |t| — no del
