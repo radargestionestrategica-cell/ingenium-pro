@@ -20,6 +20,7 @@ const MODULOS = [
   'arquitectura',
   'mmo',
   'termica',
+  'instrumentacion',
 ]
 
 export default function sitemap(): MetadataRoute.Sitemap {
