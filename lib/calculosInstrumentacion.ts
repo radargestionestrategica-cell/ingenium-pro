@@ -72,7 +72,7 @@ export function linealizarTermocupla(tipo: TipoTermocupla, milivoltios: number):
 }
 
 // ═══════════════════════════════════════════════════════════════
-// RTD — linealización Callendar-Van Dusen (IEC 60751), Pt100 / Pt1000.
+// RTD — linealización Callendar-Van Dusen (IEC 60751:2022), Pt100 / Pt1000.
 // Recibe la resistencia medida en ohms y devuelve la temperatura en °C.
 //
 // T ≥ 0°C  (R ≥ R0): cuadrática directa
@@ -87,9 +87,9 @@ export type TipoRTD = 100 | 1000;
 
 const RTD_A = 0.0039083;
 const RTD_B = -0.0000005775;
-const RTD_C = -4.183e-12; // IEC 60751 / Callendar-Van Dusen, válido solo para T < 0°C
+const RTD_C = -4.183e-12; // IEC 60751:2022 / Callendar-Van Dusen, válido solo para T < 0°C
 
-const RTD_RANGO = { min: -200, max: 850 }; // IEC 60751, curva α=0.00385 (Pt100/Pt1000)
+const RTD_RANGO = { min: -200, max: 850 }; // IEC 60751:2022, curva α=0.00385 (Pt100/Pt1000)
 
 export interface ResultadoRTD {
   r0: TipoRTD;
@@ -133,7 +133,7 @@ export function linealizarRTD(r0: TipoRTD, resistenciaOhms: number): ResultadoRT
     celsius,
     dentroDeRango,
     rango: { ...RTD_RANGO },
-    norma: `IEC 60751 — Callendar-Van Dusen, Pt${r0}`,
+    norma: `IEC 60751:2022 — Callendar-Van Dusen, Pt${r0}`,
   };
 }
 
