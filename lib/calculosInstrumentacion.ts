@@ -295,3 +295,86 @@ export function evaluarTolerancia(
       : `IEC 60751:2022 — Clase ${sensor.clase}`,
   };
 }
+
+// ═══════════════════════════════════════════════════════════════
+// Presupuesto de incertidumbre — JCGM 100:2008 (GUM).
+//
+// Componentes Tipo B (distribución rectangular, semiancho/√3):
+//   uB_tolerancia  = toleranciaC / √3
+//   uB_resolución  = resolucionInstrumentoC / (2·√3)   (semiancho = resolución/2)
+//   uB_cable       = errorCableC / √3
+//
+// Componente Tipo A (evaluación experimental, opcional):
+//   uA_repetibilidad = desviacionEstandarLecturasC / √cantidadLecturas
+//   (0 si no se ingresaron lecturas repetidas)
+//
+// Combinación (ley de propagación de incertidumbres, componentes no
+// correlacionados):
+//   uc = √(uB_tolerancia² + uB_resolución² + uB_cable² + uA_repetibilidad²)
+//
+// Incertidumbre expandida, factor de cobertura k=2 (~95% de confianza,
+// Anexo G del GUM):
+//   U = k · uc
+// ═══════════════════════════════════════════════════════════════
+
+export interface ParametrosIncertidumbre {
+  toleranciaC: number;
+  errorCableC: number;
+  resolucionInstrumentoC: number;
+  desviacionEstandarLecturasC?: number;
+  cantidadLecturas?: number;
+}
+
+export interface ComponenteIncertidumbre {
+  nombre: string;
+  tipo: 'A' | 'B';
+  distribucion: string;
+  valorC: number;
+}
+
+export interface ResultadoIncertidumbre {
+  componentes: ComponenteIncertidumbre[];
+  uCombinada: number;
+  factorCobertura: number;
+  incertidumbreExpandida: number;
+  norma: string;
+}
+
+export function calcularPresupuestoIncertidumbre(
+  params: ParametrosIncertidumbre,
+): ResultadoIncertidumbre {
+  const uTolerancia = params.toleranciaC / Math.sqrt(3);
+  const uResolucion = params.resolucionInstrumentoC / (2 * Math.sqrt(3));
+  const uCable = params.errorCableC / Math.sqrt(3);
+  const uRepetibilidad =
+    params.desviacionEstandarLecturasC != null &&
+    params.cantidadLecturas != null &&
+    params.cantidadLecturas > 0
+      ? params.desviacionEstandarLecturasC / Math.sqrt(params.cantidadLecturas)
+      : 0;
+
+  const componentes: ComponenteIncertidumbre[] = [
+    { nombre: 'Tolerancia de fábrica del sensor', tipo: 'B', distribucion: 'rectangular', valorC: uTolerancia },
+    { nombre: 'Resolución del instrumento',        tipo: 'B', distribucion: 'rectangular', valorC: uResolucion },
+    { nombre: 'Error de cable',                     tipo: 'B', distribucion: 'rectangular', valorC: uCable },
+    { nombre: 'Repetibilidad de lecturas',          tipo: 'A', distribucion: 'experimental (evaluación estadística)', valorC: uRepetibilidad },
+  ];
+
+  const uCombinada = Math.sqrt(
+    uTolerancia * uTolerancia +
+    uResolucion * uResolucion +
+    uCable * uCable +
+    uRepetibilidad * uRepetibilidad,
+  );
+
+  const factorCobertura = 2;
+  const incertidumbreExpandida = factorCobertura * uCombinada;
+
+  return {
+    componentes,
+    uCombinada,
+    factorCobertura,
+    incertidumbreExpandida,
+    norma: 'JCGM 100:2008 (GUM) — incertidumbre combinada y expandida, k=2 (~95% de confianza, Anexo G)',
+  };
+}

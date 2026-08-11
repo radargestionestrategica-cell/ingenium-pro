@@ -6,6 +6,7 @@ import {
   linealizarTermocupla, TipoTermocupla, linealizarRTD, TipoRTD,
   evaluarTolerancia, SensorTolerancia, ClaseTermocupla, ClaseRTD,
   calcularErrorCableRTD, CantidadHilosRTD,
+  calcularPresupuestoIncertidumbre,
 } from '@/lib/calculosInstrumentacion';
 
 type SensorInstrumentacion =
@@ -63,6 +64,12 @@ export default function ModuloInstrumentacion() {
   const [resErrorCable,  setResErrorCable]  = useState<ReturnType<typeof calcularErrorCableRTD> | null>(null);
   const [errorCable,     setErrorCable]     = useState('');
 
+  const [resolucionInstrumento,       setResolucionInstrumento]       = useState('0.1');
+  const [desviacionEstandarLecturas,  setDesviacionEstandarLecturas]  = useState('');
+  const [cantidadLecturas,            setCantidadLecturas]            = useState('');
+  const [resIncertidumbre,            setResIncertidumbre]            = useState<ReturnType<typeof calcularPresupuestoIncertidumbre> | null>(null);
+  const [errorIncertidumbre,          setErrorIncertidumbre]          = useState('');
+
   const sensor = TIPOS_SENSOR[tipoIdx];
   const unidadSenal = sensor.kind === 'termocupla' ? 'mV' : 'Ω';
   const clasesDisponibles = sensor.kind === 'termocupla' ? CLASES_TERMOCUPLA : CLASES_RTD;
@@ -70,6 +77,7 @@ export default function ModuloInstrumentacion() {
   const calcular = () => {
     setError('');
     setResTolerancia(null);
+    setResIncertidumbre(null);
     const valor = parseFloat(senal);
     if (isNaN(valor)) {
       setError(`Ingresá un valor numérico válido de señal (${unidadSenal}).`);
@@ -101,6 +109,7 @@ export default function ModuloInstrumentacion() {
 
   const verificarTolerancia = () => {
     setErrorTolerancia('');
+    setResIncertidumbre(null);
     if (!res) return;
     const esperada = parseFloat(tempEsperada);
     if (isNaN(esperada)) {
@@ -126,6 +135,37 @@ export default function ModuloInstrumentacion() {
     }
     const r = calcularErrorCableRTD(hilos, awgNum, longNum, sensor.r0);
     setResErrorCable(r);
+  };
+
+  const calcularIncertidumbre = () => {
+    setErrorIncertidumbre('');
+    if (!resTolerancia) {
+      setErrorIncertidumbre('Primero verificá la tolerancia — el presupuesto de incertidumbre usa ese resultado.');
+      return;
+    }
+    const resolucion = parseFloat(resolucionInstrumento);
+    if (isNaN(resolucion)) {
+      setErrorIncertidumbre('Ingresá la resolución del instrumento (°C).');
+      return;
+    }
+    const desvTexto = desviacionEstandarLecturas.trim();
+    const cantTexto = cantidadLecturas.trim();
+    const desviacionEstandarLecturasC = desvTexto === '' ? undefined : parseFloat(desvTexto);
+    const cantidadLecturasNum = cantTexto === '' ? undefined : parseFloat(cantTexto);
+    if ((desviacionEstandarLecturasC != null && isNaN(desviacionEstandarLecturasC)) ||
+        (cantidadLecturasNum != null && isNaN(cantidadLecturasNum))) {
+      setErrorIncertidumbre('Desviación estándar y cantidad de lecturas deben ser numéricas.');
+      return;
+    }
+    const errorCableC = sensor.kind === 'rtd' ? (resErrorCable?.errorC ?? 0) : 0;
+    const r = calcularPresupuestoIncertidumbre({
+      toleranciaC: resTolerancia.toleranciaC,
+      errorCableC,
+      resolucionInstrumentoC: resolucion,
+      desviacionEstandarLecturasC,
+      cantidadLecturas: cantidadLecturasNum,
+    });
+    setResIncertidumbre(r);
   };
 
   return (
@@ -157,6 +197,7 @@ export default function ModuloInstrumentacion() {
                 setClaseIdx(0);
                 setResTolerancia(null);
                 setResErrorCable(null);
+                setResIncertidumbre(null);
               }}
               style={{ ...inputStyle, fontSize: 14 }}>
               {TIPOS_SENSOR.map((tp, i) => <option key={i} value={i}>{tp.label}</option>)}
@@ -328,6 +369,77 @@ export default function ModuloInstrumentacion() {
                   <div style={{ fontSize: 10, color: '#475569', fontFamily: 'ui-monospace,SFMono-Regular,monospace' }}>{resTolerancia.norma}</div>
                 </div>
               )}
+
+              {/* PRESUPUESTO DE INCERTIDUMBRE */}
+              <div style={{ marginTop: 20, paddingTop: 16, borderTop: '1px solid #334155' }}>
+                <div style={{ color: '#a78bfa', fontWeight: 700, fontSize: 14, marginBottom: 12, textTransform: 'uppercase', letterSpacing: 1 }}>
+                  Presupuesto de incertidumbre (GUM)
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 16 }}>
+                  <div>
+                    <label style={{ color: '#94a3b8', fontSize: 12, display: 'block', marginBottom: 6 }}>Resolución instrumento (°C)</label>
+                    <input value={resolucionInstrumento} onChange={e => setResolucionInstrumento(e.target.value)}
+                      style={inputStyle} placeholder="Ej: 0.1" />
+                  </div>
+                  <div>
+                    <label style={{ color: '#94a3b8', fontSize: 12, display: 'block', marginBottom: 6 }}>Desv. estándar lecturas (°C, opcional)</label>
+                    <input value={desviacionEstandarLecturas} onChange={e => setDesviacionEstandarLecturas(e.target.value)}
+                      style={inputStyle} placeholder="Ej: 0.05" />
+                  </div>
+                  <div>
+                    <label style={{ color: '#94a3b8', fontSize: 12, display: 'block', marginBottom: 6 }}>Cantidad de lecturas (opcional)</label>
+                    <input value={cantidadLecturas} onChange={e => setCantidadLecturas(e.target.value)}
+                      style={inputStyle} placeholder="Ej: 10" />
+                  </div>
+                </div>
+
+                {errorIncertidumbre && (
+                  <div style={{ background: '#450a0a', border: '1px solid #dc2626', borderRadius: 8, padding: '10px 14px', color: '#fca5a5', fontSize: 13, marginBottom: 16 }}>
+                    {errorIncertidumbre}
+                  </div>
+                )}
+
+                <button onClick={calcularIncertidumbre}
+                  style={{ width: '100%', background: 'transparent', border: `1px solid ${TEAL}`, borderRadius: 10, padding: '12px 0', color: TEAL, fontWeight: 800, fontSize: 14, cursor: 'pointer', letterSpacing: 0.5, marginBottom: resIncertidumbre ? 16 : 0 }}>
+                  📐 CALCULAR PRESUPUESTO DE INCERTIDUMBRE
+                </button>
+
+                {resIncertidumbre && (
+                  <div style={{ background: '#0f172a', border: `1px solid ${TEAL}`, borderRadius: 8, padding: 16 }}>
+                    <div style={{ textAlign: 'center' as const, marginBottom: 14 }}>
+                      <div style={{ color: '#64748b', fontSize: 10, marginBottom: 4 }}>Resultado final</div>
+                      <div style={{ color: TEAL, fontSize: 22, fontWeight: 800 }}>
+                        {res!.celsius.toFixed(3)} °C ± {resIncertidumbre.incertidumbreExpandida.toFixed(4)} °C
+                      </div>
+                      <div style={{ color: '#475569', fontSize: 10 }}>U expandida, k = {resIncertidumbre.factorCobertura} (≈95% de confianza)</div>
+                    </div>
+
+                    <div style={{ fontSize: 9, color: '#334155', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 }}>Componentes</div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 12 }}>
+                      {resIncertidumbre.componentes.map((c, i) => (
+                        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#1e293b', borderRadius: 6, padding: '6px 10px' }}>
+                          <div style={{ fontSize: 11, color: '#e2e8f0' }}>{c.nombre} <span style={{ color: '#475569' }}>(Tipo {c.tipo}, {c.distribucion})</span></div>
+                          <div style={{ fontSize: 12, color: '#f8fafc', fontWeight: 700, fontFamily: 'ui-monospace,SFMono-Regular,monospace' }}>{c.valorC.toFixed(4)} °C</div>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 }}>
+                      <div>
+                        <div style={{ color: '#64748b', fontSize: 10 }}>uc combinada</div>
+                        <div style={{ color: '#f8fafc', fontWeight: 700, fontSize: 13 }}>{resIncertidumbre.uCombinada.toFixed(4)} °C</div>
+                      </div>
+                      <div>
+                        <div style={{ color: '#64748b', fontSize: 10 }}>U expandida (k=2)</div>
+                        <div style={{ color: TEAL, fontWeight: 700, fontSize: 13 }}>{resIncertidumbre.incertidumbreExpandida.toFixed(4)} °C</div>
+                      </div>
+                    </div>
+
+                    <div style={{ fontSize: 10, color: '#475569', fontFamily: 'ui-monospace,SFMono-Regular,monospace' }}>{resIncertidumbre.norma}</div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         )}
