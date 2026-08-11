@@ -50,6 +50,7 @@ const modulos = [
   { n:'13', nombre:'Minería',               desc:'RMR Bieniawski · UCS · ventilación subterránea',             norma:'Bieniawski 89 · NIOSH · MSHA',      color:'#fb923c',icon:'⛏️', calcs:2  },
   { n:'14', nombre:'Térmica',               desc:'LMTD · intercambiadores · dilatación · coef. global',       norma:'TEMA · ASME Sec.VIII · Kern 1950',   color:'#f87171',icon:'🌡️', calcs:2  },
   { n:'15', nombre:'Geotecnia',             desc:'Capacidad portante · estabilidad talud · Bishop',            norma:'Meyerhof 63 · Bishop 55 · CIRSOC',   color:'#a3e635',icon:'🌍', calcs:2  },
+  { n:'16', nombre:'Electrónica e Instrumentación', desc:'Termocupla K/J · RTD Pt100/Pt1000 · verificación de tolerancia de fábrica', norma:'NIST ITS-90 · IEC 60584-1 · IEC 60751:2022', color: CYAN, icon:'📟', calcs:3 },
 ];
 
 const flujo = [
