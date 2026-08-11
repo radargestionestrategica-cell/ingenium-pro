@@ -164,7 +164,7 @@ proyectoId? (FK → Proyecto), createdAt
 ### Arquitectura de autenticación — reglas críticas
 
 **Capa 1: `middleware.ts` (Edge Runtime)**
-- Protege `matcher: ['/dashboard/:path*']`
+- Protege `matcher: ['/dashboard/:path*', '/equipo/:path*', '/telemetria/:path*', '/admin/:path*', '/api/:path*']`
 - Lee cookie httpOnly `ip_auth` — NO leer con `document.cookie`
 - HMAC: `crypto.subtle` (Web Crypto API) — NO `crypto.createHmac`
 - Llama `/api/v1/auth/plan` vía fetch (AbortController 5s — `AbortSignal.timeout()` NO existe en Edge)

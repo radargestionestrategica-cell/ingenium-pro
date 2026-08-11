@@ -34,7 +34,7 @@
 ## Arquitectura de autenticación — DOS capas independientes
 
 ### Capa 1: Middleware (Edge Runtime — `middleware.ts`)
-- Protege rutas: `matcher: ['/dashboard/:path*']`
+- Protege rutas: `matcher: ['/dashboard/:path*', '/equipo/:path*', '/telemetria/:path*', '/admin/:path*', '/api/:path*']`
 - Lee el cookie **httpOnly** `ip_auth` de la request
 - Verifica firma HMAC-SHA256 del token
 - Llama `/api/v1/auth/plan` (Node.js) para obtener plan real desde BD
