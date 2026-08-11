@@ -378,3 +378,139 @@ export function calcularPresupuestoIncertidumbre(
     norma: 'JCGM 100:2008 (GUM) — incertidumbre combinada y expandida, k=2 (~95% de confianza, Anexo G)',
   };
 }
+
+// ═══════════════════════════════════════════════════════════════
+// Lazo 4-20mA.
+//
+// 1) Conversión de señal a unidades de ingeniería (escala lineal 4-20mA):
+//      valor = valorMin + ((mA − 4) / 16) · (valorMax − valorMin)
+//
+// 2) Clasificación de zona según NAMUR NE43 (autodiagnóstico por señal
+//    fuera del rango normal 4-20mA):
+//      < 3.6 mA        → falla downscale (cable cortado o fallo de hardware)
+//      3.6 - 3.8 mA     → banda prohibida (nunca debería ocurrir)
+//      3.8 - 4.0 mA     → subrango bajo (proceso fuera de rango, no es falla)
+//      4.0 - 20.0 mA    → normal
+//      20.0 - 20.5 mA   → subrango alto (proceso fuera de rango, no es falla)
+//      20.5 - 21.0 mA   → banda prohibida (nunca debería ocurrir)
+//      > 21.0 mA        → falla upscale
+//
+// 3) Presupuesto de energía del lazo — Ley de Ohm con corriente de lazo
+//    fija en 0.02 A (20 mA, peor caso de caída de tensión). Reutiliza
+//    diametroConductorAWG y la misma fórmula de resistencia por metro
+//    (ρ/área) que calcularErrorCableRTD, factorizada acá como
+//    resistenciaCobrePorMetro() para no duplicar el cálculo ni tocar
+//    calcularErrorCableRTD.
+// ═══════════════════════════════════════════════════════════════
+
+export function convertirSenalIngenieria(mA: number, valorMin: number, valorMax: number): number {
+  return valorMin + ((mA - 4) / 16) * (valorMax - valorMin);
+}
+
+export type ZonaNE43 =
+  | 'FALLA_DOWNSCALE'
+  | 'BANDA_PROHIBIDA_BAJA'
+  | 'SUBRANGO_BAJO'
+  | 'NORMAL'
+  | 'SUBRANGO_ALTO'
+  | 'BANDA_PROHIBIDA_ALTA'
+  | 'FALLA_UPSCALE';
+
+export interface ResultadoNE43 {
+  mA: number;
+  zona: ZonaNE43;
+  mensaje: string;
+  esFalla: boolean;
+  norma: string;
+}
+
+export function clasificarSenalNE43(mA: number): ResultadoNE43 {
+  let zona: ZonaNE43;
+  let mensaje: string;
+  let esFalla: boolean;
+
+  if (mA < 3.6) {
+    zona = 'FALLA_DOWNSCALE';
+    mensaje = 'Falla downscale — cable cortado o fallo de hardware';
+    esFalla = true;
+  } else if (mA < 3.8) {
+    zona = 'BANDA_PROHIBIDA_BAJA';
+    mensaje = 'Banda prohibida — nunca debería ocurrir';
+    esFalla = true;
+  } else if (mA < 4.0) {
+    zona = 'SUBRANGO_BAJO';
+    mensaje = 'Subrango bajo — proceso fuera de rango, no es falla';
+    esFalla = false;
+  } else if (mA <= 20.0) {
+    zona = 'NORMAL';
+    mensaje = 'Señal normal';
+    esFalla = false;
+  } else if (mA <= 20.5) {
+    zona = 'SUBRANGO_ALTO';
+    mensaje = 'Subrango alto — proceso fuera de rango, no es falla';
+    esFalla = false;
+  } else if (mA <= 21.0) {
+    zona = 'BANDA_PROHIBIDA_ALTA';
+    mensaje = 'Banda prohibida — nunca debería ocurrir';
+    esFalla = true;
+  } else {
+    zona = 'FALLA_UPSCALE';
+    mensaje = 'Falla upscale — cable cortado o fallo de hardware';
+    esFalla = true;
+  }
+
+  return { mA, zona, mensaje, esFalla, norma: 'NAMUR NE43' };
+}
+
+// Misma fórmula (ρ/área) que usa calcularErrorCableRTD internamente,
+// factorizada para reutilizarla acá sin tocar esa función.
+function resistenciaCobrePorMetro(awg: number): number {
+  const diametroM = diametroConductorAWG(awg);
+  const area = Math.PI * (diametroM / 2) ** 2;
+  return RESISTIVIDAD_COBRE / area;
+}
+
+const CORRIENTE_LAZO_A = 0.02; // A — 20 mA, peor caso para dimensionamiento
+
+export interface ResultadoEnergiaLazo {
+  vSuministro: number;
+  vMinimoTransmisor: number;
+  awg: number;
+  longitudM: number;
+  resistenciaReceptorOhm: number;
+  corrienteLazoA: number;
+  resistenciaCableOhm: number;
+  caidaCableV: number;
+  caidaReceptorV: number;
+  margenV: number;
+  alcanzaTension: boolean;
+  nota: string;
+}
+
+export function calcularPresupuestoEnergiaLazo(
+  vSuministro: number,
+  vMinimoTransmisor: number,
+  awg: number,
+  longitudM: number,
+  resistenciaReceptorOhm: number,
+): ResultadoEnergiaLazo {
+  const resistenciaCableOhm = 2 * longitudM * resistenciaCobrePorMetro(awg); // ida y vuelta
+  const caidaCableV = CORRIENTE_LAZO_A * resistenciaCableOhm;
+  const caidaReceptorV = CORRIENTE_LAZO_A * resistenciaReceptorOhm;
+  const margenV = vSuministro - vMinimoTransmisor - caidaCableV - caidaReceptorV;
+
+  return {
+    vSuministro,
+    vMinimoTransmisor,
+    awg,
+    longitudM,
+    resistenciaReceptorOhm,
+    corrienteLazoA: CORRIENTE_LAZO_A,
+    resistenciaCableOhm,
+    caidaCableV,
+    caidaReceptorV,
+    margenV,
+    alcanzaTension: margenV >= 0,
+    nota: 'Cálculo eléctrico básico (Ley de Ohm) — no cita normativa específica de instrumentación.',
+  };
+}

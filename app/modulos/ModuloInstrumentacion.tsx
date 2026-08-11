@@ -7,6 +7,7 @@ import {
   evaluarTolerancia, SensorTolerancia, ClaseTermocupla, ClaseRTD,
   calcularErrorCableRTD, CantidadHilosRTD,
   calcularPresupuestoIncertidumbre,
+  convertirSenalIngenieria, clasificarSenalNE43, calcularPresupuestoEnergiaLazo,
 } from '@/lib/calculosInstrumentacion';
 
 type SensorInstrumentacion =
@@ -92,7 +93,41 @@ function conIncertidumbre(resultado: Record<string, unknown>, ri: ReturnType<typ
   return conComponentes;
 }
 
+// ── Fusión del resultado de la pestaña Lazo 4-20mA ──
+
+function construirResultadoLazoBase(clasif: ReturnType<typeof clasificarSenalNE43>): Record<string, unknown> {
+  return {
+    'Señal (mA)': clasif.mA,
+    'Zona NE43':  clasif.zona,
+    'Mensaje':    clasif.mensaje,
+    'Es falla':   clasif.esFalla ? 'Sí' : 'No',
+  };
+}
+
+function conConversionIngenieria(resultado: Record<string, unknown>, valorConvertido: number | null, unidad: string): Record<string, unknown> {
+  if (valorConvertido == null) return resultado;
+  const sufijo = unidad.trim() ? ` (${unidad.trim()})` : '';
+  return {
+    ...resultado,
+    [`Valor de ingeniería${sufijo}`]: +valorConvertido.toFixed(4),
+  };
+}
+
+function conEnergiaLazo(resultado: Record<string, unknown>, en: ReturnType<typeof calcularPresupuestoEnergiaLazo> | null): Record<string, unknown> {
+  if (!en) return resultado;
+  return {
+    ...resultado,
+    'Energía — Resistencia de cable (Ω)': +en.resistenciaCableOhm.toFixed(3),
+    'Energía — Caída en cable (V)':       +en.caidaCableV.toFixed(3),
+    'Energía — Caída en receptor (V)':    +en.caidaReceptorV.toFixed(3),
+    'Energía — Margen de tensión (V)':    +en.margenV.toFixed(3),
+    'Energía — Alcanza la tensión':       en.alcanzaTension ? 'Sí' : 'No',
+  };
+}
+
 export default function ModuloInstrumentacion() {
+  const [pestanaActiva, setPestanaActiva] = useState<'sensor' | 'lazo'>('sensor');
+
   const [tipoIdx, setTipoIdx] = useState(0);
   const [senal,   setSenal]   = useState('4.096');
   const [res,     setRes]     = useState<ReturnType<typeof linealizarTermocupla> | ReturnType<typeof linealizarRTD> | null>(null);
@@ -115,6 +150,26 @@ export default function ModuloInstrumentacion() {
   const [cantidadLecturas,            setCantidadLecturas]            = useState('');
   const [resIncertidumbre,            setResIncertidumbre]            = useState<ReturnType<typeof calcularPresupuestoIncertidumbre> | null>(null);
   const [errorIncertidumbre,          setErrorIncertidumbre]          = useState('');
+
+  // ── Pestaña Lazo 4-20mA ──
+  const [mALazo,               setMALazo]               = useState('12.000');
+  const [valorMinIngenieria,   setValorMinIngenieria]   = useState('0');
+  const [valorMaxIngenieria,   setValorMaxIngenieria]   = useState('100');
+  const [unidadIngenieria,     setUnidadIngenieria]     = useState('');
+  const [resClasificacion,     setResClasificacion]     = useState<ReturnType<typeof clasificarSenalNE43> | null>(null);
+  const [resConversion,        setResConversion]        = useState<number | null>(null);
+  const [errorLazo,            setErrorLazo]            = useState('');
+  const [datosLazo,            setDatosLazo]            = useState<DatosExportar | null>(null);
+
+  const [vSuministro,          setVSuministro]          = useState('24');
+  const [vMinimoTransmisor,    setVMinimoTransmisor]    = useState('12');
+  const [awgLazo,              setAwgLazo]              = useState('22');
+  const [longitudLazo,         setLongitudLazo]         = useState('500');
+  const [resistenciaReceptor,  setResistenciaReceptor]  = useState('250');
+  const [resEnergia,           setResEnergia]           = useState<ReturnType<typeof calcularPresupuestoEnergiaLazo> | null>(null);
+  const [errorEnergia,         setErrorEnergia]         = useState('');
+
+  const listoParaExportarLazo = resClasificacion !== null;
 
   const sensor = TIPOS_SENSOR[tipoIdx];
   const unidadSenal = sensor.kind === 'termocupla' ? 'mV' : 'Ω';
@@ -250,6 +305,67 @@ export default function ModuloInstrumentacion() {
     }
   };
 
+  const analizarSenalLazo = () => {
+    setErrorLazo('');
+    const mA = parseFloat(mALazo);
+    const vMin = parseFloat(valorMinIngenieria);
+    const vMax = parseFloat(valorMaxIngenieria);
+    if (isNaN(mA) || isNaN(vMin) || isNaN(vMax)) {
+      setErrorLazo('Ingresá mA, valor mínimo y valor máximo numéricos válidos.');
+      return;
+    }
+    const clasif = clasificarSenalNE43(mA);
+    const conv = convertirSenalIngenieria(mA, vMin, vMax);
+    setResClasificacion(clasif);
+    setResConversion(conv);
+
+    const resultado = conEnergiaLazo(
+      conConversionIngenieria(construirResultadoLazoBase(clasif), conv, unidadIngenieria),
+      resEnergia,
+    );
+
+    const payload: DatosExportar = {
+      tipo:       'INSTRUMENTACION_LAZO_4_20MA',
+      moduloId:   'instrumentacion',
+      normativa:  clasif.norma,
+      parametros: {
+        'Señal medida (mA)':          mALazo,
+        'Valor mínimo de ingeniería': valorMinIngenieria,
+        'Valor máximo de ingeniería': valorMaxIngenieria,
+        ...(unidadIngenieria.trim() ? { 'Unidad de ingeniería': unidadIngenieria.trim() } : {}),
+      },
+      resultado,
+      alerta: clasif.esFalla,
+    };
+    setDatosLazo(payload);
+    publicarResultado(payload);
+  };
+
+  const calcularEnergiaLazo = () => {
+    setErrorEnergia('');
+    const vSup    = parseFloat(vSuministro);
+    const vMinTx  = parseFloat(vMinimoTransmisor);
+    const awgNum  = parseFloat(awgLazo);
+    const longNum = parseFloat(longitudLazo);
+    const rRecep  = parseFloat(resistenciaReceptor);
+    if ([vSup, vMinTx, awgNum, longNum, rRecep].some(v => isNaN(v))) {
+      setErrorEnergia('Completá los 5 campos con valores numéricos válidos.');
+      return;
+    }
+    const en = calcularPresupuestoEnergiaLazo(vSup, vMinTx, awgNum, longNum, rRecep);
+    setResEnergia(en);
+
+    if (datosLazo && resClasificacion) {
+      const resultado = conEnergiaLazo(
+        conConversionIngenieria(construirResultadoLazoBase(resClasificacion), resConversion, unidadIngenieria),
+        en,
+      );
+      const payloadActualizado: DatosExportar = { ...datosLazo, resultado };
+      setDatosLazo(payloadActualizado);
+      publicarResultado(payloadActualizado);
+    }
+  };
+
   return (
     <div style={{ minHeight: '100vh', background: '#0f172a', padding: '24px 16px', fontFamily: 'system-ui, sans-serif' }}>
       <div style={{ maxWidth: 800, margin: '0 auto' }}>
@@ -268,6 +384,27 @@ export default function ModuloInstrumentacion() {
           </div>
         </div>
 
+        {/* PESTAÑAS */}
+        <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
+          {([
+            { id: 'sensor' as const, label: '🌡️ Calibración de sensor' },
+            { id: 'lazo'   as const, label: '🔁 Lazo 4-20mA' },
+          ]).map(t => (
+            <button key={t.id} onClick={() => setPestanaActiva(t.id)}
+              style={{
+                flex: 1, padding: '12px 0', borderRadius: 10,
+                border: `1px solid ${pestanaActiva === t.id ? TEAL : '#334155'}`,
+                background: pestanaActiva === t.id ? 'rgba(45,212,191,0.12)' : 'transparent',
+                color: pestanaActiva === t.id ? TEAL : '#94a3b8',
+                fontWeight: 800, fontSize: 13, cursor: 'pointer', letterSpacing: 0.3,
+              }}>
+              {t.label}
+            </button>
+          ))}
+        </div>
+
+        {pestanaActiva === 'sensor' && (
+        <>
         {/* FORMULARIO */}
         <div style={{ background: '#1e293b', border: '1px solid #334155', borderRadius: 12, padding: 24, marginBottom: 20 }}>
           <div style={{ color: '#a78bfa', fontWeight: 700, fontSize: 14, marginBottom: 16, textTransform: 'uppercase', letterSpacing: 1 }}>Señal del sensor</div>
@@ -535,6 +672,180 @@ export default function ModuloInstrumentacion() {
               ⚠️ Antes de exportar falta: {pasosFaltantes.join(' y ')}.
             </div>
           )
+        )}
+        </>
+        )}
+
+        {pestanaActiva === 'lazo' && (
+        <>
+        {/* FORMULARIO — SEÑAL 4-20mA */}
+        <div style={{ background: '#1e293b', border: '1px solid #334155', borderRadius: 12, padding: 24, marginBottom: 20 }}>
+          <div style={{ color: '#a78bfa', fontWeight: 700, fontSize: 14, marginBottom: 16, textTransform: 'uppercase', letterSpacing: 1 }}>Señal del lazo</div>
+
+          <div style={{ marginBottom: 16 }}>
+            <label style={{ color: '#94a3b8', fontSize: 12, display: 'block', marginBottom: 6 }}>Señal medida (mA)</label>
+            <input value={mALazo} onChange={e => setMALazo(e.target.value)}
+              style={{ ...inputStyle, width: '50%' }} placeholder="Ej: 12.000" />
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 16 }}>
+            <div>
+              <label style={{ color: '#94a3b8', fontSize: 12, display: 'block', marginBottom: 6 }}>Valor mínimo (4mA)</label>
+              <input value={valorMinIngenieria} onChange={e => setValorMinIngenieria(e.target.value)} style={inputStyle} placeholder="Ej: 0" />
+            </div>
+            <div>
+              <label style={{ color: '#94a3b8', fontSize: 12, display: 'block', marginBottom: 6 }}>Valor máximo (20mA)</label>
+              <input value={valorMaxIngenieria} onChange={e => setValorMaxIngenieria(e.target.value)} style={inputStyle} placeholder="Ej: 100" />
+            </div>
+            <div>
+              <label style={{ color: '#94a3b8', fontSize: 12, display: 'block', marginBottom: 6 }}>Unidad (opcional)</label>
+              <input value={unidadIngenieria} onChange={e => setUnidadIngenieria(e.target.value)} style={inputStyle} placeholder="Ej: °C, bar, %" />
+            </div>
+          </div>
+
+          {errorLazo && (
+            <div style={{ background: '#450a0a', border: '1px solid #dc2626', borderRadius: 8, padding: '10px 14px', color: '#fca5a5', fontSize: 13, marginBottom: 16 }}>
+              {errorLazo}
+            </div>
+          )}
+
+          <button onClick={analizarSenalLazo}
+            style={{ width: '100%', background: `linear-gradient(135deg,${TEAL},#0d9488)`, border: 'none', borderRadius: 10, padding: '14px 0', color: '#000', fontWeight: 800, fontSize: 16, cursor: 'pointer', letterSpacing: 0.5 }}>
+            ⚡ ANALIZAR SEÑAL
+          </button>
+        </div>
+
+        {/* RESULTADOS — CLASIFICACIÓN NE43 + CONVERSIÓN */}
+        {resClasificacion && (
+          <div style={{
+            background: '#1e293b',
+            border: `2px solid ${resClasificacion.esFalla ? '#ef4444' : resClasificacion.zona === 'NORMAL' ? TEAL : '#f59e0b'}`,
+            borderRadius: 12, padding: 24, marginBottom: 20,
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+              <div style={{ color: '#f8fafc', fontWeight: 800, fontSize: 18 }}>Diagnóstico NAMUR NE43</div>
+              <div style={{
+                background: resClasificacion.esFalla ? '#ef4444' : resClasificacion.zona === 'NORMAL' ? TEAL : '#f59e0b',
+                color: '#000', borderRadius: 20, padding: '6px 16px', fontWeight: 800, fontSize: 13,
+              }}>
+                {resClasificacion.zona.replace(/_/g, ' ')}
+              </div>
+            </div>
+
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ background: '#0f172a', borderRadius: 8, padding: 14, textAlign: 'center' as const }}>
+                <div style={{ color: '#64748b', fontSize: 11, marginBottom: 4 }}>Señal medida</div>
+                <div style={{
+                  color: resClasificacion.esFalla ? '#ef4444' : resClasificacion.zona === 'NORMAL' ? TEAL : '#f59e0b',
+                  fontSize: 28, fontWeight: 800,
+                }}>{resClasificacion.mA.toFixed(3)} mA</div>
+                <div style={{ color: '#475569', fontSize: 10 }}>{resClasificacion.mensaje}</div>
+              </div>
+            </div>
+
+            {resConversion != null && (
+              <div style={{ background: '#0f172a', borderRadius: 8, padding: 14, textAlign: 'center' as const, marginBottom: 16 }}>
+                <div style={{ color: '#64748b', fontSize: 11, marginBottom: 4 }}>Valor de ingeniería</div>
+                <div style={{ color: TEAL, fontSize: 22, fontWeight: 800 }}>
+                  {resConversion.toFixed(4)} {unidadIngenieria.trim()}
+                </div>
+                <div style={{ color: '#475569', fontSize: 10 }}>
+                  Escala lineal 4-20mA · {valorMinIngenieria} a {valorMaxIngenieria}
+                </div>
+              </div>
+            )}
+
+            <div style={{ background: '#0f172a', borderRadius: 8, padding: 14, fontSize: 12, color: '#94a3b8', fontFamily: 'monospace' }}>
+              <div style={{ color: '#a78bfa', marginBottom: 4, fontWeight: 700 }}>ESCALA:</div>
+              valor = valorMin + ((mA − 4) / 16) · (valorMax − valorMin)
+              <div style={{ marginTop: 4, color: '#475569' }}>{resClasificacion.norma} — {new Date().toLocaleDateString('es-AR')}</div>
+            </div>
+
+            {/* PRESUPUESTO DE ENERGÍA DEL LAZO */}
+            <div style={{ marginTop: 20, paddingTop: 16, borderTop: '1px solid #334155' }}>
+              <div style={{ color: '#a78bfa', fontWeight: 700, fontSize: 14, marginBottom: 12, textTransform: 'uppercase', letterSpacing: 1 }}>
+                Presupuesto de energía del lazo (opcional)
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 12 }}>
+                <div>
+                  <label style={{ color: '#94a3b8', fontSize: 12, display: 'block', marginBottom: 6 }}>V. suministro (V)</label>
+                  <input value={vSuministro} onChange={e => setVSuministro(e.target.value)} style={inputStyle} placeholder="Ej: 24" />
+                </div>
+                <div>
+                  <label style={{ color: '#94a3b8', fontSize: 12, display: 'block', marginBottom: 6 }}>V. mínimo transmisor (V)</label>
+                  <input value={vMinimoTransmisor} onChange={e => setVMinimoTransmisor(e.target.value)} style={inputStyle} placeholder="Ej: 12" />
+                </div>
+                <div>
+                  <label style={{ color: '#94a3b8', fontSize: 12, display: 'block', marginBottom: 6 }}>AWG del cable</label>
+                  <input value={awgLazo} onChange={e => setAwgLazo(e.target.value)} style={inputStyle} placeholder="Ej: 22" />
+                </div>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
+                <div>
+                  <label style={{ color: '#94a3b8', fontSize: 12, display: 'block', marginBottom: 6 }}>Longitud del tramo (m)</label>
+                  <input value={longitudLazo} onChange={e => setLongitudLazo(e.target.value)} style={inputStyle} placeholder="Ej: 500" />
+                </div>
+                <div>
+                  <label style={{ color: '#94a3b8', fontSize: 12, display: 'block', marginBottom: 6 }}>Resistencia receptor (Ω)</label>
+                  <input value={resistenciaReceptor} onChange={e => setResistenciaReceptor(e.target.value)} style={inputStyle} placeholder="Ej: 250" />
+                </div>
+              </div>
+
+              {errorEnergia && (
+                <div style={{ background: '#450a0a', border: '1px solid #dc2626', borderRadius: 8, padding: '10px 14px', color: '#fca5a5', fontSize: 13, marginBottom: 12 }}>
+                  {errorEnergia}
+                </div>
+              )}
+
+              <button onClick={calcularEnergiaLazo}
+                style={{ width: '100%', background: 'transparent', border: `1px solid ${TEAL}`, borderRadius: 10, padding: '12px 0', color: TEAL, fontWeight: 800, fontSize: 14, cursor: 'pointer', letterSpacing: 0.5, marginBottom: resEnergia ? 16 : 0 }}>
+                🔋 CALCULAR PRESUPUESTO DE ENERGÍA
+              </button>
+
+              {resEnergia && (
+                <div style={{ background: '#0f172a', border: `1px solid ${resEnergia.alcanzaTension ? TEAL : '#ef4444'}`, borderRadius: 8, padding: 16 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                    <div style={{ color: '#f8fafc', fontWeight: 700, fontSize: 13 }}>Margen de tensión</div>
+                    <div style={{ background: resEnergia.alcanzaTension ? TEAL : '#ef4444', color: '#000', borderRadius: 20, padding: '4px 12px', fontWeight: 800, fontSize: 11 }}>
+                      {resEnergia.alcanzaTension ? '✅ ALCANZA' : '❌ NO ALCANZA'}
+                    </div>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginBottom: 10 }}>
+                    <div>
+                      <div style={{ color: '#64748b', fontSize: 10 }}>Caída en cable</div>
+                      <div style={{ color: '#f8fafc', fontWeight: 700, fontSize: 13 }}>{resEnergia.caidaCableV.toFixed(3)} V</div>
+                    </div>
+                    <div>
+                      <div style={{ color: '#64748b', fontSize: 10 }}>Caída en receptor</div>
+                      <div style={{ color: '#f8fafc', fontWeight: 700, fontSize: 13 }}>{resEnergia.caidaReceptorV.toFixed(3)} V</div>
+                    </div>
+                    <div>
+                      <div style={{ color: '#64748b', fontSize: 10 }}>Margen</div>
+                      <div style={{ color: resEnergia.alcanzaTension ? TEAL : '#ef4444', fontWeight: 700, fontSize: 13 }}>{resEnergia.margenV.toFixed(3)} V</div>
+                    </div>
+                  </div>
+                  <div style={{ fontSize: 10, color: '#64748b', marginBottom: 6 }}>
+                    R cable (ida y vuelta, AWG{resEnergia.awg}, {resEnergia.longitudM} m): {resEnergia.resistenciaCableOhm.toFixed(3)} Ω · I lazo: {(resEnergia.corrienteLazoA * 1000).toFixed(0)} mA
+                  </div>
+                  <div style={{ fontSize: 11, color: '#94a3b8', fontStyle: 'italic' }}>{resEnergia.nota}</div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* BOTONES EXPORTAR — bloqueados hasta clasificar la señal al menos una vez */}
+        {datosLazo && (
+          listoParaExportarLazo ? (
+            <BotonesExportar visible={true} datos={datosLazo} />
+          ) : (
+            <div style={{ background: '#1e293b', border: '1px solid #f59e0b', borderRadius: 12, padding: '16px 20px', color: '#fbbf24', fontSize: 13, lineHeight: 1.6 }}>
+              ⚠️ Antes de exportar, analizá la señal.
+            </div>
+          )
+        )}
+        </>
         )}
 
       </div>
