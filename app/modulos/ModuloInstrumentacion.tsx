@@ -46,6 +46,52 @@ const inputStyle: React.CSSProperties = {
   fontSize: 15, boxSizing: 'border-box',
 };
 
+// ── Fusión del resultado guardado/exportado con los pasos opcionales ──
+// Cada helper agrega sus campos solo si el paso correspondiente ya se
+// calculó (parámetro no nulo); si no, devuelve el resultado sin tocar.
+
+function construirResultadoBase(r: { celsius: number; dentroDeRango: boolean; rango: { min: number; max: number } }): Record<string, unknown> {
+  return {
+    'Temperatura (°C)':  +r.celsius.toFixed(3),
+    'Dentro de rango':   r.dentroDeRango ? 'Sí' : 'No',
+    'Rango válido (°C)': `${r.rango.min} a ${r.rango.max}`,
+  };
+}
+
+function conErrorCable(resultado: Record<string, unknown>, rc: ReturnType<typeof calcularErrorCableRTD> | null): Record<string, unknown> {
+  if (!rc) return resultado;
+  return {
+    ...resultado,
+    'Cable — Hilos':               rc.hilos,
+    'Cable — AWG':                 rc.awg,
+    'Cable — Longitud (m)':        rc.longitudM,
+    'Cable — Error estimado (°C)': +rc.errorC.toFixed(4),
+  };
+}
+
+function conTolerancia(resultado: Record<string, unknown>, rt: ReturnType<typeof evaluarTolerancia> | null): Record<string, unknown> {
+  if (!rt) return resultado;
+  return {
+    ...resultado,
+    'Tolerancia — Clase':                       rt.clase,
+    'Tolerancia — Temperatura esperada (°C)':   rt.temperaturaEsperadaC,
+    'Tolerancia — Tolerancia permitida (°C)':   +rt.toleranciaC.toFixed(4),
+    'Tolerancia — Desviación (°C)':             +rt.desviacionC.toFixed(4),
+    'Tolerancia — Dentro de tolerancia':        rt.dentroDeTolerancia ? 'Sí' : 'No',
+  };
+}
+
+function conIncertidumbre(resultado: Record<string, unknown>, ri: ReturnType<typeof calcularPresupuestoIncertidumbre> | null): Record<string, unknown> {
+  if (!ri) return resultado;
+  const conComponentes = ri.componentes.reduce<Record<string, unknown>>((acc, c) => {
+    acc[`Incertidumbre — ${c.nombre} (Tipo ${c.tipo}, °C)`] = +c.valorC.toFixed(4);
+    return acc;
+  }, { ...resultado });
+  conComponentes['Incertidumbre — uc combinada (°C)']       = +ri.uCombinada.toFixed(4);
+  conComponentes['Incertidumbre — U expandida k=2 (°C)']    = +ri.incertidumbreExpandida.toFixed(4);
+  return conComponentes;
+}
+
 export default function ModuloInstrumentacion() {
   const [tipoIdx, setTipoIdx] = useState(0);
   const [senal,   setSenal]   = useState('4.096');
@@ -74,6 +120,14 @@ export default function ModuloInstrumentacion() {
   const unidadSenal = sensor.kind === 'termocupla' ? 'mV' : 'Ω';
   const clasesDisponibles = sensor.kind === 'termocupla' ? CLASES_TERMOCUPLA : CLASES_RTD;
 
+  // Tolerancia es obligatoria para exportar en ambos sensores; error de
+  // cable es obligatorio solo para RTD. Incertidumbre queda siempre
+  // opcional — no entra en esta lista.
+  const pasosFaltantes: string[] = [];
+  if (!resTolerancia) pasosFaltantes.push('verificar la tolerancia');
+  if (sensor.kind === 'rtd' && !resErrorCable) pasosFaltantes.push('calcular el error de cable');
+  const listoParaExportar = pasosFaltantes.length === 0;
+
   const calcular = () => {
     setError('');
     setResTolerancia(null);
@@ -88,6 +142,10 @@ export default function ModuloInstrumentacion() {
       : linealizarRTD(sensor.r0, valor);
     setRes(r);
 
+    // Nueva temperatura invalida tolerancia e incertidumbre (ya reseteadas
+    // arriba) — el error de cable no depende de la temperatura, se conserva.
+    const resultado = conErrorCable(construirResultadoBase(r), resErrorCable);
+
     const payload: DatosExportar = {
       tipo:       sensor.tipoCalculo,
       moduloId:   'instrumentacion',
@@ -96,11 +154,7 @@ export default function ModuloInstrumentacion() {
         'Tipo de sensor':                    sensor.label,
         [`Señal medida (${unidadSenal})`]:   senal,
       },
-      resultado: {
-        'Temperatura (°C)':  +r.celsius.toFixed(3),
-        'Dentro de rango':   r.dentroDeRango ? 'Sí' : 'No',
-        'Rango válido (°C)': `${r.rango.min} a ${r.rango.max}`,
-      },
+      resultado,
       alerta: !r.dentroDeRango,
     };
     setDatos(payload);
@@ -122,6 +176,14 @@ export default function ModuloInstrumentacion() {
       : { familia: 'rtd', clase: claseSeleccionada as ClaseRTD };
     const rt = evaluarTolerancia(sensorTolerancia, esperada, res.celsius);
     setResTolerancia(rt);
+
+    // Incertidumbre ya se reseteó arriba (dependía de la tolerancia vieja).
+    if (datos) {
+      const resultado = conTolerancia(conErrorCable(construirResultadoBase(res), resErrorCable), rt);
+      const payloadActualizado: DatosExportar = { ...datos, resultado };
+      setDatos(payloadActualizado);
+      publicarResultado(payloadActualizado);
+    }
   };
 
   const calcularErrorCable = () => {
@@ -135,6 +197,16 @@ export default function ModuloInstrumentacion() {
     }
     const r = calcularErrorCableRTD(hilos, awgNum, longNum, sensor.r0);
     setResErrorCable(r);
+
+    if (datos && res) {
+      const resultado = conIncertidumbre(
+        conTolerancia(conErrorCable(construirResultadoBase(res), r), resTolerancia),
+        resIncertidumbre,
+      );
+      const payloadActualizado: DatosExportar = { ...datos, resultado };
+      setDatos(payloadActualizado);
+      publicarResultado(payloadActualizado);
+    }
   };
 
   const calcularIncertidumbre = () => {
@@ -166,6 +238,16 @@ export default function ModuloInstrumentacion() {
       cantidadLecturas: cantidadLecturasNum,
     });
     setResIncertidumbre(r);
+
+    if (datos && res) {
+      const resultado = conIncertidumbre(
+        conTolerancia(conErrorCable(construirResultadoBase(res), resErrorCable), resTolerancia),
+        r,
+      );
+      const payloadActualizado: DatosExportar = { ...datos, resultado };
+      setDatos(payloadActualizado);
+      publicarResultado(payloadActualizado);
+    }
   };
 
   return (
@@ -444,8 +526,16 @@ export default function ModuloInstrumentacion() {
           </div>
         )}
 
-        {/* BOTONES EXPORTAR */}
-        {datos && <BotonesExportar visible={true} datos={datos} />}
+        {/* BOTONES EXPORTAR — bloqueados hasta completar los pasos obligatorios */}
+        {datos && (
+          listoParaExportar ? (
+            <BotonesExportar visible={true} datos={datos} />
+          ) : (
+            <div style={{ background: '#1e293b', border: '1px solid #f59e0b', borderRadius: 12, padding: '16px 20px', color: '#fbbf24', fontSize: 13, lineHeight: 1.6 }}>
+              ⚠️ Antes de exportar falta: {pasosFaltantes.join(' y ')}.
+            </div>
+          )
+        )}
 
       </div>
     </div>
