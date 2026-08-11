@@ -27,6 +27,7 @@ const MODULOS = [
   { id: 'mineria',      label: 'Minería',           icon: '⛏️' },
   { id: 'termica',      label: 'Térmica',           icon: '🌡️' },
   { id: 'arquitectura', label: 'Arquitectura',      icon: '🏛️' },
+  { id: 'instrumentacion', label: 'Electrónica e Instrumentación', icon: '📟' },
 ];
 
 export default function DuoPage() {
