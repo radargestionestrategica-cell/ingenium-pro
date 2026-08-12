@@ -567,9 +567,9 @@ export const TABLA1_COEFICIENTES_ARCFLASH: Record<string, CoeficientesArcFlash> 
 };
 
 // IEEE 1584-2018 Ec. 1-2: x1 en función de log10(Ibf) y log10(gap); x2 es
-// un polinomio de grado 6 en Ibf. Solo hay coeficientes VCB cargados por
-// ahora — las otras 4 configuraciones (VCBB, HCB, VOA, HOA) quedan
-// pendientes para un próximo commit.
+// un polinomio de grado 6 en Ibf. Los coeficientes de las 5
+// configuraciones de electrodo (VCB, VCBB, HCB, VOA, HOA) están cargados
+// en TABLA1_COEFICIENTES_ARCFLASH.
 export function calcularIarcIntermedia(
   config: ConfiguracionElectrodoArcFlash,
   voltajeReferencia: 0.6 | 2.7 | 14.3,
@@ -608,4 +608,25 @@ export function interpolarArcFlash(
 
   const x3 = (x1 * (2.7 - voltajeRealKV) / 2.1) + (x2 * (voltajeRealKV - 0.6) / 2.1);
   return x3;
+}
+
+// IEEE 1584-2018 Ecuación 25, verificado contra librería MIT arcflash.
+// Corrige Iarc para voltajeRealKV ≤ 0.6 kV — a diferencia de Ec. 16-24,
+// no interpola entre tensiones de referencia; parte de IarcVCB600 (Iarc
+// intermedio calculado con voltajeReferencia=0.6 kV) y lo corrige por la
+// tensión real del sistema.
+export function calcularIarcFinalBajaTension(
+  config: ConfiguracionElectrodoArcFlash,
+  voltajeRealKV: number,
+  IbfKA: number,
+  gapMM: number,
+): number {
+  const IarcVCB600 = calcularIarcIntermedia(config, 0.6, IbfKA, gapMM);
+
+  const x1 = (0.6 / voltajeRealKV) ** 2;
+  const x2 = 1 / (IarcVCB600 ** 2);
+  const x3 = (0.6 ** 2 - voltajeRealKV ** 2) / (0.6 ** 2 * IbfKA ** 2);
+  const x4 = Math.sqrt(x1 * (x2 - x3));
+
+  return 1 / x4;
 }
