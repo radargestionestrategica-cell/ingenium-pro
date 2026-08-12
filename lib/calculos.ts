@@ -540,3 +540,37 @@ export function clasificarEnclosure(
   const esShallow = voltajeKV <= 0.6 && alturaMM < 508 && anchoMM < 508;
   return esShallow ? 'Shallow' : 'Typical';
 }
+
+interface CoeficientesArcFlash {
+  k1: number; k2: number; k3: number; k4: number; k5: number;
+  k6: number; k7: number; k8: number; k9: number; k10: number;
+}
+
+// IEEE 1584-2018 Tabla 1, verificado cruzando contra librería MIT arcflash
+// de Li-aung Yip que reproduce Anexo D.1/D.2 exacto
+export const TABLA1_COEFICIENTES_ARCFLASH: Record<string, CoeficientesArcFlash> = {
+  'VCB_0.6':  { k1: -0.04287, k2: 1.035, k3: -0.083, k4: 0,             k5: 0,            k6: -4.783e-9, k7: 1.962e-6, k8: -0.000229, k9: 0.003141,  k10: 1.092  },
+  'VCB_2.7':  { k1: 0.0065,   k2: 1.001, k3: -0.024, k4: -1.557e-12,    k5: 4.556e-10,    k6: -4.186e-8, k7: 8.346e-7, k8: 5.482e-5,   k9: -0.003191, k10: 0.9729 },
+  'VCB_14.3': { k1: 0.005795, k2: 1.015, k3: -0.011, k4: -1.557e-12,    k5: 4.556e-10,    k6: -4.186e-8, k7: 8.346e-7, k8: 5.482e-5,   k9: -0.003191, k10: 0.9729 },
+};
+
+// IEEE 1584-2018 Ec. 1-2: x1 en función de log10(Ibf) y log10(gap); x2 es
+// un polinomio de grado 6 en Ibf. Solo hay coeficientes VCB cargados por
+// ahora — las otras 4 configuraciones (VCBB, HCB, VOA, HOA) quedan
+// pendientes para un próximo commit.
+export function calcularIarcIntermedia(
+  config: ConfiguracionElectrodoArcFlash,
+  voltajeReferencia: 0.6 | 2.7 | 14.3,
+  IbfKA: number,
+  gapMM: number,
+): number {
+  const clave = `${config}_${voltajeReferencia}`;
+  const k = TABLA1_COEFICIENTES_ARCFLASH[clave];
+  if (!k) {
+    throw new Error(`Sin coeficientes Tabla 1 para "${clave}" — todavía no cargados en TABLA1_COEFICIENTES_ARCFLASH.`);
+  }
+  const x1 = k.k1 + k.k2 * Math.log10(IbfKA) + k.k3 * Math.log10(gapMM);
+  const x2 = k.k4 * IbfKA ** 6 + k.k5 * IbfKA ** 5 + k.k6 * IbfKA ** 4
+           + k.k7 * IbfKA ** 3 + k.k8 * IbfKA ** 2 + k.k9 * IbfKA + k.k10;
+  return Math.pow(10, x1) * x2;
+}
