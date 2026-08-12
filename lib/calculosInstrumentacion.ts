@@ -514,3 +514,122 @@ export function calcularPresupuestoEnergiaLazo(
     nota: 'Cálculo eléctrico básico (Ley de Ohm) — no cita normativa específica de instrumentación.',
   };
 }
+
+// ═══════════════════════════════════════════════════════════════
+// EMI/EMC — Límites de emisión Clase A, FCC 47 CFR Parte 15.
+//
+// Conducida (§15.107(b)) — medida en la línea de alimentación, en dBµV:
+//   0.15 - 0.5 MHz   → cuasipico 79 dBµV, promedio 66 dBµV
+//   0.5  - 30  MHz   → cuasipico 73 dBµV, promedio 60 dBµV
+//   El margen se calcula contra el límite cuasipico (el que se usa en un
+//   barrido rápido de pre-compliance); el límite promedio se informa
+//   como referencia — la verificación completa requiere ambas
+//   mediciones (detector cuasipico y detector promedio).
+//
+// Radiada (§15.109(b)) — medida a 10 metros, en µV/m, convertida a
+// dBµV/m con 20·log10(valor) para expresar el margen en dB:
+//   30  - 88  MHz    → 90  µV/m
+//   88  - 216 MHz    → 150 µV/m
+//   216 - 960 MHz    → 210 µV/m
+//   > 960 MHz        → 300 µV/m
+//
+// Esto es una comparación contra el límite publicado en la norma, NO
+// una certificación de cumplimiento — eso requiere ensayo en laboratorio
+// acreditado (sitio OATS/cámara semianecoica calibrada, instrumentación
+// trazable) según el procedimiento de medición completo de la Parte 15.
+// ═══════════════════════════════════════════════════════════════
+
+export type TipoEmisionFCC = 'conducida' | 'radiada';
+
+function limiteConducida(frecuenciaMHz: number): { cuasipico: number; promedio: number; banda: string } | null {
+  if (frecuenciaMHz >= 0.15 && frecuenciaMHz < 0.5) return { cuasipico: 79, promedio: 66, banda: '0.15 a 0.5 MHz' };
+  if (frecuenciaMHz >= 0.5  && frecuenciaMHz <= 30)  return { cuasipico: 73, promedio: 60, banda: '0.5 a 30 MHz' };
+  return null;
+}
+
+function limiteRadiadaUVm(frecuenciaMHz: number): { limiteUVm: number; banda: string } | null {
+  if (frecuenciaMHz >= 30  && frecuenciaMHz < 88)  return { limiteUVm: 90,  banda: '30 a 88 MHz' };
+  if (frecuenciaMHz >= 88  && frecuenciaMHz < 216) return { limiteUVm: 150, banda: '88 a 216 MHz' };
+  if (frecuenciaMHz >= 216 && frecuenciaMHz < 960) return { limiteUVm: 210, banda: '216 a 960 MHz' };
+  if (frecuenciaMHz >= 960)                        return { limiteUVm: 300, banda: 'mayor a 960 MHz' };
+  return null;
+}
+
+export type ResultadoEmisionFCC =
+  | {
+      ok: true;
+      tipo: TipoEmisionFCC;
+      frecuenciaMHz: number;
+      banda: string;
+      claseAplicable: 'A';
+      valorMedidoOriginal: number;
+      unidadMedidaOriginal: string;
+      valorMedidoDB: number;
+      limiteCuasipicoDB: number;
+      limitePromedioDB?: number;
+      limiteOriginalUVm?: number;
+      margenDB: number;
+      cumple: boolean;
+      norma: string;
+      disclaimer: string;
+    }
+  | { ok: false; error: string };
+
+const DISCLAIMER_FCC = 'Comparación contra el límite publicado en FCC 47 CFR Parte 15 — no constituye certificación de cumplimiento, que requiere ensayo en laboratorio acreditado.';
+
+export function evaluarEmisionFCC(
+  tipo: TipoEmisionFCC,
+  frecuenciaMHz: number,
+  valorMedido: number,
+): ResultadoEmisionFCC {
+  if (tipo === 'conducida') {
+    const b = limiteConducida(frecuenciaMHz);
+    if (!b) {
+      return { ok: false, error: `Frecuencia ${frecuenciaMHz} MHz fuera de rango — tabla conducida FCC §15.107(b) cubre solo 0.15 a 30 MHz.` };
+    }
+    const margenDB = b.cuasipico - valorMedido;
+    return {
+      ok: true,
+      tipo,
+      frecuenciaMHz,
+      banda: b.banda,
+      claseAplicable: 'A',
+      valorMedidoOriginal: valorMedido,
+      unidadMedidaOriginal: 'dBµV',
+      valorMedidoDB: valorMedido,
+      limiteCuasipicoDB: b.cuasipico,
+      limitePromedioDB: b.promedio,
+      margenDB,
+      cumple: margenDB >= 0,
+      norma: 'FCC 47 CFR §15.107(b) — Clase A, emisión conducida',
+      disclaimer: DISCLAIMER_FCC,
+    };
+  }
+
+  if (valorMedido <= 0) {
+    return { ok: false, error: 'valorMedido debe ser mayor a 0 µV/m para poder convertir a dB.' };
+  }
+  const b = limiteRadiadaUVm(frecuenciaMHz);
+  if (!b) {
+    return { ok: false, error: `Frecuencia ${frecuenciaMHz} MHz fuera de rango — tabla radiada FCC §15.109(b) cubre desde 30 MHz en adelante.` };
+  }
+  const limiteDB = 20 * Math.log10(b.limiteUVm);
+  const valorMedidoDB = 20 * Math.log10(valorMedido);
+  const margenDB = limiteDB - valorMedidoDB;
+  return {
+    ok: true,
+    tipo,
+    frecuenciaMHz,
+    banda: b.banda,
+    claseAplicable: 'A',
+    valorMedidoOriginal: valorMedido,
+    unidadMedidaOriginal: 'µV/m',
+    valorMedidoDB,
+    limiteCuasipicoDB: limiteDB,
+    limiteOriginalUVm: b.limiteUVm,
+    margenDB,
+    cumple: margenDB >= 0,
+    norma: 'FCC 47 CFR §15.109(b) — Clase A, emisión radiada a 10 m',
+    disclaimer: DISCLAIMER_FCC,
+  };
+}

@@ -8,6 +8,7 @@ import {
   calcularErrorCableRTD, CantidadHilosRTD,
   calcularPresupuestoIncertidumbre,
   convertirSenalIngenieria, clasificarSenalNE43, calcularPresupuestoEnergiaLazo,
+  evaluarEmisionFCC, TipoEmisionFCC, ResultadoEmisionFCC,
 } from '@/lib/calculosInstrumentacion';
 
 type SensorInstrumentacion =
@@ -140,7 +141,7 @@ function conEnergiaLazo(resultado: Record<string, unknown>, en: ReturnType<typeo
 }
 
 export default function ModuloInstrumentacion() {
-  const [pestanaActiva, setPestanaActiva] = useState<'sensor' | 'lazo' | 'solar'>('sensor');
+  const [pestanaActiva, setPestanaActiva] = useState<'sensor' | 'lazo' | 'solar' | 'emi'>('sensor');
 
   const [tipoIdx, setTipoIdx] = useState(0);
   const [senal,   setSenal]   = useState('4.096');
@@ -192,6 +193,14 @@ export default function ModuloInstrumentacion() {
   const [cargandoSolar,  setCargandoSolar]  = useState(false);
   const [errorSolar,     setErrorSolar]     = useState('');
   const [datosSolar,     setDatosSolar]     = useState<DatosExportar | null>(null);
+
+  // ── Pestaña EMI/EMC (FCC 47 CFR Parte 15) ──
+  const [tipoEmi,        setTipoEmi]        = useState<TipoEmisionFCC>('conducida');
+  const [frecuenciaEmi,  setFrecuenciaEmi]  = useState('');
+  const [valorEmi,       setValorEmi]       = useState('');
+  const [resEmi,         setResEmi]         = useState<ResultadoEmisionFCC | null>(null);
+  const [errorEmi,       setErrorEmi]       = useState('');
+  const [datosEmi,       setDatosEmi]       = useState<DatosExportar | null>(null);
 
   const sensor = TIPOS_SENSOR[tipoIdx];
   const unidadSenal = sensor.kind === 'termocupla' ? 'mV' : 'Ω';
@@ -433,6 +442,49 @@ export default function ModuloInstrumentacion() {
     }
   };
 
+  const evaluarEmi = () => {
+    setErrorEmi('');
+    setResEmi(null);
+    const freq = parseFloat(frecuenciaEmi);
+    const valor = parseFloat(valorEmi);
+    if (isNaN(freq) || isNaN(valor)) {
+      setErrorEmi('Ingresá frecuencia (MHz) y valor medido numéricos válidos.');
+      return;
+    }
+    const r = evaluarEmisionFCC(tipoEmi, freq, valor);
+    if (!r.ok) {
+      setErrorEmi(r.error);
+      return;
+    }
+    setResEmi(r);
+
+    const unidad = tipoEmi === 'conducida' ? 'dBµV' : 'µV/m';
+    const payload: DatosExportar = {
+      tipo:       tipoEmi === 'conducida' ? 'INSTRUMENTACION_EMI_CONDUCIDA' : 'INSTRUMENTACION_EMI_RADIADA',
+      moduloId:   'instrumentacion',
+      normativa:  r.norma,
+      parametros: {
+        'Tipo de emisión':             tipoEmi === 'conducida' ? 'Conducida' : 'Radiada',
+        'Frecuencia (MHz)':            frecuenciaEmi,
+        [`Valor medido (${unidad})`]:  valorEmi,
+      },
+      resultado: {
+        'Banda':                    r.banda,
+        'Clase aplicable':          r.claseAplicable,
+        'Límite cuasipico (dB)':    +r.limiteCuasipicoDB.toFixed(2),
+        ...(r.limitePromedioDB != null ? { 'Límite promedio (dBµV, referencia)': r.limitePromedioDB } : {}),
+        ...(r.limiteOriginalUVm != null ? { 'Límite (µV/m)': r.limiteOriginalUVm } : {}),
+        'Valor medido (dB)':        +r.valorMedidoDB.toFixed(2),
+        'Margen (dB)':              +r.margenDB.toFixed(2),
+        'Cumple límite publicado':  r.cumple ? 'Sí' : 'No',
+        'Aclaración':               r.disclaimer,
+      },
+      alerta: !r.cumple,
+    };
+    setDatosEmi(payload);
+    publicarResultado(payload);
+  };
+
   return (
     <div style={{ minHeight: '100vh', background: '#0f172a', padding: '24px 16px', fontFamily: 'system-ui, sans-serif' }}>
       <div style={{ maxWidth: 800, margin: '0 auto' }}>
@@ -457,6 +509,7 @@ export default function ModuloInstrumentacion() {
             { id: 'sensor' as const, label: '🌡️ Calibración de sensor' },
             { id: 'lazo'   as const, label: '🔁 Lazo 4-20mA' },
             { id: 'solar'  as const, label: '☀️ Energía Solar' },
+            { id: 'emi'    as const, label: '📡 EMI/EMC' },
           ]).map(t => (
             <button key={t.id} onClick={() => setPestanaActiva(t.id)}
               style={{
@@ -999,6 +1052,117 @@ export default function ModuloInstrumentacion() {
 
         {/* BOTONES EXPORTAR */}
         {datosSolar && <BotonesExportar visible={true} datos={datosSolar} />}
+        </>
+        )}
+
+        {pestanaActiva === 'emi' && (
+        <>
+        {/* FORMULARIO — EMISIÓN CONDUCIDA/RADIADA */}
+        <div style={{ background: '#1e293b', border: '1px solid #334155', borderRadius: 12, padding: 24, marginBottom: 20 }}>
+          <div style={{ color: '#a78bfa', fontWeight: 700, fontSize: 14, marginBottom: 16, textTransform: 'uppercase', letterSpacing: 1 }}>Emisión medida — FCC 47 CFR Parte 15, Clase A</div>
+
+          <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+            {([
+              { id: 'conducida' as const, label: 'Conducida (§15.107)' },
+              { id: 'radiada'   as const, label: 'Radiada (§15.109)' },
+            ]).map(t => (
+              <button key={t.id} onClick={() => { setTipoEmi(t.id); setResEmi(null); setErrorEmi(''); }}
+                style={{
+                  flex: 1, padding: '10px 0', borderRadius: 8,
+                  border: `1px solid ${tipoEmi === t.id ? TEAL : '#475569'}`,
+                  background: tipoEmi === t.id ? 'rgba(45,212,191,0.12)' : 'transparent',
+                  color: tipoEmi === t.id ? TEAL : '#94a3b8',
+                  fontWeight: 700, fontSize: 13, cursor: 'pointer',
+                }}>
+                {t.label}
+              </button>
+            ))}
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
+            <div>
+              <label style={{ color: '#94a3b8', fontSize: 12, display: 'block', marginBottom: 6 }}>Frecuencia (MHz)</label>
+              <input value={frecuenciaEmi} onChange={e => setFrecuenciaEmi(e.target.value)}
+                style={inputStyle} placeholder={tipoEmi === 'conducida' ? 'Ej: 5' : 'Ej: 150'} />
+            </div>
+            <div>
+              <label style={{ color: '#94a3b8', fontSize: 12, display: 'block', marginBottom: 6 }}>
+                Valor medido ({tipoEmi === 'conducida' ? 'dBµV' : 'µV/m'})
+              </label>
+              <input value={valorEmi} onChange={e => setValorEmi(e.target.value)}
+                style={inputStyle} placeholder={tipoEmi === 'conducida' ? 'Ej: 68' : 'Ej: 120'} />
+            </div>
+          </div>
+
+          <div style={{ background: '#0f172a', borderRadius: 8, padding: '10px 14px', fontSize: 11, color: '#64748b', marginBottom: 16 }}>
+            {tipoEmi === 'conducida'
+              ? 'Rango cubierto por esta tabla: 0.15 a 30 MHz.'
+              : 'Rango cubierto por esta tabla: 30 MHz en adelante. Límite medido a 10 metros.'}
+          </div>
+
+          {errorEmi && (
+            <div style={{ background: '#450a0a', border: '1px solid #dc2626', borderRadius: 8, padding: '10px 14px', color: '#fca5a5', fontSize: 13, marginBottom: 16 }}>
+              {errorEmi}
+            </div>
+          )}
+
+          <button onClick={evaluarEmi}
+            style={{ width: '100%', background: `linear-gradient(135deg,${TEAL},#0d9488)`, border: 'none', borderRadius: 10, padding: '14px 0', color: '#000', fontWeight: 800, fontSize: 16, cursor: 'pointer', letterSpacing: 0.5 }}>
+            📡 EVALUAR CONTRA LÍMITE FCC
+          </button>
+        </div>
+
+        {/* RESULTADOS — MARGEN CONTRA LÍMITE FCC */}
+        {resEmi && resEmi.ok && (
+          <div style={{ background: '#1e293b', border: `2px solid ${resEmi.cumple ? TEAL : '#ef4444'}`, borderRadius: 12, padding: 24 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+              <div style={{ color: '#f8fafc', fontWeight: 800, fontSize: 18 }}>Margen contra límite publicado</div>
+              <div style={{ background: resEmi.cumple ? TEAL : '#ef4444', color: '#000', borderRadius: 20, padding: '6px 16px', fontWeight: 800, fontSize: 13 }}>
+                {resEmi.cumple ? '🟢 DENTRO DEL LÍMITE' : '🔴 SUPERA EL LÍMITE'}
+              </div>
+            </div>
+
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ background: '#0f172a', borderRadius: 8, padding: 14, textAlign: 'center' as const }}>
+                <div style={{ color: '#64748b', fontSize: 11, marginBottom: 4 }}>Margen — banda {resEmi.banda}</div>
+                <div style={{ color: resEmi.cumple ? TEAL : '#ef4444', fontSize: 28, fontWeight: 800 }}>
+                  {resEmi.margenDB >= 0 ? '+' : ''}{resEmi.margenDB.toFixed(2)} dB
+                </div>
+                <div style={{ color: '#475569', fontSize: 10 }}>
+                  Medido: {resEmi.valorMedidoDB.toFixed(2)} dB{resEmi.tipo === 'radiada' ? 'µV/m' : 'µV'} · Límite cuasipico: {resEmi.limiteCuasipicoDB.toFixed(2)} dB{resEmi.tipo === 'radiada' ? 'µV/m' : 'µV'}
+                </div>
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: resEmi.limitePromedioDB != null ? '1fr 1fr' : '1fr', gap: 10, marginBottom: 16 }}>
+              {resEmi.limitePromedioDB != null && (
+                <div style={{ background: '#0f172a', borderRadius: 8, padding: 12 }}>
+                  <div style={{ color: '#64748b', fontSize: 10 }}>Límite promedio (referencia)</div>
+                  <div style={{ color: '#f8fafc', fontWeight: 700, fontSize: 14 }}>{resEmi.limitePromedioDB} dBµV</div>
+                </div>
+              )}
+              {resEmi.limiteOriginalUVm != null && (
+                <div style={{ background: '#0f172a', borderRadius: 8, padding: 12 }}>
+                  <div style={{ color: '#64748b', fontSize: 10 }}>Límite tabla original</div>
+                  <div style={{ color: '#f8fafc', fontWeight: 700, fontSize: 14 }}>{resEmi.limiteOriginalUVm} µV/m</div>
+                </div>
+              )}
+            </div>
+
+            <div style={{ background: '#0f172a', borderRadius: 8, padding: 14, fontSize: 12, color: '#94a3b8', fontFamily: 'monospace', marginBottom: 12 }}>
+              <div style={{ color: '#a78bfa', marginBottom: 4, fontWeight: 700 }}>NORMA:</div>
+              {resEmi.norma}
+              <div style={{ marginTop: 4, color: '#475569' }}>Consultado: {new Date().toLocaleDateString('es-AR')}</div>
+            </div>
+
+            <div style={{ background: '#1e293b', border: '1px solid #f59e0b', borderRadius: 8, padding: '10px 14px', color: '#fbbf24', fontSize: 11, lineHeight: 1.5 }}>
+              ⚠️ {resEmi.disclaimer}
+            </div>
+          </div>
+        )}
+
+        {/* BOTONES EXPORTAR — bloqueados hasta evaluar al menos una vez */}
+        {datosEmi && <BotonesExportar visible={true} datos={datosEmi} />}
         </>
         )}
 
