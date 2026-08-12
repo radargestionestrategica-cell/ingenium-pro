@@ -445,3 +445,73 @@ export function calcVidaRemanente(
     'REEMPLAZO URGENTE';
   return { vida: +vida.toFixed(1), pct: +pct.toFixed(1), estado };
 }
+
+// ── ARC FLASH — IEEE 1584-2018 (rangos de aplicabilidad del modelo) ──
+// Función aislada — todavía no conectada a ningún componente. Solo valida
+// que los parámetros de entrada caigan dentro del rango en el que el
+// modelo empírico de IEEE 1584-2018 es aplicable; no calcula energía
+// incidente ni distancia de arco límite.
+// voltajeKV: tensión del sistema en kV · corrienteFallaKA: corriente de
+// falla bolted en kA · gapMM: separación entre conductores en mm ·
+// distanciaTrabajoMM: distancia de trabajo en mm.
+export type ConfiguracionElectrodoArcFlash = 'VCB' | 'VCBB' | 'HCB' | 'VOA' | 'HOA';
+
+export interface ResultadoValidacionArcFlash {
+  valido: boolean;
+  errores: string[];
+}
+
+const CONFIGURACIONES_ELECTRODO_VALIDAS: ConfiguracionElectrodoArcFlash[] = [
+  'VCB', 'VCBB', 'HCB', 'VOA', 'HOA',
+];
+
+export function validarEntradaArcFlash(
+  voltajeKV: number,
+  corrienteFallaKA: number,
+  gapMM: number,
+  distanciaTrabajoMM: number,
+  configuracionElectrodo: ConfiguracionElectrodoArcFlash,
+): ResultadoValidacionArcFlash {
+  const errores: string[] = [];
+
+  if (voltajeKV < 0.208 || voltajeKV > 15) {
+    errores.push(`Voltaje ${voltajeKV} kV fuera de rango — IEEE 1584-2018 cubre 0.208 a 15 kV.`);
+  }
+
+  // Umbral de 0.6 kV: por debajo, rango de corriente 0.5-106 kA; de 0.6 a
+  // 15 kV, rango 0.2-65 kA. Se clasifica con el voltaje recibido tal cual,
+  // incluso si ese voltaje ya fue marcado inválido arriba.
+  const esBajaTension  = voltajeKV < 0.6;
+  const rangoCorriente = esBajaTension ? { min: 0.5, max: 106 } : { min: 0.2, max: 65 };
+  if (corrienteFallaKA < rangoCorriente.min || corrienteFallaKA > rangoCorriente.max) {
+    errores.push(
+      `Corriente de falla ${corrienteFallaKA} kA fuera de rango — IEEE 1584-2018 cubre ` +
+      `${rangoCorriente.min} a ${rangoCorriente.max} kA para ${esBajaTension ? 'menos de 0.6 kV' : '0.6 a 15 kV'}.`,
+    );
+  }
+
+  // Sub-rangos de gap por tensión: tomados de fuentes técnicas secundarias
+  // (ELEK Software, EasyPower), PENDIENTE DE VERIFICACIÓN FINAL contra el
+  // texto primario de IEEE 1584-2018 antes de habilitar este módulo en
+  // producción.
+  const esBajaTensionGap = voltajeKV <= 0.6;
+  const rangoGap = esBajaTensionGap ? { min: 6.35, max: 76.2 } : { min: 19.05, max: 254 };
+  if (gapMM < rangoGap.min || gapMM > rangoGap.max) {
+    errores.push(
+      `Gap ${gapMM} mm fuera de rango — IEEE 1584-2018 cubre ${rangoGap.min} a ${rangoGap.max} mm ` +
+      `para ${esBajaTensionGap ? '0.6 kV o menos' : 'más de 0.6 hasta 15 kV'}.`,
+    );
+  }
+
+  if (distanciaTrabajoMM < 305) {
+    errores.push(`Distancia de trabajo ${distanciaTrabajoMM} mm por debajo del mínimo — IEEE 1584-2018 exige al menos 305 mm.`);
+  }
+
+  if (!CONFIGURACIONES_ELECTRODO_VALIDAS.includes(configuracionElectrodo)) {
+    errores.push(
+      `Configuración de electrodo "${configuracionElectrodo}" inválida — IEEE 1584-2018 define VCB, VCBB, HCB, VOA, HOA.`,
+    );
+  }
+
+  return { valido: errores.length === 0, errores };
+}
