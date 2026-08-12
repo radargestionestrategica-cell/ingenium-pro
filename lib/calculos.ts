@@ -515,3 +515,28 @@ export function validarEntradaArcFlash(
 
   return { valido: errores.length === 0, errores };
 }
+
+// Configuraciones en caja (box) vs. en aire abierto (open air) — IEEE
+// 1584-2018 cláusula 4.8. VCB/VCBB/HCB montan los electrodos dentro de un
+// gabinete metálico, que reorienta y concentra el plasma del arco
+// (requiere el factor de corrección por enclosure); VOA/HOA son montajes
+// en aire abierto, sin gabinete que corregir.
+export function requiereCorreccionEnclosure(
+  configuracionElectrodo: ConfiguracionElectrodoArcFlash,
+): boolean {
+  return configuracionElectrodo === 'VCB'
+    || configuracionElectrodo === 'VCBB'
+    || configuracionElectrodo === 'HCB';
+}
+
+// Clasificación "Typical" vs. "Shallow" del enclosure — IEEE 1584-2018.
+// "Shallow" aplica solo a gabinetes de baja tensión (≤0.6 kV) con alto y
+// ancho ambos por debajo de 508 mm (20 in); todo lo demás es "Typical".
+export type ClasificacionEnclosure = 'Typical' | 'Shallow';
+
+export function clasificarEnclosure(
+  alturaMM: number, anchoMM: number, voltajeKV: number,
+): ClasificacionEnclosure {
+  const esShallow = voltajeKV <= 0.6 && alturaMM < 508 && anchoMM < 508;
+  return esShallow ? 'Shallow' : 'Typical';
+}
