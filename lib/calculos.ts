@@ -586,3 +586,26 @@ export function calcularIarcIntermedia(
            + k.k7 * IbfKA ** 3 + k.k8 * IbfKA ** 2 + k.k9 * IbfKA + k.k10;
   return Math.pow(10, x1) * x2;
 }
+
+// IEEE 1584-2018 Ec. 16-18 (misma forma que Ec. 19-21 e Ec. 22-24),
+// verificado contra librería MIT arcflash. Interpola a la tensión real
+// del sistema el resultado calculado en las 3 tensiones de referencia
+// de Tabla 1 (0.6/2.7/14.3 kV). Para voltajeRealKV ≤ 0.6 kV corresponde
+// la Ecuación 25 — una fórmula distinta, capa aparte, todavía pendiente.
+export function interpolarArcFlash(
+  x600: number, x2700: number, x14300: number, voltajeRealKV: number,
+): number {
+  if (voltajeRealKV <= 0.6) {
+    throw new Error('voltajeRealKV ≤ 0.6 kV usa la Ecuación 25 (capa aparte, pendiente), no esta interpolación.');
+  }
+
+  const x1 = ((x2700 - x600) / 2.1) * (voltajeRealKV - 2.7) + x2700;
+  const x2 = ((x14300 - x2700) / 11.6) * (voltajeRealKV - 14.3) + x14300;
+
+  if (voltajeRealKV > 2.7) {
+    return x2;
+  }
+
+  const x3 = (x1 * (2.7 - voltajeRealKV) / 2.1) + (x2 * (voltajeRealKV - 0.6) / 2.1);
+  return x3;
+}
