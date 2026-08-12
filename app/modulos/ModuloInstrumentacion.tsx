@@ -41,6 +41,20 @@ const OPCIONES_HILOS: { label: string; value: CantidadHilosRTD }[] = [
 
 const TEAL = '#2dd4bf';
 
+function ipAuthHeader(): Record<string, string> {
+  if (typeof window === 'undefined') return {};
+  const t = localStorage.getItem('ip_token');
+  return t ? { Authorization: `Bearer ${t}` } : {};
+}
+
+type ValorMensual = { mes: string; valor: number };
+type NasaPowerResp = {
+  lat: number; lon: number; unidad: string;
+  valoresMensuales: ValorMensual[];
+  promedioAnual: number;
+  mesMasDesfavorable: ValorMensual;
+};
+
 const inputStyle: React.CSSProperties = {
   width: '100%', background: '#0f172a', border: '1px solid #475569',
   borderRadius: 8, padding: '10px 12px', color: '#f8fafc',
@@ -126,7 +140,7 @@ function conEnergiaLazo(resultado: Record<string, unknown>, en: ReturnType<typeo
 }
 
 export default function ModuloInstrumentacion() {
-  const [pestanaActiva, setPestanaActiva] = useState<'sensor' | 'lazo'>('sensor');
+  const [pestanaActiva, setPestanaActiva] = useState<'sensor' | 'lazo' | 'solar'>('sensor');
 
   const [tipoIdx, setTipoIdx] = useState(0);
   const [senal,   setSenal]   = useState('4.096');
@@ -170,6 +184,14 @@ export default function ModuloInstrumentacion() {
   const [errorEnergia,         setErrorEnergia]         = useState('');
 
   const listoParaExportarLazo = resClasificacion !== null;
+
+  // ── Pestaña Energía Solar (NASA POWER) ──
+  const [latSolar,       setLatSolar]       = useState('');
+  const [lonSolar,       setLonSolar]       = useState('');
+  const [resSolar,       setResSolar]       = useState<NasaPowerResp | null>(null);
+  const [cargandoSolar,  setCargandoSolar]  = useState(false);
+  const [errorSolar,     setErrorSolar]     = useState('');
+  const [datosSolar,     setDatosSolar]     = useState<DatosExportar | null>(null);
 
   const sensor = TIPOS_SENSOR[tipoIdx];
   const unidadSenal = sensor.kind === 'termocupla' ? 'mV' : 'Ω';
@@ -366,6 +388,51 @@ export default function ModuloInstrumentacion() {
     }
   };
 
+  const consultarEnergiaSolar = async () => {
+    setErrorSolar('');
+    setResSolar(null);
+    const lat = parseFloat(latSolar);
+    const lon = parseFloat(lonSolar);
+    if (isNaN(lat) || isNaN(lon) || lat < -90 || lat > 90 || lon < -180 || lon > 180) {
+      setErrorSolar('Ingresá latitud (-90 a 90) y longitud (-180 a 180) numéricas válidas.');
+      return;
+    }
+    setCargandoSolar(true);
+    try {
+      const res = await fetch(`/api/nasa-power?lat=${lat}&lon=${lon}`, {
+        headers: ipAuthHeader(),
+      });
+      if (!res.ok) throw new Error('api');
+      const data = await res.json() as NasaPowerResp;
+      setResSolar(data);
+
+      const payload: DatosExportar = {
+        tipo:       'INSTRUMENTACION_ENERGIA_SOLAR',
+        moduloId:   'instrumentacion',
+        normativa:  'NASA POWER — Climatology (promedio histórico ~22 años, comunidad RE)',
+        parametros: {
+          'Latitud':  latSolar,
+          'Longitud': lonSolar,
+        },
+        resultado: {
+          ...Object.fromEntries(
+            data.valoresMensuales.map(v => [`Irradiancia ${v.mes} (${data.unidad})`, v.valor]),
+          ),
+          [`Promedio anual (${data.unidad})`]:          data.promedioAnual,
+          'Mes más desfavorable':                       data.mesMasDesfavorable.mes,
+          [`Irradiancia mes desfavorable (${data.unidad})`]: data.mesMasDesfavorable.valor,
+        },
+        alerta: false,
+      };
+      setDatosSolar(payload);
+      publicarResultado(payload);
+    } catch {
+      setErrorSolar('No se pudo consultar NASA POWER. Verificá tu conexión e intentá de nuevo.');
+    } finally {
+      setCargandoSolar(false);
+    }
+  };
+
   return (
     <div style={{ minHeight: '100vh', background: '#0f172a', padding: '24px 16px', fontFamily: 'system-ui, sans-serif' }}>
       <div style={{ maxWidth: 800, margin: '0 auto' }}>
@@ -389,6 +456,7 @@ export default function ModuloInstrumentacion() {
           {([
             { id: 'sensor' as const, label: '🌡️ Calibración de sensor' },
             { id: 'lazo'   as const, label: '🔁 Lazo 4-20mA' },
+            { id: 'solar'  as const, label: '☀️ Energía Solar' },
           ]).map(t => (
             <button key={t.id} onClick={() => setPestanaActiva(t.id)}
               style={{
@@ -845,6 +913,92 @@ export default function ModuloInstrumentacion() {
             </div>
           )
         )}
+        </>
+        )}
+
+        {pestanaActiva === 'solar' && (
+        <>
+        {/* FORMULARIO — UBICACIÓN DEL ACTIVO */}
+        <div style={{ background: '#1e293b', border: '1px solid #334155', borderRadius: 12, padding: 24, marginBottom: 20 }}>
+          <div style={{ color: '#a78bfa', fontWeight: 700, fontSize: 14, marginBottom: 16, textTransform: 'uppercase', letterSpacing: 1 }}>Ubicación del activo</div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 20 }}>
+            <div>
+              <label style={{ color: '#94a3b8', fontSize: 12, display: 'block', marginBottom: 6 }}>Latitud (-90 a 90)</label>
+              <input value={latSolar} onChange={e => setLatSolar(e.target.value)}
+                style={inputStyle} placeholder="Ej: -34.6037" />
+            </div>
+            <div>
+              <label style={{ color: '#94a3b8', fontSize: 12, display: 'block', marginBottom: 6 }}>Longitud (-180 a 180)</label>
+              <input value={lonSolar} onChange={e => setLonSolar(e.target.value)}
+                style={inputStyle} placeholder="Ej: -58.3816" />
+            </div>
+          </div>
+
+          {errorSolar && (
+            <div style={{ background: '#450a0a', border: '1px solid #dc2626', borderRadius: 8, padding: '10px 14px', color: '#fca5a5', fontSize: 13, marginBottom: 16 }}>
+              {errorSolar}
+            </div>
+          )}
+
+          <button onClick={consultarEnergiaSolar} disabled={cargandoSolar}
+            style={{
+              width: '100%', background: `linear-gradient(135deg,${TEAL},#0d9488)`, border: 'none', borderRadius: 10,
+              padding: '14px 0', color: '#000', fontWeight: 800, fontSize: 16,
+              cursor: cargandoSolar ? 'not-allowed' : 'pointer', letterSpacing: 0.5,
+              opacity: cargandoSolar ? 0.6 : 1,
+            }}>
+            {cargandoSolar ? '⏳ CONSULTANDO NASA POWER...' : '☀️ CONSULTAR IRRADIANCIA'}
+          </button>
+        </div>
+
+        {/* RESULTADOS — IRRADIANCIA MENSUAL */}
+        {resSolar && (
+          <div style={{ background: '#1e293b', border: `2px solid ${TEAL}`, borderRadius: 12, padding: 24 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+              <div style={{ color: '#f8fafc', fontWeight: 800, fontSize: 18 }}>Irradiancia solar histórica</div>
+              <div style={{ background: '#f59e0b', color: '#000', borderRadius: 20, padding: '6px 16px', fontWeight: 800, fontSize: 13 }}>
+                MES CRÍTICO: {resSolar.mesMasDesfavorable.mes}
+              </div>
+            </div>
+
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ background: '#0f172a', borderRadius: 8, padding: 14, textAlign: 'center' as const }}>
+                <div style={{ color: '#64748b', fontSize: 11, marginBottom: 4 }}>Mes más desfavorable — dimensionar con este valor</div>
+                <div style={{ color: '#f59e0b', fontSize: 28, fontWeight: 800 }}>
+                  {resSolar.mesMasDesfavorable.valor.toFixed(2)} {resSolar.unidad}
+                </div>
+                <div style={{ color: '#475569', fontSize: 10 }}>
+                  Promedio anual: {resSolar.promedioAnual.toFixed(2)} {resSolar.unidad} · lat {resSolar.lat}, lon {resSolar.lon}
+                </div>
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginBottom: 16 }}>
+              {resSolar.valoresMensuales.map(v => (
+                <div key={v.mes} style={{
+                  background: '#0f172a',
+                  border: `1px solid ${v.mes === resSolar.mesMasDesfavorable.mes ? '#f59e0b' : '#334155'}`,
+                  borderRadius: 8, padding: '8px 6px', textAlign: 'center' as const,
+                }}>
+                  <div style={{ color: '#64748b', fontSize: 10 }}>{v.mes}</div>
+                  <div style={{ color: v.mes === resSolar.mesMasDesfavorable.mes ? '#f59e0b' : '#e2e8f0', fontWeight: 700, fontSize: 13 }}>
+                    {v.valor.toFixed(2)}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div style={{ background: '#0f172a', borderRadius: 8, padding: 14, fontSize: 12, color: '#94a3b8', fontFamily: 'monospace' }}>
+              <div style={{ color: '#a78bfa', marginBottom: 4, fontWeight: 700 }}>FUENTE:</div>
+              NASA POWER — parámetro ALLSKY_SFC_SW_DWN, climatology (promedio histórico ~22 años), comunidad RE
+              <div style={{ marginTop: 4, color: '#475569' }}>Consultado: {new Date().toLocaleDateString('es-AR')}</div>
+            </div>
+          </div>
+        )}
+
+        {/* BOTONES EXPORTAR */}
+        {datosSolar && <BotonesExportar visible={true} datos={datosSolar} />}
         </>
         )}
 
