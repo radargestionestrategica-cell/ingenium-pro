@@ -50,7 +50,7 @@ const ZONAS = {
   zona2: { iec:'Zona 2', api:'División 2', desc:'Atmósfera explosiva INFRECUENTE (<10 h/año)', equipo:'Ex nA, Ex nC — Categoría 3G', color:'#22c55e' },
 };
 
-type Sub = 'cable'|'caida'|'cc'|'fp'|'motor'|'peligrosa'|'luz'|'trafo';
+type Sub = 'cable'|'caida'|'cc'|'fp'|'motor'|'peligrosa'|'luz'|'trafo'|'arcflash';
 
 const SUBS: { id: Sub; label: string; icon: string }[] = [
   { id:'cable',     label:'Calibre Cable',    icon:'🔌' },
@@ -61,6 +61,7 @@ const SUBS: { id: Sub; label: string; icon: string }[] = [
   { id:'peligrosa', label:'Área Peligrosa',   icon:'☠️' },
   { id:'luz',       label:'Iluminación',      icon:'💡' },
   { id:'trafo',     label:'Transformador',    icon:'🔄' },
+  { id:'arcflash',  label:'Arc Flash IEEE 1584', icon:'🥽' },
 ];
 
 const inp: CSSProperties = {
@@ -245,6 +246,18 @@ export default function ModuloElectricidad() {
   const [trVp, setTrvp] = useState('13200');
   const [trVs, setTrvs] = useState('400');
   const [resTr, setResTr] = useState<null|{S:number;Ip:number;Is:number;Iarr:number}>(null);
+
+  // ARC FLASH STATE — IEEE 1584-2018
+  const [afVoltajeKV, setAfvoltajekv] = useState('0.48');
+  const [afIbfKA, setAfibfka] = useState('25');
+  const [afGapMM, setAfgapmm] = useState('32');
+  const [afAlturaMM, setAfalturamm] = useState('508');
+  const [afAnchoMM, setAfanchomm] = useState('508');
+  const [afDistanciaTrabajoMM, setAfdistanciatrabajomm] = useState('455.6');
+  const [afTiempoNormalMS, setAftiemponormalms] = useState('200');
+  const [afTiempoReducidoMS, setAftiemporeducidoms] = useState('100');
+  const [afConfigElectrodo, setAfconfigelectrodo] = useState<'VCB'|'VCBB'|'HCB'|'VOA'|'HOA'>('VCB');
+  const [resArcFlash, setResArcFlash] = useState<null|{energia:number;afb:number;escenario:string}>(null);
 
   // EXPORT STATE
   const [datosCable, setDatosCable] = useState<DatosExportar | null>(null);
