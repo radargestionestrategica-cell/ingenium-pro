@@ -665,3 +665,53 @@ export function calcularVarCf(
 export function calcularIarcReducida(iarcNormal: number, varCf: number): number {
   return iarcNormal * (1 - 0.5 * varCf);
 }
+
+// IEEE 1584-2018 Ecuaciones 11-13 (Equivalent Enclosure Size, en
+// pulgadas), verificado contra librería MIT arcflash. Solo aplica a
+// configuraciones en caja (VCB, VCBB, HCB) — VOA/HOA son en aire abierto
+// y no tienen enclosure que corregir (ver requiereCorreccionEnclosure).
+export function calcularEES(
+  config: ConfiguracionElectrodoArcFlash,
+  voltajeRealKV: number,
+  alturaMM: number,
+  anchoMM: number,
+  clasificacion: ClasificacionEnclosure,
+): number {
+  if (config !== 'VCB' && config !== 'VCBB' && config !== 'HCB') {
+    throw new Error(`calcularEES (Ec. 11-13) solo aplica a configuraciones en caja (VCB/VCBB/HCB) — "${config}" es en aire abierto.`);
+  }
+
+  // Ecuaciones 11-12: ajuste lineal por tensión real dentro del tramo
+  // 660.4-1244.6 mm, con constantes A/B por configuración.
+  const eq1112 = (dimMM: number): number => {
+    const { A, B } =
+      config === 'VCB'  ? { A: 4,  B: 20 } :
+      config === 'VCBB' ? { A: 10, B: 24 } :
+      /* HCB */            { A: 10, B: 22 };
+    return (660.4 + ((dimMM - 660.4) * ((voltajeRealKV + A) / B))) / 25.4;
+  };
+
+  let ancho_1: number;
+  if (anchoMM < 508) {
+    ancho_1 = clasificacion === 'Typical' ? 20 : anchoMM * 0.03937;
+  } else if (anchoMM <= 660.4) {
+    ancho_1 = anchoMM * 0.03937;
+  } else if (anchoMM <= 1244.6) {
+    ancho_1 = eq1112(anchoMM);
+  } else {
+    ancho_1 = eq1112(1244.6);
+  }
+
+  let altura_1: number;
+  if (alturaMM < 508) {
+    altura_1 = clasificacion === 'Typical' ? 20 : alturaMM * 0.03937;
+  } else if (alturaMM <= 660.4) {
+    altura_1 = alturaMM * 0.03937;
+  } else if (alturaMM <= 1244.6) {
+    altura_1 = config === 'VCB' ? alturaMM * 0.03937 : eq1112(alturaMM);
+  } else {
+    altura_1 = config === 'VCB' ? 49 : eq1112(1244.6);
+  }
+
+  return (altura_1 + ancho_1) / 2;
+}
