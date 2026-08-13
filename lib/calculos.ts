@@ -758,8 +758,8 @@ interface CoeficientesEnergiaArcFlash {
 }
 
 // IEEE 1584-2018 Tablas 3/4/5, verificado contra librería MIT arcflash.
-// Por ahora solo hay coeficientes VCB cargados — VCBB/HCB/VOA/HOA quedan
-// pendientes para un próximo commit.
+// Coeficientes de las 5 configuraciones de electrodo (VCB, VCBB, HCB,
+// VOA, HOA) cargados.
 export const TABLA345_ENERGIA_ARCFLASH: Record<string, CoeficientesEnergiaArcFlash> = {
   'VCB_0.6':   { k1: 0.753364, k2: 0.566, k3: 1.752636,  k4: 0,          k5: 0,          k6: -4.783e-9, k7: 1.962e-6,  k8: -0.000229, k9: 0.003141,  k10: 1.092,  k11: 0,     k12: -1.598, k13: 0.957  },
   'VCB_2.7':   { k1: 2.40021,  k2: 0.165, k3: 0.354202,  k4: -1.557e-12, k5: 4.556e-10,  k6: -4.186e-8, k7: 8.346e-7,  k8: 5.482e-5,   k9: -0.003191, k10: 0.9729, k11: 0,     k12: -1.569, k13: 0.9778 },
