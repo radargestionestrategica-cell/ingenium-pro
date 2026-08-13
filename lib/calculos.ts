@@ -829,6 +829,30 @@ export function calcularArcFlashBoundary(
   return Math.pow(5.0208 / F, 1 / k.k12);
 }
 
+// IEEE 1584-2018 — combina las 3 energías incidentes intermedias
+// (calculadas en 0.6/2.7/14.3 kV con calcularEnergiaIncidente) en la
+// tensión real del sistema, reusando interpolarArcFlash (misma
+// interpolación que ya se usa para Iarc).
+export function calcularEnergiaFinal(
+  config: ConfiguracionElectrodoArcFlash,
+  voltajeRealKV: number,
+  tiempoMS: number,
+  iarc600: number,
+  iarc2700: number,
+  iarc14300: number,
+  ibfKA: number,
+  gapMM: number,
+  cf: number,
+  distanciaTrabajoMM: number,
+  iarcParaLV?: number,
+): number {
+  const E600   = calcularEnergiaIncidente(config, 0.6,  tiempoMS, iarc600,   ibfKA, gapMM, cf, distanciaTrabajoMM, iarcParaLV);
+  const E2700  = calcularEnergiaIncidente(config, 2.7,  tiempoMS, iarc2700,  ibfKA, gapMM, cf, distanciaTrabajoMM, iarcParaLV);
+  const E14300 = calcularEnergiaIncidente(config, 14.3, tiempoMS, iarc14300, ibfKA, gapMM, cf, distanciaTrabajoMM, iarcParaLV);
+
+  return interpolarArcFlash(E600, E2700, E14300, voltajeRealKV);
+}
+
 // IEEE 1584-2018 exige evaluar ambos escenarios de corriente de arco
 // (normal y reducida, ver calcularIarcReducida) y tomar como resultado
 // final el de mayor energía incidente — la reducción de corriente no
