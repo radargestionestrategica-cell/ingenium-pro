@@ -751,3 +751,47 @@ export function calcularCF(
   const x1 = b.b1 * ees ** 2 + b.b2 * ees + b.b3;
   return clasificacion === 'Typical' ? x1 : 1 / x1;
 }
+
+interface CoeficientesEnergiaArcFlash {
+  k1: number; k2: number; k3: number; k4: number; k5: number; k6: number; k7: number;
+  k8: number; k9: number; k10: number; k11: number; k12: number; k13: number;
+}
+
+// IEEE 1584-2018 Tablas 3/4/5, verificado contra librería MIT arcflash.
+// Por ahora solo hay coeficientes VCB cargados — VCBB/HCB/VOA/HOA quedan
+// pendientes para un próximo commit.
+export const TABLA345_ENERGIA_ARCFLASH: Record<string, CoeficientesEnergiaArcFlash> = {
+  'VCB_0.6':  { k1: 0.753364, k2: 0.566, k3: 1.752636,  k4: 0,             k5: 0,          k6: -4.783e-9, k7: 1.962e-6, k8: -0.000229, k9: 0.003141,  k10: 1.092,  k11: 0, k12: -1.598, k13: 0.957  },
+  'VCB_2.7':  { k1: 2.40021,  k2: 0.165, k3: 0.354202,  k4: -1.557e-12,    k5: 4.556e-10,  k6: -4.186e-8, k7: 8.346e-7, k8: 5.482e-5,   k9: -0.003191, k10: 0.9729, k11: 0, k12: -1.569, k13: 0.9778 },
+  'VCB_14.3': { k1: 3.825917, k2: 0.11,  k3: -0.999749, k4: -1.557e-12,    k5: 4.556e-10,  k6: -4.186e-8, k7: 8.346e-7, k8: 5.482e-5,   k9: -0.003191, k10: 0.9729, k11: 0, k12: -1.568, k13: 0.99   },
+};
+
+// IEEE 1584-2018 Ecuaciones 3-6 — energía incidente en cal/cm².
+export function calcularEnergiaIncidente(
+  config: ConfiguracionElectrodoArcFlash,
+  voltajeReferencia: 0.6 | 2.7 | 14.3,
+  tiempoMS: number,
+  iarcKA: number,
+  ibfKA: number,
+  gapMM: number,
+  cf: number,
+  distanciaTrabajoMM: number,
+  iarc600KA?: number,
+): number {
+  const clave = `${config}_${voltajeReferencia}`;
+  const k = TABLA345_ENERGIA_ARCFLASH[clave];
+  if (!k) {
+    throw new Error(`Sin coeficientes Tabla 3/4/5 para "${clave}" — todavía no cargados en TABLA345_ENERGIA_ARCFLASH.`);
+  }
+
+  const x1 = 12.552 / 50 * tiempoMS;
+  const x2 = k.k1 + k.k2 * Math.log10(gapMM);
+  const x3num = iarc600KA !== undefined ? k.k3 * iarc600KA : k.k3 * iarcKA;
+  const x3den = k.k4 * ibfKA ** 7 + k.k5 * ibfKA ** 6 + k.k6 * ibfKA ** 5 + k.k7 * ibfKA ** 4
+              + k.k8 * ibfKA ** 3 + k.k9 * ibfKA ** 2 + k.k10 * ibfKA;
+  const x3 = x3num / x3den;
+  const x4 = k.k11 * Math.log10(ibfKA) + k.k13 * Math.log10(iarcKA) + Math.log10(1 / cf);
+  const x5 = k.k12 * Math.log10(distanciaTrabajoMM);
+
+  return x1 * Math.pow(10, x2 + x3 + x4 + x5);
+}
