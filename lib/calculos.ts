@@ -630,3 +630,37 @@ export function calcularIarcFinalBajaTension(
 
   return 1 / x4;
 }
+
+interface CoeficientesVarCf {
+  k1: number; k2: number; k3: number; k4: number; k5: number; k6: number; k7: number;
+}
+
+// IEEE 1584-2018 Tabla 2, verificado contra librería MIT arcflash
+export const TABLA2_VARCF_ARCFLASH: Record<string, CoeficientesVarCf> = {
+  VCB:  { k1: 0,          k2: -1.4269e-6, k3: 8.3137e-5,  k4: -0.0019382, k5: 0.022366, k6: -0.12645, k7: 0.30226 },
+  VCBB: { k1: 1.138e-6,   k2: -6.0287e-5, k3: 0.0012758,  k4: -0.013778,  k5: 0.080217, k6: -0.24066, k7: 0.33524 },
+  HCB:  { k1: 0,          k2: -3.097e-6,  k3: 0.00016405, k4: -0.0033609, k5: 0.033308, k6: -0.16182, k7: 0.34627 },
+  VOA:  { k1: 9.5606e-7,  k2: -5.1543e-5, k3: 0.0011161,  k4: -0.01242,   k5: 0.075125, k6: -0.23584, k7: 0.33696 },
+  HOA:  { k1: 0,          k2: -3.1555e-6, k3: 0.0001682,  k4: -0.0034607, k5: 0.034124, k6: -0.1599,  k7: 0.34629 },
+};
+
+// IEEE 1584-2018 — polinomio de grado 6 en voltajeRealKV con los
+// coeficientes de Tabla 2, por configuración de electrodo.
+export function calcularVarCf(
+  config: ConfiguracionElectrodoArcFlash, voltajeRealKV: number,
+): number {
+  const k = TABLA2_VARCF_ARCFLASH[config];
+  if (!k) {
+    throw new Error(`Sin coeficientes Tabla 2 para "${config}".`);
+  }
+  const v = k.k1 * voltajeRealKV ** 6 + k.k2 * voltajeRealKV ** 5 + k.k3 * voltajeRealKV ** 4
+          + k.k4 * voltajeRealKV ** 3 + k.k5 * voltajeRealKV ** 2 + k.k6 * voltajeRealKV + k.k7;
+  return v;
+}
+
+// Ecuación 2, IEEE 1584-2018 — corrige Iarc por la variación de la
+// corriente de arco (VarCf) para obtener el límite inferior del rango
+// de corriente de arco usado en el cálculo de energía incidente.
+export function calcularIarcReducida(iarcNormal: number, varCf: number): number {
+  return iarcNormal * (1 - 0.5 * varCf);
+}
