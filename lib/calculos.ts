@@ -828,3 +828,17 @@ export function calcularArcFlashBoundary(
   const F = energiaIncidente / Math.pow(distanciaTrabajoMM, k.k12);
   return Math.pow(5.0208 / F, 1 / k.k12);
 }
+
+// IEEE 1584-2018 exige evaluar ambos escenarios de corriente de arco
+// (normal y reducida, ver calcularIarcReducida) y tomar como resultado
+// final el de mayor energía incidente — la reducción de corriente no
+// siempre reduce la energía, porque también alarga el tiempo de despeje.
+export function elegirPeorCaso(
+  energiaNormal: number, afbNormal: number,
+  energiaReducida: number, afbReducida: number,
+): { energia: number; afb: number; escenario: string } {
+  if (energiaReducida > energiaNormal) {
+    return { energia: energiaReducida, afb: afbReducida, escenario: 'reducida' };
+  }
+  return { energia: energiaNormal, afb: afbNormal, escenario: 'normal' };
+}
