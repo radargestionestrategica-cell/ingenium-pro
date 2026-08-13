@@ -807,3 +807,24 @@ export function calcularEnergiaIncidente(
 
   return x1 * Math.pow(10, x2 + x3 + x4 + x5);
 }
+
+// IEEE 1584-2018 Ecuaciones 7-10 — arc-flash boundary, en mm. Reusa
+// TABLA345_ENERGIA_ARCFLASH (misma clave k12 que usa
+// calcularEnergiaIncidente), verificado contra librería MIT arcflash.
+// 5.0208 = 1.2 cal/cm² × 4.184 (J por cal) — el valor de referencia que
+// define el límite del arc-flash boundary según el estándar.
+export function calcularArcFlashBoundary(
+  config: ConfiguracionElectrodoArcFlash,
+  voltajeReferencia: 0.6 | 2.7 | 14.3,
+  energiaIncidente: number,
+  distanciaTrabajoMM: number,
+): number {
+  const clave = `${config}_${voltajeReferencia}`;
+  const k = TABLA345_ENERGIA_ARCFLASH[clave];
+  if (!k) {
+    throw new Error(`Sin coeficientes Tabla 3/4/5 para "${clave}" — todavía no cargados en TABLA345_ENERGIA_ARCFLASH.`);
+  }
+
+  const F = energiaIncidente / Math.pow(distanciaTrabajoMM, k.k12);
+  return Math.pow(5.0208 / F, 1 / k.k12);
+}
