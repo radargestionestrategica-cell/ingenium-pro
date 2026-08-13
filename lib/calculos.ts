@@ -715,3 +715,39 @@ export function calcularEES(
 
   return (altura_1 + ancho_1) / 2;
 }
+
+interface CoeficientesCF {
+  b1: number; b2: number; b3: number;
+}
+
+// IEEE 1584-2018 Tabla 7, verificado contra librería MIT arcflash
+export const TABLA7_CF_ARCFLASH: Record<string, CoeficientesCF> = {
+  Typical_VCB:  { b1: -0.000302,  b2: 0.03441,   b3: 0.4325  },
+  Typical_VCBB: { b1: -0.0002976, b2: 0.032,     b3: 0.479   },
+  Typical_HCB:  { b1: -0.0001923, b2: 0.01935,   b3: 0.6899  },
+  Shallow_VCB:  { b1: 0.002222,   b2: -0.02556,  b3: 0.6222  },
+  Shallow_VCBB: { b1: -0.002778,  b2: 0.1194,    b3: -0.2778 },
+  Shallow_HCB:  { b1: -0.0005556, b2: 0.03722,   b3: 0.4778  },
+};
+
+// IEEE 1584-2018 Ecuaciones 14-15 — factor de corrección de enclosure
+// (CF). VOA/HOA no tienen enclosure que corregir (ver
+// requiereCorreccionEnclosure), así que CF=1 para esas configuraciones.
+export function calcularCF(
+  config: ConfiguracionElectrodoArcFlash,
+  clasificacion: ClasificacionEnclosure,
+  ees: number,
+): number {
+  if (!requiereCorreccionEnclosure(config)) {
+    return 1;
+  }
+
+  const clave = `${clasificacion}_${config}`;
+  const b = TABLA7_CF_ARCFLASH[clave];
+  if (!b) {
+    throw new Error(`Sin coeficientes Tabla 7 para "${clave}".`);
+  }
+
+  const x1 = b.b1 * ees ** 2 + b.b2 * ees + b.b3;
+  return clasificacion === 'Typical' ? x1 : 1 / x1;
+}
