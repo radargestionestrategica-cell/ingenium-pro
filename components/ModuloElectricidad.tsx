@@ -3,6 +3,12 @@
 import { publicarResultado } from '@/components/ResultadoContexto';
 import BotonesExportar, { DatosExportar } from '@/components/BotonesExportar';
 import { useState, type CSSProperties, type ReactNode } from 'react';
+import {
+  clasificarEnclosure, calcularIarcIntermedia, interpolarArcFlash,
+  calcularVarCf, calcularIarcReducida, calcularEES, calcularCF,
+  calcularEnergiaFinal, calcularArcFlashBoundary, elegirPeorCaso,
+  validarEntradaArcFlash,
+} from '@/lib/calculos';
 
 // MÓDULO ELECTRICIDAD INDUSTRIAL — INGENIUM PRO v8.1
 // Base conservada. Exportación integrada con ResultadoContexto.
@@ -759,6 +765,63 @@ export default function ModuloElectricidad() {
     };
     setDatosPeligrosa(payloadPeligrosa);
     publicarResultado(payloadPeligrosa);
+  };
+
+  const calcArcFlash = () => {
+    R();
+
+    const voltajeKV = parseFloat(afVoltajeKV);
+    const ibfKA = parseFloat(afIbfKA);
+    const gapMM = parseFloat(afGapMM);
+    const alturaMM = parseFloat(afAlturaMM);
+    const anchoMM = parseFloat(afAnchoMM);
+    const distanciaTrabajoMM = parseFloat(afDistanciaTrabajoMM);
+    const tiempoNormalMS = parseFloat(afTiempoNormalMS);
+    const tiempoReducidoMS = parseFloat(afTiempoReducidoMS);
+
+    const validacion = validarEntradaArcFlash(voltajeKV, ibfKA, gapMM, distanciaTrabajoMM, afConfigElectrodo);
+    if (!validacion.valido) {
+      alert(validacion.errores.join('\n'));
+      return;
+    }
+
+    // Mismo pipeline que lib/__tests__/arcflash-anexo-d1.test.ts
+    const clasificacion = clasificarEnclosure(alturaMM, anchoMM, voltajeKV);
+
+    const iarc600   = calcularIarcIntermedia(afConfigElectrodo, 0.6,  ibfKA, gapMM);
+    const iarc2700  = calcularIarcIntermedia(afConfigElectrodo, 2.7,  ibfKA, gapMM);
+    const iarc14300 = calcularIarcIntermedia(afConfigElectrodo, 14.3, ibfKA, gapMM);
+    interpolarArcFlash(iarc600, iarc2700, iarc14300, voltajeKV); // Iarc normal — informativo, no se reusa río abajo
+
+    const varCf = calcularVarCf(afConfigElectrodo, voltajeKV);
+
+    const iarc600Red   = calcularIarcReducida(iarc600, varCf);
+    const iarc2700Red  = calcularIarcReducida(iarc2700, varCf);
+    const iarc14300Red = calcularIarcReducida(iarc14300, varCf);
+    interpolarArcFlash(iarc600Red, iarc2700Red, iarc14300Red, voltajeKV); // Iarc reducida — informativo
+
+    const ees = calcularEES(afConfigElectrodo, voltajeKV, alturaMM, anchoMM, clasificacion);
+    const cf  = calcularCF(afConfigElectrodo, clasificacion, ees);
+
+    const energiaNormal = calcularEnergiaFinal(
+      afConfigElectrodo, voltajeKV, tiempoNormalMS,
+      iarc600, iarc2700, iarc14300,
+      ibfKA, gapMM, cf, distanciaTrabajoMM,
+    );
+    const energiaReducida = calcularEnergiaFinal(
+      afConfigElectrodo, voltajeKV, tiempoReducidoMS,
+      iarc600Red, iarc2700Red, iarc14300Red,
+      ibfKA, gapMM, cf, distanciaTrabajoMM,
+    );
+
+    // AFB: mismo criterio que lib/__tests__/arcflash-anexo-d1.test.ts —
+    // usa el set de coeficientes de 14.3kV (solo validado para
+    // voltajeKV > 2.7kV, igual que el caso del Anexo D.1 del test).
+    const afbNormal   = calcularArcFlashBoundary(afConfigElectrodo, 14.3, energiaNormal, distanciaTrabajoMM);
+    const afbReducida = calcularArcFlashBoundary(afConfigElectrodo, 14.3, energiaReducida, distanciaTrabajoMM);
+
+    const peorCaso = elegirPeorCaso(energiaNormal, afbNormal, energiaReducida, afbReducida);
+    setResArcFlash(peorCaso);
   };
 
   const zd = ZONAS[apZona];
