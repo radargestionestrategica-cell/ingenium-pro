@@ -832,7 +832,12 @@ export function calcularArcFlashBoundary(
 // IEEE 1584-2018 — combina las 3 energías incidentes intermedias
 // (calculadas en 0.6/2.7/14.3 kV con calcularEnergiaIncidente) en la
 // tensión real del sistema, reusando interpolarArcFlash (misma
-// interpolación que ya se usa para Iarc).
+// interpolación que ya se usa para Iarc). Esta interpolación es para
+// voltajeRealKV > 0.6 kV; cada punto de referencia usa su propia
+// corriente de arco (iarc600/iarc2700/iarc14300) sin sustituir por
+// IarcVCB600 — esa sustitución solo aplica al caso LV directo (Ecuación
+// 25, voltajeRealKV ≤ 0.6 kV, ver calcularIarcFinalBajaTension), que es
+// una función aparte y no pasa por esta interpolación.
 export function calcularEnergiaFinal(
   config: ConfiguracionElectrodoArcFlash,
   voltajeRealKV: number,
@@ -844,11 +849,10 @@ export function calcularEnergiaFinal(
   gapMM: number,
   cf: number,
   distanciaTrabajoMM: number,
-  iarcParaLV?: number,
 ): number {
-  const E600   = calcularEnergiaIncidente(config, 0.6,  tiempoMS, iarc600,   ibfKA, gapMM, cf, distanciaTrabajoMM, iarcParaLV);
-  const E2700  = calcularEnergiaIncidente(config, 2.7,  tiempoMS, iarc2700,  ibfKA, gapMM, cf, distanciaTrabajoMM, iarcParaLV);
-  const E14300 = calcularEnergiaIncidente(config, 14.3, tiempoMS, iarc14300, ibfKA, gapMM, cf, distanciaTrabajoMM, iarcParaLV);
+  const E600   = calcularEnergiaIncidente(config, 0.6,  tiempoMS, iarc600,   ibfKA, gapMM, cf, distanciaTrabajoMM);
+  const E2700  = calcularEnergiaIncidente(config, 2.7,  tiempoMS, iarc2700,  ibfKA, gapMM, cf, distanciaTrabajoMM);
+  const E14300 = calcularEnergiaIncidente(config, 14.3, tiempoMS, iarc14300, ibfKA, gapMM, cf, distanciaTrabajoMM);
 
   return interpolarArcFlash(E600, E2700, E14300, voltajeRealKV);
 }
