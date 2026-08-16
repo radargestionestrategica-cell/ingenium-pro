@@ -6,8 +6,8 @@ import { useState, type CSSProperties, type ReactNode } from 'react';
 import {
   clasificarEnclosure, calcularIarcIntermedia, interpolarArcFlash,
   calcularVarCf, calcularIarcReducida, calcularEES, calcularCF,
-  calcularEnergiaFinal, calcularArcFlashBoundary, elegirPeorCaso,
-  validarEntradaArcFlash,
+  calcularEnergiaFinal, calcularEnergiaIncidente, calcularArcFlashBoundary,
+  elegirPeorCaso, validarEntradaArcFlash, calcularIarcFinalBajaTension,
 } from '@/lib/calculos';
 
 // MÓDULO ELECTRICIDAD INDUSTRIAL — INGENIUM PRO v8.1
@@ -785,9 +785,36 @@ export default function ModuloElectricidad() {
       return;
     }
 
-    // Mismo pipeline que lib/__tests__/arcflash-anexo-d1.test.ts
     const clasificacion = clasificarEnclosure(alturaMM, anchoMM, voltajeKV);
 
+    // Rama LV directa — Ecuación 25 (voltajeKV ≤ 0.6kV), sin interpolar
+    // entre las 3 tensiones de referencia: hay un solo Iarc corregido por
+    // tensión real, que se reusa tanto en el término principal como en el
+    // parámetro opcional iarc600KA de calcularEnergiaIncidente.
+    if (voltajeKV <= 0.6) {
+      const iarcNormal   = calcularIarcFinalBajaTension(afConfigElectrodo, voltajeKV, ibfKA, gapMM);
+      const varCfLV      = calcularVarCf(afConfigElectrodo, voltajeKV);
+      const iarcReducida = calcularIarcReducida(iarcNormal, varCfLV);
+
+      const eesLV = calcularEES(afConfigElectrodo, voltajeKV, alturaMM, anchoMM, clasificacion);
+      const cfLV  = calcularCF(afConfigElectrodo, clasificacion, eesLV);
+
+      const energiaNormalLV = calcularEnergiaIncidente(
+        afConfigElectrodo, 0.6, tiempoNormalMS, iarcNormal, ibfKA, gapMM, cfLV, distanciaTrabajoMM, iarcNormal,
+      );
+      const energiaReducidaLV = calcularEnergiaIncidente(
+        afConfigElectrodo, 0.6, tiempoReducidoMS, iarcReducida, ibfKA, gapMM, cfLV, distanciaTrabajoMM, iarcReducida,
+      );
+
+      const afbNormalLV   = calcularArcFlashBoundary(afConfigElectrodo, 0.6, energiaNormalLV, distanciaTrabajoMM);
+      const afbReducidaLV = calcularArcFlashBoundary(afConfigElectrodo, 0.6, energiaReducidaLV, distanciaTrabajoMM);
+
+      setResArcFlash(elegirPeorCaso(energiaNormalLV, afbNormalLV, energiaReducidaLV, afbReducidaLV));
+      return;
+    }
+
+    // Rama HV — interpolación entre 0.6/2.7/14.3 kV. Mismo pipeline que
+    // lib/__tests__/arcflash-anexo-d1.test.ts
     const iarc600   = calcularIarcIntermedia(afConfigElectrodo, 0.6,  ibfKA, gapMM);
     const iarc2700  = calcularIarcIntermedia(afConfigElectrodo, 2.7,  ibfKA, gapMM);
     const iarc14300 = calcularIarcIntermedia(afConfigElectrodo, 14.3, ibfKA, gapMM);
