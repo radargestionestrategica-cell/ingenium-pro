@@ -1413,6 +1413,69 @@ export default function ModuloElectricidad() {
           )}
         </div>
       )}
+      {sub === 'arcflash' && (
+        <div>
+          <Tit t="Arc Flash — IEEE 1584-2018" />
+
+          <div style={g3}>
+            <div>
+              <label style={lbl}>Voltaje del sistema (kV)</label>
+              <input value={afVoltajeKV} onChange={(e) => setAfvoltajekv(e.target.value)} style={inp} type="number" min="0.208" max="15" step="0.01" />
+            </div>
+
+            <div>
+              <label style={lbl}>Corriente de falla Ibf (kA)</label>
+              <input value={afIbfKA} onChange={(e) => setAfibfka(e.target.value)} style={inp} type="number" min="0.2" step="0.1" />
+            </div>
+
+            <div>
+              <label style={lbl}>Gap entre conductores (mm)</label>
+              <input value={afGapMM} onChange={(e) => setAfgapmm(e.target.value)} style={inp} type="number" min="6.35" max="254" step="0.1" />
+            </div>
+
+            <div>
+              <label style={lbl}>Alto del gabinete (mm)</label>
+              <input value={afAlturaMM} onChange={(e) => setAfalturamm(e.target.value)} style={inp} type="number" min="1" step="1" />
+            </div>
+
+            <div>
+              <label style={lbl}>Ancho del gabinete (mm)</label>
+              <input value={afAnchoMM} onChange={(e) => setAfanchomm(e.target.value)} style={inp} type="number" min="1" step="1" />
+            </div>
+
+            <div>
+              <label style={lbl}>Distancia de trabajo (mm)</label>
+              <input value={afDistanciaTrabajoMM} onChange={(e) => setAfdistanciatrabajomm(e.target.value)} style={inp} type="number" min="305" step="1" />
+            </div>
+
+            <div>
+              <label style={lbl}>Tiempo de arco normal (ms)</label>
+              <input value={afTiempoNormalMS} onChange={(e) => setAftiemponormalms(e.target.value)} style={inp} type="number" min="1" step="1" />
+            </div>
+
+            <div>
+              <label style={lbl}>Tiempo de arco reducido (ms)</label>
+              <input value={afTiempoReducidoMS} onChange={(e) => setAftiemporeducidoms(e.target.value)} style={inp} type="number" min="1" step="1" />
+            </div>
+
+            <div>
+              <label style={lbl}>Configuración de electrodo</label>
+              <select value={afConfigElectrodo} onChange={(e) => setAfconfigelectrodo(e.target.value as 'VCB'|'VCBB'|'HCB'|'VOA'|'HOA')} style={inp}>
+                <option value="VCB"  style={{ background:'#0a0f1e' }}>VCB — Vertical en caja</option>
+                <option value="VCBB" style={{ background:'#0a0f1e' }}>VCBB — Vertical en caja, barrera</option>
+                <option value="HCB"  style={{ background:'#0a0f1e' }}>HCB — Horizontal en caja</option>
+                <option value="VOA"  style={{ background:'#0a0f1e' }}>VOA — Vertical en aire abierto</option>
+                <option value="HOA"  style={{ background:'#0a0f1e' }}>HOA — Horizontal en aire abierto</option>
+              </select>
+            </div>
+          </div>
+
+          <Info t="IEEE 1584-2018 — energía incidente y arc-flash boundary con el modelo empírico completo (Tablas 1-7, Ecuaciones 1-25). No reemplaza el estudio de coordinación de protecciones ni la certificación de un ingeniero matriculado." />
+
+          <Btn onClick={calcArcFlash} text="Calcular Arc Flash" />
+        </div>
+      )}
+
       {datosActivo && <BotonesExportar visible={true} datos={datosActivo} />}
     </div>
   );
