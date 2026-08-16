@@ -792,18 +792,22 @@ export default function ModuloElectricidad() {
     // tensión real, que se reusa tanto en el término principal como en el
     // parámetro opcional iarc600KA de calcularEnergiaIncidente.
     if (voltajeKV <= 0.6) {
-      const iarcNormal   = calcularIarcFinalBajaTension(afConfigElectrodo, voltajeKV, ibfKA, gapMM);
-      const varCfLV      = calcularVarCf(afConfigElectrodo, voltajeKV);
-      const iarcReducida = calcularIarcReducida(iarcNormal, varCfLV);
+      const iarc600Crudo = calcularIarcIntermedia(afConfigElectrodo, 0.6, ibfKA, gapMM);
+      const iarcNormal    = calcularIarcFinalBajaTension(afConfigElectrodo, voltajeKV, ibfKA, gapMM);
+      const varCfLV       = calcularVarCf(afConfigElectrodo, voltajeKV);
+      const iarcReducida  = calcularIarcReducida(iarcNormal, varCfLV);
 
       const eesLV = calcularEES(afConfigElectrodo, voltajeKV, alturaMM, anchoMM, clasificacion);
       const cfLV  = calcularCF(afConfigElectrodo, clasificacion, eesLV);
 
+      // iarc600Crudo (Iarc intermedio SIN corregir por Ecuación 25) no
+      // cambia entre escenarios — solo el 4to parámetro (iarcKA) difiere
+      // entre normal y reducida.
       const energiaNormalLV = calcularEnergiaIncidente(
-        afConfigElectrodo, 0.6, tiempoNormalMS, iarcNormal, ibfKA, gapMM, cfLV, distanciaTrabajoMM, iarcNormal,
+        afConfigElectrodo, 0.6, tiempoNormalMS, iarcNormal, ibfKA, gapMM, cfLV, distanciaTrabajoMM, iarc600Crudo,
       );
       const energiaReducidaLV = calcularEnergiaIncidente(
-        afConfigElectrodo, 0.6, tiempoReducidoMS, iarcReducida, ibfKA, gapMM, cfLV, distanciaTrabajoMM, iarcReducida,
+        afConfigElectrodo, 0.6, tiempoReducidoMS, iarcReducida, ibfKA, gapMM, cfLV, distanciaTrabajoMM, iarc600Crudo,
       );
 
       const afbNormalLV   = calcularArcFlashBoundary(afConfigElectrodo, 0.6, energiaNormalLV, distanciaTrabajoMM);
