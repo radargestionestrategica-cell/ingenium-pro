@@ -275,6 +275,7 @@ export default function ModuloElectricidad() {
   const [datosPeligrosa, setDatosPeligrosa] = useState<DatosExportar | null>(null);
   const [datosLuz, setDatosLuz] = useState<DatosExportar | null>(null);
   const [datosTrafo, setDatosTrafo] = useState<DatosExportar | null>(null);
+  const [datosArcFlash, setDatosArcFlash] = useState<DatosExportar | null>(null);
 
   const R = () => setErr('');
 
@@ -851,11 +852,25 @@ export default function ModuloElectricidad() {
 
     const peorCaso = elegirPeorCaso(energiaNormal, afbNormal, energiaReducida, afbReducida);
     setResArcFlash(peorCaso);
+
+    const payloadArcFlash: DatosExportar = {
+      tipo: 'arcflash',
+      normativa: 'IEEE 1584-2018',
+      parametros: {
+        voltajeKV, ibfKA, gapMM, alturaMM, anchoMM, distanciaTrabajoMM,
+        tiempoNormalMS, tiempoReducidoMS, configElectrodo: afConfigElectrodo,
+      },
+      resultado: {
+        energia: peorCaso.energia, afb: peorCaso.afb, escenario: peorCaso.escenario,
+      },
+    };
+    setDatosArcFlash(payloadArcFlash);
+    publicarResultado(payloadArcFlash);
   };
 
   const zd = ZONAS[apZona];
 
-  const DATOS_MAP: Record<string, DatosExportar | null> = { cable: datosCable, caida: datosCaida, cc: datosCC, fp: datosFP, motor: datosMotor, peligrosa: datosPeligrosa, luz: datosLuz, trafo: datosTrafo };
+  const DATOS_MAP: Record<string, DatosExportar | null> = { cable: datosCable, caida: datosCaida, cc: datosCC, fp: datosFP, motor: datosMotor, peligrosa: datosPeligrosa, luz: datosLuz, trafo: datosTrafo, arcflash: datosArcFlash };
   const datosActivo = DATOS_MAP[sub] ?? null;
 
   return (
