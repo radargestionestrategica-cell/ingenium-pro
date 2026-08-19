@@ -47,3 +47,5 @@ next-env.d.ts
 
 .env*.local
 lib/auth.ts
+
+.env*
