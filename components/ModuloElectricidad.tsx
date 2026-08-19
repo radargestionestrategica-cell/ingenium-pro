@@ -822,11 +822,20 @@ export default function ModuloElectricidad() {
         tipo: 'arcflash',
         normativa: 'IEEE 1584-2018',
         parametros: {
-          voltajeKV, ibfKA, gapMM, alturaMM, anchoMM, distanciaTrabajoMM,
-          tiempoNormalMS, tiempoReducidoMS, configElectrodo: afConfigElectrodo,
+          'Tensión (kV)':                              voltajeKV,
+          'Corriente de falla (kA)':                    ibfKA,
+          'Separación entre electrodos (mm)':           gapMM,
+          'Altura del gabinete (mm)':                   alturaMM,
+          'Ancho del gabinete (mm)':                    anchoMM,
+          'Distancia de trabajo (mm)':                  distanciaTrabajoMM,
+          'Tiempo de arco - escenario normal (ms)':     tiempoNormalMS,
+          'Tiempo de arco - escenario reducido (ms)':   tiempoReducidoMS,
+          'Configuración de electrodo':                 afConfigElectrodo,
         },
         resultado: {
-          energia: peorCasoLV.energia, afb: peorCasoLV.afb, escenario: peorCasoLV.escenario,
+          'Energía incidente (J/cm²)':                        peorCasoLV.energia,
+          'Distancia límite - Arc Flash Boundary (mm)':       peorCasoLV.afb,
+          'Escenario crítico':                                peorCasoLV.escenario,
         },
       };
       setDatosArcFlash(payloadArcFlashLV);
@@ -872,11 +881,20 @@ export default function ModuloElectricidad() {
       tipo: 'arcflash',
       normativa: 'IEEE 1584-2018',
       parametros: {
-        voltajeKV, ibfKA, gapMM, alturaMM, anchoMM, distanciaTrabajoMM,
-        tiempoNormalMS, tiempoReducidoMS, configElectrodo: afConfigElectrodo,
+        'Tensión (kV)':                              voltajeKV,
+        'Corriente de falla (kA)':                    ibfKA,
+        'Separación entre electrodos (mm)':           gapMM,
+        'Altura del gabinete (mm)':                   alturaMM,
+        'Ancho del gabinete (mm)':                    anchoMM,
+        'Distancia de trabajo (mm)':                  distanciaTrabajoMM,
+        'Tiempo de arco - escenario normal (ms)':     tiempoNormalMS,
+        'Tiempo de arco - escenario reducido (ms)':   tiempoReducidoMS,
+        'Configuración de electrodo':                 afConfigElectrodo,
       },
       resultado: {
-        energia: peorCaso.energia, afb: peorCaso.afb, escenario: peorCaso.escenario,
+        'Energía incidente (J/cm²)':                        peorCaso.energia,
+        'Distancia límite - Arc Flash Boundary (mm)':       peorCaso.afb,
+        'Escenario crítico':                                peorCaso.escenario,
       },
     };
     setDatosArcFlash(payloadArcFlash);
