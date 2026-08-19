@@ -6,7 +6,8 @@ import { useState, type CSSProperties, type ReactNode } from 'react';
 import {
   clasificarEnclosure, calcularIarcIntermedia, interpolarArcFlash,
   calcularVarCf, calcularIarcReducida, calcularEES, calcularCF,
-  calcularEnergiaFinal, calcularEnergiaIncidente, calcularArcFlashBoundary,
+  calcularEnergiaIncidente, calcularArcFlashBoundary,
+  calcularEnergiaYBoundaryFinal,
   elegirPeorCaso, validarEntradaArcFlash, calcularIarcFinalBajaTension,
 } from '@/lib/calculos';
 
@@ -834,22 +835,19 @@ export default function ModuloElectricidad() {
     const ees = calcularEES(afConfigElectrodo, voltajeKV, alturaMM, anchoMM, clasificacion);
     const cf  = calcularCF(afConfigElectrodo, clasificacion, ees);
 
-    const energiaNormal = calcularEnergiaFinal(
+    // Energía y AFB interpolados cada uno por separado (no se deriva el
+    // AFB de la energía ya interpolada) — mismo patrón validado en
+    // lib/__tests__/arcflash-anexo-d1.test.ts.
+    const { energia: energiaNormal, afb: afbNormal } = calcularEnergiaYBoundaryFinal(
       afConfigElectrodo, voltajeKV, tiempoNormalMS,
       iarc600, iarc2700, iarc14300,
       ibfKA, gapMM, cf, distanciaTrabajoMM,
     );
-    const energiaReducida = calcularEnergiaFinal(
+    const { energia: energiaReducida, afb: afbReducida } = calcularEnergiaYBoundaryFinal(
       afConfigElectrodo, voltajeKV, tiempoReducidoMS,
       iarc600Red, iarc2700Red, iarc14300Red,
       ibfKA, gapMM, cf, distanciaTrabajoMM,
     );
-
-    // AFB: mismo criterio que lib/__tests__/arcflash-anexo-d1.test.ts —
-    // usa el set de coeficientes de 14.3kV (solo validado para
-    // voltajeKV > 2.7kV, igual que el caso del Anexo D.1 del test).
-    const afbNormal   = calcularArcFlashBoundary(afConfigElectrodo, 14.3, energiaNormal, distanciaTrabajoMM);
-    const afbReducida = calcularArcFlashBoundary(afConfigElectrodo, 14.3, energiaReducida, distanciaTrabajoMM);
 
     const peorCaso = elegirPeorCaso(energiaNormal, afbNormal, energiaReducida, afbReducida);
     setResArcFlash(peorCaso);
