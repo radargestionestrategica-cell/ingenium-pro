@@ -857,6 +857,43 @@ export function calcularEnergiaFinal(
   return interpolarArcFlash(E600, E2700, E14300, voltajeRealKV);
 }
 
+// Sigue el patrón del motor de referencia (MIT arcflash): energía
+// incidente y arc-flash boundary se calculan e interpolan CADA UNO por
+// separado en su propio espacio (Ecuaciones 3-6 y 7-10 en las 3
+// tensiones de referencia, cada resultado interpolado con
+// interpolarArcFlash) — el AFB NO se deriva de la energía ya
+// interpolada a la tensión real, porque calcularArcFlashBoundary no es
+// una función lineal de la energía (usa k12 como exponente), así que
+// interpolar linealmente la energía y recién ahí calcular el boundary
+// da un resultado distinto (incorrecto) a interpolar el boundary de
+// cada punto de referencia por separado.
+export function calcularEnergiaYBoundaryFinal(
+  config: ConfiguracionElectrodoArcFlash,
+  voltajeRealKV: number,
+  tiempoMS: number,
+  iarc600: number,
+  iarc2700: number,
+  iarc14300: number,
+  ibfKA: number,
+  gapMM: number,
+  cf: number,
+  distanciaTrabajoMM: number,
+  iarc600Override?: number,
+): { energia: number; afb: number } {
+  const E600   = calcularEnergiaIncidente(config, 0.6,  tiempoMS, iarc600,   ibfKA, gapMM, cf, distanciaTrabajoMM, iarc600Override);
+  const E2700  = calcularEnergiaIncidente(config, 2.7,  tiempoMS, iarc2700,  ibfKA, gapMM, cf, distanciaTrabajoMM, iarc600Override);
+  const E14300 = calcularEnergiaIncidente(config, 14.3, tiempoMS, iarc14300, ibfKA, gapMM, cf, distanciaTrabajoMM, iarc600Override);
+
+  const AFB600   = calcularArcFlashBoundary(config, 0.6,  E600,   distanciaTrabajoMM);
+  const AFB2700  = calcularArcFlashBoundary(config, 2.7,  E2700,  distanciaTrabajoMM);
+  const AFB14300 = calcularArcFlashBoundary(config, 14.3, E14300, distanciaTrabajoMM);
+
+  return {
+    energia: interpolarArcFlash(E600, E2700, E14300, voltajeRealKV),
+    afb: interpolarArcFlash(AFB600, AFB2700, AFB14300, voltajeRealKV),
+  };
+}
+
 // IEEE 1584-2018 exige evaluar ambos escenarios de corriente de arco
 // (normal y reducida, ver calcularIarcReducida) y tomar como resultado
 // final el de mayor energía incidente — la reducción de corriente no
