@@ -815,7 +815,22 @@ export default function ModuloElectricidad() {
       const afbNormalLV   = calcularArcFlashBoundary(afConfigElectrodo, 0.6, energiaNormalLV, distanciaTrabajoMM);
       const afbReducidaLV = calcularArcFlashBoundary(afConfigElectrodo, 0.6, energiaReducidaLV, distanciaTrabajoMM);
 
-      setResArcFlash(elegirPeorCaso(energiaNormalLV, afbNormalLV, energiaReducidaLV, afbReducidaLV));
+      const peorCasoLV = elegirPeorCaso(energiaNormalLV, afbNormalLV, energiaReducidaLV, afbReducidaLV);
+      setResArcFlash(peorCasoLV);
+
+      const payloadArcFlashLV: DatosExportar = {
+        tipo: 'arcflash',
+        normativa: 'IEEE 1584-2018',
+        parametros: {
+          voltajeKV, ibfKA, gapMM, alturaMM, anchoMM, distanciaTrabajoMM,
+          tiempoNormalMS, tiempoReducidoMS, configElectrodo: afConfigElectrodo,
+        },
+        resultado: {
+          energia: peorCasoLV.energia, afb: peorCasoLV.afb, escenario: peorCasoLV.escenario,
+        },
+      };
+      setDatosArcFlash(payloadArcFlashLV);
+      publicarResultado(payloadArcFlashLV);
       return;
     }
 
