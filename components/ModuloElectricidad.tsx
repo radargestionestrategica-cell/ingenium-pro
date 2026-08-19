@@ -1473,6 +1473,25 @@ export default function ModuloElectricidad() {
           <Info t="IEEE 1584-2018 — energía incidente y arc-flash boundary con el modelo empírico completo (Tablas 1-7, Ecuaciones 1-25). No reemplaza el estudio de coordinación de protecciones ni la certificación de un ingeniero matriculado." />
 
           <Btn onClick={calcArcFlash} text="Calcular Arc Flash" />
+
+          {resArcFlash && (
+            <ResBox>
+              <div style={{ fontSize:12, color:COLOR, fontWeight:700, marginBottom:14 }}>RESULTADO — ARC FLASH (IEEE 1584-2018)</div>
+
+              <div style={g3}>
+                <Card
+                  label="Energía incidente"
+                  val={`${resArcFlash.energia.toFixed(3)} cal/cm²`}
+                  color={resArcFlash.escenario === 'reducida' ? '#f59e0b' : undefined}
+                  sub={`Peor caso — escenario ${resArcFlash.escenario}`}
+                />
+                <Card label="Arc-flash boundary" val={`${resArcFlash.afb.toFixed(1)} mm`} sub="Distancia límite sin PPE" />
+                <Card label="Escenario crítico" val={resArcFlash.escenario === 'reducida' ? 'Corriente reducida' : 'Normal'} sub="Mayor energía entre ambos" />
+              </div>
+
+              <Warn t="⚠️ Comparación contra el modelo publicado IEEE 1584-2018 — no reemplaza el estudio de arc flash certificado por un ingeniero matriculado ni la selección de PPE en campo." />
+            </ResBox>
+          )}
         </div>
       )}
 

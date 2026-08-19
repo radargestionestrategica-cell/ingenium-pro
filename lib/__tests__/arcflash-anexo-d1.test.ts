@@ -7,8 +7,7 @@ import {
   calcularIarcReducida,
   calcularEES,
   calcularCF,
-  calcularEnergiaFinal,
-  calcularArcFlashBoundary,
+  calcularEnergiaYBoundaryFinal,
   elegirPeorCaso,
   ConfiguracionElectrodoArcFlash,
 } from '../calculos';
@@ -83,28 +82,21 @@ describe('Pipeline IEEE 1584-2018 — Anexo D.1 (VCB, 4.16kV, Ibf=15kA)', () => 
     const cf = calcularCF(CONFIG, clasificacion, ees);
     console.log(`calcularCF: ${cf.toFixed(6)}`);
 
-    // 9) Energía incidente final — escenario normal y reducido.
-    // voltajeRealKV=4.16kV > 2.7kV: interpolarArcFlash usa la rama x2
-    // (extrapolada desde el par 2700-14300) para este rango, así que el
-    // AFB reusa el mismo set de coeficientes de 14.3kV.
-    const energiaNormal = calcularEnergiaFinal(
+    // 9-10) Energía incidente y arc-flash boundary final — cada uno
+    // interpolado por separado en su propio espacio (no se deriva el AFB
+    // de la energía ya interpolada), escenario normal y reducido.
+    const { energia: energiaNormal, afb: afbNormal } = calcularEnergiaYBoundaryFinal(
       CONFIG, VOLTAJE_REAL_KV, TIEMPO_NORMAL_MS,
       iarc600, iarc2700, iarc14300,
       IBF_KA, GAP_MM, cf, DISTANCIA_TRABAJO_MM,
     );
-    const energiaReducida = calcularEnergiaFinal(
+    const { energia: energiaReducida, afb: afbReducida } = calcularEnergiaYBoundaryFinal(
       CONFIG, VOLTAJE_REAL_KV, TIEMPO_REDUCIDO_MS,
       iarc600Red, iarc2700Red, iarc14300Red,
       IBF_KA, GAP_MM, cf, DISTANCIA_TRABAJO_MM,
     );
-    console.log(`calcularEnergiaFinal normal (t=${TIEMPO_NORMAL_MS}ms):   ${energiaNormal.toFixed(4)}`);
-    console.log(`calcularEnergiaFinal reducida (t=${TIEMPO_REDUCIDO_MS}ms): ${energiaReducida.toFixed(4)}`);
-
-    // 10) Arc-flash boundary — ambos escenarios
-    const afbNormal   = calcularArcFlashBoundary(CONFIG, 14.3, energiaNormal, DISTANCIA_TRABAJO_MM);
-    const afbReducida = calcularArcFlashBoundary(CONFIG, 14.3, energiaReducida, DISTANCIA_TRABAJO_MM);
-    console.log(`calcularArcFlashBoundary normal:   ${afbNormal.toFixed(4)} mm`);
-    console.log(`calcularArcFlashBoundary reducida: ${afbReducida.toFixed(4)} mm`);
+    console.log(`calcularEnergiaYBoundaryFinal normal (t=${TIEMPO_NORMAL_MS}ms):   energia=${energiaNormal.toFixed(4)}  afb=${afbNormal.toFixed(4)}`);
+    console.log(`calcularEnergiaYBoundaryFinal reducida (t=${TIEMPO_REDUCIDO_MS}ms): energia=${energiaReducida.toFixed(4)}  afb=${afbReducida.toFixed(4)}`);
 
     // 11) Peor caso
     const peorCaso = elegirPeorCaso(energiaNormal, afbNormal, energiaReducida, afbReducida);
