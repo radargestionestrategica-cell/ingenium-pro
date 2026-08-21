@@ -45,6 +45,11 @@ type Props = {
   proyectoId?:  string;
   activoNombre?: string;
   moduloId?:    string;
+  // Modo opcional: limita la selección a exactamente 2 registros (para cruce
+  // manual entre dos cálculos puntuales) en vez de la selección libre que ya
+  // usa exportar-lote. No afecta el comportamiento cuando está ausente/false.
+  modoSeleccionMaxima?: boolean;
+  onSeleccionCompleta?: (id1: string, id2: string) => void;
 };
 
 // ── Colores semáforo ─────────────────────────────────────────────────────────
@@ -54,7 +59,7 @@ const SEMAFORO = {
   ESTABLE:   { bg: 'bg-green-900/40',  border: 'border-green-500',  texto: 'text-green-400',  icono: '🟢', label: 'ESTABLE'    },
 };
 
-export default function HistorialActivo({ usuarioId, proyectoId, activoNombre, moduloId }: Props) {
+export default function HistorialActivo({ usuarioId, proyectoId, activoNombre, moduloId, modoSeleccionMaxima, onSeleccionCompleta }: Props) {
   const [datos,     setDatos]     = useState<RespuestaHistorial | null>(null);
   const [cargando,  setCargando]  = useState(false);
   const [error,     setError]     = useState<string | null>(null);
@@ -64,8 +69,18 @@ export default function HistorialActivo({ usuarioId, proyectoId, activoNombre, m
   const [exportandoLote, setExportandoLote] = useState(false);
 
   const toggleSeleccion = (id: string) => {
-    setSeleccionados(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+    setSeleccionados(prev => {
+      if (prev.includes(id)) return prev.filter(x => x !== id);
+      if (modoSeleccionMaxima && prev.length >= 2) return prev;
+      return [...prev, id];
+    });
   };
+
+  useEffect(() => {
+    if (modoSeleccionMaxima && seleccionados.length === 2 && onSeleccionCompleta) {
+      onSeleccionCompleta(seleccionados[0], seleccionados[1]);
+    }
+  }, [modoSeleccionMaxima, seleccionados, onSeleccionCompleta]);
 
   const exportarLote = async () => {
     if (seleccionados.length === 0) return;
@@ -362,10 +377,11 @@ export default function HistorialActivo({ usuarioId, proyectoId, activoNombre, m
                       <input
                         type="checkbox"
                         checked={seleccionados.includes(calc.id)}
+                        disabled={modoSeleccionMaxima && seleccionados.length >= 2 && !seleccionados.includes(calc.id)}
                         onClick={e => e.stopPropagation()}
                         onChange={() => toggleSeleccion(calc.id)}
-                        className="w-4 h-4 accent-cyan-500 cursor-pointer flex-shrink-0"
-                        title="Seleccionar para exportar en lote"
+                        className="w-4 h-4 accent-cyan-500 cursor-pointer flex-shrink-0 disabled:opacity-30 disabled:cursor-not-allowed"
+                        title={modoSeleccionMaxima ? 'Seleccionar (máximo 2)' : 'Seleccionar para exportar en lote'}
                       />
                       <span className="text-gray-500 text-xs whitespace-nowrap">
                         {new Date(calc.createdAt).toLocaleDateString('es-AR', {

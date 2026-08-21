@@ -1,7 +1,9 @@
 'use client';
 import { publicarResultado } from '@/components/ResultadoContexto';
 import BotonesExportar, { DatosExportar } from '@/components/BotonesExportar';
-import { useState } from 'react';
+import HistorialActivo from '@/components/HistorialActivo';
+import type { RiesgoDetectado } from '@/lib/cruceReglas';
+import { useState, useEffect } from 'react';
 import {
   linealizarTermocupla, TipoTermocupla, linealizarRTD, TipoRTD,
   evaluarTolerancia, SensorTolerancia, ClaseTermocupla, ClaseRTD,
@@ -201,6 +203,38 @@ export default function ModuloInstrumentacion() {
   const [resEmi,         setResEmi]         = useState<ResultadoEmisionFCC | null>(null);
   const [errorEmi,       setErrorEmi]       = useState('');
   const [datosEmi,       setDatosEmi]       = useState<DatosExportar | null>(null);
+
+  // ── Cruce manual con otro cálculo (CRUCE-011 / CRUCE-012) ──
+  const [usuarioId,       setUsuarioId]       = useState('');
+  const [mostrarCruce,    setMostrarCruce]    = useState(false);
+  const [cargandoCruce,   setCargandoCruce]   = useState(false);
+  const [resultadoCruce,  setResultadoCruce]  = useState<{ ok: boolean; riesgos?: RiesgoDetectado[]; error?: string } | null>(null);
+
+  useEffect(() => {
+    try {
+      const usr = JSON.parse(localStorage.getItem('ip_usuario') || '{}');
+      setUsuarioId(usr?.id ?? '');
+    } catch {}
+  }, []);
+
+  const manejarSeleccionCompleta = async (calculoId1: string, calculoId2: string) => {
+    setCargandoCruce(true);
+    setResultadoCruce(null);
+    try {
+      const res = await fetch('/api/cruce/analizar-manual', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json', ...ipAuthHeader() },
+        body:    JSON.stringify({ calculoId1, calculoId2 }),
+      });
+      const json = await res.json();
+      setResultadoCruce(json);
+    } catch {
+      setResultadoCruce({ ok: false, error: 'No se pudo conectar con el servidor.' });
+    } finally {
+      setCargandoCruce(false);
+      setMostrarCruce(false);
+    }
+  };
 
   const sensor = TIPOS_SENSOR[tipoIdx];
   const unidadSenal = sensor.kind === 'termocupla' ? 'mV' : 'Ω';
@@ -1165,6 +1199,74 @@ export default function ModuloInstrumentacion() {
         {datosEmi && <BotonesExportar visible={true} datos={datosEmi} />}
         </>
         )}
+
+        {/* ── CRUCE MANUAL CON OTRO CÁLCULO ── */}
+        <div style={{ marginTop: 28, paddingTop: 20, borderTop: '1px solid #334155' }}>
+          <button
+            onClick={() => { setMostrarCruce(v => !v); setResultadoCruce(null); }}
+            style={{ width: '100%', background: 'transparent', border: `1px solid ${TEAL}`, borderRadius: 10, padding: '12px 0', color: TEAL, fontWeight: 800, fontSize: 14, cursor: 'pointer', letterSpacing: 0.5 }}>
+            🔗 {mostrarCruce ? 'Cancelar cruce' : 'Cruzar con otro cálculo'}
+          </button>
+
+          {mostrarCruce && (
+            <div style={{ marginTop: 16, background: '#1e293b', border: '1px solid #334155', borderRadius: 12, padding: 16 }}>
+              <div style={{ color: '#94a3b8', fontSize: 12, marginBottom: 12 }}>
+                Elegí exactamente 2 cálculos del historial (Térmica + RTD, o Lazo 4-20mA + Electricidad) para cruzarlos.
+              </div>
+              {usuarioId
+                ? (
+                  <HistorialActivo
+                    usuarioId={usuarioId}
+                    modoSeleccionMaxima
+                    onSeleccionCompleta={manejarSeleccionCompleta}
+                  />
+                )
+                : <div style={{ color: '#64748b', fontSize: 12 }}>Cargando usuario...</div>}
+            </div>
+          )}
+
+          {cargandoCruce && (
+            <div style={{ marginTop: 16, color: '#94a3b8', fontSize: 13 }}>⏳ Analizando cruce...</div>
+          )}
+
+          {resultadoCruce && !resultadoCruce.ok && (
+            <div style={{ marginTop: 16, background: '#450a0a', border: '1px solid #dc2626', borderRadius: 8, padding: '14px 16px', color: '#fca5a5', fontSize: 13, lineHeight: 1.6 }}>
+              ⚠️ {resultadoCruce.error ?? 'No se pudo analizar el cruce.'}
+            </div>
+          )}
+
+          {resultadoCruce?.ok && (
+            <div style={{ marginTop: 16 }}>
+              {(!resultadoCruce.riesgos || resultadoCruce.riesgos.length === 0) ? (
+                <div style={{ background: '#0f172a', border: `1px solid ${TEAL}`, borderRadius: 8, padding: '14px 16px', color: TEAL, fontSize: 13 }}>
+                  ✓ Sin riesgos detectados en el cruce.
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {resultadoCruce.riesgos.map(r => (
+                    <div key={r.id} style={{
+                      background: '#1e293b',
+                      border: `2px solid ${r.nivel === 'CRITICO' ? '#ef4444' : r.nivel === 'ALTO' ? '#f59e0b' : '#334155'}`,
+                      borderRadius: 10, padding: 16,
+                    }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                        <div style={{ color: '#a78bfa', fontWeight: 800, fontSize: 11, letterSpacing: 0.5 }}>{r.id}</div>
+                        <div style={{
+                          background: r.nivel === 'CRITICO' ? '#ef4444' : r.nivel === 'ALTO' ? '#f59e0b' : '#334155',
+                          color: '#000', borderRadius: 20, padding: '4px 12px', fontWeight: 800, fontSize: 11,
+                        }}>{r.nivel}</div>
+                      </div>
+                      <div style={{ color: '#f8fafc', fontWeight: 700, fontSize: 14, marginBottom: 6 }}>{r.titulo}</div>
+                      <div style={{ color: '#94a3b8', fontSize: 13, lineHeight: 1.6, marginBottom: 8 }}>{r.descripcion}</div>
+                      <div style={{ color: '#475569', fontSize: 11, fontFamily: 'ui-monospace,SFMono-Regular,monospace', marginBottom: 8 }}>{r.normativa}</div>
+                      <div style={{ color: '#cbd5e1', fontSize: 12, fontStyle: 'italic' }}>Acción: {r.accion}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
 
       </div>
     </div>
