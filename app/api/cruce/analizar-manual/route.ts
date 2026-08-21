@@ -5,6 +5,21 @@ import { verificarTokenAPI, respuestaNoAutorizado } from '@/lib/api-auth';
 import { aplicarReglasCruceManual } from '@/lib/cruceReglas';
 import type { CalculoManual } from '@/lib/cruceReglas';
 
+// Mismos prefijos de tipo que usan evaluarCruce011/evaluarCruce012 internamente
+// en lib/cruceReglas.ts — se valida acá, antes de llamar a las reglas, para
+// poder distinguir "combinación no soportada" (400) de "regla no disparó
+// porque no coinciden activo/umbrales" (200 con riesgos: []).
+function combinacionSoportada(tipoA: string, tipoB: string): boolean {
+  const up = (t: string) => t.toUpperCase();
+  const esTermica = (t: string) => up(t).includes('DILATACION_TERMICA');
+  const esRTD     = (t: string) => up(t).includes('INSTRUMENTACION_RTD');
+  const esLazo    = (t: string) => up(t).includes('INSTRUMENTACION_LAZO');
+  const esElec    = (t: string) => up(t).includes('ELECTRICIDAD_CAIDA_TENSION');
+
+  return (esTermica(tipoA) && esRTD(tipoB)) || (esTermica(tipoB) && esRTD(tipoA)) ||
+         (esLazo(tipoA)    && esElec(tipoB)) || (esLazo(tipoB)    && esElec(tipoA));
+}
+
 export async function POST(req: NextRequest) {
   const payload = verificarTokenAPI(req);
   if (!payload) return respuestaNoAutorizado();
@@ -33,6 +48,13 @@ export async function POST(req: NextRequest) {
     }
     if (reg1.usuarioId !== payload.id || reg2.usuarioId !== payload.id) {
       return NextResponse.json({ ok: false, error: 'No autorizado para uno o ambos cálculos' }, { status: 403 });
+    }
+
+    if (!combinacionSoportada(reg1.tipo, reg2.tipo)) {
+      return NextResponse.json({
+        ok:    false,
+        error: 'Combinación de cálculos no soportada para cruce manual. Se admite: Térmica + Instrumentación RTD, o Instrumentación Lazo 4-20mA + Electricidad',
+      }, { status: 400 });
     }
 
     const aCalculoManual = (r: typeof reg1): CalculoManual => ({
