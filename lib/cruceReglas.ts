@@ -287,3 +287,93 @@ export function aplicarReglasDecruce(snaps: CalculoSnap[]): RiesgoDetectado[] {
   const orden: Record<string, number> = { CRITICO: 0, ALTO: 1, MEDIO: 2, BAJO: 3 };
   return alertas.sort((a, b) => orden[a.nivel] - orden[b.nivel]);
 }
+
+// ════════════════════════════════════════════════════════════════════════════
+// REGLAS DE CRUCE MANUALES — comparación puntual entre dos cálculos elegidos
+// explícitamente por el usuario (no automáticas, no barren los últimos 100).
+// Requieren activoNombre, que CalculoSnap no trae, por eso usan su propio tipo.
+// ════════════════════════════════════════════════════════════════════════════
+
+export interface CalculoManual extends CalculoSnap {
+  activoNombre: string | null;
+}
+
+function esTipo(c: CalculoManual, ...prefijos: string[]): boolean {
+  return prefijos.some(p => c.tipo.toUpperCase().includes(p.toUpperCase()));
+}
+
+function mismoActivo(a: CalculoManual, b: CalculoManual): boolean {
+  return !!a.activoNombre && !!b.activoNombre &&
+    a.activoNombre.trim().toLowerCase() === b.activoNombre.trim().toLowerCase();
+}
+
+// ── CRUCE-011: margen de diseño térmico vs error de medición RTD ────────────
+// DILATACION_TERMICA no tiene un campo propio de "margen de diseño": se usa
+// 'Delta T (C)' (el ΔT operación−instalación que dimensiona la dilatación
+// libre, ASME B31.3 Appendix C) porque es el único campo de Térmica en
+// unidades de temperatura comparable directamente contra el error de
+// medición del RTD. Si el error de medición iguala o supera ese ΔT, el
+// diseño térmico no puede confiar en la lectura del sensor que lo mide.
+export function evaluarCruce011(calcA: CalculoManual, calcB: CalculoManual): RiesgoDetectado | null {
+  const term = esTipo(calcA, 'DILATACION_TERMICA') ? calcA : esTipo(calcB, 'DILATACION_TERMICA') ? calcB : null;
+  const rtd  = esTipo(calcA, 'INSTRUMENTACION_RTD') ? calcA : esTipo(calcB, 'INSTRUMENTACION_RTD') ? calcB : null;
+  if (!term || !rtd || term === rtd) return null;
+  if (!mismoActivo(term, rtd)) return null;
+
+  const margenDisenoC = num(term.resultado, 'Delta T (C)');
+  const errorMedicionC =
+    num(rtd.resultado, 'Incertidumbre — U expandida k=2 (°C)') ||
+    num(rtd.resultado, 'Cable — Error estimado (°C)');
+
+  if (margenDisenoC <= 0 || errorMedicionC <= 0) return null;
+  if (errorMedicionC < margenDisenoC) return null;
+
+  return {
+    id:          'CRUCE-011',
+    nivel:       errorMedicionC >= margenDisenoC * 1.5 ? 'CRITICO' : 'ALTO',
+    titulo:      'Error de medición RTD iguala o supera el margen de diseño térmico',
+    descripcion: `Error de medición RTD=${errorMedicionC.toFixed(3)} °C ≥ ΔT de diseño térmico=${margenDisenoC.toFixed(2)} °C para el mismo activo — la incertidumbre del sensor invalida la confiabilidad del margen calculado.`,
+    modulos:     [term.tipo, rtd.tipo],
+    normativa:   'ASME B31.3 Appendix C: ΔT de diseño para análisis de dilatación térmica. JCGM 100:2008 (GUM): incertidumbre de medición expandida k=2.',
+    accion:      'Verificar la clase de tolerancia y el presupuesto de incertidumbre del RTD. Considerar un sensor de mayor clase (AA) o reducir el error de cable antes de confiar en el margen térmico calculado.',
+    evidencia:   { 'ΔT diseño (°C)': +margenDisenoC.toFixed(2), 'Error medición RTD (°C)': +errorMedicionC.toFixed(3) },
+  };
+}
+
+// ── CRUCE-012: presupuesto de energía del lazo 4-20mA vs caída de tensión ───
+// eléctrica general del mismo activo.
+// El margen de tensión del lazo (Instrumentación) ya descuenta la caída en
+// su propio cableado de señal, pero no conoce la caída de tensión del
+// circuito de alimentación general (Electricidad) que llega hasta la fuente
+// del lazo. Se resta esa caída adicional del margen del lazo: si el
+// resultado queda negativo, el lazo se queda sin energía suficiente aunque
+// cada cálculo por separado haya dado "OK".
+export function evaluarCruce012(calcA: CalculoManual, calcB: CalculoManual): RiesgoDetectado | null {
+  const lazo = esTipo(calcA, 'INSTRUMENTACION_LAZO') ? calcA : esTipo(calcB, 'INSTRUMENTACION_LAZO') ? calcB : null;
+  const elec = esTipo(calcA, 'ELECTRICIDAD_CAIDA_TENSION') ? calcA : esTipo(calcB, 'ELECTRICIDAD_CAIDA_TENSION') ? calcB : null;
+  if (!lazo || !elec || lazo === elec) return null;
+  if (!mismoActivo(lazo, elec)) return null;
+
+  const margenLazoV = num(lazo.resultado, 'Energía — Margen de tensión (V)');
+  const caidaElecV  = num(elec.resultado, 'Caida de tension (V)');
+  if (caidaElecV <= 0) return null;
+
+  const margenCombinadoV = margenLazoV - caidaElecV;
+  if (margenCombinadoV >= 0) return null;
+
+  return {
+    id:          'CRUCE-012',
+    nivel:       margenCombinadoV < -2 ? 'CRITICO' : 'ALTO',
+    titulo:      'Lazo 4-20mA sin energía suficiente al sumar la caída del circuito de alimentación',
+    descripcion: `Margen de tensión del lazo=${margenLazoV.toFixed(2)} V menos caída del circuito eléctrico=${caidaElecV.toFixed(2)} V da un margen combinado de ${margenCombinadoV.toFixed(2)} V para el mismo activo.`,
+    modulos:     [lazo.tipo, elec.tipo],
+    normativa:   'Ley de Ohm — presupuesto de energía de lazo (Instrumentación). IEC 60364-5-52 / NEC 210.19 — caída de tensión del circuito de alimentación (Electricidad).',
+    accion:      'Aumentar la tensión de suministro, reducir longitud/calibre del cableado de alimentación general, o recalcular el lazo con el margen real disponible tras la caída del circuito de alimentación.',
+    evidencia:   { 'Margen lazo (V)': +margenLazoV.toFixed(2), 'Caída circuito (V)': +caidaElecV.toFixed(2), 'Margen combinado (V)': +margenCombinadoV.toFixed(2) },
+  };
+}
+
+export function aplicarReglasCruceManual(calcA: CalculoManual, calcB: CalculoManual): RiesgoDetectado[] {
+  return [evaluarCruce011(calcA, calcB), evaluarCruce012(calcA, calcB)]
+    .filter((r): r is RiesgoDetectado => r !== null);
+}
