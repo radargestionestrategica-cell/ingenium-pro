@@ -2,9 +2,10 @@
 const nextConfig = {
   serverExternalPackages: ['pdfkit'],
   async headers() {
+    const isDev = process.env.NODE_ENV === 'development';
     const csp = [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-inline'",
+      `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ''}`,
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: https:",
       "font-src 'self' data: https:",
