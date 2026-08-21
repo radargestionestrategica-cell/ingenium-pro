@@ -23,10 +23,11 @@ const ACCESOS = [
   { id:'mineria',      label:'Minería',               icon:'⛏️', color:'#fb923c',norma:'Bieniawski 89 · MSHA' },
   { id:'termica',      label:'Térmica',               icon:'🌡️', color:'#f87171',norma:'TEMA · ASME Sec.VIII' },
   { id:'geotecnia',    label:'Geotecnia',             icon:'🌍', color:'#a3e635',norma:'Meyerhof · Bishop 55' },
+  { id:'instrumentacion', label:'Electrónica e Instrumentación', icon:'📟', color:'#818cf8', norma:'IEC 60751 · NIST ITS-90' },
 ];
 
 const CAPACIDADES = [
-  { icon:'📐', titulo:'15 módulos técnicos', desc:'Petróleo · Electricidad · Civil · Minería · Represas · Soldadura y más' },
+  { icon:'📐', titulo:'16 módulos técnicos', desc:'Petróleo · Electricidad · Civil · Minería · Represas · Soldadura y más' },
   { icon:'📋', titulo:'130+ normativas',      desc:'ASME · API · IEC · NACE · AISC · ACI · AASHTO · AWS · USACE' },
   { icon:'📤', titulo:'4 formatos de exportación', desc:'PDF profesional · Excel editable · DXF para CAD · QR de trazabilidad' },
   { icon:'🤖', titulo:'Auditoría IA',         desc:'La IA revisa resultados, detecta inconsistencias y marca puntos críticos' },
@@ -65,7 +66,7 @@ export default function DashboardHome({ onSelectModulo }: Props) {
           </div>
           <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, flexShrink:0 }}>
             {[
-              { val:'15',   lbl:'Módulos activos', color:GOLD  },
+              { val:'16',   lbl:'Módulos activos', color:GOLD  },
               { val:'130+', lbl:'Normativas',       color:CYAN  },
               { val:'DXF',  lbl:'Exporta a CAD',    color:GREEN },
               { val:'IA',   lbl:'Auditoría técnica', color:'#e879f9' },
@@ -97,7 +98,7 @@ export default function DashboardHome({ onSelectModulo }: Props) {
         <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:16 }}>
           <div style={{ fontSize:11, color:GREEN, fontWeight:900, letterSpacing:2, textTransform:'uppercase' }}>Acceso rápido a módulos</div>
           <div style={{ flex:1, height:1, background:'rgba(34,197,94,.12)' }} />
-          <div style={{ fontSize:10, color:'#334155', fontWeight:600 }}>15 módulos disponibles</div>
+          <div style={{ fontSize:10, color:'#334155', fontWeight:600 }}>16 módulos disponibles</div>
         </div>
         <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(220px,1fr))', gap:10 }}>
           {ACCESOS.map(({ id, label, icon, color, norma }) => (
