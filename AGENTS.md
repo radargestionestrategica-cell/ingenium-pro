@@ -231,6 +231,8 @@ Se integraron las 21 skills de [claude-webkit](https://github.com/Hainrixz/claud
 
 **Atribución y licencias:** ver `.claude/skills/ATTRIBUTION.md` (fuente original, commit fijado, cambios locales).
 
+**Gotcha de build (ya corregido acá, replicar en cualquier proyecto nuevo que copie estas skills):** `.claude/skills/web-reader/scripts/web-reader.ts` importa `z-ai-web-dev-sdk`, que no es dependencia del proyecto. Si el `tsconfig.json` del proyecto incluye `**/*.ts` sin excluir `.claude/**`, `next build`/`tsc` lo tipan y el build falla con "Cannot find module". Acá se resolvió agregando `".claude/**"` al `exclude` de `tsconfig.json` y a los `globalIgnores` de `eslint.config.mjs`. Verificado con `tsc --noEmit`, `npm run lint`, `npm run build` y `npm test` (114 tests) — todo en verde.
+
 **Plantilla para proyectos nuevos:** el repo completo `claude-webkit` (clonado en el entorno de trabajo) queda como base reutilizable para levantar landing pages nuevas desde cero (`git clone` + `claude` + cuestionario guiado de 6 fases). No se integra ese flujo dentro de `ingenium-pro` porque este ya es un proyecto existente con arquitectura propia — el kit se usa tal cual para *otros* proyectos futuros.
 
 ## 8. Próximos pasos pendientes
