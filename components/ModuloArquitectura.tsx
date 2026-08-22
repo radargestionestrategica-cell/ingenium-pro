@@ -84,10 +84,10 @@ function calcIluminacion(
   };
 }
 
-// ── CORTANTE BASAL — CIRSOC 103:2013 (Método simplificado) ───
-// Ref: CIRSOC 103:2013 § 4.2 — Fuerza Lateral Equivalente
-// Zonas sísmicas Argentina: Tabla 2.1 CIRSOC 103:2013
-// Factores suelo S: Tabla 4.2 CIRSOC 103:2013
+// ── CORTANTE BASAL — INPRES-CIRSOC 103 Parte I (2018) (Método simplificado) ───
+// Ref: INPRES-CIRSOC 103 Parte I (2018) § 4.2 — Fuerza Lateral Equivalente
+// Zonas sísmicas Argentina: Tabla 2.1 INPRES-CIRSOC 103 Parte I (2018)
+// Factores suelo S: Tabla 4.2 INPRES-CIRSOC 103 Parte I (2018)
 // Período empírico: T = Ct × hn^0.75 (§ 5.1)
 function calcSismo(
   W_kN: number,
@@ -99,7 +99,7 @@ function calcSismo(
 ) {
   if (W_kN <= 0 || hn_m <= 0 || R <= 0) return null;
 
-  // Período fundamental empírico — CIRSOC 103:2013 § 5.1
+  // Período fundamental empírico — INPRES-CIRSOC 103 Parte I (2018) § 5.1
   const CtMap: Record<string, number> = {
     portico_acero:    0.085,
     portico_hormigon: 0.075,
@@ -116,7 +116,7 @@ function calcSismo(
   };
   const a0 = a0Map[zona] ?? 0.10;
 
-  // Factor de amplificación de suelo S — CIRSOC 103:2013 Tabla 4.2
+  // Factor de amplificación de suelo S — INPRES-CIRSOC 103 Parte I (2018) Tabla 4.2
   const SMap: Record<string, number> = {
     A: 1.0, B: 1.2, C: 1.5, D: 1.8, E: 2.0,
   };
@@ -129,7 +129,7 @@ function calcSismo(
   // de suelo según Tabla 3.1 del reglamento, no implementado aún; aproximación de plataforma.
   const Tc   = 0.60;
 
-  // Coeficiente sísmico Cs (CIRSOC 103:2013 § 4.2.1)
+  // Coeficiente sísmico Cs (INPRES-CIRSOC 103 Parte I (2018) § 4.2.1)
   const Sa   = T <= Tc
     ? a0 * S * eta
     : a0 * S * eta * (Tc / T);
@@ -374,7 +374,7 @@ export default function ModuloArquitectura() {
     setResSismo(r);
 
     const advertencias: string[] = [
-      'Resultado preliminar — método espectral de fuerza lateral equivalente, INPRES-CIRSOC 103:2013 (análogo a Capítulo 6, método estático).',
+      'Resultado preliminar — método espectral de fuerza lateral equivalente, INPRES-CIRSOC 103 Parte I (2018) (análogo a Capítulo 6, método estático).',
       'La determinación definitiva requiere análisis modal espectral por profesional habilitado.',
     ];
     if (r.riesgo === 'HIGH') advertencias.push('Cs > 0.20 — estructura en zona de alta demanda sísmica. Diseño detallado obligatorio.');
@@ -386,7 +386,7 @@ export default function ModuloArquitectura() {
 
     const payload: DatosExportar = {
       tipo:           'ARQUITECTURA_SISMO',
-      normativa:      'CIRSOC 103:2013 — Norma Argentina Construcciones Sismorresistentes',
+      normativa:      'INPRES-CIRSOC 103 Parte I (2018) — Norma Argentina Construcciones Sismorresistentes',
       nivelPrecision: 1,
       advertencias,
       parametros: {
@@ -433,11 +433,11 @@ export default function ModuloArquitectura() {
             <div style={{ width: 52, height: 52, borderRadius: 14, background: 'linear-gradient(135deg,#8b5cf6,#6d28d9)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, flexShrink: 0 }}>🏛️</div>
             <div>
               <div style={{ color: '#f8fafc', fontWeight: 900, fontSize: 20, letterSpacing: -.3 }}>Módulo Arquitectura Técnica</div>
-              <div style={{ color: '#94a3b8', fontSize: 12, marginTop: 2 }}>Viento ASCE 7-22 · Iluminación IRAM 11601 · Sismo CIRSOC 103:2013</div>
+              <div style={{ color: '#94a3b8', fontSize: 12, marginTop: 2 }}>Viento ASCE 7-22 · Iluminación IRAM 11601 · Sismo INPRES-CIRSOC 103 Parte I (2018)</div>
             </div>
           </div>
           <div style={{ background: CARD, borderRadius: 8, padding: '9px 14px', fontSize: 11, color: '#64748b', fontFamily: 'ui-monospace,monospace', letterSpacing: .3 }}>
-            ASCE 7-22 · CIRSOC 102 · IRAM 11601 · ASHRAE 62.1 · ASHRAE 90.1 · CIRSOC 103:2013
+            ASCE 7-22 · CIRSOC 102 · IRAM 11601 · ASHRAE 62.1 · ASHRAE 90.1 · INPRES-CIRSOC 103 Parte I (2018)
           </div>
         </div>
 
@@ -544,7 +544,7 @@ export default function ModuloArquitectura() {
         {tab === 'sismo' && (
           <div style={{ background: PANEL, border: '1px solid #1e293b', borderRadius: 14, padding: 24, marginBottom: 20 }}>
             <div style={{ color: COLOR, fontWeight: 800, fontSize: 12, marginBottom: 4, textTransform: 'uppercase', letterSpacing: 1.5 }}>
-              Cortante Basal Simplificado — CIRSOC 103:2013
+              Cortante Basal Simplificado — INPRES-CIRSOC 103 Parte I (2018)
             </div>
             <div style={{ fontSize: 11, color: '#475569', marginBottom: 16, lineHeight: 1.6 }}>
               Fuerza Lateral Equivalente · § 4.2 · Período empírico T = Ct × hn^0.75
@@ -567,13 +567,13 @@ export default function ModuloArquitectura() {
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 12, marginBottom: 16 }}>
               <div>
-                <label style={lbl}>Zona sísmica (CIRSOC 103:2013 Tabla 2.1)</label>
+                <label style={lbl}>Zona sísmica (INPRES-CIRSOC 103 Parte I (2018) Tabla 2.1)</label>
                 <select value={zona} onChange={e => setZona(e.target.value)} style={{ ...inp, fontSize: 12 }}>
                   {ZONAS_SISMICAS.map(z => <option key={z.id} value={z.id} style={{ background: CARD }}>{z.label}</option>)}
                 </select>
               </div>
               <div>
-                <label style={lbl}>Tipo de suelo (CIRSOC 103:2013 Tabla 4.2)</label>
+                <label style={lbl}>Tipo de suelo (INPRES-CIRSOC 103 Parte I (2018) Tabla 4.2)</label>
                 <select value={suelo} onChange={e => setSuelo(e.target.value)} style={{ ...inp, fontSize: 12 }}>
                   {TIPOS_SUELO.map(s => <option key={s.id} value={s.id} style={{ background: CARD }}>{s.label}</option>)}
                 </select>
@@ -587,7 +587,7 @@ export default function ModuloArquitectura() {
             </div>
             {error && <div style={{ background: 'rgba(239,68,68,.1)', border: '1px solid rgba(239,68,68,.3)', borderRadius: 8, padding: '9px 12px', color: '#fca5a5', fontSize: 12, marginBottom: 12 }}>{error}</div>}
             <button onClick={calcSismo_} style={{ width: '100%', background: 'linear-gradient(135deg,#8b5cf6,#6d28d9)', border: 'none', borderRadius: 10, padding: '13px 0', color: '#fff', fontWeight: 800, fontSize: 15, cursor: 'pointer', letterSpacing: .3 }}>
-              CALCULAR CORTANTE BASAL — CIRSOC 103:2013
+              CALCULAR CORTANTE BASAL — INPRES-CIRSOC 103 Parte I (2018)
             </button>
           </div>
         )}
@@ -698,7 +698,7 @@ export default function ModuloArquitectura() {
               ))}
             </div>
             <div style={{ background: CARD, borderRadius: 8, padding: '10px 14px', fontSize: 11, color: '#94a3b8', fontFamily: 'ui-monospace,monospace', marginBottom: 12 }}>
-              <span style={{ color: COLOR, fontWeight: 700 }}>CIRSOC 103:2013 § 4.2: </span>
+              <span style={{ color: COLOR, fontWeight: 700 }}>INPRES-CIRSOC 103 Parte I (2018) § 4.2: </span>
               T = Ct × hn^0.75 &nbsp;|&nbsp; Sa = a0 × S × η &nbsp;|&nbsp; Cs = Sa / R &nbsp;|&nbsp; V = Cs × W
               <div style={{ marginTop: 3, color: '#475569' }}>{new Date().toLocaleDateString('es-AR')}</div>
             </div>
