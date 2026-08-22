@@ -214,7 +214,26 @@ UPSTASH_REDIS_REST_URL (opcional), UPSTASH_REDIS_REST_TOKEN (opcional)
 | Favicon | ✅ `app/icon.tsx` — Ω dorado 64×64 |
 | Google Search Console | ✅ Sitemap enviado (2026-07-28) |
 
-## 7. Próximos pasos pendientes
+## 7. Skills de Claude Code integradas (`.claude/skills/`)
+
+Se integraron las 21 skills de [claude-webkit](https://github.com/Hainrixz/claude-webkit) (Tododeia, MIT) en `.claude/skills/` — cargan automáticamente al abrir el repo con Claude Code. Están pensadas para trabajo de diseño/frontend/SEO/deploy, no cambian la arquitectura de auth ni el stack de negocio descrito arriba.
+
+| Categoría | Skills | Uso en INGENIUM PRO |
+|---|---|---|
+| Diseño / UI | `frontend-design`, `shadcn-ui`, `building-components`, `ui-ux-pro-max`, `web-design-guidelines` | Nuevas pantallas del dashboard, landing (`app/page.tsx`), páginas de `/planes` |
+| Copy | `humanizer` | Revisar copy de landing y planes para que no suene a IA |
+| Animación | `animate`, `emil-design-eng`, `apple-design`, `review-animations`, `find-animation-opportunities`, `animation-vocabulary`, `improve-animations`, `prototype` | Transiciones del dashboard, carruseles (`ModulosCarrusel`, `ExportacionCarrusel`) |
+| SEO | `seo-audit` | Auditar `app/layout.tsx`, sitemap, OG tags antes de cada release |
+| QA visual | `playwright-cli`, `chrome-bridge-automation` | Screenshots de regresión visual en `/dashboard` y landing |
+| Investigación | `web-reader`, `deep-research` | Research de referencia para nuevos módulos técnicos |
+| Performance | `vercel-react-best-practices` | Revisión antes de deploy a Vercel |
+| Deploy | `vercel-deploy` | Deploys de preview sin cuenta Vercel (no reemplaza el flujo `main` → Vercel prod) |
+
+**Atribución y licencias:** ver `.claude/skills/ATTRIBUTION.md` (fuente original, commit fijado, cambios locales).
+
+**Plantilla para proyectos nuevos:** el repo completo `claude-webkit` (clonado en el entorno de trabajo) queda como base reutilizable para levantar landing pages nuevas desde cero (`git clone` + `claude` + cuestionario guiado de 6 fases). No se integra ese flujo dentro de `ingenium-pro` porque este ya es un proyecto existente con arquitectura propia — el kit se usa tal cual para *otros* proyectos futuros.
+
+## 8. Próximos pasos pendientes
 
 Ninguno registrado.
 
