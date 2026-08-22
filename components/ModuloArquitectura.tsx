@@ -2,6 +2,7 @@
 import { publicarResultado } from '@/components/ResultadoContexto';
 import BotonesExportar, { DatosExportar } from '@/components/BotonesExportar';
 import { useState } from 'react';
+import { PAISES_SISMICOS } from '@/lib/sismica-zonificacion';
 
 // ── CARGA DE VIENTO — ASCE 7-22 Cap.27 / CIRSOC 102 ─────────
 function calcCargaViento(
@@ -163,13 +164,8 @@ const USOS_LOCAL = [
   { id: 'industrial',   label: 'Industrial — FLD req. 3.0%' },
   { id: 'hospitalario', label: 'Hospitalario — FLD req. 2.0%' },
 ];
-const ZONAS_SISMICAS = [
-  { id: 'zona0', label: 'Zona 0 — a₀=0.04g (muy reducida)' },
-  { id: 'zona1', label: 'Zona 1 — a₀=0.10g (reducida)' },
-  { id: 'zona2', label: 'Zona 2 — a₀=0.18g (moderada)' },
-  { id: 'zona3', label: 'Zona 3 — a₀=0.25g (elevada)' },
-  { id: 'zona4', label: 'Zona 4 — a₀=0.35g (muy elevada — Cuyo, NOA, Mendoza)' },
-];
+const ZONAS_SISMICAS = (PAISES_SISMICOS.find(p => p.nombre === 'Argentina')?.zonas ?? [])
+  .map((z, i) => ({ id: `zona${i}`, label: z.detalle ? `${z.nombre} - a0=${z.pga}g (${z.detalle})` : `${z.nombre} - a0=${z.pga}g` }));
 const TIPOS_SUELO = [
   { id: 'A', label: 'A — Roca dura (S=1.0)' },
   { id: 'B', label: 'B — Roca blanda / suelo muy rígido (S=1.2)' },
