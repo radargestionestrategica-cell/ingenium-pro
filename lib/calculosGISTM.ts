@@ -675,3 +675,83 @@ export const PRINCIPLES_GISTM: Principle[] = [
     ],
   },
 ];
+
+// ═══════════════════════════════════════════════════════════════
+// ANNEX 2 — Consequence Classification Tables (GISTM agosto 2020, páginas 34-36)
+// ═══════════════════════════════════════════════════════════════
+
+export interface NivelConsecuencia {
+  id: 'low' | 'significant' | 'high' | 'very_high' | 'extreme';
+  nombre: string;
+  poblacionRiesgo: string;
+  perdidaVidas: string;
+}
+
+// Tabla 1: Consequence Classification Matrix (página 34)
+export const TABLA_CLASIFICACION_CONSECUENCIA: NivelConsecuencia[] = [
+  { id: 'low', nombre: 'Low', poblacionRiesgo: 'None', perdidaVidas: 'None expected' },
+  { id: 'significant', nombre: 'Significant', poblacionRiesgo: '1-10', perdidaVidas: 'Unspecified' },
+  { id: 'high', nombre: 'High', poblacionRiesgo: '10-100', perdidaVidas: 'Possible (1-10)' },
+  { id: 'very_high', nombre: 'Very High', poblacionRiesgo: '100-1,000', perdidaVidas: 'Likely (10-100)' },
+  { id: 'extreme', nombre: 'Extreme', poblacionRiesgo: '>1,000', perdidaVidas: 'Many (>100)' },
+];
+
+export interface CriterioProbabilidad {
+  nombre: string;
+  probabilidadOperacion: string;
+  probabilidadCierrePasivo: string;
+}
+
+// Tabla 2: Flood Design Criteria — Annual Exceedance Probability (página 36)
+export const CRITERIO_CRECIDA: CriterioProbabilidad[] = [
+  { nombre: 'Low', probabilidadOperacion: '1/200', probabilidadCierrePasivo: '1/10,000' },
+  { nombre: 'Significant', probabilidadOperacion: '1/1,000', probabilidadCierrePasivo: '1/10,000' },
+  { nombre: 'High', probabilidadOperacion: '1/2,475', probabilidadCierrePasivo: '1/10,000' },
+  { nombre: 'Very High', probabilidadOperacion: '1/5,000', probabilidadCierrePasivo: '1/10,000' },
+  { nombre: 'Extreme', probabilidadOperacion: '1/10,000', probabilidadCierrePasivo: '1/10,000' },
+];
+
+// Tabla 3: Seismic Design Criteria — Annual Exceedance Probability (página 36, mismos valores que Tabla 2)
+export const CRITERIO_SISMICO: CriterioProbabilidad[] = [
+  { nombre: 'Low', probabilidadOperacion: '1/200', probabilidadCierrePasivo: '1/10,000' },
+  { nombre: 'Significant', probabilidadOperacion: '1/1,000', probabilidadCierrePasivo: '1/10,000' },
+  { nombre: 'High', probabilidadOperacion: '1/2,475', probabilidadCierrePasivo: '1/10,000' },
+  { nombre: 'Very High', probabilidadOperacion: '1/5,000', probabilidadCierrePasivo: '1/10,000' },
+  { nombre: 'Extreme', probabilidadOperacion: '1/10,000', probabilidadCierrePasivo: '1/10,000' },
+];
+
+const ORDEN_NIVELES = ['low', 'significant', 'high', 'very_high', 'extreme'] as const;
+
+// Bins numéricos derivados de Tabla 1. El documento tiene límites superpuestos
+// entre bandas (p. ej. "1-10" y "10-100" comparten el 10); el valor límite se
+// asigna a la banda de menor severidad para no sobreclasificar.
+function nivelPorPoblacion(poblacionRiesgo: number): typeof ORDEN_NIVELES[number] {
+  if (poblacionRiesgo <= 0) return 'low';
+  if (poblacionRiesgo <= 10) return 'significant';
+  if (poblacionRiesgo <= 100) return 'high';
+  if (poblacionRiesgo <= 1000) return 'very_high';
+  return 'extreme';
+}
+
+// 'Significant' no tiene rango numérico de pérdida de vidas definido en la
+// norma (columna "Unspecified"), por lo que ese nivel solo puede alcanzarse
+// por el criterio de población en riesgo.
+function nivelPorPerdidaVidas(perdidaVidasPotencial: number): typeof ORDEN_NIVELES[number] {
+  if (perdidaVidasPotencial <= 0) return 'low';
+  if (perdidaVidasPotencial <= 10) return 'high';
+  if (perdidaVidasPotencial <= 100) return 'very_high';
+  return 'extreme';
+}
+
+// Clasifica según Tabla 1, tomando "the classification corresponding to the
+// highest Consequence Classification for each category" (Requirement 4.1).
+export function clasificarConsecuencia(
+  poblacionRiesgo: number,
+  perdidaVidasPotencial: number,
+): NivelConsecuencia {
+  const nivelPob = nivelPorPoblacion(poblacionRiesgo);
+  const nivelPerdidas = nivelPorPerdidaVidas(perdidaVidasPotencial);
+  const idFinal =
+    ORDEN_NIVELES[Math.max(ORDEN_NIVELES.indexOf(nivelPob), ORDEN_NIVELES.indexOf(nivelPerdidas))];
+  return TABLA_CLASIFICACION_CONSECUENCIA.find(n => n.id === idFinal)!;
+}
