@@ -126,4 +126,132 @@ export const PRINCIPLES_GISTM: Principle[] = [
       },
     ],
   },
+  {
+    id: 4,
+    topicId: 'III',
+    titulo:
+      'Develop plans and design criteria for the tailings facility to minimise risk for all phases of its lifecycle, including closure and post-closure.',
+    requisitos: [
+      {
+        id: '4.1',
+        principleId: 4,
+        topicId: 'III',
+        texto:
+          'Determine the consequence of failure classification of the tailings facility by assessing the downstream conditions documented in the knowledge base and selecting the classification corresponding to the highest Consequence Classification for each category in Annex 2, Table 1. The assessment and selection of the classification shall be based on credible failure modes, and shall be defensible and documented.',
+      },
+      {
+        id: '4.2',
+        principleId: 4,
+        topicId: 'III',
+        texto:
+          "With the objective of maintaining flexibility in the development of a new tailings facility and optimising costs while prioritising safety throughout the tailings facility lifecycle: A. Develop preliminary designs for the tailings facility with external loading design criteria consistent with both the consequence of failure classification selected based on current conditions and higher Consequence Classifications (including 'Extreme'). B. Informed by the range of requirements defined by the preliminary designs, either: 1. Implement the design for the 'Extreme' Consequence Classification external loading criteria; or 2. Implement the design for the current Consequence Classification criteria, or a higher one, and demonstrate that the feasibility, at a proof of concept level, to upgrade to the design for the 'Extreme' classification criteria is maintained throughout the tailings facility lifecycle. C. If option B.2 is implemented, review the consequence of failure classification at the time of the Dam Safety Review (DSR) and at least every five years, or sooner if there is a material change in the social, environmental and local economic context, and complete the upgrade of the tailings facility to the new Consequence Classification as determined by the DSR within three years. This review shall proceed until the tailings facility has been safely closed according to this Standard. D. The process described above shall be reviewed by the Independent Tailings Review Board (ITRB) or the senior independent technical reviewer, as appropriate for the tailings facility Consequence Classification. Subject to Requirement 4.7, Requirements 4.2.C and 4.2.D shall also apply to existing tailings facilities.",
+      },
+      {
+        id: '4.3',
+        principleId: 4,
+        topicId: 'III',
+        texto:
+          'The Accountable Executive shall take the decision to adopt a design for the current Consequence Classification criteria and to maintain flexibility to upgrade the design for the highest classification criteria later in the tailings facility lifecycle. This decision shall be documented.',
+      },
+      {
+        id: '4.4',
+        principleId: 4,
+        topicId: 'III',
+        texto:
+          'Select, explicitly identify and document all design criteria that are appropriate to minimise risk for all credible failure modes for all phases of the tailings facility lifecycle.',
+      },
+      {
+        id: '4.5',
+        principleId: 4,
+        topicId: 'III',
+        texto:
+          'Apply design criteria, such as factors of safety for slope stability and seepage management, that consider estimated operational properties of materials and expected performance of design elements, and quality of the implementation of risk management systems. These issues should also be appropriately accounted for in designs based on deformation analyses.',
+      },
+      {
+        id: '4.6',
+        principleId: 4,
+        topicId: 'III',
+        texto:
+          'Identify and address brittle failure modes with conservative design criteria, independent of trigger mechanisms, to minimise their impact on the performance of the tailings facility.',
+      },
+      {
+        id: '4.7',
+        principleId: 4,
+        topicId: 'III',
+        texto:
+          'Existing tailings facilities shall conform with the Requirements under Principle 4, except for those aspects where the Engineer of Record (EOR), with review by the ITRB or a senior independent technical reviewer, determines that the upgrade of an existing tailings facility is not viable or cannot be retroactively applied. In this case, the Accountable Executive shall approve and document the implementation of measures to reduce both the probability and the consequences of a tailings facility failure in order to reduce the risk to a level as low as reasonably practicable (ALARP). The basis and timing for addressing the upgrade of existing tailings facilities shall be risk-informed and carried out as soon as reasonably practicable.',
+      },
+      {
+        id: '4.8',
+        principleId: 4,
+        topicId: 'III',
+        texto:
+          'The EOR shall prepare a Design Basis Report (DBR) that details the design assumptions and criteria, including operating constraints, and that provides the basis for the design of all phases of the tailings facility lifecycle. The DBR shall be reviewed by the ITRB or senior independent technical reviewer. The EOR shall update the DBR every time there is a material change in the design assumptions, design criteria, design or the knowledge base and confirm internal consistency among these elements.',
+      },
+    ],
+  },
+  {
+    id: 5,
+    topicId: 'III',
+    titulo:
+      'Develop a robust design that integrates the knowledge base and minimises the risk of failure to people and the environment for all phases of the tailings facility lifecycle, including closure and post-closure.',
+    requisitos: [
+      {
+        id: '5.1',
+        principleId: 5,
+        topicId: 'III',
+        texto:
+          'For new tailings facilities, incorporate the outcome of the multi-criteria alternatives analysis including the use of tailings technologies in the design of the tailings facility. For expansions to existing tailings facilities, investigate the potential to refine the tailings technologies and design approaches with the goal of minimising risks to people and the environment throughout the tailings facility lifecycle.',
+      },
+      {
+        id: '5.2',
+        principleId: 5,
+        topicId: 'III',
+        texto:
+          'Develop a robust design that considers the technical, social, environmental and local economic context, the tailings facility Consequence Classification, site conditions, water management, mine plant operations, tailings operational and construction issues, and that demonstrates the feasibility of safe closure of the tailings facility. The design should be reviewed and updated as performance and site data become available and in response to material changes to the tailings facility or its performance.',
+      },
+      {
+        id: '5.3',
+        principleId: 5,
+        topicId: 'III',
+        texto:
+          'Develop, implement and maintain a water balance model and associated water management plans for the tailings facility, taking into account the knowledge base including climate change, upstream and downstream hydrological and hydrogeological basins, the mine site, mine planning and overall operations and the integrity of the tailings facility throughout its lifecycle. The water management programme must be designed to protect against unintentional releases.',
+      },
+      {
+        id: '5.4',
+        principleId: 5,
+        topicId: 'III',
+        texto:
+          'Address all potential failure modes of the structure, its foundation, abutments, reservoir (tailings deposit and pond), reservoir rim and appurtenant structures to minimise risk to ALARP. Risk assessments must be used to inform the design.',
+      },
+      {
+        id: '5.5',
+        principleId: 5,
+        topicId: 'III',
+        texto:
+          'Develop a design for each stage of construction of the tailings facility, including but not limited to start-up, partial raises and interim configurations, final raise, and all closure stages.',
+      },
+      {
+        id: '5.6',
+        principleId: 5,
+        topicId: 'III',
+        texto:
+          'Design the closure phase in a manner that meets all the Requirements of the Standard with sufficient detail to demonstrate the feasibility of the closure scenario and to allow implementation of elements of the design during construction and operation as appropriate. The design should include progressive closure and reclamation during operations.',
+      },
+      {
+        id: '5.7',
+        principleId: 5,
+        topicId: 'III',
+        texto:
+          "For a proposed new tailings facility classified as 'High', 'Very High' or 'Extreme', the Accountable Executive shall confirm that the design satisfies ALARP and shall approve additional reasonable steps that may be taken downstream, to further reduce potential consequences to people and the environment. The Accountable Executive shall explain and document the decisions with respect to ALARP and additional consequence reduction measures. For an existing tailings facility classified as 'High', 'Very High' or 'Extreme', the Accountable Executive, at the time of every DSR or at least every five years, shall confirm that the design satisfies ALARP and shall seek to identify and implement additional reasonable steps that may be taken to further reduce potential consequences to people and the environment. The Accountable Executive shall explain and document the decisions with respect to ALARP and additional consequence reduction measures, in consultation with external parties as appropriate.",
+      },
+      {
+        id: '5.8',
+        principleId: 5,
+        topicId: 'III',
+        texto:
+          'Where other measures to reduce the consequences of a tailings facility credible failure mode as per the breach analysis have been exhausted, and pre-emptive resettlement cannot be avoided, the Operator shall demonstrate conformance with international standards for involuntary resettlement.',
+      },
+    ],
+  },
 ];
