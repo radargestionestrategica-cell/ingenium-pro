@@ -254,4 +254,97 @@ export const PRINCIPLES_GISTM: Principle[] = [
       },
     ],
   },
+  {
+    id: 6,
+    topicId: 'III',
+    titulo:
+      'Plan, build and operate the tailings facility to manage risk at all phases of the tailings facility lifecycle, including closure and post-closure.',
+    requisitos: [
+      {
+        id: '6.1',
+        principleId: 6,
+        topicId: 'III',
+        texto:
+          'Build, operate, monitor and close the tailings facility according to the design intent at all phases of the tailings facility lifecycle, using qualified personnel and appropriate methodology, equipment and procedures, data acquisition methods, the Tailings Management System (TMS) and the overall Environmental and Social Management System (ESMS) for the mine and associated infrastructure.',
+      },
+      {
+        id: '6.2',
+        principleId: 6,
+        topicId: 'III',
+        texto:
+          'Manage the quality and adequacy of the construction and operation process by implementing Quality Control, Quality Assurance and Construction vs Design Intent Verification (CDIV). The Operator shall use the CDIV to ensure that the design intent is implemented and is still being met if the site conditions vary from the design assumptions.',
+      },
+      {
+        id: '6.3',
+        principleId: 6,
+        topicId: 'III',
+        texto:
+          "Prepare a detailed Construction Records Report ('as-built' report) whenever there is a material change to the tailings facility, its infrastructure or its monitoring system. The EOR and the Responsible Tailings Facility Engineer (RTFE) shall sign this report.",
+      },
+      {
+        id: '6.4',
+        principleId: 6,
+        topicId: 'III',
+        texto:
+          'Develop, implement, review annually and update as required an Operations, Maintenance and Surveillance (OMS) Manual that supports effective risk management as part of the TMS. The OMS Manual should follow best practices, clearly provide the context and critical controls for safe operations, and be reviewed for effectiveness. The RTFE shall provide access to the OMS Manual and training to all levels of personnel involved in the TMS with support from the EOR.',
+      },
+      {
+        id: '6.5',
+        principleId: 6,
+        topicId: 'III',
+        texto:
+          'Implement a formal change management system that triggers the evaluation, review, approval and documentation of changes to design, construction, operation or monitoring during the tailings facility lifecycle. The change management system shall also include the requirement for the EOR to prepare a periodic Deviance Accountability Report (DAR), that provides an assessment of the cumulative impact of the changes on the risk level of the as-constructed facility. The DAR shall provide recommendations for managing risk, if necessary, and any resulting updates to the design, DBR, OMS and the monitoring programme. The DAR shall be approved by the Accountable Executive.',
+      },
+      {
+        id: '6.6',
+        principleId: 6,
+        topicId: 'III',
+        texto:
+          'Include new and emerging technologies and approaches and use the evolving knowledge in the refinement of the design, construction and operation of the tailings facility.',
+      },
+    ],
+  },
+  {
+    id: 7,
+    topicId: 'III',
+    titulo:
+      'Design, implement and operate monitoring systems to manage risk at all phases of the facility lifecycle, including closure.',
+    requisitos: [
+      {
+        id: '7.1',
+        principleId: 7,
+        topicId: 'III',
+        texto:
+          'Design, implement and operate a comprehensive and integrated performance monitoring programme for the tailings facility and its appurtenant structures as part of the TMS and for those aspects of the ESMS related to the tailings facility in accordance with the principles of Adaptive Management.',
+      },
+      {
+        id: '7.2',
+        principleId: 7,
+        topicId: 'III',
+        texto:
+          'Design, implement and operate a comprehensive and integrated engineering monitoring system that is appropriate for verifying design assumptions and for monitoring potential failure modes. Full implementation of the Observational Method shall be adopted for non-brittle failure modes. Brittle failure modes are addressed by conservative design criteria.',
+      },
+      {
+        id: '7.3',
+        principleId: 7,
+        topicId: 'III',
+        texto:
+          'Establish specific and measurable performance objectives, indicators, criteria, and performance parameters and include them in the design of the monitoring programmes that measure performance throughout the tailings facility lifecycle. Record and evaluate the data at appropriate frequencies. Based on the data obtained, update the monitoring programmes throughout the tailings facility lifecycle to confirm that they remain effective to manage risk.',
+      },
+      {
+        id: '7.4',
+        principleId: 7,
+        topicId: 'III',
+        texto:
+          'Analyse technical monitoring data at the frequency recommended by the EOR, and assess the performance of the tailings facility, clearly identifying and presenting evidence on any deviations from the expected performance and any deterioration of the performance over time. Promptly submit evidence to the EOR for review and update the risk assessment and design, if required. Performance outside the expected ranges shall be addressed promptly through Trigger Action Response Plans (TARPs) or critical controls.',
+      },
+      {
+        id: '7.5',
+        principleId: 7,
+        topicId: 'III',
+        texto:
+          'Report the results of each of the monitoring programmes at the frequency required to meet company and regulatory requirements and, at a minimum, on an annual basis. The RTFE and the EOR shall review and approve the technical monitoring reports.',
+      },
+    ],
+  },
 ];
