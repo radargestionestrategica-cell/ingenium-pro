@@ -347,4 +347,103 @@ export const PRINCIPLES_GISTM: Principle[] = [
       },
     ],
   },
+  {
+    id: 8,
+    topicId: 'IV',
+    titulo:
+      'Establish policies, systems and accountabilities to support the safety and integrity of the tailings facility.',
+    requisitos: [
+      {
+        id: '8.1',
+        principleId: 8,
+        topicId: 'IV',
+        texto:
+          'The Board of Directors shall adopt and publish a policy on or commitment to the safe management of tailings facilities, to emergency preparedness and response, and to recovery after failure.',
+      },
+      {
+        id: '8.2',
+        principleId: 8,
+        topicId: 'IV',
+        texto:
+          'Establish a tailings governance framework and a performance based TMS and ensure that the ESMS and other critical systems encompass relevant aspects of the tailings facility management.',
+      },
+      {
+        id: '8.3',
+        principleId: 8,
+        topicId: 'IV',
+        texto:
+          'For roles with responsibility for tailings facilities, develop mechanisms such that incentive payments or performance reviews are based, at least in part, on public safety and the integrity of the tailings facility. These incentive payments shall reflect the degree to which public safety and the integrity of the tailings facility are part of the role. Long-term incentives for relevant executive managers should take tailings management into account.',
+      },
+      {
+        id: '8.4',
+        principleId: 8,
+        topicId: 'IV',
+        texto:
+          'Appoint one or more Accountable Executives who is/are directly answerable to the CEO on matters related to this Standard. The Accountable Executive(s) shall be accountable for the safety of tailings facilities and for avoiding or minimising the social and environmental consequences of a tailings facility failure. The Accountable Executive(s) shall also be accountable for a programme of tailings management training, and for emergency preparedness and response. The Accountable Executive(s) must have scheduled communication with the EOR and regular communication with the Board of Directors, which can be initiated either by the Accountable Executive(s), or the Board. The Board of Directors shall document how it holds the Accountable Executive(s) accountable.',
+      },
+      {
+        id: '8.5',
+        principleId: 8,
+        topicId: 'IV',
+        texto:
+          'Appoint a site-specific Responsible Tailings Facility Engineer (RTFE) who is accountable for the integrity of the tailings facility, who liaises with the EOR and internal teams such as operations, planning, regulatory affairs, social performance and environment, and who has regular two-way communication with the Accountable Executive. The RTFE must be familiar with the DBR, the design report and the construction and performance of the tailings facility.',
+      },
+      {
+        id: '8.6',
+        principleId: 8,
+        topicId: 'IV',
+        texto:
+          'Identify appropriate qualifications and experience requirements for all personnel who play safety-critical roles in the operation of a tailings facility, including, but not limited to the RTFE, the EOR and the Accountable Executive. Ensure that incumbents of these roles have the identified qualifications and experience, and develop succession plans for these personnel.',
+      },
+      {
+        id: '8.7',
+        principleId: 8,
+        topicId: 'IV',
+        texto:
+          "For tailings facilities with Consequence Classification of 'Very High' or 'Extreme', appoint an Independent Tailings Review Board (ITRB). For all other facilities, the Operator may appoint a senior independent technical reviewer. The ITRB or the reviewer shall be appointed early in the project development process, report to the Accountable Executive and certify in writing that they follow best practices for engineers in avoiding conflicts of interest.",
+      },
+    ],
+  },
+  {
+    id: 9,
+    topicId: 'IV',
+    titulo: 'Appoint and empower an Engineer of Record.',
+    requisitos: [
+      {
+        id: '9.1',
+        principleId: 9,
+        topicId: 'IV',
+        texto:
+          "Engage an engineering firm with expertise and experience in the design and construction of tailings facilities of comparable complexity to provide EOR services for operating the tailings facility and for closed facilities with 'High', 'Very High' and 'Extreme' Consequence Classification, that are in the active closure phase. Require that the firm nominate a senior engineer, approved by the Operator, to represent the firm as the EOR, and verify that the individual has the necessary experience, skills and time to fulfil this role. Alternatively, the Operator may appoint an in-house engineer with expertise and experience in comparable facilities as the EOR. In this instance, the EOR may delegate the design to a firm ('Designer of Record') but shall remain thoroughly familiar with the design in discharging their responsibilities as EOR. Whether the EOR or the DOR is in-house or external, they must be competent and have experience appropriate to the Consequence Classification and complexity of the tailings facility.",
+      },
+      {
+        id: '9.2',
+        principleId: 9,
+        topicId: 'IV',
+        texto:
+          'Empower the EOR through a written agreement that clearly describes their authority, role and responsibilities throughout the tailings facility lifecycle, and during change of ownership of mining properties. The written agreement must clearly describe the obligations of the Operator to the EOR, to support the effective performance of the EOR.',
+      },
+      {
+        id: '9.3',
+        principleId: 9,
+        topicId: 'IV',
+        texto:
+          'Establish and implement a programme to manage the quality of all engineering work, the interactions between the EOR, the RTFE and the Accountable Executive, and their involvement in the tailings facility lifecycle as necessary to confirm that both the implementation of the design and the design intent are met.',
+      },
+      {
+        id: '9.4',
+        principleId: 9,
+        topicId: 'IV',
+        texto:
+          'Given its potential impact on the risks associated with a tailings facility, the selection of the EOR shall be decided by the Accountable Executive and informed, but not decided, by procurement personnel.',
+      },
+      {
+        id: '9.5',
+        principleId: 9,
+        topicId: 'IV',
+        texto:
+          'Where it becomes necessary to change the EOR (whether a firm or an in-house employee), develop a detailed plan for the comprehensive transfer of data, information, knowledge and experience with the construction procedures and materials.',
+      },
+    ],
+  },
 ];
