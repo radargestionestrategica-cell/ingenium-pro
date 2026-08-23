@@ -645,4 +645,33 @@ export const PRINCIPLES_GISTM: Principle[] = [
       },
     ],
   },
+  {
+    id: 15,
+    topicId: 'VI',
+    titulo:
+      'Publicly disclose and provide access to information about the tailings facility to support public accountability.',
+    requisitos: [
+      {
+        id: '15.1',
+        principleId: 15,
+        topicId: 'VI',
+        texto:
+          "Publish and regularly update information on the Operator's commitment to safe tailings facility management, implementation of its tailings governance framework, its organisation-wide policies, standards or approaches to the design, construction, monitoring and closure of tailings facilities. A. For new tailings facilities for which the regulatory authorisation process has commenced, or that are otherwise approved by the Operator, the Operator shall publish and update, in accordance with Principle 21 of the UNGP, the following information: 1. A plain language summary of the rationale for the basis of the design and site selected as per the multi-criteria alternatives analysis, impact assessments, and mitigation plans (Information may be obtained from the output of multiple Requirements including, but not limited to, Requirements 3.2, 3.3, 5.1, 5.3, 6.4, 6.6, 7.1 and 10.1); and 2. The Consequence Classification. (Requirement 4.1). B. For each existing tailings facility and in accordance with Principle 21 of the UNGP, the Operator shall publish and update at least on an annual basis, the following information: 1. A description of the tailings facility (information may be obtained from the output of Requirements 5.5 and 6.4); 2. The Consequence Classification (Requirement 4.1); 3. A summary of risk assessment findings relevant to the tailings facility (Information may be obtained from the output of Requirement 10.1); 4. A summary of impact assessments and of human exposure and vulnerability to tailings facility credible flow failure scenarios (Information may be obtained from the output of Requirements 2.4 and 3.3); 5. A description of the design for all phases of the tailings facility lifecycle including the current and final height (Information may be obtained from the output of Requirement 5.5); 6. A summary of material findings of annual performance reviews and DSR, including implementation of mitigation measures to reduce risk to ALARP (Information may be obtained from output of Requirements 10.4 and 10.5); 7. A summary of material findings of the environmental and social monitoring programme including implementation of mitigation measures (Requirement 7.5); 8. A summary version of the tailings facility EPRP for facilities that have a credible failure mode(s) that could lead to a flow failure event that: (i) is informed by credible flow failure scenarios from the tailings facility breach analysis; (ii) includes emergency response measures that apply to project affected people as identified through the tailings facility breach analysis and involve cooperation with public sector agencies; and (iii) excludes details of emergency preparedness measures that apply to the Operator's assets, or confidential information (Requirements 13.1 and 13.2); 9. Dates of most recent and next independent reviews (Requirement 10.5); and 10. Annual confirmation that the Operator has adequate financial capacity (including insurance to the extent commercially reasonable) to cover estimated costs of planned closure, early closure, reclamation, and post-closure of the tailings facility and its appurtenant structures (Requirement 10.7). Such disclosures shall be made directly, unless subject to limitations imposed by regulatory authorities. C. Provide local authorities and emergency services with sufficient information derived from the breach analysis to enable effective disaster management planning (Information may be obtained from the output of Requirement 2.3).",
+      },
+      {
+        id: '15.2',
+        principleId: 15,
+        topicId: 'VI',
+        texto:
+          'Respond in a systematic and timely manner to requests from interested and affected stakeholders for additional information material to the public safety and integrity of a tailings facility. When the request for information is denied, provide an explanation to the requesting stakeholder.',
+      },
+      {
+        id: '15.3',
+        principleId: 15,
+        topicId: 'VI',
+        texto:
+          'Commit to cooperate in credible global transparency initiatives to create standardised, independent, industry-wide and publicly accessible databases, inventories or other information repositories about the safety and integrity of tailings facilities.',
+      },
+    ],
+  },
 ];
