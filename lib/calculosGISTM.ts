@@ -446,4 +446,126 @@ export const PRINCIPLES_GISTM: Principle[] = [
       },
     ],
   },
+  {
+    id: 10,
+    topicId: 'IV',
+    titulo:
+      'Establish and implement levels of review as part of a strong quality and risk management system for all phases of the tailings facility lifecycle, including closure.',
+    requisitos: [
+      {
+        id: '10.1',
+        principleId: 10,
+        topicId: 'IV',
+        texto:
+          'Conduct and update risk assessments with a qualified multi-disciplinary team using best practice methodologies at a minimum every three years and more frequently whenever there is a material change either to the tailings facility or to the social, environmental and local economic context. Transmit risk assessments to the ITRB or senior independent technical reviewer for review, and address with urgency all unacceptable tailings facility risks.',
+      },
+      {
+        id: '10.2',
+        principleId: 10,
+        topicId: 'IV',
+        texto:
+          "Conduct regular reviews of the TMS and of the components of the ESMS that refer to the tailings facility to assure the effectiveness of the management systems. Document and report the outcomes to the Accountable Executive, Board of Directors and project-affected people. The review shall be undertaken by senior technical reviewers with the appropriate qualifications, expertise and resources. For tailings facilities with 'High', 'Very High' or 'Extreme' Consequence Classification, conduct the review at least every three years.",
+      },
+      {
+        id: '10.3',
+        principleId: 10,
+        topicId: 'IV',
+        texto:
+          'Conduct internal audits to verify consistent implementation of company procedures, guidelines and corporate governance requirements consistent with the TMS and aspects of the ESMS developed to manage tailings facility risks.',
+      },
+      {
+        id: '10.4',
+        principleId: 10,
+        topicId: 'IV',
+        texto:
+          'The EOR or senior independent technical reviewer shall conduct tailings facility construction and performance reviews annually or more frequently, if required.',
+      },
+      {
+        id: '10.5',
+        principleId: 10,
+        topicId: 'IV',
+        texto:
+          "Conduct an independent DSR at least every five years for tailings facilities with 'Very High' or 'Extreme' Consequence Classifications and at least every 10 years for all other facilities. For tailings facilities with complex conditions or performance, the ITRB may recommend more frequent DSRs. The DSR shall include technical, operational and governance aspects of the tailings facility and shall be completed according to best practices. The DSR contractor cannot conduct consecutive DSRs on the same tailings facility and shall certify in writing that they follow best practices for engineers in avoiding conflicts of interest.",
+      },
+      {
+        id: '10.6',
+        principleId: 10,
+        topicId: 'IV',
+        texto:
+          "For tailings facilities with 'Very High' or 'Extreme' Consequence Classifications, the ITRB, reporting to the Accountable Executive shall provide ongoing senior independent review of the planning, siting, design, construction, operation, water and mass balance, maintenance, monitoring, performance and risk management at appropriate intervals across all phases of the tailings facility lifecycle. For tailings facilities with other Consequence Classifications, this review can be done by a senior independent technical reviewer.",
+      },
+      {
+        id: '10.7',
+        principleId: 10,
+        topicId: 'IV',
+        texto:
+          'The amount of estimated costs for planned closure, early closure, reclamation, and post-closure of the tailings facility and its appurtenant structures shall be reviewed periodically to confirm that adequate financial capacity (including insurance, to the extent commercially reasonable) is available for such purposes throughout the tailings facility lifecycle, and the conclusions of the review shall be publicly disclosed annually. Disclosure may be made in audited financial statements or in public regulatory filings. Subject to the provisions of local or national regulations on this matter, Operators shall use best efforts to assess and take into account the capability of an acquirer of any of its assets involving a tailings facility (through merger, acquisition, or other change in ownership) to maintain this Standard for the tailings facility lifecycle.',
+      },
+    ],
+  },
+  {
+    id: 11,
+    topicId: 'IV',
+    titulo:
+      'Develop an organisational culture that promotes learning, communication and early problem recognition.',
+    requisitos: [
+      {
+        id: '11.1',
+        principleId: 11,
+        topicId: 'IV',
+        texto:
+          'Educate personnel who have a role in any phase of the tailings facility lifecycle about how their job procedures and responsibilities relate to the prevention of a failure.',
+      },
+      {
+        id: '11.2',
+        principleId: 11,
+        topicId: 'IV',
+        texto:
+          "Establish mechanisms that incorporate workers' experience-based knowledge into planning, design and operations for all phases of the tailings facility lifecycle.",
+      },
+      {
+        id: '11.3',
+        principleId: 11,
+        topicId: 'IV',
+        texto:
+          'Establish mechanisms that promote cross-functional collaboration to ensure effective data and knowledge sharing, communication and implementation of management measures to support public safety and the integrity of the tailings facility.',
+      },
+      {
+        id: '11.4',
+        principleId: 11,
+        topicId: 'IV',
+        texto:
+          'Identify and implement lessons from internal incident investigations and relevant external incident reports, paying particular attention to human and organisational factors.',
+      },
+      {
+        id: '11.5',
+        principleId: 11,
+        topicId: 'IV',
+        texto:
+          'Establish mechanisms that recognise, reward and protect from retaliation, employees and contractors who report problems or identify opportunities for improving tailings facility management. Respond in a timely manner and communicate actions taken and their outcomes.',
+      },
+    ],
+  },
+  {
+    id: 12,
+    topicId: 'IV',
+    titulo:
+      'Establish a process for reporting and addressing concerns and implement whistleblower protections.',
+    requisitos: [
+      {
+        id: '12.1',
+        principleId: 12,
+        topicId: 'IV',
+        texto:
+          'The Accountable Executive shall establish a formal, confidential and written process to receive, investigate and promptly address concerns from employees and contractors about possible permit violations or other matters relating to regulatory compliance, public safety, tailings facility integrity or the environment.',
+      },
+      {
+        id: '12.2',
+        principleId: 12,
+        topicId: 'IV',
+        texto:
+          'In accordance with international best practices for whistleblower protection, the Operator shall not discharge, discriminate against, or otherwise retaliate in any way against a whistleblower who, in good faith, has reported possible permit violations or other matters relating to regulatory compliance, public safety, tailings facility integrity or the environment.',
+      },
+    ],
+  },
 ];
