@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
-import { PRINCIPLES_GISTM } from '@/lib/calculosGISTM';
+import { PRINCIPLES_GISTM, clasificarConsecuencia, CRITERIO_CRECIDA, CRITERIO_SISMICO } from '@/lib/calculosGISTM';
+import type { NivelConsecuencia } from '@/lib/calculosGISTM';
 
 // GISTM — Global Industry Standard on Tailings Management (ICMM/UNEP/PRI, agosto 2020)
 // Checklist de auto-evaluación de cumplimiento por requisito, sin guardado/sellado todavía.
@@ -34,9 +35,30 @@ const statusColor: Record<EstadoRequisito['status'], string> = {
   no_aplica: '#64748b',
 };
 
+const nivelColor: Record<NivelConsecuencia['id'], string> = {
+  low: '#22c55e',
+  significant: '#eab308',
+  high: '#f97316',
+  very_high: '#ef4444',
+  extreme: '#b91c1c',
+};
+
 export default function ModuloGISTM() {
   const [pestanaActiva, setPestanaActiva] = useState<TopicId>('I');
   const [estados, setEstados] = useState<Record<string, EstadoRequisito>>({});
+
+  // Clasificación de Consecuencia (Annex 2, Tabla 1) — estos dos valores y su
+  // resultado derivado quedan en el estado del componente para usarlos en el
+  // payload del guardado HMAC en el próximo paso.
+  const [poblacionRiesgo, setPoblacionRiesgo] = useState('');
+  const [perdidaVidasPotencial, setPerdidaVidasPotencial] = useState('');
+
+  const clasificacion = clasificarConsecuencia(
+    Number(poblacionRiesgo) || 0,
+    Number(perdidaVidasPotencial) || 0,
+  );
+  const criterioCrecida = CRITERIO_CRECIDA.find(c => c.nombre === clasificacion.nombre);
+  const criterioSismico = CRITERIO_SISMICO.find(c => c.nombre === clasificacion.nombre);
 
   const setStatus = (id: string, status: EstadoRequisito['status']) => {
     setEstados(prev => ({ ...prev, [id]: { ...(prev[id] ?? {}), status } }));
@@ -67,6 +89,88 @@ export default function ModuloGISTM() {
           </div>
           <div style={{ background: PANEL, borderRadius: 8, padding: '10px 14px', fontSize: 12, color: '#64748b' }}>
             Normativa: ICMM / UNEP / PRI — Global Industry Standard on Tailings Management (agosto 2020)
+          </div>
+        </div>
+
+        {/* CLASIFICACIÓN DE CONSECUENCIA — Annex 2, Tabla 1 */}
+        <div style={{ background: PANEL, border: `1px solid ${BORD}`, borderRadius: 12, padding: 20, marginBottom: 20 }}>
+          <div style={{ color: TEAL, fontWeight: 700, fontSize: 12, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>
+            Annex 2 · Tabla 1
+          </div>
+          <div style={{ color: '#f1f5f9', fontWeight: 700, fontSize: 14, marginBottom: 16 }}>
+            Clasificación de Consecuencia
+          </div>
+
+          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 16 }}>
+            <div style={{ flex: '1 1 200px' }}>
+              <label style={{ display: 'block', color: '#94a3b8', fontSize: 11, marginBottom: 6 }}>
+                Población en riesgo (personas)
+              </label>
+              <input
+                type="number"
+                min={0}
+                value={poblacionRiesgo}
+                onChange={e => setPoblacionRiesgo(e.target.value)}
+                placeholder="0"
+                style={{ width: '100%', boxSizing: 'border-box', background: BG, border: `1px solid ${BORD}`, borderRadius: 8, padding: '8px 10px', color: '#f1f5f9', fontSize: 12 }}
+              />
+            </div>
+            <div style={{ flex: '1 1 200px' }}>
+              <label style={{ display: 'block', color: '#94a3b8', fontSize: 11, marginBottom: 6 }}>
+                Pérdida de vidas potencial
+              </label>
+              <input
+                type="number"
+                min={0}
+                value={perdidaVidasPotencial}
+                onChange={e => setPerdidaVidasPotencial(e.target.value)}
+                placeholder="0"
+                style={{ width: '100%', boxSizing: 'border-box', background: BG, border: `1px solid ${BORD}`, borderRadius: 8, padding: '8px 10px', color: '#f1f5f9', fontSize: 12 }}
+              />
+            </div>
+          </div>
+
+          <div style={{ background: CARD, border: `1px solid ${BORD}`, borderRadius: 10, padding: 14 }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 12 }}>
+              <span style={{ color: '#94a3b8', fontSize: 11 }}>Nivel:</span>
+              <span style={{ color: nivelColor[clasificacion.id], fontWeight: 800, fontSize: 14 }}>
+                {clasificacion.nombre}
+              </span>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 10 }}>
+              <div>
+                <div style={{ color: '#64748b', fontSize: 10, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 2 }}>
+                  Crecida · Operación/Cierre Activo
+                </div>
+                <div style={{ color: '#f1f5f9', fontSize: 13, fontWeight: 700 }}>
+                  {criterioCrecida?.probabilidadOperacion ?? '—'}
+                </div>
+              </div>
+              <div>
+                <div style={{ color: '#64748b', fontSize: 10, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 2 }}>
+                  Crecida · Cierre Pasivo
+                </div>
+                <div style={{ color: '#f1f5f9', fontSize: 13, fontWeight: 700 }}>
+                  {criterioCrecida?.probabilidadCierrePasivo ?? '—'}
+                </div>
+              </div>
+              <div>
+                <div style={{ color: '#64748b', fontSize: 10, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 2 }}>
+                  Sísmico · Operación/Cierre Activo
+                </div>
+                <div style={{ color: '#f1f5f9', fontSize: 13, fontWeight: 700 }}>
+                  {criterioSismico?.probabilidadOperacion ?? '—'}
+                </div>
+              </div>
+              <div>
+                <div style={{ color: '#64748b', fontSize: 10, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 2 }}>
+                  Sísmico · Cierre Pasivo
+                </div>
+                <div style={{ color: '#f1f5f9', fontSize: 13, fontWeight: 700 }}>
+                  {criterioSismico?.probabilidadCierrePasivo ?? '—'}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
