@@ -568,4 +568,81 @@ export const PRINCIPLES_GISTM: Principle[] = [
       },
     ],
   },
+  {
+    id: 13,
+    topicId: 'V',
+    titulo: 'Prepare for emergency response to tailings facility failures.',
+    requisitos: [
+      {
+        id: '13.1',
+        principleId: 13,
+        topicId: 'V',
+        texto:
+          'As part of the TMS, use best practices and emergency response expertise to prepare and implement a site-specific tailings facility Emergency Preparedness and Response Plan (EPRP) based on credible flow failure scenarios and the assessment of potential consequences. Test and update the EPRP at all phases of the tailings facility lifecycle at a frequency established in the plan, or more frequently if triggered by a material change either to the tailings facility or to the social, environmental and local economic context. Meaningfully engage with employees and contractors to inform the EPRP, and co-develop community-focused emergency preparedness measures with project-affected people.',
+      },
+      {
+        id: '13.2',
+        principleId: 13,
+        topicId: 'V',
+        texto:
+          'Engage with public sector agencies, first responders, local authorities and institutions and take reasonable steps to assess the capability of emergency response services to address the hazards identified in the tailings facility EPRP, identify gaps in capability and use this information to support the development of a collaborative plan to improve preparedness.',
+      },
+      {
+        id: '13.3',
+        principleId: 13,
+        topicId: 'V',
+        texto:
+          'Considering community-focused measures and public sector capacity, the Operator shall take all reasonable steps to maintain a shared state of readiness for tailings facility credible flow failure scenarios by securing resources and carrying out annual training and exercises. The Operator shall conduct emergency response simulations at a frequency established in the EPRP but at least every 3 years for tailings facilities with potential loss of life.',
+      },
+      {
+        id: '13.4',
+        principleId: 13,
+        topicId: 'V',
+        texto:
+          'In the case of a catastrophic tailings facility failure, provide immediate response to save lives, supply humanitarian aid and minimise environmental harm.',
+      },
+    ],
+  },
+  {
+    id: 14,
+    topicId: 'V',
+    titulo: 'Prepare for long-term recovery in the event of catastrophic failure.',
+    requisitos: [
+      {
+        id: '14.1',
+        principleId: 14,
+        topicId: 'V',
+        texto:
+          'Based on tailings facility credible flow failure scenarios and the assessment of potential consequences, take reasonable steps to meaningfully engage with public sector agencies and other organisations that would participate in medium- and long-term social and environmental post-failure response strategies.',
+      },
+      {
+        id: '14.2',
+        principleId: 14,
+        topicId: 'V',
+        texto:
+          'In the event of a catastrophic tailings facility failure, assess social, environmental and local economic impacts as soon as possible after people are safe and short-term survival needs have been met.',
+      },
+      {
+        id: '14.3',
+        principleId: 14,
+        topicId: 'V',
+        texto:
+          'In the event of a catastrophic tailings facility failure, work with public sector agencies and other stakeholders to develop and implement reconstruction, restoration and recovery plans that address the medium- and long-term social, environmental and local economic impacts of the failure. The plans shall be disclosed if permitted by public authorities.',
+      },
+      {
+        id: '14.4',
+        principleId: 14,
+        topicId: 'V',
+        texto:
+          'In the event of a catastrophic tailings facility failure, enable the participation of affected people in reconstruction, restoration and recovery works and ongoing monitoring activities.',
+      },
+      {
+        id: '14.5',
+        principleId: 14,
+        topicId: 'V',
+        texto:
+          'Facilitate the monitoring and public reporting of post-failure outcomes that are aligned with the thresholds and indicators outlined in the reconstruction, restoration and recovery plans and adapt activities in response to findings and feedback.',
+      },
+    ],
+  },
 ];
