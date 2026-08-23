@@ -16,6 +16,7 @@ import ModuloCanerias from '@/components/ModuloCanerias';
 import ModuloCivil from '@/components/ModuloCivil';
 import ModuloElectricidad from '@/components/ModuloElectricidad';
 import ModuloGeotecnia from '@/components/ModuloGeotecnia';
+import ModuloGISTM from '@/app/modulos/ModuloGISTM';
 import ModuloHidraulica from '@/components/ModuloHidraulica';
 import ModuloInstrumentacion from '@/app/modulos/ModuloInstrumentacion';
 import ModuloMineria from '@/components/ModuloMineria';
@@ -45,6 +46,7 @@ const MODULOS = [
   { id: 'termica',      label: 'Térmica',           icon: '🌡️', component: ModuloTermica     },
   { id: 'arquitectura', label: 'Arquitectura',      icon: '🏛️', component: ModuloArquitectura},
   { id: 'instrumentacion', label: 'Electrónica e Instrumentación', icon: '📟', component: ModuloInstrumentacion, cluster: 'Electrónica e Instrumentación' },
+  { id: 'gistm', label: 'GISTM - Gestión de Relaves', icon: '⛰️', component: ModuloGISTM },
 ];
 
 function ipAuthHeader(): Record<string, string> {
