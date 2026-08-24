@@ -31,6 +31,7 @@ function resolverModuloId(d: DatosExportar): string {
   if (raw.includes('CANERIA'))                              return 'CANERIAS';
   if (raw.includes('PERFOR'))                               return 'PERFORACION';
   if (raw.includes('ELECTR'))                               return 'ELECTRICIDAD';
+  if (raw.includes('GISTM'))                                return 'GISTM_CONFORMIDAD';
   return raw;
 }
 

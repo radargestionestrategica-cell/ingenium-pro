@@ -547,6 +547,31 @@ function preCalcular(ctx: ContextoCalculo): ResultadosDerivados {
     if (Cv > 0) notas.push(`Cv requerido: ${Cv} [ISA 75.01.01]`);
   }
 
+  // ── GISTM — ICMM/UNEP/PRI Global Industry Standard on Tailings Management ──
+  if (ctx.moduloId === 'GISTM_CONFORMIDAD') {
+    const poblacionRiesgo = findNum(p, 'Poblacion en riesgo', 'poblacionRiesgo');
+    const pll             = findNum(p, 'Perdida de vidas potencial', 'perdidaVidasPotencial', 'PLL');
+    const nivelClasif     = String(r['Nivel de clasificacion'] ?? '');
+    const reqCumple       = findNum(r, 'Requisitos cumple');
+    const reqNoCumple     = findNum(r, 'Requisitos no cumple');
+    const reqNoAplica     = findNum(r, 'Requisitos no aplica');
+    const totalReq        = findNum(r, 'Total requisitos');
+
+    if (poblacionRiesgo > 0) notas.push(`Poblacion en riesgo: ${poblacionRiesgo} personas`);
+    if (pll > 0) notas.push(`Perdida de vidas potencial (PLL): ${pll}`);
+    if (nivelClasif) notas.push(`Nivel de clasificacion de consecuencia (Annex 2, Tabla 1): ${nivelClasif}`);
+    if (totalReq > 0) notas.push(`Checklist GISTM: ${reqCumple}/${totalReq} cumple, ${reqNoCumple} no cumple, ${reqNoAplica} no aplica`);
+
+    if (nivelClasif === 'Extreme' || nivelClasif === 'Very High') nivel_riesgo = 'CRITICO';
+    else if (nivelClasif === 'High')                              nivel_riesgo = 'ALTO';
+    else if (nivelClasif === 'Significant')                       nivel_riesgo = 'MEDIO';
+
+    if (reqNoCumple > 0) {
+      resultado.supera_admisible = true;
+      notas.push(`${reqNoCumple} requisito(s) GISTM en no cumplimiento — revisar plan de conformidad`);
+    }
+  }
+
   resultado.nivel_riesgo     = nivel_riesgo;
   resultado.notas_calculo    = notas;
   resultado.supera_admisible = supera_admisible || resultado.supera_admisible;
@@ -816,6 +841,12 @@ ISA 75.01.01-2012: Cv = Q·√(SG/ΔP) — Q en GPM, ΔP en psi, SG relativo al 
 ISA 75.01.01-2012 §5: Kv = 0.865·Cv — conversión a unidades métricas (m3/h a 1 bar de ΔP).
 ISA 75.01.01-2012 §6: Cavitación — Cv de servicio > Cv·FL² para evitar daño al asiento.
 API 6D-2021 §5.7: Pérdida de presión admisible a través de válvula en condición de diseño máximo.`,
+
+  GISTM_CONFORMIDAD: `NORMATIVAS APLICABLES — VERIFICADAS:
+ICMM/UNEP/PRI — Global Industry Standard on Tailings Management (GISTM), agosto 2020 — norma base.
+GISTM Annex 2, Tabla 1: Clasificación de Consecuencia por población en riesgo y pérdida de vidas potencial (PLL).
+GISTM Annex 2: Probabilidad anual de excedencia por crecida y sísmico — operación/cierre activo vs. cierre pasivo.
+GISTM Principles I-VI: 77 requisitos auditables — comunidades afectadas, conocimiento, diseño/operación, gobernanza, emergencias, divulgación.`,
 };
 
 // ════════════════════════════════════════════════════════════════════════════
