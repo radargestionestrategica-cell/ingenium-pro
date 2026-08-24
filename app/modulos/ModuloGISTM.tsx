@@ -2,6 +2,8 @@
 import { useState } from 'react';
 import { PRINCIPLES_GISTM, clasificarConsecuencia, CRITERIO_CRECIDA, CRITERIO_SISMICO } from '@/lib/calculosGISTM';
 import type { NivelConsecuencia } from '@/lib/calculosGISTM';
+import { publicarResultado } from '@/components/ResultadoContexto';
+import BotonesExportar, { DatosExportar } from '@/components/BotonesExportar';
 
 // GISTM — Global Industry Standard on Tailings Management (ICMM/UNEP/PRI, agosto 2020)
 // Checklist de auto-evaluación de cumplimiento por requisito, sin guardado/sellado todavía.
@@ -59,6 +61,40 @@ export default function ModuloGISTM() {
   );
   const criterioCrecida = CRITERIO_CRECIDA.find(c => c.nombre === clasificacion.nombre);
   const criterioSismico = CRITERIO_SISMICO.find(c => c.nombre === clasificacion.nombre);
+
+  const [payload, setPayload] = useState<DatosExportar | null>(null);
+
+  const todosRequisitos = PRINCIPLES_GISTM.flatMap(p => p.requisitos);
+  const resumenChecklist = {
+    cumple:    todosRequisitos.filter(r => estados[r.id]?.status === 'cumple').length,
+    no_cumple: todosRequisitos.filter(r => estados[r.id]?.status === 'no_cumple').length,
+    no_aplica: todosRequisitos.filter(r => estados[r.id]?.status === 'no_aplica').length,
+  };
+
+  const generarResultado = () => {
+    const nuevoPayload: DatosExportar = {
+      tipo:      'GISTM_CONFORMIDAD',
+      normativa: 'ICMM/UNEP/PRI - GISTM (agosto 2020)',
+      parametros: {
+        'Poblacion en riesgo':          Number(poblacionRiesgo) || 0,
+        'Perdida de vidas potencial':   Number(perdidaVidasPotencial) || 0,
+      },
+      resultado: {
+        'Nivel de clasificacion':                              clasificacion.nombre,
+        'Probabilidad crecida - Operacion/Cierre Activo':       criterioCrecida?.probabilidadOperacion ?? '—',
+        'Probabilidad crecida - Cierre Pasivo':                 criterioCrecida?.probabilidadCierrePasivo ?? '—',
+        'Probabilidad sismico - Operacion/Cierre Activo':       criterioSismico?.probabilidadOperacion ?? '—',
+        'Probabilidad sismico - Cierre Pasivo':                 criterioSismico?.probabilidadCierrePasivo ?? '—',
+        'Requisitos cumple':                                    resumenChecklist.cumple,
+        'Requisitos no cumple':                                 resumenChecklist.no_cumple,
+        'Requisitos no aplica':                                 resumenChecklist.no_aplica,
+        'Total requisitos':                                     todosRequisitos.length,
+      },
+      nivel: clasificacion.id,
+    };
+    setPayload(nuevoPayload);
+    publicarResultado(nuevoPayload);
+  };
 
   const setStatus = (id: string, status: EstadoRequisito['status']) => {
     setEstados(prev => ({ ...prev, [id]: { ...(prev[id] ?? {}), status } }));
@@ -245,6 +281,21 @@ export default function ModuloGISTM() {
             })}
           </div>
         ))}
+
+        {/* GENERAR RESULTADO */}
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 8 }}>
+          <button
+            onClick={generarResultado}
+            style={{
+              padding: '10px 18px', borderRadius: 10, border: 'none',
+              background: TEAL, color: '#0f172a', fontWeight: 800, fontSize: 13, cursor: 'pointer',
+            }}
+          >
+            Generar resultado
+          </button>
+        </div>
+
+        {payload && <BotonesExportar visible={true} datos={payload} />}
 
       </div>
     </div>
