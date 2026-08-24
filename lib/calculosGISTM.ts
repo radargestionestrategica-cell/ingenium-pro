@@ -7,6 +7,7 @@ export interface Requisito {
   principleId: number;
   topicId: string;
   texto: string;
+  textoEs?: string;
   rolResponsable?: string[];
 }
 
@@ -14,6 +15,7 @@ export interface Principle {
   id: number;
   topicId: string;
   titulo: string;
+  tituloEs?: string;
   requisitos: Requisito[];
 }
 
@@ -23,6 +25,8 @@ export const PRINCIPLES_GISTM: Principle[] = [
     topicId: 'I',
     titulo:
       'Respect the rights of project-affected people and meaningfully engage them at all phases of the tailings facility lifecycle, including closure.',
+    tituloEs:
+      'Respetar los derechos de las personas afectadas por el proyecto y comprometerlas de manera significativa en todas las fases del ciclo de vida de la instalacion de relaves, incluido el cierre.',
     requisitos: [
       {
         id: '1.1',
@@ -30,6 +34,8 @@ export const PRINCIPLES_GISTM: Principle[] = [
         topicId: 'I',
         texto:
           'Demonstrate respect for human rights in accordance with the United Nations Guiding Principles on Business and Human Rights (UNGP), conduct human rights due diligence to inform management decisions throughout the tailings facility lifecycle and address the human rights risks of tailings facility credible failure scenarios. For existing facilities, the Operator can initially opt to prioritise salient human rights issues in accordance with the UNGP.',
+        textoEs:
+          'Demostrar respeto por los derechos humanos de conformidad con los Principios Rectores de la ONU sobre Empresas y Derechos Humanos (UNGP), realizar la debida diligencia en derechos humanos para fundamentar decisiones de gestion durante el ciclo de vida de la instalacion, y abordar los riesgos de derechos humanos de escenarios creibles de falla. En instalaciones existentes, el Operador puede priorizar inicialmente los temas mas relevantes segun los UNGP.',
       },
       {
         id: '1.2',
@@ -37,6 +43,8 @@ export const PRINCIPLES_GISTM: Principle[] = [
         topicId: 'I',
         texto:
           'Where a new tailings facility may impact the rights of indigenous or tribal peoples, including their land and resource rights and their right to self-determination, work to obtain and maintain Free Prior and Informed Consent (FPIC) by demonstrating conformance to international guidance and recognised best practice frameworks.',
+        textoEs:
+          'Cuando una nueva instalacion pueda afectar derechos de pueblos indigenas o tribales, incluidos derechos territoriales y de autodeterminacion, trabajar para obtener y mantener el Consentimiento Libre, Previo e Informado (CLPI) conforme a guias internacionales reconocidas.',
       },
       {
         id: '1.3',
@@ -44,6 +52,8 @@ export const PRINCIPLES_GISTM: Principle[] = [
         topicId: 'I',
         texto:
           'Demonstrate that project-affected people are meaningfully engaged throughout the tailings facility lifecycle in building the knowledge base and in decisions that may have a bearing on public safety and the integrity of the tailings facility. The Operator shall share information to support this process.',
+        textoEs:
+          'Demostrar que las personas afectadas por el proyecto participan de manera significativa durante el ciclo de vida de la instalacion en la construccion de la base de conocimiento y en decisiones que puedan incidir en la seguridad publica y la integridad de la instalacion. El Operador debera compartir informacion para respaldar este proceso.',
       },
       {
         id: '1.4',
@@ -51,6 +61,8 @@ export const PRINCIPLES_GISTM: Principle[] = [
         topicId: 'I',
         texto:
           'Establish an effective operational-level, non-judicial grievance mechanism that addresses complaints and grievances of project-affected people relating to the tailings facility, and provide remedy in accordance with the UNGP.',
+        textoEs:
+          'Establecer un mecanismo de reclamos a nivel operativo, no judicial y eficaz, que atienda quejas y reclamos de las personas afectadas por el proyecto relacionados con la instalacion, y proporcionar reparacion conforme a los UNGP.',
       },
     ],
   },
@@ -59,6 +71,8 @@ export const PRINCIPLES_GISTM: Principle[] = [
     topicId: 'II',
     titulo:
       'Develop and maintain an interdisciplinary knowledge base to support safe tailings management throughout the tailings facility lifecycle, including closure.',
+    tituloEs:
+      'Desarrollar y mantener una base de conocimiento interdisciplinaria para respaldar la gestion segura de relaves a lo largo del ciclo de vida de la instalacion, incluido el cierre.',
     requisitos: [
       {
         id: '2.1',
@@ -66,6 +80,8 @@ export const PRINCIPLES_GISTM: Principle[] = [
         topicId: 'II',
         texto:
           'Develop and document knowledge about the social, environmental and local economic context of the tailings facility, using approaches aligned with international best practices. Update this knowledge at least every five years, and whenever there is a material change either to the tailings facility or to the social, environmental and local economic context. This knowledge should capture uncertainties due to climate change.',
+        textoEs:
+          'Desarrollar y documentar conocimiento sobre el contexto social, ambiental y economico local de la instalacion de relaves, usando enfoques alineados con mejores practicas internacionales. Actualizar cada cinco años o ante cambio material en la instalacion o el contexto. Debe capturar incertidumbres del cambio climatico.',
       },
       {
         id: '2.2',
@@ -73,6 +89,8 @@ export const PRINCIPLES_GISTM: Principle[] = [
         topicId: 'II',
         texto:
           'Prepare, document and update a detailed site characterisation of the tailings facility site(s) that includes data on climate, geomorphology, geology, geochemistry, hydrology and hydrogeology (surface and groundwater flow and quality), geotechnical, and seismicity. The physical and chemical properties of the tailings shall be characterised and updated regularly to account for variability in ore properties and processing.',
+        textoEs:
+          'Preparar, documentar y actualizar una caracterizacion detallada del sitio que incluya clima, geomorfologia, geologia, geoquimica, hidrologia e hidrogeologia, geotecnia y sismicidad. Las propiedades fisicas y quimicas de los relaves deben caracterizarse y actualizarse periodicamente.',
       },
       {
         id: '2.3',
@@ -80,6 +98,8 @@ export const PRINCIPLES_GISTM: Principle[] = [
         topicId: 'II',
         texto:
           "Develop and document a breach analysis for the tailings facility using a methodology that considers credible failure modes, site conditions, and the properties of the slurry. The results of the analysis shall estimate the physical area impacted by a potential failure. When flowable materials (water and liquefiable solids) are present at tailings facilities with Consequence Classification of 'High', 'Very High' or 'Extreme', the results should include estimates of the physical area impacted by a potential failure, flow arrival times, depth and velocities, and depth of material deposition. Update whenever there is a material change either to the tailings facility or the physical area impacted.",
+        textoEs:
+          'Desarrollar y documentar un analisis de brecha para la instalacion usando una metodologia que considere modos de falla creibles, condiciones del sitio y propiedades de la pulpa. En instalaciones High/Very High/Extreme con materiales fluibles, incluir area afectada, tiempos de llegada, profundidad y velocidades del flujo. Actualizar ante cambio material.',
       },
       {
         id: '2.4',
@@ -87,6 +107,8 @@ export const PRINCIPLES_GISTM: Principle[] = [
         topicId: 'II',
         texto:
           'In order to identify the groups most at risk, refer to the updated tailings facility breach analysis to assess and document potential human exposure and vulnerability to tailings facility credible failure scenarios. Update the assessment whenever there is a material change either to the tailings facility or to the knowledge base.',
+        textoEs:
+          'Para identificar los grupos con mayor riesgo, usar el analisis de brecha actualizado para evaluar y documentar exposicion humana potencial y vulnerabilidad ante escenarios creibles de falla. Actualizar ante cambio material en la instalacion o la base de conocimiento.',
       },
     ],
   },
@@ -95,6 +117,8 @@ export const PRINCIPLES_GISTM: Principle[] = [
     topicId: 'II',
     titulo:
       'Use all elements of the knowledge base - social, environmental, local economic and technical - to inform decisions throughout the tailings facility lifecycle, including closure.',
+    tituloEs:
+      'Utilizar todos los elementos de la base de conocimiento -social, ambiental, economico local y tecnico- para fundamentar las decisiones a lo largo del ciclo de vida de la instalacion de relaves, incluido el cierre.',
     requisitos: [
       {
         id: '3.1',
@@ -102,6 +126,8 @@ export const PRINCIPLES_GISTM: Principle[] = [
         topicId: 'II',
         texto:
           'To enhance resilience to climate change, evaluate, regularly update and use climate change knowledge throughout the tailings facility lifecycle in accordance with the principles of Adaptive Management.',
+        textoEs:
+          'Para fortalecer la resiliencia frente al cambio climatico, evaluar, actualizar regularmente y utilizar el conocimiento sobre cambio climatico a lo largo del ciclo de vida de la instalacion, de acuerdo con los principios de la Gestion Adaptativa.',
       },
       {
         id: '3.2',
@@ -131,6 +157,8 @@ export const PRINCIPLES_GISTM: Principle[] = [
     topicId: 'III',
     titulo:
       'Develop plans and design criteria for the tailings facility to minimise risk for all phases of its lifecycle, including closure and post-closure.',
+    tituloEs:
+      'Desarrollar planes y criterios de diseño para la instalacion de relaves con el fin de minimizar el riesgo en todas las fases de su ciclo de vida, incluyendo el cierre y el post-cierre.',
     requisitos: [
       {
         id: '4.1',
@@ -138,6 +166,8 @@ export const PRINCIPLES_GISTM: Principle[] = [
         topicId: 'III',
         texto:
           'Determine the consequence of failure classification of the tailings facility by assessing the downstream conditions documented in the knowledge base and selecting the classification corresponding to the highest Consequence Classification for each category in Annex 2, Table 1. The assessment and selection of the classification shall be based on credible failure modes, and shall be defensible and documented.',
+        textoEs:
+          'Determinar la clasificacion de consecuencia de falla de la instalacion de relaves evaluando las condiciones aguas abajo documentadas en la base de conocimiento y seleccionando la clasificacion correspondiente a la Clasificacion de Consecuencia mas alta para cada categoria de la Tabla 1 del Annex 2. La evaluacion y seleccion deberan basarse en modos de falla creibles, y deberan ser defendibles y estar documentadas.',
       },
       {
         id: '4.2',
@@ -145,6 +175,8 @@ export const PRINCIPLES_GISTM: Principle[] = [
         topicId: 'III',
         texto:
           "With the objective of maintaining flexibility in the development of a new tailings facility and optimising costs while prioritising safety throughout the tailings facility lifecycle: A. Develop preliminary designs for the tailings facility with external loading design criteria consistent with both the consequence of failure classification selected based on current conditions and higher Consequence Classifications (including 'Extreme'). B. Informed by the range of requirements defined by the preliminary designs, either: 1. Implement the design for the 'Extreme' Consequence Classification external loading criteria; or 2. Implement the design for the current Consequence Classification criteria, or a higher one, and demonstrate that the feasibility, at a proof of concept level, to upgrade to the design for the 'Extreme' classification criteria is maintained throughout the tailings facility lifecycle. C. If option B.2 is implemented, review the consequence of failure classification at the time of the Dam Safety Review (DSR) and at least every five years, or sooner if there is a material change in the social, environmental and local economic context, and complete the upgrade of the tailings facility to the new Consequence Classification as determined by the DSR within three years. This review shall proceed until the tailings facility has been safely closed according to this Standard. D. The process described above shall be reviewed by the Independent Tailings Review Board (ITRB) or the senior independent technical reviewer, as appropriate for the tailings facility Consequence Classification. Subject to Requirement 4.7, Requirements 4.2.C and 4.2.D shall also apply to existing tailings facilities.",
+        textoEs:
+          'Con el objetivo de mantener flexibilidad en el desarrollo de una nueva instalacion de relaves y optimizar costos priorizando la seguridad a lo largo del ciclo de vida: A. Desarrollar disenos preliminares con criterios de carga externa consistentes con la clasificacion actual y con clasificaciones superiores incluyendo Extreme. B. Conforme al rango de requisitos de los disenos preliminares: 1. Implementar el diseno para criterios Extreme; o 2. Implementar el diseno para criterios actuales o superiores, demostrando viabilidad de actualizar a Extreme mas adelante. C. Si se implementa la opcion B.2, revisar la clasificacion en cada Revision de Seguridad de la Presa y al menos cada cinco anios, o antes si hay cambio material en el contexto, completando la actualizacion dentro de tres anios. Esta revision continua hasta el cierre seguro de la instalacion. D. El proceso debera ser revisado por la ITRB o el revisor tecnico independiente senior. Sujeto al Requisito 4.7, los Requisitos 4.2.C y 4.2.D tambien aplican a instalaciones existentes.',
       },
       {
         id: '4.3',
