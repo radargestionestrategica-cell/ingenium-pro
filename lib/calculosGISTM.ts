@@ -184,6 +184,8 @@ export const PRINCIPLES_GISTM: Principle[] = [
         topicId: 'III',
         texto:
           'The Accountable Executive shall take the decision to adopt a design for the current Consequence Classification criteria and to maintain flexibility to upgrade the design for the highest classification criteria later in the tailings facility lifecycle. This decision shall be documented.',
+        textoEs:
+          'El Ejecutivo Responsable debera tomar la decision de adoptar un diseno para la Clasificacion de Consecuencia actual y de mantener la flexibilidad para actualizarlo a criterios mas altos mas adelante. Esta decision debera estar documentada.',
       },
       {
         id: '4.4',
@@ -191,6 +193,8 @@ export const PRINCIPLES_GISTM: Principle[] = [
         topicId: 'III',
         texto:
           'Select, explicitly identify and document all design criteria that are appropriate to minimise risk for all credible failure modes for all phases of the tailings facility lifecycle.',
+        textoEs:
+          'Seleccionar, identificar explicitamente y documentar todos los criterios de diseno apropiados para minimizar el riesgo ante todos los modos de falla creibles, para todas las fases del ciclo de vida de la instalacion.',
       },
       {
         id: '4.5',
@@ -198,6 +202,8 @@ export const PRINCIPLES_GISTM: Principle[] = [
         topicId: 'III',
         texto:
           'Apply design criteria, such as factors of safety for slope stability and seepage management, that consider estimated operational properties of materials and expected performance of design elements, and quality of the implementation of risk management systems. These issues should also be appropriately accounted for in designs based on deformation analyses.',
+        textoEs:
+          'Aplicar criterios de diseno, como factores de seguridad para estabilidad de taludes y gestion de filtraciones, que consideren las propiedades operativas estimadas de los materiales y el desempeno esperado de los elementos de diseno, asi como la calidad de implementacion de los sistemas de gestion de riesgo. Estas cuestiones tambien deberan tenerse en cuenta en los disenos basados en analisis de deformacion.',
       },
       {
         id: '4.6',
@@ -205,6 +211,8 @@ export const PRINCIPLES_GISTM: Principle[] = [
         topicId: 'III',
         texto:
           'Identify and address brittle failure modes with conservative design criteria, independent of trigger mechanisms, to minimise their impact on the performance of the tailings facility.',
+        textoEs:
+          'Identificar y abordar los modos de falla fragil con criterios de diseno conservadores, independientemente de los mecanismos desencadenantes, para minimizar su impacto en el desempeno de la instalacion.',
       },
       {
         id: '4.7',
@@ -212,6 +220,8 @@ export const PRINCIPLES_GISTM: Principle[] = [
         topicId: 'III',
         texto:
           'Existing tailings facilities shall conform with the Requirements under Principle 4, except for those aspects where the Engineer of Record (EOR), with review by the ITRB or a senior independent technical reviewer, determines that the upgrade of an existing tailings facility is not viable or cannot be retroactively applied. In this case, the Accountable Executive shall approve and document the implementation of measures to reduce both the probability and the consequences of a tailings facility failure in order to reduce the risk to a level as low as reasonably practicable (ALARP). The basis and timing for addressing the upgrade of existing tailings facilities shall be risk-informed and carried out as soon as reasonably practicable.',
+        textoEs:
+          'Las instalaciones existentes deberan cumplir con los Requisitos del Principio 4, excepto donde el Ingeniero de Registro, con revision de la ITRB o un revisor tecnico independiente senior, determine que la actualizacion no es viable o no puede aplicarse retroactivamente. En ese caso, el Ejecutivo Responsable debera aprobar y documentar medidas para reducir probabilidad y consecuencias de falla, llevando el riesgo a un nivel tan bajo como sea razonablemente practicable (ALARP). El fundamento y los plazos para abordar la actualizacion de instalaciones existentes deberan estar basados en riesgo y ejecutarse tan pronto como sea razonablemente practicable.',
       },
       {
         id: '4.8',
@@ -219,6 +229,8 @@ export const PRINCIPLES_GISTM: Principle[] = [
         topicId: 'III',
         texto:
           'The EOR shall prepare a Design Basis Report (DBR) that details the design assumptions and criteria, including operating constraints, and that provides the basis for the design of all phases of the tailings facility lifecycle. The DBR shall be reviewed by the ITRB or senior independent technical reviewer. The EOR shall update the DBR every time there is a material change in the design assumptions, design criteria, design or the knowledge base and confirm internal consistency among these elements.',
+        textoEs:
+          'El EOR debera preparar un Informe de Bases de Diseno que detalle los supuestos y criterios de diseno, incluidas las restricciones operativas, como base del diseno de todas las fases del ciclo de vida. El Informe debera ser revisado por la ITRB o un revisor tecnico independiente senior, y actualizado cada vez que exista un cambio material en los supuestos de diseno, los criterios de diseno, el diseno o la base de conocimiento, confirmando consistencia interna entre estos elementos.',
       },
     ],
   },
@@ -227,6 +239,8 @@ export const PRINCIPLES_GISTM: Principle[] = [
     topicId: 'III',
     titulo:
       'Develop a robust design that integrates the knowledge base and minimises the risk of failure to people and the environment for all phases of the tailings facility lifecycle, including closure and post-closure.',
+    tituloEs:
+      'Desarrollar un diseno robusto que integre la base de conocimiento y minimice el riesgo de falla para las personas y el ambiente en todas las fases del ciclo de vida de la instalacion de relaves, incluyendo el cierre y el post-cierre.',
     requisitos: [
       {
         id: '5.1',
@@ -234,6 +248,8 @@ export const PRINCIPLES_GISTM: Principle[] = [
         topicId: 'III',
         texto:
           'For new tailings facilities, incorporate the outcome of the multi-criteria alternatives analysis including the use of tailings technologies in the design of the tailings facility. For expansions to existing tailings facilities, investigate the potential to refine the tailings technologies and design approaches with the goal of minimising risks to people and the environment throughout the tailings facility lifecycle.',
+        textoEs:
+          'Para nuevas instalaciones de relaves, incorporar el resultado del analisis de alternativas multicriterio, incluyendo el uso de tecnologias de relaves, en el diseno de la instalacion. Para ampliaciones de instalaciones existentes, investigar la posibilidad de perfeccionar las tecnologias y enfoques de diseno con el objetivo de minimizar los riesgos para las personas y el ambiente a lo largo del ciclo de vida de la instalacion.',
       },
       {
         id: '5.2',
@@ -241,6 +257,8 @@ export const PRINCIPLES_GISTM: Principle[] = [
         topicId: 'III',
         texto:
           'Develop a robust design that considers the technical, social, environmental and local economic context, the tailings facility Consequence Classification, site conditions, water management, mine plant operations, tailings operational and construction issues, and that demonstrates the feasibility of safe closure of the tailings facility. The design should be reviewed and updated as performance and site data become available and in response to material changes to the tailings facility or its performance.',
+        textoEs:
+          'Desarrollar un diseno robusto que considere el contexto tecnico, social, ambiental y economico local, la Clasificacion de Consecuencia de la instalacion, las condiciones del sitio, la gestion del agua, las operaciones de la planta minera, y los aspectos operativos y constructivos de los relaves, y que demuestre la viabilidad de un cierre seguro de la instalacion. El diseno debera revisarse y actualizarse a medida que se disponga de datos de desempeno y del sitio, y en respuesta a cambios materiales en la instalacion o su desempeno.',
       },
       {
         id: '5.3',
@@ -248,6 +266,8 @@ export const PRINCIPLES_GISTM: Principle[] = [
         topicId: 'III',
         texto:
           'Develop, implement and maintain a water balance model and associated water management plans for the tailings facility, taking into account the knowledge base including climate change, upstream and downstream hydrological and hydrogeological basins, the mine site, mine planning and overall operations and the integrity of the tailings facility throughout its lifecycle. The water management programme must be designed to protect against unintentional releases.',
+        textoEs:
+          'Desarrollar, implementar y mantener un modelo de balance hidrico y los planes de gestion del agua asociados para la instalacion de relaves, teniendo en cuenta la base de conocimiento, incluido el cambio climatico, las cuencas hidrologicas e hidrogeologicas aguas arriba y aguas abajo, el sitio minero, la planificacion minera y las operaciones generales, y la integridad de la instalacion a lo largo de su ciclo de vida. El programa de gestion del agua debe disenarse para proteger contra liberaciones no intencionales.',
       },
       {
         id: '5.4',
@@ -255,6 +275,8 @@ export const PRINCIPLES_GISTM: Principle[] = [
         topicId: 'III',
         texto:
           'Address all potential failure modes of the structure, its foundation, abutments, reservoir (tailings deposit and pond), reservoir rim and appurtenant structures to minimise risk to ALARP. Risk assessments must be used to inform the design.',
+        textoEs:
+          'Abordar todos los modos de falla potenciales de la estructura, su fundacion, estribos, embalse (deposito de relaves y laguna), borde del embalse y estructuras conexas, a fin de minimizar el riesgo a un nivel ALARP. Las evaluaciones de riesgo deben utilizarse para fundamentar el diseno.',
       },
       {
         id: '5.5',
@@ -262,6 +284,8 @@ export const PRINCIPLES_GISTM: Principle[] = [
         topicId: 'III',
         texto:
           'Develop a design for each stage of construction of the tailings facility, including but not limited to start-up, partial raises and interim configurations, final raise, and all closure stages.',
+        textoEs:
+          'Desarrollar un diseno para cada etapa de construccion de la instalacion de relaves, incluyendo pero no limitado al arranque, elevaciones parciales y configuraciones intermedias, elevacion final, y todas las etapas de cierre.',
       },
       {
         id: '5.6',
@@ -269,6 +293,8 @@ export const PRINCIPLES_GISTM: Principle[] = [
         topicId: 'III',
         texto:
           'Design the closure phase in a manner that meets all the Requirements of the Standard with sufficient detail to demonstrate the feasibility of the closure scenario and to allow implementation of elements of the design during construction and operation as appropriate. The design should include progressive closure and reclamation during operations.',
+        textoEs:
+          'Disenar la fase de cierre de manera que cumpla con todos los Requisitos del Estandar, con el detalle suficiente para demostrar la viabilidad del escenario de cierre y permitir la implementacion de elementos del diseno durante la construccion y la operacion segun corresponda. El diseno debe incluir cierre progresivo y recuperacion durante la operacion.',
       },
       {
         id: '5.7',
@@ -276,6 +302,8 @@ export const PRINCIPLES_GISTM: Principle[] = [
         topicId: 'III',
         texto:
           "For a proposed new tailings facility classified as 'High', 'Very High' or 'Extreme', the Accountable Executive shall confirm that the design satisfies ALARP and shall approve additional reasonable steps that may be taken downstream, to further reduce potential consequences to people and the environment. The Accountable Executive shall explain and document the decisions with respect to ALARP and additional consequence reduction measures. For an existing tailings facility classified as 'High', 'Very High' or 'Extreme', the Accountable Executive, at the time of every DSR or at least every five years, shall confirm that the design satisfies ALARP and shall seek to identify and implement additional reasonable steps that may be taken to further reduce potential consequences to people and the environment. The Accountable Executive shall explain and document the decisions with respect to ALARP and additional consequence reduction measures, in consultation with external parties as appropriate.",
+        textoEs:
+          'Para una nueva instalacion de relaves propuesta clasificada como High, Very High o Extreme, el Ejecutivo Responsable debera confirmar que el diseno satisface el ALARP y debera aprobar pasos razonables adicionales que puedan tomarse aguas abajo para reducir aun mas las consecuencias potenciales para las personas y el ambiente. El Ejecutivo Responsable debera explicar y documentar las decisiones respecto del ALARP y las medidas adicionales de reduccion de consecuencias. Para una instalacion existente clasificada como High, Very High o Extreme, el Ejecutivo Responsable, en cada DSR o al menos cada cinco anios, debera confirmar que el diseno satisface el ALARP y debera procurar identificar e implementar pasos razonables adicionales para reducir aun mas las consecuencias potenciales. El Ejecutivo Responsable debera explicar y documentar las decisiones respecto del ALARP y las medidas adicionales, en consulta con partes externas segun corresponda.',
       },
       {
         id: '5.8',
@@ -283,6 +311,8 @@ export const PRINCIPLES_GISTM: Principle[] = [
         topicId: 'III',
         texto:
           'Where other measures to reduce the consequences of a tailings facility credible failure mode as per the breach analysis have been exhausted, and pre-emptive resettlement cannot be avoided, the Operator shall demonstrate conformance with international standards for involuntary resettlement.',
+        textoEs:
+          'Cuando se hayan agotado otras medidas para reducir las consecuencias de un modo de falla creible de la instalacion de relaves segun el analisis de brecha, y el reasentamiento preventivo no pueda evitarse, el Operador debera demostrar conformidad con los estandares internacionales de reasentamiento involuntario.',
       },
     ],
   },
@@ -291,6 +321,8 @@ export const PRINCIPLES_GISTM: Principle[] = [
     topicId: 'III',
     titulo:
       'Plan, build and operate the tailings facility to manage risk at all phases of the tailings facility lifecycle, including closure and post-closure.',
+    tituloEs:
+      'Planificar, construir y operar la instalacion de relaves para gestionar el riesgo en todas las fases de su ciclo de vida, incluyendo el cierre y el post-cierre.',
     requisitos: [
       {
         id: '6.1',
@@ -298,6 +330,8 @@ export const PRINCIPLES_GISTM: Principle[] = [
         topicId: 'III',
         texto:
           'Build, operate, monitor and close the tailings facility according to the design intent at all phases of the tailings facility lifecycle, using qualified personnel and appropriate methodology, equipment and procedures, data acquisition methods, the Tailings Management System (TMS) and the overall Environmental and Social Management System (ESMS) for the mine and associated infrastructure.',
+        textoEs:
+          'Construir, operar, monitorear y cerrar la instalacion de relaves de acuerdo con la intencion de diseno en todas las fases del ciclo de vida, utilizando personal calificado, y metodologia, equipos y procedimientos apropiados, metodos de adquisicion de datos, el Sistema de Gestion de Relaves (TMS) y el Sistema de Gestion Ambiental y Social (ESMS) general de la mina y su infraestructura asociada.',
       },
       {
         id: '6.2',
@@ -305,6 +339,8 @@ export const PRINCIPLES_GISTM: Principle[] = [
         topicId: 'III',
         texto:
           'Manage the quality and adequacy of the construction and operation process by implementing Quality Control, Quality Assurance and Construction vs Design Intent Verification (CDIV). The Operator shall use the CDIV to ensure that the design intent is implemented and is still being met if the site conditions vary from the design assumptions.',
+        textoEs:
+          'Gestionar la calidad y adecuacion del proceso de construccion y operacion implementando Control de Calidad, Aseguramiento de Calidad y Verificacion de Construccion versus Intencion de Diseno (CDIV). El Operador debera usar el CDIV para asegurar que la intencion de diseno se implemente y se siga cumpliendo si las condiciones del sitio varian respecto de los supuestos de diseno.',
       },
       {
         id: '6.3',
@@ -312,6 +348,8 @@ export const PRINCIPLES_GISTM: Principle[] = [
         topicId: 'III',
         texto:
           "Prepare a detailed Construction Records Report ('as-built' report) whenever there is a material change to the tailings facility, its infrastructure or its monitoring system. The EOR and the Responsible Tailings Facility Engineer (RTFE) shall sign this report.",
+        textoEs:
+          'Preparar un Informe de Registros de Construccion detallado (informe as-built) cada vez que exista un cambio material en la instalacion de relaves, su infraestructura o su sistema de monitoreo. El EOR y el Ingeniero Responsable de la Instalacion de Relaves (RTFE) deberan firmar este informe.',
       },
       {
         id: '6.4',
@@ -319,6 +357,8 @@ export const PRINCIPLES_GISTM: Principle[] = [
         topicId: 'III',
         texto:
           'Develop, implement, review annually and update as required an Operations, Maintenance and Surveillance (OMS) Manual that supports effective risk management as part of the TMS. The OMS Manual should follow best practices, clearly provide the context and critical controls for safe operations, and be reviewed for effectiveness. The RTFE shall provide access to the OMS Manual and training to all levels of personnel involved in the TMS with support from the EOR.',
+        textoEs:
+          'Desarrollar, implementar, revisar anualmente y actualizar segun sea necesario un Manual de Operacion, Mantenimiento y Vigilancia (OMS) que respalde la gestion eficaz del riesgo como parte del TMS. El Manual OMS debe seguir mejores practicas, proveer claramente el contexto y los controles criticos para operaciones seguras, y ser revisado por su efectividad. El RTFE debera proveer acceso al Manual OMS y capacitacion a todos los niveles de personal involucrado en el TMS, con el apoyo del EOR.',
       },
       {
         id: '6.5',
@@ -326,6 +366,8 @@ export const PRINCIPLES_GISTM: Principle[] = [
         topicId: 'III',
         texto:
           'Implement a formal change management system that triggers the evaluation, review, approval and documentation of changes to design, construction, operation or monitoring during the tailings facility lifecycle. The change management system shall also include the requirement for the EOR to prepare a periodic Deviance Accountability Report (DAR), that provides an assessment of the cumulative impact of the changes on the risk level of the as-constructed facility. The DAR shall provide recommendations for managing risk, if necessary, and any resulting updates to the design, DBR, OMS and the monitoring programme. The DAR shall be approved by the Accountable Executive.',
+        textoEs:
+          'Implementar un sistema formal de gestion de cambios que active la evaluacion, revision, aprobacion y documentacion de cambios al diseno, construccion, operacion o monitoreo durante el ciclo de vida de la instalacion. El sistema de gestion de cambios debera incluir tambien el requisito de que el EOR prepare un Informe de Responsabilidad por Desviacion (DAR) periodico, que evalue el impacto acumulado de los cambios sobre el nivel de riesgo de la instalacion tal como fue construida. El DAR debera proveer recomendaciones para gestionar el riesgo, si es necesario, y cualquier actualizacion resultante al diseno, al DBR, al OMS y al programa de monitoreo. El DAR debera ser aprobado por el Ejecutivo Responsable.',
       },
       {
         id: '6.6',
@@ -333,6 +375,8 @@ export const PRINCIPLES_GISTM: Principle[] = [
         topicId: 'III',
         texto:
           'Include new and emerging technologies and approaches and use the evolving knowledge in the refinement of the design, construction and operation of the tailings facility.',
+        textoEs:
+          'Incorporar tecnologias y enfoques nuevos y emergentes, y utilizar el conocimiento en evolucion para el perfeccionamiento del diseno, la construccion y la operacion de la instalacion de relaves.',
       },
     ],
   },
