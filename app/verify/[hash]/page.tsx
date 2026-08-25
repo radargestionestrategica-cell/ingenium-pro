@@ -159,6 +159,9 @@ export default async function VerifyPage({ params }: PageProps) {
   const firmaRaw = calculo?.firma ?? lectura?.firma ?? null;
   const firmaValida = firmaRaw ? verifySignature(hashLimpio, firmaRaw) : false;
 
+  const FECHA_ROTACION_CLAVE = new Date('2026-08-22T00:00:00Z');
+  const esPreRotacion = calculo?.createdAt && new Date(calculo.createdAt) < FECHA_ROTACION_CLAVE;
+
   return (
     <main className="page">
       <style>{`
@@ -265,6 +268,18 @@ export default async function VerifyPage({ params }: PageProps) {
           color: var(--red);
           border: 1px solid rgba(239,68,68,.25);
           background: rgba(239,68,68,.08);
+        }
+
+        .status.neutral {
+          color: var(--dim);
+          border: 1px solid rgba(148,163,184,.25);
+          background: rgba(148,163,184,.08);
+        }
+
+        .status.warn {
+          color: var(--gold);
+          border: 1px solid rgba(232,160,32,.25);
+          background: rgba(232,160,32,.08);
         }
 
         h1 {
@@ -481,10 +496,14 @@ export default async function VerifyPage({ params }: PageProps) {
                 </div>
               )}
 
-              {firmaValida ? (
-                <div className="status ok" style={{marginTop:'18px',marginBottom:'0'}}>✓ Verificado criptográficamente</div>
+              {!firmaRaw ? (
+                <div className="status neutral" style={{marginTop:'18px',marginBottom:'0'}}>Este cálculo no fue sellado criptográficamente.</div>
+              ) : !firmaValida && esPreRotacion ? (
+                <div className="status warn" style={{marginTop:'18px',marginBottom:'0'}}>Sellado antes de una rotación de clave de seguridad — no verificable retroactivamente. El cálculo no fue alterado.</div>
+              ) : !firmaValida ? (
+                <div className="status err" style={{marginTop:'18px',marginBottom:'0'}}>No verificado — los datos no coinciden con la firma.</div>
               ) : (
-                <div className="status err" style={{marginTop:'18px',marginBottom:'0'}}>✗ No verificado</div>
+                <div className="status ok" style={{marginTop:'18px',marginBottom:'0'}}>✓ Verificado criptográficamente</div>
               )}
             </>
           ) : (
