@@ -1,9 +1,11 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { PRINCIPLES_GISTM, clasificarConsecuencia, CRITERIO_CRECIDA, CRITERIO_SISMICO } from '@/lib/calculosGISTM';
 import type { NivelConsecuencia } from '@/lib/calculosGISTM';
 import { publicarResultado } from '@/components/ResultadoContexto';
 import BotonesExportar, { DatosExportar } from '@/components/BotonesExportar';
+import { getLang, EVENTO_IDIOMA } from '@/lib/i18n';
+import type { Lang } from '@/lib/i18n';
 
 // GISTM — Global Industry Standard on Tailings Management (ICMM/UNEP/PRI, agosto 2020)
 // Checklist de auto-evaluación de cumplimiento por requisito, sin guardado/sellado todavía.
@@ -46,8 +48,18 @@ const nivelColor: Record<NivelConsecuencia['id'], string> = {
 };
 
 export default function ModuloGISTM() {
+  const [lang, setLang] = useState<Lang>(() => getLang());
   const [pestanaActiva, setPestanaActiva] = useState<TopicId>('I');
   const [estados, setEstados] = useState<Record<string, EstadoRequisito>>({});
+
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const ce = e as CustomEvent<Lang>;
+      setLang(ce.detail);
+    };
+    window.addEventListener(EVENTO_IDIOMA, handler);
+    return () => window.removeEventListener(EVENTO_IDIOMA, handler);
+  }, []);
 
   // Clasificación de Consecuencia (Annex 2, Tabla 1) — estos dos valores y su
   // resultado derivado quedan en el estado del componente para usarlos en el
@@ -233,7 +245,7 @@ export default function ModuloGISTM() {
               Principle {principle.id}
             </div>
             <div style={{ color: '#f1f5f9', fontWeight: 700, fontSize: 14, marginBottom: 16, lineHeight: 1.5 }}>
-              {principle.titulo}
+              {lang === 'es' && principle.tituloEs ? principle.tituloEs : principle.titulo}
             </div>
 
             {principle.requisitos.map(requisito => {
@@ -249,7 +261,7 @@ export default function ModuloGISTM() {
                     )}
                   </div>
                   <div style={{ color: '#cbd5e1', fontSize: 12, lineHeight: 1.6, marginBottom: 10 }}>
-                    {requisito.texto}
+                    {lang === 'es' && requisito.textoEs ? requisito.textoEs : requisito.texto}
                   </div>
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
