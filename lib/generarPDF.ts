@@ -220,11 +220,12 @@ export async function generarPDF(datos: DatosPDF): Promise<Buffer> {
 
       // Fecha con zona horaria correcta según el país del usuario registrado
       const tz = obtenerTimezone(datos.pais);
+      const fechaValida = datos.fecha instanceof Date && !isNaN(datos.fecha.getTime());
       const fechaFormateada = new Intl.DateTimeFormat('es-AR', {
         timeZone: tz,
         day: '2-digit', month: 'long', year: 'numeric',
         hour: '2-digit', minute: '2-digit',
-      }).format(new Date());
+      }).format(fechaValida ? datos.fecha : new Date());
 
       filaInfo('Proyecto',      datos.proyectoNombre || '—',   y);
       filaInfo('Activo físico', datos.activoNombre   || '—',   y + 18);
