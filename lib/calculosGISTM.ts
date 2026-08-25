@@ -721,6 +721,8 @@ export const PRINCIPLES_GISTM: Principle[] = [
     id: 13,
     topicId: 'V',
     titulo: 'Prepare for emergency response to tailings facility failures.',
+    tituloEs:
+      'Prepararse para la respuesta ante emergencias por fallas de la instalacion de relaves.',
     requisitos: [
       {
         id: '13.1',
@@ -728,6 +730,8 @@ export const PRINCIPLES_GISTM: Principle[] = [
         topicId: 'V',
         texto:
           'As part of the TMS, use best practices and emergency response expertise to prepare and implement a site-specific tailings facility Emergency Preparedness and Response Plan (EPRP) based on credible flow failure scenarios and the assessment of potential consequences. Test and update the EPRP at all phases of the tailings facility lifecycle at a frequency established in the plan, or more frequently if triggered by a material change either to the tailings facility or to the social, environmental and local economic context. Meaningfully engage with employees and contractors to inform the EPRP, and co-develop community-focused emergency preparedness measures with project-affected people.',
+        textoEs:
+          'Como parte del TMS, utilizar mejores practicas y experiencia en respuesta ante emergencias para preparar e implementar un Plan de Preparacion y Respuesta ante Emergencias (EPRP) especifico del sitio para la instalacion de relaves, basado en escenarios creibles de falla de flujo y en la evaluacion de consecuencias potenciales. Probar y actualizar el EPRP en todas las fases del ciclo de vida de la instalacion con la frecuencia establecida en el plan, o con mayor frecuencia si se activa por un cambio material en la instalacion o en el contexto social, ambiental y economico local. Involucrar de manera significativa a empleados y contratistas para nutrir el EPRP, y co-desarrollar medidas de preparacion ante emergencias centradas en la comunidad junto con las personas afectadas por el proyecto.',
       },
       {
         id: '13.2',
@@ -735,6 +739,8 @@ export const PRINCIPLES_GISTM: Principle[] = [
         topicId: 'V',
         texto:
           'Engage with public sector agencies, first responders, local authorities and institutions and take reasonable steps to assess the capability of emergency response services to address the hazards identified in the tailings facility EPRP, identify gaps in capability and use this information to support the development of a collaborative plan to improve preparedness.',
+        textoEs:
+          'Involucrar a agencias del sector publico, personal de primera respuesta, autoridades locales e instituciones, y tomar medidas razonables para evaluar la capacidad de los servicios de respuesta ante emergencias para abordar los peligros identificados en el EPRP de la instalacion, identificar brechas de capacidad, y usar esta informacion para respaldar el desarrollo de un plan colaborativo que mejore la preparacion.',
       },
       {
         id: '13.3',
@@ -742,6 +748,8 @@ export const PRINCIPLES_GISTM: Principle[] = [
         topicId: 'V',
         texto:
           'Considering community-focused measures and public sector capacity, the Operator shall take all reasonable steps to maintain a shared state of readiness for tailings facility credible flow failure scenarios by securing resources and carrying out annual training and exercises. The Operator shall conduct emergency response simulations at a frequency established in the EPRP but at least every 3 years for tailings facilities with potential loss of life.',
+        textoEs:
+          'Considerando las medidas centradas en la comunidad y la capacidad del sector publico, el Operador debera tomar todas las medidas razonables para mantener un estado compartido de preparacion ante escenarios creibles de falla de flujo de la instalacion de relaves, asegurando recursos y llevando a cabo capacitaciones y ejercicios anuales. El Operador debera realizar simulacros de respuesta ante emergencias con la frecuencia establecida en el EPRP, pero al menos cada 3 anios para instalaciones con potencial perdida de vidas.',
       },
       {
         id: '13.4',
@@ -749,6 +757,8 @@ export const PRINCIPLES_GISTM: Principle[] = [
         topicId: 'V',
         texto:
           'In the case of a catastrophic tailings facility failure, provide immediate response to save lives, supply humanitarian aid and minimise environmental harm.',
+        textoEs:
+          'En caso de una falla catastrofica de la instalacion de relaves, brindar respuesta inmediata para salvar vidas, proveer ayuda humanitaria y minimizar el dano ambiental.',
       },
     ],
   },
