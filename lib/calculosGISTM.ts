@@ -512,6 +512,7 @@ export const PRINCIPLES_GISTM: Principle[] = [
     id: 9,
     topicId: 'IV',
     titulo: 'Appoint and empower an Engineer of Record.',
+    tituloEs: 'Designar y empoderar a un Ingeniero de Registro (EOR).',
     requisitos: [
       {
         id: '9.1',
@@ -519,6 +520,8 @@ export const PRINCIPLES_GISTM: Principle[] = [
         topicId: 'IV',
         texto:
           "Engage an engineering firm with expertise and experience in the design and construction of tailings facilities of comparable complexity to provide EOR services for operating the tailings facility and for closed facilities with 'High', 'Very High' and 'Extreme' Consequence Classification, that are in the active closure phase. Require that the firm nominate a senior engineer, approved by the Operator, to represent the firm as the EOR, and verify that the individual has the necessary experience, skills and time to fulfil this role. Alternatively, the Operator may appoint an in-house engineer with expertise and experience in comparable facilities as the EOR. In this instance, the EOR may delegate the design to a firm ('Designer of Record') but shall remain thoroughly familiar with the design in discharging their responsibilities as EOR. Whether the EOR or the DOR is in-house or external, they must be competent and have experience appropriate to the Consequence Classification and complexity of the tailings facility.",
+        textoEs:
+          'Contratar una firma de ingenieria con experiencia y trayectoria en el diseno y construccion de instalaciones de relaves de complejidad comparable, para proveer servicios de EOR en la instalacion operativa y en instalaciones cerradas con Clasificacion de Consecuencia High, Very High y Extreme que esten en fase activa de cierre. Exigir que la firma designe un ingeniero senior, aprobado por el Operador, para representar a la firma como EOR, y verificar que la persona cuente con la experiencia, habilidades y tiempo necesarios para cumplir este rol. Alternativamente, el Operador puede designar un ingeniero interno con experiencia y trayectoria en instalaciones comparables como EOR. En este caso, el EOR puede delegar el diseno a una firma (Disenador de Registro), pero debera mantenerse profundamente familiarizado con el diseno al desempenar sus responsabilidades como EOR. Ya sea que el EOR o el DOR sean internos o externos, deben ser competentes y tener experiencia apropiada a la Clasificacion de Consecuencia y complejidad de la instalacion.',
       },
       {
         id: '9.2',
@@ -526,6 +529,8 @@ export const PRINCIPLES_GISTM: Principle[] = [
         topicId: 'IV',
         texto:
           'Empower the EOR through a written agreement that clearly describes their authority, role and responsibilities throughout the tailings facility lifecycle, and during change of ownership of mining properties. The written agreement must clearly describe the obligations of the Operator to the EOR, to support the effective performance of the EOR.',
+        textoEs:
+          'Empoderar al EOR mediante un acuerdo escrito que describa claramente su autoridad, rol y responsabilidades a lo largo del ciclo de vida de la instalacion, y durante cambios de propiedad de los activos mineros. El acuerdo escrito debe describir claramente las obligaciones del Operador hacia el EOR, para respaldar el desempeno eficaz del EOR.',
       },
       {
         id: '9.3',
@@ -533,6 +538,8 @@ export const PRINCIPLES_GISTM: Principle[] = [
         topicId: 'IV',
         texto:
           'Establish and implement a programme to manage the quality of all engineering work, the interactions between the EOR, the RTFE and the Accountable Executive, and their involvement in the tailings facility lifecycle as necessary to confirm that both the implementation of the design and the design intent are met.',
+        textoEs:
+          'Establecer e implementar un programa para gestionar la calidad de todo el trabajo de ingenieria, las interacciones entre el EOR, el RTFE y el Ejecutivo Responsable, y su participacion en el ciclo de vida de la instalacion segun sea necesario, a fin de confirmar que se cumplan tanto la implementacion del diseno como la intencion de diseno.',
       },
       {
         id: '9.4',
@@ -540,6 +547,8 @@ export const PRINCIPLES_GISTM: Principle[] = [
         topicId: 'IV',
         texto:
           'Given its potential impact on the risks associated with a tailings facility, the selection of the EOR shall be decided by the Accountable Executive and informed, but not decided, by procurement personnel.',
+        textoEs:
+          'Dado su impacto potencial sobre los riesgos asociados a una instalacion de relaves, la seleccion del EOR debera ser decidida por el Ejecutivo Responsable, e informada -pero no decidida- por el personal de compras.',
       },
       {
         id: '9.5',
@@ -547,6 +556,8 @@ export const PRINCIPLES_GISTM: Principle[] = [
         topicId: 'IV',
         texto:
           'Where it becomes necessary to change the EOR (whether a firm or an in-house employee), develop a detailed plan for the comprehensive transfer of data, information, knowledge and experience with the construction procedures and materials.',
+        textoEs:
+          'Cuando sea necesario cambiar de EOR (ya sea una firma o un empleado interno), desarrollar un plan detallado para la transferencia integral de datos, informacion, conocimiento y experiencia relacionados con los procedimientos de construccion y los materiales.',
       },
     ],
   },
