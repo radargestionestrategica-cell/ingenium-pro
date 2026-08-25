@@ -385,6 +385,8 @@ export const PRINCIPLES_GISTM: Principle[] = [
     topicId: 'III',
     titulo:
       'Design, implement and operate monitoring systems to manage risk at all phases of the facility lifecycle, including closure.',
+    tituloEs:
+      'Disenar, implementar y operar sistemas de monitoreo para gestionar el riesgo en todas las fases del ciclo de vida de la instalacion, incluyendo el cierre.',
     requisitos: [
       {
         id: '7.1',
@@ -392,6 +394,8 @@ export const PRINCIPLES_GISTM: Principle[] = [
         topicId: 'III',
         texto:
           'Design, implement and operate a comprehensive and integrated performance monitoring programme for the tailings facility and its appurtenant structures as part of the TMS and for those aspects of the ESMS related to the tailings facility in accordance with the principles of Adaptive Management.',
+        textoEs:
+          'Disenar, implementar y operar un programa de monitoreo de desempeno integral e integrado para la instalacion de relaves y sus estructuras conexas como parte del TMS, y para aquellos aspectos del ESMS relacionados con la instalacion, de acuerdo con los principios de la Gestion Adaptativa.',
       },
       {
         id: '7.2',
@@ -399,6 +403,8 @@ export const PRINCIPLES_GISTM: Principle[] = [
         topicId: 'III',
         texto:
           'Design, implement and operate a comprehensive and integrated engineering monitoring system that is appropriate for verifying design assumptions and for monitoring potential failure modes. Full implementation of the Observational Method shall be adopted for non-brittle failure modes. Brittle failure modes are addressed by conservative design criteria.',
+        textoEs:
+          'Disenar, implementar y operar un sistema de monitoreo de ingenieria integral e integrado que sea apropiado para verificar los supuestos de diseno y para monitorear los modos de falla potenciales. Debera adoptarse la implementacion total del Metodo Observacional para los modos de falla no fragiles. Los modos de falla fragil se abordan mediante criterios de diseno conservadores.',
       },
       {
         id: '7.3',
@@ -406,6 +412,8 @@ export const PRINCIPLES_GISTM: Principle[] = [
         topicId: 'III',
         texto:
           'Establish specific and measurable performance objectives, indicators, criteria, and performance parameters and include them in the design of the monitoring programmes that measure performance throughout the tailings facility lifecycle. Record and evaluate the data at appropriate frequencies. Based on the data obtained, update the monitoring programmes throughout the tailings facility lifecycle to confirm that they remain effective to manage risk.',
+        textoEs:
+          'Establecer objetivos, indicadores, criterios y parametros de desempeno especificos y medibles, e incluirlos en el diseno de los programas de monitoreo que midan el desempeno a lo largo del ciclo de vida de la instalacion. Registrar y evaluar los datos con la frecuencia apropiada. Con base en los datos obtenidos, actualizar los programas de monitoreo a lo largo del ciclo de vida de la instalacion para confirmar que sigan siendo eficaces para gestionar el riesgo.',
       },
       {
         id: '7.4',
@@ -413,6 +421,8 @@ export const PRINCIPLES_GISTM: Principle[] = [
         topicId: 'III',
         texto:
           'Analyse technical monitoring data at the frequency recommended by the EOR, and assess the performance of the tailings facility, clearly identifying and presenting evidence on any deviations from the expected performance and any deterioration of the performance over time. Promptly submit evidence to the EOR for review and update the risk assessment and design, if required. Performance outside the expected ranges shall be addressed promptly through Trigger Action Response Plans (TARPs) or critical controls.',
+        textoEs:
+          'Analizar los datos de monitoreo tecnico con la frecuencia recomendada por el EOR, y evaluar el desempeno de la instalacion, identificando y presentando claramente evidencia de cualquier desviacion respecto del desempeno esperado y cualquier deterioro del desempeno a lo largo del tiempo. Presentar la evidencia sin demora al EOR para su revision, y actualizar la evaluacion de riesgo y el diseno si es necesario. El desempeno fuera de los rangos esperados debera abordarse sin demora mediante Planes de Respuesta a la Activacion de Disparadores (TARPs) o controles criticos.',
       },
       {
         id: '7.5',
@@ -420,6 +430,8 @@ export const PRINCIPLES_GISTM: Principle[] = [
         topicId: 'III',
         texto:
           'Report the results of each of the monitoring programmes at the frequency required to meet company and regulatory requirements and, at a minimum, on an annual basis. The RTFE and the EOR shall review and approve the technical monitoring reports.',
+        textoEs:
+          'Reportar los resultados de cada uno de los programas de monitoreo con la frecuencia requerida para cumplir con los requisitos de la empresa y regulatorios y, como minimo, con periodicidad anual. El RTFE y el EOR deberan revisar y aprobar los reportes tecnicos de monitoreo.',
       },
     ],
   },
@@ -428,6 +440,8 @@ export const PRINCIPLES_GISTM: Principle[] = [
     topicId: 'IV',
     titulo:
       'Establish policies, systems and accountabilities to support the safety and integrity of the tailings facility.',
+    tituloEs:
+      'Establecer politicas, sistemas y responsabilidades para respaldar la seguridad e integridad de la instalacion de relaves.',
     requisitos: [
       {
         id: '8.1',
@@ -435,6 +449,8 @@ export const PRINCIPLES_GISTM: Principle[] = [
         topicId: 'IV',
         texto:
           'The Board of Directors shall adopt and publish a policy on or commitment to the safe management of tailings facilities, to emergency preparedness and response, and to recovery after failure.',
+        textoEs:
+          'El Directorio debera adoptar y publicar una politica sobre -o compromiso con- la gestion segura de las instalaciones de relaves, la preparacion y respuesta ante emergencias, y la recuperacion tras una falla.',
       },
       {
         id: '8.2',
@@ -442,6 +458,8 @@ export const PRINCIPLES_GISTM: Principle[] = [
         topicId: 'IV',
         texto:
           'Establish a tailings governance framework and a performance based TMS and ensure that the ESMS and other critical systems encompass relevant aspects of the tailings facility management.',
+        textoEs:
+          'Establecer un marco de gobernanza de relaves y un TMS basado en desempeno, y asegurar que el ESMS y otros sistemas criticos abarquen los aspectos relevantes de la gestion de la instalacion de relaves.',
       },
       {
         id: '8.3',
@@ -449,6 +467,8 @@ export const PRINCIPLES_GISTM: Principle[] = [
         topicId: 'IV',
         texto:
           'For roles with responsibility for tailings facilities, develop mechanisms such that incentive payments or performance reviews are based, at least in part, on public safety and the integrity of the tailings facility. These incentive payments shall reflect the degree to which public safety and the integrity of the tailings facility are part of the role. Long-term incentives for relevant executive managers should take tailings management into account.',
+        textoEs:
+          'Para los roles con responsabilidad sobre las instalaciones de relaves, desarrollar mecanismos tales que los pagos por incentivos o las evaluaciones de desempeno se basen, al menos en parte, en la seguridad publica y la integridad de la instalacion. Estos pagos por incentivos deberan reflejar el grado en que la seguridad publica y la integridad de la instalacion forman parte del rol. Los incentivos a largo plazo para los directivos ejecutivos relevantes deberan tener en cuenta la gestion de relaves.',
       },
       {
         id: '8.4',
@@ -456,6 +476,8 @@ export const PRINCIPLES_GISTM: Principle[] = [
         topicId: 'IV',
         texto:
           'Appoint one or more Accountable Executives who is/are directly answerable to the CEO on matters related to this Standard. The Accountable Executive(s) shall be accountable for the safety of tailings facilities and for avoiding or minimising the social and environmental consequences of a tailings facility failure. The Accountable Executive(s) shall also be accountable for a programme of tailings management training, and for emergency preparedness and response. The Accountable Executive(s) must have scheduled communication with the EOR and regular communication with the Board of Directors, which can be initiated either by the Accountable Executive(s), or the Board. The Board of Directors shall document how it holds the Accountable Executive(s) accountable.',
+        textoEs:
+          'Designar uno o mas Ejecutivos Responsables que respondan directamente ante el CEO en asuntos relacionados con este Estandar. El o los Ejecutivo(s) Responsable(s) debera(n) responder por la seguridad de las instalaciones de relaves y por evitar o minimizar las consecuencias sociales y ambientales de una falla. El o los Ejecutivo(s) Responsable(s) tambien debera(n) responder por un programa de capacitacion en gestion de relaves, y por la preparacion y respuesta ante emergencias. El o los Ejecutivo(s) Responsable(s) debera(n) tener comunicacion programada con el EOR y comunicacion regular con el Directorio, que puede ser iniciada tanto por el o los Ejecutivo(s) Responsable(s) como por el Directorio. El Directorio debera documentar como responsabiliza al o a los Ejecutivo(s) Responsable(s).',
       },
       {
         id: '8.5',
@@ -463,6 +485,8 @@ export const PRINCIPLES_GISTM: Principle[] = [
         topicId: 'IV',
         texto:
           'Appoint a site-specific Responsible Tailings Facility Engineer (RTFE) who is accountable for the integrity of the tailings facility, who liaises with the EOR and internal teams such as operations, planning, regulatory affairs, social performance and environment, and who has regular two-way communication with the Accountable Executive. The RTFE must be familiar with the DBR, the design report and the construction and performance of the tailings facility.',
+        textoEs:
+          'Designar un Ingeniero Responsable de la Instalacion de Relaves (RTFE) especifico del sitio, que responda por la integridad de la instalacion, que enlace con el EOR y con equipos internos como operaciones, planificacion, asuntos regulatorios, desempeno social y ambiente, y que tenga comunicacion regular en ambos sentidos con el Ejecutivo Responsable. El RTFE debe estar familiarizado con el DBR, el informe de diseno, y la construccion y desempeno de la instalacion.',
       },
       {
         id: '8.6',
@@ -470,6 +494,8 @@ export const PRINCIPLES_GISTM: Principle[] = [
         topicId: 'IV',
         texto:
           'Identify appropriate qualifications and experience requirements for all personnel who play safety-critical roles in the operation of a tailings facility, including, but not limited to the RTFE, the EOR and the Accountable Executive. Ensure that incumbents of these roles have the identified qualifications and experience, and develop succession plans for these personnel.',
+        textoEs:
+          'Identificar los requisitos apropiados de calificacion y experiencia para todo el personal que desempene roles criticos de seguridad en la operacion de una instalacion de relaves, incluyendo, entre otros, el RTFE, el EOR y el Ejecutivo Responsable. Asegurar que quienes ocupen estos roles cuenten con la calificacion y experiencia identificadas, y desarrollar planes de sucesion para este personal.',
       },
       {
         id: '8.7',
@@ -477,6 +503,8 @@ export const PRINCIPLES_GISTM: Principle[] = [
         topicId: 'IV',
         texto:
           "For tailings facilities with Consequence Classification of 'Very High' or 'Extreme', appoint an Independent Tailings Review Board (ITRB). For all other facilities, the Operator may appoint a senior independent technical reviewer. The ITRB or the reviewer shall be appointed early in the project development process, report to the Accountable Executive and certify in writing that they follow best practices for engineers in avoiding conflicts of interest.",
+        textoEs:
+          'Para instalaciones de relaves con Clasificacion de Consecuencia Very High o Extreme, designar una ITRB. Para el resto de las instalaciones, el Operador podra designar un revisor tecnico independiente senior. La ITRB o el revisor deberan ser designados tempranamente en el proceso de desarrollo del proyecto, reportar al Ejecutivo Responsable, y certificar por escrito que siguen las mejores practicas de ingenieria para evitar conflictos de interes.',
       },
     ],
   },
