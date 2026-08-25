@@ -1,5 +1,6 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { getLang, setLang as guardarLang, IDIOMAS, EVENTO_IDIOMA } from '@/lib/i18n';
 import type { Lang } from '@/lib/i18n';
 
@@ -7,11 +8,17 @@ import type { Lang } from '@/lib/i18n';
 //  SELECTOR DE IDIOMA — INGENIUM PRO v8.1
 //  8 idiomas. Guarda en localStorage. Emite evento global.
 //  Se agrega en el header de page.tsx y dashboard/page.tsx
+//  El dropdown se porta a document.body (createPortal) para no
+//  quedar recortado por ancestros con overflow:auto/hidden (ej.
+//  el <aside> del sidebar) — la posición se calcula con
+//  getBoundingClientRect() del botón, en coordenadas de viewport.
 // ═══════════════════════════════════════════════════════════════
 
 export default function SelectorIdioma() {
   const [lang, setLangState] = useState<Lang>(() => getLang()); // getLang() ya verifica typeof window
   const [abierto, setAbierto] = useState(false);
+  const [coords, setCoords] = useState<{ top: number; left: number } | null>(null);
+  const btnRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     const handler = (e: Event) => {
@@ -21,6 +28,14 @@ export default function SelectorIdioma() {
     window.addEventListener(EVENTO_IDIOMA, handler);
     return () => window.removeEventListener(EVENTO_IDIOMA, handler);
   }, []);
+
+  const alternar = () => {
+    if (!abierto && btnRef.current) {
+      const r = btnRef.current.getBoundingClientRect();
+      setCoords({ top: r.bottom + 6, left: r.right - 200 });
+    }
+    setAbierto(o => !o);
+  };
 
   const cambiar = (l: Lang) => {
     guardarLang(l);
@@ -34,7 +49,8 @@ export default function SelectorIdioma() {
     <div style={{ position: 'relative' }}>
       {/* BOTÓN ACTUAL */}
       <button
-        onClick={() => setAbierto(!abierto)}
+        ref={btnRef}
+        onClick={alternar}
         title="Cambiar idioma / Change language"
         style={{
           display: 'flex', alignItems: 'center', gap: 6,
@@ -49,8 +65,8 @@ export default function SelectorIdioma() {
         <span style={{ fontSize: 9, color: '#475569' }}>▼</span>
       </button>
 
-      {/* DROPDOWN */}
-      {abierto && (
+      {/* DROPDOWN — portado a document.body para no cortarse contra ancestros con overflow */}
+      {abierto && coords && typeof document !== 'undefined' && createPortal(
         <>
           {/* Overlay para cerrar */}
           <div
@@ -58,7 +74,7 @@ export default function SelectorIdioma() {
             style={{ position: 'fixed', inset: 0, zIndex: 998 }}
           />
           <div style={{
-            position: 'absolute', top: '100%', right: 0, marginTop: 6,
+            position: 'fixed', top: coords.top, left: coords.left,
             zIndex: 999, background: '#0f172a',
             border: '1px solid #1e293b', borderRadius: 12,
             padding: 6, minWidth: 200,
@@ -86,8 +102,9 @@ export default function SelectorIdioma() {
               </button>
             ))}
           </div>
-        </>
+        </>,
+        document.body
       )}
     </div>
   );
-} 
+}
