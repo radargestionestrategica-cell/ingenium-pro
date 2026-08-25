@@ -694,6 +694,8 @@ export const PRINCIPLES_GISTM: Principle[] = [
     topicId: 'IV',
     titulo:
       'Establish a process for reporting and addressing concerns and implement whistleblower protections.',
+    tituloEs:
+      'Establecer un proceso para reportar y abordar inquietudes, e implementar protecciones para denunciantes.',
     requisitos: [
       {
         id: '12.1',
@@ -701,6 +703,8 @@ export const PRINCIPLES_GISTM: Principle[] = [
         topicId: 'IV',
         texto:
           'The Accountable Executive shall establish a formal, confidential and written process to receive, investigate and promptly address concerns from employees and contractors about possible permit violations or other matters relating to regulatory compliance, public safety, tailings facility integrity or the environment.',
+        textoEs:
+          'El Ejecutivo Responsable debera establecer un proceso formal, confidencial y por escrito para recibir, investigar y abordar de manera oportuna las inquietudes de empleados y contratistas sobre posibles violaciones de permisos u otros asuntos relacionados con el cumplimiento regulatorio, la seguridad publica, la integridad de la instalacion de relaves o el ambiente.',
       },
       {
         id: '12.2',
@@ -708,6 +712,8 @@ export const PRINCIPLES_GISTM: Principle[] = [
         topicId: 'IV',
         texto:
           'In accordance with international best practices for whistleblower protection, the Operator shall not discharge, discriminate against, or otherwise retaliate in any way against a whistleblower who, in good faith, has reported possible permit violations or other matters relating to regulatory compliance, public safety, tailings facility integrity or the environment.',
+        textoEs:
+          'De acuerdo con las mejores practicas internacionales de proteccion a denunciantes, el Operador no debera despedir, discriminar ni tomar represalias de ningun modo contra un denunciante que, de buena fe, haya reportado posibles violaciones de permisos u otros asuntos relacionados con el cumplimiento regulatorio, la seguridad publica, la integridad de la instalacion de relaves o el ambiente.',
       },
     ],
   },
