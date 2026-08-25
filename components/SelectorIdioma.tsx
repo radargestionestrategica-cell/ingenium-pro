@@ -32,7 +32,8 @@ export default function SelectorIdioma() {
   const alternar = () => {
     if (!abierto && btnRef.current) {
       const r = btnRef.current.getBoundingClientRect();
-      setCoords({ top: r.bottom + 6, left: r.right - 200 });
+      const left = Math.max(8, Math.min(r.right - 200, window.innerWidth - 200 - 8));
+      setCoords({ top: r.bottom + 6, left });
     }
     setAbierto(o => !o);
   };
