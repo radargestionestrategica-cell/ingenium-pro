@@ -242,7 +242,7 @@ export default function ModuloGISTM() {
         {principiosDelTopic.map(principle => (
           <div key={principle.id} style={{ background: PANEL, border: `1px solid ${BORD}`, borderRadius: 12, padding: 20, marginBottom: 16 }}>
             <div style={{ color: TEAL, fontWeight: 700, fontSize: 12, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>
-              Principle {principle.id}
+              {lang === 'es' ? 'Principio' : 'Principle'} {principle.id}
             </div>
             <div style={{ color: '#f1f5f9', fontWeight: 700, fontSize: 14, marginBottom: 16, lineHeight: 1.5 }}>
               {lang === 'es' && principle.tituloEs ? principle.tituloEs : principle.titulo}
