@@ -766,6 +766,8 @@ export const PRINCIPLES_GISTM: Principle[] = [
     id: 14,
     topicId: 'V',
     titulo: 'Prepare for long-term recovery in the event of catastrophic failure.',
+    tituloEs:
+      'Prepararse para la recuperacion a largo plazo en caso de una falla catastrofica.',
     requisitos: [
       {
         id: '14.1',
@@ -773,6 +775,8 @@ export const PRINCIPLES_GISTM: Principle[] = [
         topicId: 'V',
         texto:
           'Based on tailings facility credible flow failure scenarios and the assessment of potential consequences, take reasonable steps to meaningfully engage with public sector agencies and other organisations that would participate in medium- and long-term social and environmental post-failure response strategies.',
+        textoEs:
+          'Con base en los escenarios creibles de falla de flujo de la instalacion de relaves y la evaluacion de consecuencias potenciales, tomar medidas razonables para involucrar de manera significativa a agencias del sector publico y otras organizaciones que participarian en las estrategias de respuesta social y ambiental post-falla a mediano y largo plazo.',
       },
       {
         id: '14.2',
@@ -780,6 +784,8 @@ export const PRINCIPLES_GISTM: Principle[] = [
         topicId: 'V',
         texto:
           'In the event of a catastrophic tailings facility failure, assess social, environmental and local economic impacts as soon as possible after people are safe and short-term survival needs have been met.',
+        textoEs:
+          'En caso de una falla catastrofica de la instalacion de relaves, evaluar los impactos sociales, ambientales y economicos locales tan pronto como sea posible una vez que las personas esten a salvo y se hayan satisfecho las necesidades de supervivencia a corto plazo.',
       },
       {
         id: '14.3',
@@ -787,6 +793,8 @@ export const PRINCIPLES_GISTM: Principle[] = [
         topicId: 'V',
         texto:
           'In the event of a catastrophic tailings facility failure, work with public sector agencies and other stakeholders to develop and implement reconstruction, restoration and recovery plans that address the medium- and long-term social, environmental and local economic impacts of the failure. The plans shall be disclosed if permitted by public authorities.',
+        textoEs:
+          'En caso de una falla catastrofica de la instalacion de relaves, trabajar con agencias del sector publico y otras partes interesadas para desarrollar e implementar planes de reconstruccion, restauracion y recuperacion que aborden los impactos sociales, ambientales y economicos locales a mediano y largo plazo de la falla. Los planes deberan divulgarse si las autoridades publicas lo permiten.',
       },
       {
         id: '14.4',
@@ -794,6 +802,8 @@ export const PRINCIPLES_GISTM: Principle[] = [
         topicId: 'V',
         texto:
           'In the event of a catastrophic tailings facility failure, enable the participation of affected people in reconstruction, restoration and recovery works and ongoing monitoring activities.',
+        textoEs:
+          'En caso de una falla catastrofica de la instalacion de relaves, facilitar la participacion de las personas afectadas en las obras de reconstruccion, restauracion y recuperacion, y en las actividades de monitoreo continuo.',
       },
       {
         id: '14.5',
@@ -801,6 +811,8 @@ export const PRINCIPLES_GISTM: Principle[] = [
         topicId: 'V',
         texto:
           'Facilitate the monitoring and public reporting of post-failure outcomes that are aligned with the thresholds and indicators outlined in the reconstruction, restoration and recovery plans and adapt activities in response to findings and feedback.',
+        textoEs:
+          'Facilitar el monitoreo y el reporte publico de los resultados post-falla, alineados con los umbrales e indicadores establecidos en los planes de reconstruccion, restauracion y recuperacion, y adaptar las actividades en funcion de los hallazgos y la retroalimentacion.',
       },
     ],
   },
