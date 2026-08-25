@@ -135,6 +135,8 @@ export const PRINCIPLES_GISTM: Principle[] = [
         topicId: 'II',
         texto:
           'For new tailings facilities, the Operator shall use the knowledge base and undertake a multi-criteria alternatives analysis of all feasible sites, technologies and strategies for tailings management. The goal of this analysis shall be to: (i) select an alternative that minimises risks to people and the environment throughout the tailings facility lifecycle; and (ii) minimise the volume of tailings and water placed in external tailings facilities. This analysis shall be reviewed by the Independent Tailings Review Board (ITRB) or a senior independent technical reviewer. For existing tailings facilities, the Operator shall periodically review and refine the tailings technologies and design, and management strategies to minimise risk and improve environmental outcomes. An exception applies to facilities that are demonstrated to be in a state of safe closure.',
+        textoEs:
+          'Para instalaciones de relaves nuevas, el Operador deberá utilizar la base de conocimiento y realizar un análisis multicriterio de alternativas de todos los sitios, tecnologías y estrategias viables para la gestión de relaves. El objetivo de este análisis será: (i) seleccionar una alternativa que minimice los riesgos para las personas y el ambiente a lo largo del ciclo de vida de la instalación de relaves; y (ii) minimizar el volumen de relaves y agua depositados en instalaciones de relaves externas. Este análisis deberá ser revisado por el Independent Tailings Review Board (ITRB) (Comité Independiente de Revisión de Relaves) o por un revisor técnico independiente senior. Para instalaciones de relaves existentes, el Operador deberá revisar y perfeccionar periódicamente las tecnologías, el diseño y las estrategias de gestión de relaves para minimizar el riesgo y mejorar los resultados ambientales. Se aplica una excepción a las instalaciones que hayan demostrado encontrarse en estado de cierre seguro.',
       },
       {
         id: '3.3',
@@ -142,6 +144,8 @@ export const PRINCIPLES_GISTM: Principle[] = [
         topicId: 'II',
         texto:
           'For new tailings facilities, use the knowledge base, including uncertainties due to climate change, to assess the social, environmental and local economic impacts of the tailings facility and its potential failure throughout its lifecycle. Where impact assessments predict material acute or chronic impacts, the Operator shall develop, document and implement impact mitigation and management plans using the mitigation hierarchy.',
+        textoEs:
+          'Para instalaciones de relaves nuevas, utilizar la base de conocimiento, incluyendo las incertidumbres derivadas del cambio climático, para evaluar los impactos sociales, ambientales y económicos locales de la instalación de relaves y de su falla potencial a lo largo de su ciclo de vida. Cuando las evaluaciones de impacto predigan impactos agudos o crónicos materiales, el Operador deberá desarrollar, documentar e implementar planes de mitigación y gestión de impactos utilizando la jerarquía de mitigación.',
       },
       {
         id: '3.4',
@@ -149,6 +153,8 @@ export const PRINCIPLES_GISTM: Principle[] = [
         topicId: 'II',
         texto:
           'Update the assessment of the social, environmental and local economic impacts to reflect a material change either to the tailings facility or to the social, environmental and local economic context. If new data indicates that the impacts from the tailings facility have changed materially, including as a result of climate change knowledge or long-term impacts, the Operator shall update tailings facility management to reflect the new data using Adaptive Management best practices.',
+        textoEs:
+          'Actualizar la evaluación de los impactos sociales, ambientales y económicos locales para reflejar un cambio material ya sea en la instalación de relaves o en el contexto social, ambiental y económico local. Si nuevos datos indican que los impactos de la instalación de relaves han cambiado materialmente, incluso como resultado de nuevo conocimiento sobre cambio climático o impactos de largo plazo, el Operador deberá actualizar la gestión de la instalación de relaves para reflejar los nuevos datos utilizando las mejores prácticas de Gestión Adaptativa (Adaptive Management).',
       },
     ],
   },
