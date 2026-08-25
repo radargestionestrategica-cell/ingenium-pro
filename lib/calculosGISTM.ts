@@ -566,6 +566,8 @@ export const PRINCIPLES_GISTM: Principle[] = [
     topicId: 'IV',
     titulo:
       'Establish and implement levels of review as part of a strong quality and risk management system for all phases of the tailings facility lifecycle, including closure.',
+    tituloEs:
+      'Establecer e implementar Niveles de Revision como parte de un sistema solido de gestion de calidad y riesgo para todas las fases del ciclo de vida de la instalacion de relaves, incluyendo el cierre.',
     requisitos: [
       {
         id: '10.1',
@@ -573,6 +575,8 @@ export const PRINCIPLES_GISTM: Principle[] = [
         topicId: 'IV',
         texto:
           'Conduct and update risk assessments with a qualified multi-disciplinary team using best practice methodologies at a minimum every three years and more frequently whenever there is a material change either to the tailings facility or to the social, environmental and local economic context. Transmit risk assessments to the ITRB or senior independent technical reviewer for review, and address with urgency all unacceptable tailings facility risks.',
+        textoEs:
+          'Realizar y actualizar evaluaciones de riesgo con un equipo multidisciplinario calificado, utilizando metodologias de mejores practicas, como minimo cada tres anios y con mayor frecuencia cada vez que exista un cambio material en la instalacion de relaves o en el contexto social, ambiental y economico local. Transmitir las evaluaciones de riesgo a la ITRB o al revisor tecnico independiente senior para su revision, y abordar con urgencia todos los riesgos inaceptables de la instalacion de relaves.',
       },
       {
         id: '10.2',
@@ -580,6 +584,8 @@ export const PRINCIPLES_GISTM: Principle[] = [
         topicId: 'IV',
         texto:
           "Conduct regular reviews of the TMS and of the components of the ESMS that refer to the tailings facility to assure the effectiveness of the management systems. Document and report the outcomes to the Accountable Executive, Board of Directors and project-affected people. The review shall be undertaken by senior technical reviewers with the appropriate qualifications, expertise and resources. For tailings facilities with 'High', 'Very High' or 'Extreme' Consequence Classification, conduct the review at least every three years.",
+        textoEs:
+          'Realizar revisiones periodicas del TMS y de los componentes del ESMS relacionados con la instalacion de relaves para asegurar la eficacia de los sistemas de gestion. Documentar y reportar los resultados al Ejecutivo Responsable, al Directorio y a las personas afectadas por el proyecto. La revision debera ser realizada por revisores tecnicos senior con la calificacion, experiencia y recursos apropiados. Para instalaciones con Clasificacion de Consecuencia High, Very High o Extreme, realizar la revision al menos cada tres anios.',
       },
       {
         id: '10.3',
@@ -587,6 +593,8 @@ export const PRINCIPLES_GISTM: Principle[] = [
         topicId: 'IV',
         texto:
           'Conduct internal audits to verify consistent implementation of company procedures, guidelines and corporate governance requirements consistent with the TMS and aspects of the ESMS developed to manage tailings facility risks.',
+        textoEs:
+          'Realizar auditorias internas para verificar la implementacion consistente de los procedimientos, lineamientos y requisitos de gobernanza corporativa de la empresa, en consonancia con el TMS y los aspectos del ESMS desarrollados para gestionar los riesgos de la instalacion de relaves.',
       },
       {
         id: '10.4',
@@ -594,6 +602,8 @@ export const PRINCIPLES_GISTM: Principle[] = [
         topicId: 'IV',
         texto:
           'The EOR or senior independent technical reviewer shall conduct tailings facility construction and performance reviews annually or more frequently, if required.',
+        textoEs:
+          'El EOR o el revisor tecnico independiente senior debera realizar revisiones de construccion y desempeno de la instalacion de relaves anualmente o con mayor frecuencia, si es necesario.',
       },
       {
         id: '10.5',
@@ -601,6 +611,8 @@ export const PRINCIPLES_GISTM: Principle[] = [
         topicId: 'IV',
         texto:
           "Conduct an independent DSR at least every five years for tailings facilities with 'Very High' or 'Extreme' Consequence Classifications and at least every 10 years for all other facilities. For tailings facilities with complex conditions or performance, the ITRB may recommend more frequent DSRs. The DSR shall include technical, operational and governance aspects of the tailings facility and shall be completed according to best practices. The DSR contractor cannot conduct consecutive DSRs on the same tailings facility and shall certify in writing that they follow best practices for engineers in avoiding conflicts of interest.",
+        textoEs:
+          'Realizar una DSR independiente al menos cada cinco anios para instalaciones con Clasificacion de Consecuencia Very High o Extreme, y al menos cada 10 anios para el resto de las instalaciones. Para instalaciones con condiciones o desempeno complejos, la ITRB puede recomendar DSR mas frecuentes. La DSR debera incluir aspectos tecnicos, operativos y de gobernanza de la instalacion, y debera completarse conforme a las mejores practicas. El contratista de la DSR no puede realizar DSR consecutivas sobre la misma instalacion, y debera certificar por escrito que sigue las mejores practicas de ingenieria para evitar conflictos de interes.',
       },
       {
         id: '10.6',
@@ -608,6 +620,8 @@ export const PRINCIPLES_GISTM: Principle[] = [
         topicId: 'IV',
         texto:
           "For tailings facilities with 'Very High' or 'Extreme' Consequence Classifications, the ITRB, reporting to the Accountable Executive shall provide ongoing senior independent review of the planning, siting, design, construction, operation, water and mass balance, maintenance, monitoring, performance and risk management at appropriate intervals across all phases of the tailings facility lifecycle. For tailings facilities with other Consequence Classifications, this review can be done by a senior independent technical reviewer.",
+        textoEs:
+          'Para instalaciones con Clasificacion de Consecuencia Very High o Extreme, la ITRB, reportando al Ejecutivo Responsable, debera proveer revision independiente senior continua de la planificacion, ubicacion, diseno, construccion, operacion, balance de agua y masa, mantenimiento, monitoreo, desempeno y gestion de riesgo, con intervalos apropiados a lo largo de todas las fases del ciclo de vida de la instalacion. Para instalaciones con otras Clasificaciones de Consecuencia, esta revision puede ser realizada por un revisor tecnico independiente senior.',
       },
       {
         id: '10.7',
@@ -615,6 +629,8 @@ export const PRINCIPLES_GISTM: Principle[] = [
         topicId: 'IV',
         texto:
           'The amount of estimated costs for planned closure, early closure, reclamation, and post-closure of the tailings facility and its appurtenant structures shall be reviewed periodically to confirm that adequate financial capacity (including insurance, to the extent commercially reasonable) is available for such purposes throughout the tailings facility lifecycle, and the conclusions of the review shall be publicly disclosed annually. Disclosure may be made in audited financial statements or in public regulatory filings. Subject to the provisions of local or national regulations on this matter, Operators shall use best efforts to assess and take into account the capability of an acquirer of any of its assets involving a tailings facility (through merger, acquisition, or other change in ownership) to maintain this Standard for the tailings facility lifecycle.',
+        textoEs:
+          'El monto de los costos estimados para el cierre planificado, cierre anticipado, recuperacion y post-cierre de la instalacion de relaves y sus estructuras conexas debera revisarse periodicamente para confirmar que exista capacidad financiera adecuada (incluyendo seguros, en la medida comercialmente razonable) disponible para tales fines a lo largo del ciclo de vida de la instalacion, y las conclusiones de la revision deberan divulgarse publicamente cada anio. La divulgacion puede realizarse en estados financieros auditados o en presentaciones regulatorias publicas. Sujeto a las disposiciones de las regulaciones locales o nacionales sobre esta materia, los Operadores deberan hacer sus mejores esfuerzos para evaluar y tener en cuenta la capacidad de un adquirente de cualquiera de sus activos que involucre una instalacion de relaves (a traves de fusion, adquisicion u otro cambio de propiedad) para mantener este Estandar a lo largo del ciclo de vida de la instalacion.',
       },
     ],
   },
