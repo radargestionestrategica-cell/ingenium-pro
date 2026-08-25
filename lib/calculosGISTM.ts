@@ -639,6 +639,8 @@ export const PRINCIPLES_GISTM: Principle[] = [
     topicId: 'IV',
     titulo:
       'Develop an organisational culture that promotes learning, communication and early problem recognition.',
+    tituloEs:
+      'Desarrollar una cultura organizacional que promueva el aprendizaje, la comunicacion y la deteccion temprana de problemas.',
     requisitos: [
       {
         id: '11.1',
@@ -646,6 +648,8 @@ export const PRINCIPLES_GISTM: Principle[] = [
         topicId: 'IV',
         texto:
           'Educate personnel who have a role in any phase of the tailings facility lifecycle about how their job procedures and responsibilities relate to the prevention of a failure.',
+        textoEs:
+          'Educar al personal que desempene un rol en cualquier fase del ciclo de vida de la instalacion de relaves sobre como sus procedimientos de trabajo y responsabilidades se relacionan con la prevencion de una falla.',
       },
       {
         id: '11.2',
@@ -653,6 +657,8 @@ export const PRINCIPLES_GISTM: Principle[] = [
         topicId: 'IV',
         texto:
           "Establish mechanisms that incorporate workers' experience-based knowledge into planning, design and operations for all phases of the tailings facility lifecycle.",
+        textoEs:
+          'Establecer mecanismos que incorporen el conocimiento basado en la experiencia de los trabajadores en la planificacion, el diseno y las operaciones, para todas las fases del ciclo de vida de la instalacion de relaves.',
       },
       {
         id: '11.3',
@@ -660,6 +666,8 @@ export const PRINCIPLES_GISTM: Principle[] = [
         topicId: 'IV',
         texto:
           'Establish mechanisms that promote cross-functional collaboration to ensure effective data and knowledge sharing, communication and implementation of management measures to support public safety and the integrity of the tailings facility.',
+        textoEs:
+          'Establecer mecanismos que promuevan la colaboracion interfuncional para asegurar el intercambio eficaz de datos y conocimiento, la comunicacion y la implementacion de medidas de gestion que respalden la seguridad publica y la integridad de la instalacion de relaves.',
       },
       {
         id: '11.4',
@@ -667,6 +675,8 @@ export const PRINCIPLES_GISTM: Principle[] = [
         topicId: 'IV',
         texto:
           'Identify and implement lessons from internal incident investigations and relevant external incident reports, paying particular attention to human and organisational factors.',
+        textoEs:
+          'Identificar e implementar lecciones aprendidas de investigaciones internas de incidentes y de reportes externos relevantes de incidentes, prestando especial atencion a los factores humanos y organizacionales.',
       },
       {
         id: '11.5',
@@ -674,6 +684,8 @@ export const PRINCIPLES_GISTM: Principle[] = [
         topicId: 'IV',
         texto:
           'Establish mechanisms that recognise, reward and protect from retaliation, employees and contractors who report problems or identify opportunities for improving tailings facility management. Respond in a timely manner and communicate actions taken and their outcomes.',
+        textoEs:
+          'Establecer mecanismos que reconozcan, premien y protejan de represalias a los empleados y contratistas que reporten problemas o identifiquen oportunidades para mejorar la gestion de la instalacion de relaves. Responder de manera oportuna y comunicar las acciones tomadas y sus resultados.',
       },
     ],
   },
