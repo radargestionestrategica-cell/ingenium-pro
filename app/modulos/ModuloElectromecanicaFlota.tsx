@@ -7,12 +7,14 @@ import type { Lang } from '@/lib/i18n';
 import {
   calcularDerateoTermico, definicionServicio,
   limiteTemperaturaBobinado, verificarArranqueDisenoN,
+  caidaTension, fusibleSugerido, verificarAmpacidadCable,
 } from '@/lib/calculosElectromecanicaFlota';
 import type { TipoServicio, ClaseTermica, MetodoDeteccion } from '@/lib/calculosElectromecanicaFlota';
 
 // Módulo 18 — Electromecánica de Flota Pesada
-// Secciones "Motores y Generadores" y "Arranque y Protección Térmica" —
-// cálculos orientativos, sin tabla kVA/kW todavía (queda para otra tanda).
+// Secciones "Motores y Generadores", "Arranque y Protección Térmica" y
+// "Cableado y Protección" — cálculos orientativos, sin tabla kVA/kW
+// todavía (queda para otra tanda).
 
 type MarcoNormativo = 'SAE_API_ASME' | 'IEC_ISO';
 type Voltaje = '12V' | '24V';
@@ -57,6 +59,12 @@ export default function ModuloElectromecanicaFlota() {
   const [claseTermica, setClaseTermica] = useState<ClaseTermica>('155');
   const [metodoDeteccion, setMetodoDeteccion] = useState<MetodoDeteccion>('lento');
 
+  // Cableado y Protección
+  const [corrienteCircuito, setCorrienteCircuito] = useState('');
+  const [longitudTramo, setLongitudTramo] = useState('');
+  const [seccionCable, setSeccionCable] = useState('');
+  const [incluirRetorno, setIncluirRetorno] = useState(false);
+
   const [payload, setPayload] = useState<DatosExportar | null>(null);
 
   const derateo = calcularDerateoTermico(
@@ -66,6 +74,16 @@ export default function ModuloElectromecanicaFlota() {
   const clasificacionServicio = definicionServicio(tipoServicio);
   const limiteTemp = limiteTemperaturaBobinado(claseTermica, metodoDeteccion);
   const arranque = verificarArranqueDisenoN(Number(potenciaNominal) || 0, polos);
+
+  const caida = caidaTension(
+    Number(corrienteCircuito) || 0,
+    Number(longitudTramo) || 0,
+    Number(seccionCable) || 0,
+    incluirRetorno,
+    voltaje === '12V' ? 12 : 24,
+  );
+  const fusible = fusibleSugerido(Number(corrienteCircuito) || 0);
+  const ampacidad = verificarAmpacidadCable();
 
   useEffect(() => {
     const handler = (e: Event) => {
@@ -90,6 +108,10 @@ export default function ModuloElectromecanicaFlota() {
         'Temperatura ambiente (C)':     Number(temperaturaAmbiente) || 0,
         'Clase termica':                claseTermica,
         'Metodo deteccion':             metodoDeteccion,
+        'Corriente circuito (A)':       Number(corrienteCircuito) || 0,
+        'Longitud tramo (m)':           Number(longitudTramo) || 0,
+        'Seccion cable (mm2)':          Number(seccionCable) || 0,
+        'Incluye retorno a masa':       incluirRetorno,
       },
       resultado: {
         'Salto termico admisible (K)':      derateo.saltoTermicoAdmisibleK,
@@ -98,6 +120,10 @@ export default function ModuloElectromecanicaFlota() {
         'Limite temperatura bobinado (C)':   limiteTemp,
         'Arranque Diseno N - estado':        arranque.estado,
         'Arranque Diseno N - mensaje':       arranque.mensaje,
+        'Caida de tension (V)':              caida.caidaV,
+        'Caida de tension (%)':              caida.caidaPorcentaje,
+        'Fusible sugerido':                  fusible.mensaje,
+        'Ampacidad cable':                   ampacidad.mensaje,
       },
     };
     setPayload(nuevoPayload);
@@ -295,6 +321,95 @@ export default function ModuloElectromecanicaFlota() {
             </div>
             <div style={{ color: '#f1f5f9', fontSize: 12, lineHeight: 1.6 }}>
               {arranque.mensaje}
+            </div>
+          </div>
+        </div>
+
+        {/* CABLEADO Y PROTECCIÓN */}
+        <div style={{ background: PANEL, border: `1px solid ${BORD}`, borderRadius: 12, padding: 20, marginBottom: 20 }}>
+          <div style={{ color: TEAL, fontWeight: 700, fontSize: 12, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 16 }}>
+            Cableado y Protección
+          </div>
+
+          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 16 }}>
+            <div style={{ flex: '1 1 160px' }}>
+              <label style={{ display: 'block', color: '#94a3b8', fontSize: 11, marginBottom: 6 }}>
+                Corriente del circuito (A)
+              </label>
+              <input
+                type="number"
+                min={0}
+                value={corrienteCircuito}
+                onChange={e => setCorrienteCircuito(e.target.value)}
+                placeholder="0"
+                style={{ width: '100%', boxSizing: 'border-box', background: BG, border: `1px solid ${BORD}`, borderRadius: 8, padding: '8px 10px', color: '#f1f5f9', fontSize: 12 }}
+              />
+            </div>
+
+            <div style={{ flex: '1 1 160px' }}>
+              <label style={{ display: 'block', color: '#94a3b8', fontSize: 11, marginBottom: 6 }}>
+                Longitud del tramo (m)
+              </label>
+              <input
+                type="number"
+                min={0}
+                value={longitudTramo}
+                onChange={e => setLongitudTramo(e.target.value)}
+                placeholder="0"
+                style={{ width: '100%', boxSizing: 'border-box', background: BG, border: `1px solid ${BORD}`, borderRadius: 8, padding: '8px 10px', color: '#f1f5f9', fontSize: 12 }}
+              />
+            </div>
+
+            <div style={{ flex: '1 1 160px' }}>
+              <label style={{ display: 'block', color: '#94a3b8', fontSize: 11, marginBottom: 6 }}>
+                Sección del cable (mm²)
+              </label>
+              <input
+                type="number"
+                min={0}
+                value={seccionCable}
+                onChange={e => setSeccionCable(e.target.value)}
+                placeholder="0"
+                style={{ width: '100%', boxSizing: 'border-box', background: BG, border: `1px solid ${BORD}`, borderRadius: 8, padding: '8px 10px', color: '#f1f5f9', fontSize: 12 }}
+              />
+            </div>
+
+            <div style={{ flex: '1 1 220px', display: 'flex', alignItems: 'flex-end', paddingBottom: 8 }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#94a3b8', fontSize: 12, cursor: 'pointer' }}>
+                <input
+                  type="checkbox"
+                  checked={incluirRetorno}
+                  onChange={e => setIncluirRetorno(e.target.checked)}
+                />
+                Incluir retorno a masa (ida y vuelta)
+              </label>
+            </div>
+          </div>
+
+          <div style={{ background: BG, border: `1px solid ${BORD}`, borderRadius: 10, padding: 14, marginBottom: 10 }}>
+            <div style={{ color: '#64748b', fontSize: 10, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 }}>
+              Caída de tensión
+            </div>
+            <div style={{ color: '#f1f5f9', fontSize: 12, lineHeight: 1.6 }}>
+              {caida.caidaV} V ({caida.caidaPorcentaje}% sobre {voltaje})
+            </div>
+          </div>
+
+          <div style={{ background: BG, border: `1px solid ${BORD}`, borderRadius: 10, padding: 14, marginBottom: 10 }}>
+            <div style={{ color: '#64748b', fontSize: 10, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 }}>
+              Fusible sugerido (blade)
+            </div>
+            <div style={{ color: '#f1f5f9', fontSize: 12, lineHeight: 1.6 }}>
+              {fusible.mensaje}
+            </div>
+          </div>
+
+          <div style={{ background: BG, border: `1px solid ${BORD}`, borderRadius: 10, padding: 14 }}>
+            <div style={{ color: '#64748b', fontSize: 10, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 }}>
+              Ampacidad de cable
+            </div>
+            <div style={{ color: '#f1f5f9', fontSize: 12, lineHeight: 1.6 }}>
+              {ampacidad.mensaje}
             </div>
           </div>
         </div>
