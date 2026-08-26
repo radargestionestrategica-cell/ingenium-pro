@@ -120,7 +120,7 @@ export default function BotonesExportar({ datos, visible }: Props) {
     const id = await guardar();
     if (!id) { setExportando(null); return; }
     try {
-      const analisisIA = (() => { try { return localStorage.getItem('ip_ia_analisis') || undefined; } catch { return undefined; } })();
+      const analisisIA = (() => { try { return localStorage.getItem(`ip_ia_analisis_${datos.moduloId ?? datos.tipo}`) || undefined; } catch { return undefined; } })();
       const res = await fetch('/api/calculos/exportar', {
         method: 'POST',
         credentials: 'include',
