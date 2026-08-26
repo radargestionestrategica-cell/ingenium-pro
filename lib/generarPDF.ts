@@ -287,8 +287,17 @@ export async function generarPDF(datos: DatosPDF): Promise<Buffer> {
         .text('RESULTADOS CALCULADOS', 50, y);
       y += 16;
 
-      const resultados = Object.entries(datos.resultado).slice(0, 16);
-      resultados.forEach(([k, v], i) => {
+      // Valores cortos (números, estados) van en la grilla compacta de 2
+      // columnas; valores de texto largo (párrafos informativos, como
+      // derrateo estimado o clasificación de servicio) rompen esa grilla
+      // si se fuerzan en una sola línea de 18px, así que se renderizan en
+      // un bloque propio a ancho completo con salto de línea real.
+      const UMBRAL_TEXTO_LARGO = 40;
+      const resultadosTodos  = Object.entries(datos.resultado).slice(0, 16);
+      const resultadosCortos = resultadosTodos.filter(([, v]) => String(v).length <= UMBRAL_TEXTO_LARGO);
+      const resultadosLargos = resultadosTodos.filter(([, v]) => String(v).length > UMBRAL_TEXTO_LARGO);
+
+      resultadosCortos.forEach(([k, v], i) => {
         const col = i % 2;
         const row = Math.floor(i / 2);
         const px  = 50 + col * colW;
@@ -300,7 +309,23 @@ export async function generarPDF(datos: DatosPDF): Promise<Buffer> {
           .text(String(v), px + 90, py, { width: colW - 95, lineBreak: false, ellipsis: true });
       });
 
-      y += Math.ceil(resultados.length / 2) * 18 + 16;
+      if (resultadosCortos.length > 0) {
+        y += Math.ceil(resultadosCortos.length / 2) * 18 + 12;
+      }
+
+      resultadosLargos.forEach(([k, v]) => {
+        if (y > 680) { doc.addPage(); y = 50; }
+
+        doc.fillColor(COLOR_GRIS).fontSize(7).font('Helvetica')
+          .text(k.toUpperCase(), 50, y, { width: doc.page.width - 100, lineBreak: false, ellipsis: true });
+        y += 11;
+
+        doc.fillColor('#1a1a1a').fontSize(9).font('Helvetica')
+          .text(String(v), 50, y, { width: doc.page.width - 100, lineBreak: true });
+        y = doc.y + 10;
+      });
+
+      y += 6;
 
       // ── ANÁLISIS DE IA ────────────────────────────────────────
       if (datos.analisisIA) {
