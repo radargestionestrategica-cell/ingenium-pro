@@ -30,9 +30,9 @@ function resolverModuloId(d: DatosExportar): string {
   if (raw.includes('HIDRAU') || raw.includes('DARCY'))      return 'HIDRAULICA';
   if (raw.includes('CANERIA'))                              return 'CANERIAS';
   if (raw.includes('PERFOR'))                               return 'PERFORACION';
+  if (raw.includes('ELECTROMECANICA') || raw.includes('FLOTA')) return 'ELECTROMECANICA_FLOTA';
   if (raw.includes('ELECTR'))                               return 'ELECTRICIDAD';
   if (raw.includes('GISTM'))                                return 'GISTM_CONFORMIDAD';
-  if (raw.includes('ELECTROMECANICA') || raw.includes('FLOTA')) return 'ELECTROMECANICA_FLOTA';
   return raw;
 }
 
@@ -115,7 +115,7 @@ export default function IAChat({ datos }: Props) {
       if (data.derivados?.nivel_riesgo) setNivelRiesgo(data.derivados.nivel_riesgo);
 
       setMensajes(prev => [...prev, { role: 'assistant', content: respuesta }]);
-      try { localStorage.setItem('ip_ia_analisis', respuesta); } catch { /* noop */ }
+      try { localStorage.setItem(`ip_ia_analisis_${datos.moduloId ?? datos.tipo}`, respuesta); } catch { /* noop */ }
       setAnalizado(true);
     } catch {
       setMensajes(prev => [...prev, {
