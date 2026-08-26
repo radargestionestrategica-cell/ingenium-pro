@@ -8,13 +8,14 @@ import {
   calcularDerateoTermico, definicionServicio,
   limiteTemperaturaBobinado, verificarArranqueDisenoN,
   caidaTension, fusibleSugerido, verificarAmpacidadCable,
+  ccaDisponible, alternadorRequerido,
 } from '@/lib/calculosElectromecanicaFlota';
 import type { TipoServicio, ClaseTermica, MetodoDeteccion } from '@/lib/calculosElectromecanicaFlota';
 
 // Módulo 18 — Electromecánica de Flota Pesada
-// Secciones "Motores y Generadores", "Arranque y Protección Térmica" y
-// "Cableado y Protección" — cálculos orientativos, sin tabla kVA/kW
-// todavía (queda para otra tanda).
+// Secciones "Motores y Generadores", "Arranque y Protección Térmica",
+// "Cableado y Protección" y "Batería y Alternador" — cálculos
+// orientativos, sin tabla kVA/kW todavía (queda para otra tanda).
 
 type MarcoNormativo = 'SAE_API_ASME' | 'IEC_ISO';
 type Voltaje = '12V' | '24V';
@@ -65,6 +66,12 @@ export default function ModuloElectromecanicaFlota() {
   const [seccionCable, setSeccionCable] = useState('');
   const [incluirRetorno, setIncluirRetorno] = useState(false);
 
+  // Batería y Alternador
+  const [ccaNominal, setCcaNominal] = useState('');
+  const [tempArranque, setTempArranque] = useState('');
+  const [cargaContinua, setCargaContinua] = useState('');
+  const [cargaIntermitente, setCargaIntermitente] = useState('');
+
   const [payload, setPayload] = useState<DatosExportar | null>(null);
 
   const derateo = calcularDerateoTermico(
@@ -84,6 +91,9 @@ export default function ModuloElectromecanicaFlota() {
   );
   const fusible = fusibleSugerido(Number(corrienteCircuito) || 0);
   const ampacidad = verificarAmpacidadCable();
+
+  const cca = ccaDisponible(Number(ccaNominal) || 0, Number(tempArranque) || 0);
+  const alternador = alternadorRequerido(Number(cargaContinua) || 0, Number(cargaIntermitente) || 0);
 
   useEffect(() => {
     const handler = (e: Event) => {
@@ -112,6 +122,10 @@ export default function ModuloElectromecanicaFlota() {
         'Longitud tramo (m)':           Number(longitudTramo) || 0,
         'Seccion cable (mm2)':          Number(seccionCable) || 0,
         'Incluye retorno a masa':       incluirRetorno,
+        'CCA nominal bateria (A)':      Number(ccaNominal) || 0,
+        'Temperatura ambiente arranque (C)': Number(tempArranque) || 0,
+        'Carga continua estimada (A)': Number(cargaContinua) || 0,
+        'Carga intermitente estimada (A)': Number(cargaIntermitente) || 0,
       },
       resultado: {
         'Salto termico admisible (K)':      derateo.saltoTermicoAdmisibleK,
@@ -124,6 +138,10 @@ export default function ModuloElectromecanicaFlota() {
         'Caida de tension (%)':              caida.caidaPorcentaje,
         'Fusible sugerido':                  fusible.mensaje,
         'Ampacidad cable':                   ampacidad.mensaje,
+        'CCA disponible (A)':                cca.ccaDisponible,
+        'CCA disponible - nota':             cca.mensaje,
+        'Alternador minimo (A)':             alternador.alternadorMinimoA,
+        'Alternador - metodologia':          alternador.mensaje,
       },
     };
     setPayload(nuevoPayload);
@@ -410,6 +428,97 @@ export default function ModuloElectromecanicaFlota() {
             </div>
             <div style={{ color: '#f1f5f9', fontSize: 12, lineHeight: 1.6 }}>
               {ampacidad.mensaje}
+            </div>
+          </div>
+        </div>
+
+        {/* BATERÍA Y ALTERNADOR */}
+        <div style={{ background: PANEL, border: `1px solid ${BORD}`, borderRadius: 12, padding: 20, marginBottom: 20 }}>
+          <div style={{ color: TEAL, fontWeight: 700, fontSize: 12, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 16 }}>
+            Batería y Alternador
+          </div>
+
+          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 16 }}>
+            <div style={{ flex: '1 1 160px' }}>
+              <label style={{ display: 'block', color: '#94a3b8', fontSize: 11, marginBottom: 6 }}>
+                CCA nominal de batería (A)
+              </label>
+              <input
+                type="number"
+                min={0}
+                value={ccaNominal}
+                onChange={e => setCcaNominal(e.target.value)}
+                placeholder="0"
+                style={{ width: '100%', boxSizing: 'border-box', background: BG, border: `1px solid ${BORD}`, borderRadius: 8, padding: '8px 10px', color: '#f1f5f9', fontSize: 12 }}
+              />
+            </div>
+
+            <div style={{ flex: '1 1 160px' }}>
+              <label style={{ display: 'block', color: '#94a3b8', fontSize: 11, marginBottom: 6 }}>
+                Temperatura ambiente de arranque (°C)
+              </label>
+              <input
+                type="number"
+                value={tempArranque}
+                onChange={e => setTempArranque(e.target.value)}
+                placeholder="0"
+                style={{ width: '100%', boxSizing: 'border-box', background: BG, border: `1px solid ${BORD}`, borderRadius: 8, padding: '8px 10px', color: '#f1f5f9', fontSize: 12 }}
+              />
+            </div>
+
+            <div style={{ flex: '1 1 160px' }}>
+              <label style={{ display: 'block', color: '#94a3b8', fontSize: 11, marginBottom: 6 }}>
+                Carga continua estimada (A)
+              </label>
+              <input
+                type="number"
+                min={0}
+                value={cargaContinua}
+                onChange={e => setCargaContinua(e.target.value)}
+                placeholder="0"
+                style={{ width: '100%', boxSizing: 'border-box', background: BG, border: `1px solid ${BORD}`, borderRadius: 8, padding: '8px 10px', color: '#f1f5f9', fontSize: 12 }}
+              />
+            </div>
+
+            <div style={{ flex: '1 1 160px' }}>
+              <label style={{ display: 'block', color: '#94a3b8', fontSize: 11, marginBottom: 6 }}>
+                Carga intermitente estimada (A)
+              </label>
+              <input
+                type="number"
+                min={0}
+                value={cargaIntermitente}
+                onChange={e => setCargaIntermitente(e.target.value)}
+                placeholder="0"
+                style={{ width: '100%', boxSizing: 'border-box', background: BG, border: `1px solid ${BORD}`, borderRadius: 8, padding: '8px 10px', color: '#f1f5f9', fontSize: 12 }}
+              />
+            </div>
+          </div>
+
+          <div style={{ background: BG, border: `1px solid ${BORD}`, borderRadius: 10, padding: 14, marginBottom: 10 }}>
+            <div style={{ color: '#64748b', fontSize: 10, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 }}>
+              CCA disponible (SAE J537)
+            </div>
+            <div style={{ color: '#f1f5f9', fontSize: 12, lineHeight: 1.6 }}>
+              {cca.ccaDisponible} A — {cca.mensaje}
+            </div>
+          </div>
+
+          <div style={{ background: BG, border: `1px solid ${BORD}`, borderRadius: 10, padding: 14, marginBottom: 10 }}>
+            <div style={{ color: '#64748b', fontSize: 10, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 }}>
+              Alternador mínimo requerido (metodología Delco Remy)
+            </div>
+            <div style={{ color: '#f1f5f9', fontSize: 12, lineHeight: 1.6 }}>
+              {alternador.alternadorMinimoA} A — {alternador.mensaje}
+            </div>
+          </div>
+
+          <div style={{ background: BG, border: `1px solid ${BORD}`, borderRadius: 10, padding: 14 }}>
+            <div style={{ color: '#64748b', fontSize: 10, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 }}>
+              Formato de placa de alternador (SAE J56)
+            </div>
+            <div style={{ color: '#f1f5f9', fontSize: 12, lineHeight: 1.6 }}>
+              Los alternadores se marcan como "IL/IR A VT V" (ej: 50/120A 13.5V) = corriente a ralentí (1500rpm) / corriente a régimen nominal (6000rpm), medidos a voltaje de prueba VT (13.5V para 12V, 27.0V para 24V).
             </div>
           </div>
         </div>
