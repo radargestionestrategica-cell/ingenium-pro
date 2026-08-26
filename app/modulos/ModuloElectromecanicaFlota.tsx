@@ -4,12 +4,15 @@ import { publicarResultado } from '@/components/ResultadoContexto';
 import BotonesExportar, { DatosExportar } from '@/components/BotonesExportar';
 import { getLang, EVENTO_IDIOMA } from '@/lib/i18n';
 import type { Lang } from '@/lib/i18n';
-import { calcularDerateoTermico, definicionServicio } from '@/lib/calculosElectromecanicaFlota';
-import type { TipoServicio } from '@/lib/calculosElectromecanicaFlota';
+import {
+  calcularDerateoTermico, definicionServicio,
+  limiteTemperaturaBobinado, verificarArranqueDisenoN,
+} from '@/lib/calculosElectromecanicaFlota';
+import type { TipoServicio, ClaseTermica, MetodoDeteccion } from '@/lib/calculosElectromecanicaFlota';
 
 // Módulo 18 — Electromecánica de Flota Pesada
-// Sección "Motores y Generadores" — cálculos orientativos, sin arranque
-// ni tabla kVA/kW todavía (queda para otra tanda).
+// Secciones "Motores y Generadores" y "Arranque y Protección Térmica" —
+// cálculos orientativos, sin tabla kVA/kW todavía (queda para otra tanda).
 
 type MarcoNormativo = 'SAE_API_ASME' | 'IEC_ISO';
 type Voltaje = '12V' | '24V';
@@ -17,6 +20,11 @@ type Polos = '2' | '4' | '6' | '8';
 
 const POLOS_OPCIONES: Polos[] = ['2', '4', '6', '8'];
 const SERVICIOS_OPCIONES: TipoServicio[] = ['S1', 'S2', 'S3', 'S4', 'S5', 'S6', 'S7', 'S8', 'S9', 'S10'];
+const CLASES_TERMICAS: ClaseTermica[] = ['130', '155', '180', '200'];
+const METODOS_DETECCION: { id: MetodoDeteccion; label: string }[] = [
+  { id: 'lento',  label: 'Lento' },
+  { id: 'rapido', label: 'Rápido' },
+];
 
 const MARCOS: { id: MarcoNormativo; label: string }[] = [
   { id: 'SAE_API_ASME', label: 'SAE / API / ASME' },
@@ -45,6 +53,10 @@ export default function ModuloElectromecanicaFlota() {
   const [altitudInstalacion, setAltitudInstalacion] = useState('');
   const [temperaturaAmbiente, setTemperaturaAmbiente] = useState('');
 
+  // Arranque y Protección Térmica
+  const [claseTermica, setClaseTermica] = useState<ClaseTermica>('155');
+  const [metodoDeteccion, setMetodoDeteccion] = useState<MetodoDeteccion>('lento');
+
   const [payload, setPayload] = useState<DatosExportar | null>(null);
 
   const derateo = calcularDerateoTermico(
@@ -52,6 +64,8 @@ export default function ModuloElectromecanicaFlota() {
     Number(temperaturaAmbiente) || 0,
   );
   const clasificacionServicio = definicionServicio(tipoServicio);
+  const limiteTemp = limiteTemperaturaBobinado(claseTermica, metodoDeteccion);
+  const arranque = verificarArranqueDisenoN(Number(potenciaNominal) || 0, polos);
 
   useEffect(() => {
     const handler = (e: Event) => {
@@ -74,11 +88,16 @@ export default function ModuloElectromecanicaFlota() {
         'Tipo de servicio':             tipoServicio,
         'Altitud instalacion (m)':      Number(altitudInstalacion) || 0,
         'Temperatura ambiente (C)':     Number(temperaturaAmbiente) || 0,
+        'Clase termica':                claseTermica,
+        'Metodo deteccion':             metodoDeteccion,
       },
       resultado: {
-        'Salto termico admisible (K)':  derateo.saltoTermicoAdmisibleK,
-        'Derrateo estimado':            derateo.derrateoEstimado,
-        'Clasificacion de servicio':    clasificacionServicio,
+        'Salto termico admisible (K)':      derateo.saltoTermicoAdmisibleK,
+        'Derrateo estimado':                derateo.derrateoEstimado,
+        'Clasificacion de servicio':         clasificacionServicio,
+        'Limite temperatura bobinado (C)':   limiteTemp,
+        'Arranque Diseno N - estado':        arranque.estado,
+        'Arranque Diseno N - mensaje':       arranque.mensaje,
       },
     };
     setPayload(nuevoPayload);
@@ -223,6 +242,59 @@ export default function ModuloElectromecanicaFlota() {
             </div>
             <div style={{ color: '#f1f5f9', fontSize: 12, lineHeight: 1.6 }}>
               {clasificacionServicio}
+            </div>
+          </div>
+        </div>
+
+        {/* ARRANQUE Y PROTECCIÓN TÉRMICA */}
+        <div style={{ background: PANEL, border: `1px solid ${BORD}`, borderRadius: 12, padding: 20, marginBottom: 20 }}>
+          <div style={{ color: TEAL, fontWeight: 700, fontSize: 12, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 16 }}>
+            Arranque y Protección Térmica
+          </div>
+
+          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 16 }}>
+            <div style={{ flex: '1 1 160px' }}>
+              <label style={{ display: 'block', color: '#94a3b8', fontSize: 11, marginBottom: 6 }}>
+                Clase térmica
+              </label>
+              <select
+                value={claseTermica}
+                onChange={e => setClaseTermica(e.target.value as ClaseTermica)}
+                style={{ width: '100%', background: BG, border: `1px solid ${BORD}`, borderRadius: 8, padding: '8px 10px', color: '#f1f5f9', fontSize: 12 }}
+              >
+                {CLASES_TERMICAS.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
+
+            <div style={{ flex: '1 1 160px' }}>
+              <label style={{ display: 'block', color: '#94a3b8', fontSize: 11, marginBottom: 6 }}>
+                Método detección
+              </label>
+              <select
+                value={metodoDeteccion}
+                onChange={e => setMetodoDeteccion(e.target.value as MetodoDeteccion)}
+                style={{ width: '100%', background: BG, border: `1px solid ${BORD}`, borderRadius: 8, padding: '8px 10px', color: '#f1f5f9', fontSize: 12 }}
+              >
+                {METODOS_DETECCION.map(m => <option key={m.id} value={m.id}>{m.label}</option>)}
+              </select>
+            </div>
+          </div>
+
+          <div style={{ background: BG, border: `1px solid ${BORD}`, borderRadius: 10, padding: 14, marginBottom: 10 }}>
+            <div style={{ color: '#64748b', fontSize: 10, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 }}>
+              Límite de temperatura de bobinado (IEC 60034-11)
+            </div>
+            <div style={{ color: '#f1f5f9', fontSize: 12, lineHeight: 1.6 }}>
+              {limiteTemp} °C
+            </div>
+          </div>
+
+          <div style={{ background: BG, border: `1px solid ${BORD}`, borderRadius: 10, padding: 14 }}>
+            <div style={{ color: '#64748b', fontSize: 10, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 }}>
+              Verificación de arranque (IEC 60034-12 Diseño N)
+            </div>
+            <div style={{ color: '#f1f5f9', fontSize: 12, lineHeight: 1.6 }}>
+              {arranque.mensaje}
             </div>
           </div>
         </div>
