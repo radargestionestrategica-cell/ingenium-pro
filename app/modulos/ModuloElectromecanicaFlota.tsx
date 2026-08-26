@@ -4,12 +4,19 @@ import { publicarResultado } from '@/components/ResultadoContexto';
 import BotonesExportar, { DatosExportar } from '@/components/BotonesExportar';
 import { getLang, EVENTO_IDIOMA } from '@/lib/i18n';
 import type { Lang } from '@/lib/i18n';
+import { calcularDerateoTermico, definicionServicio } from '@/lib/calculosElectromecanicaFlota';
+import type { TipoServicio } from '@/lib/calculosElectromecanicaFlota';
 
 // Módulo 18 — Electromecánica de Flota Pesada
-// Esqueleto de estructura — sin lógica de cálculo todavía.
+// Sección "Motores y Generadores" — cálculos orientativos, sin arranque
+// ni tabla kVA/kW todavía (queda para otra tanda).
 
 type MarcoNormativo = 'SAE_API_ASME' | 'IEC_ISO';
 type Voltaje = '12V' | '24V';
+type Polos = '2' | '4' | '6' | '8';
+
+const POLOS_OPCIONES: Polos[] = ['2', '4', '6', '8'];
+const SERVICIOS_OPCIONES: TipoServicio[] = ['S1', 'S2', 'S3', 'S4', 'S5', 'S6', 'S7', 'S8', 'S9', 'S10'];
 
 const MARCOS: { id: MarcoNormativo; label: string }[] = [
   { id: 'SAE_API_ASME', label: 'SAE / API / ASME' },
@@ -30,7 +37,21 @@ export default function ModuloElectromecanicaFlota() {
   const [lang, setLang] = useState<Lang>(() => getLang());
   const [marcoNormativo, setMarcoNormativo] = useState<MarcoNormativo>('SAE_API_ASME');
   const [voltaje, setVoltaje] = useState<Voltaje>('12V');
+
+  // Motores y Generadores
+  const [potenciaNominal, setPotenciaNominal] = useState('');
+  const [polos, setPolos] = useState<Polos>('4');
+  const [tipoServicio, setTipoServicio] = useState<TipoServicio>('S1');
+  const [altitudInstalacion, setAltitudInstalacion] = useState('');
+  const [temperaturaAmbiente, setTemperaturaAmbiente] = useState('');
+
   const [payload, setPayload] = useState<DatosExportar | null>(null);
+
+  const derateo = calcularDerateoTermico(
+    Number(altitudInstalacion) || 0,
+    Number(temperaturaAmbiente) || 0,
+  );
+  const clasificacionServicio = definicionServicio(tipoServicio);
 
   useEffect(() => {
     const handler = (e: Event) => {
@@ -46,10 +67,19 @@ export default function ModuloElectromecanicaFlota() {
       tipo:      'ELECTROMECANICA_FLOTA',
       normativa: marcoNormativo === 'SAE_API_ASME' ? 'SAE / API / ASME' : 'IEC / ISO',
       parametros: {
-        'Marco normativo': marcoNormativo,
-        'Voltaje':         voltaje,
+        'Marco normativo':              marcoNormativo,
+        'Voltaje':                      voltaje,
+        'Potencia nominal (kW)':        Number(potenciaNominal) || 0,
+        'Polos':                        polos,
+        'Tipo de servicio':             tipoServicio,
+        'Altitud instalacion (m)':      Number(altitudInstalacion) || 0,
+        'Temperatura ambiente (C)':     Number(temperaturaAmbiente) || 0,
       },
-      resultado: {},
+      resultado: {
+        'Salto termico admisible (K)':  derateo.saltoTermicoAdmisibleK,
+        'Derrateo estimado':            derateo.derrateoEstimado,
+        'Clasificacion de servicio':    clasificacionServicio,
+      },
     };
     setPayload(nuevoPayload);
     publicarResultado(nuevoPayload);
@@ -103,10 +133,97 @@ export default function ModuloElectromecanicaFlota() {
           ))}
         </div>
 
-        {/* CONTENEDOR VACÍO PARA INPUTS FUTUROS */}
+        {/* MOTORES Y GENERADORES */}
         <div style={{ background: PANEL, border: `1px solid ${BORD}`, borderRadius: 12, padding: 20, marginBottom: 20 }}>
-          <div style={{ color: '#64748b', fontSize: 12 }}>
-            {lang === 'es' ? 'Próximamente: parámetros de cálculo' : 'Coming soon: calculation parameters'}
+          <div style={{ color: TEAL, fontWeight: 700, fontSize: 12, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 16 }}>
+            Motores y Generadores
+          </div>
+
+          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 16 }}>
+            <div style={{ flex: '1 1 160px' }}>
+              <label style={{ display: 'block', color: '#94a3b8', fontSize: 11, marginBottom: 6 }}>
+                Potencia nominal (kW)
+              </label>
+              <input
+                type="number"
+                min={0}
+                value={potenciaNominal}
+                onChange={e => setPotenciaNominal(e.target.value)}
+                placeholder="0"
+                style={{ width: '100%', boxSizing: 'border-box', background: BG, border: `1px solid ${BORD}`, borderRadius: 8, padding: '8px 10px', color: '#f1f5f9', fontSize: 12 }}
+              />
+            </div>
+
+            <div style={{ flex: '1 1 120px' }}>
+              <label style={{ display: 'block', color: '#94a3b8', fontSize: 11, marginBottom: 6 }}>
+                Polos
+              </label>
+              <select
+                value={polos}
+                onChange={e => setPolos(e.target.value as Polos)}
+                style={{ width: '100%', background: BG, border: `1px solid ${BORD}`, borderRadius: 8, padding: '8px 10px', color: '#f1f5f9', fontSize: 12 }}
+              >
+                {POLOS_OPCIONES.map(p => <option key={p} value={p}>{p}</option>)}
+              </select>
+            </div>
+
+            <div style={{ flex: '1 1 160px' }}>
+              <label style={{ display: 'block', color: '#94a3b8', fontSize: 11, marginBottom: 6 }}>
+                Tipo de servicio
+              </label>
+              <select
+                value={tipoServicio}
+                onChange={e => setTipoServicio(e.target.value as TipoServicio)}
+                style={{ width: '100%', background: BG, border: `1px solid ${BORD}`, borderRadius: 8, padding: '8px 10px', color: '#f1f5f9', fontSize: 12 }}
+              >
+                {SERVICIOS_OPCIONES.map(s => <option key={s} value={s}>{s}</option>)}
+              </select>
+            </div>
+
+            <div style={{ flex: '1 1 160px' }}>
+              <label style={{ display: 'block', color: '#94a3b8', fontSize: 11, marginBottom: 6 }}>
+                Altitud instalación (m)
+              </label>
+              <input
+                type="number"
+                min={0}
+                value={altitudInstalacion}
+                onChange={e => setAltitudInstalacion(e.target.value)}
+                placeholder="0"
+                style={{ width: '100%', boxSizing: 'border-box', background: BG, border: `1px solid ${BORD}`, borderRadius: 8, padding: '8px 10px', color: '#f1f5f9', fontSize: 12 }}
+              />
+            </div>
+
+            <div style={{ flex: '1 1 160px' }}>
+              <label style={{ display: 'block', color: '#94a3b8', fontSize: 11, marginBottom: 6 }}>
+                Temperatura ambiente (°C)
+              </label>
+              <input
+                type="number"
+                value={temperaturaAmbiente}
+                onChange={e => setTemperaturaAmbiente(e.target.value)}
+                placeholder="0"
+                style={{ width: '100%', boxSizing: 'border-box', background: BG, border: `1px solid ${BORD}`, borderRadius: 8, padding: '8px 10px', color: '#f1f5f9', fontSize: 12 }}
+              />
+            </div>
+          </div>
+
+          <div style={{ background: BG, border: `1px solid ${BORD}`, borderRadius: 10, padding: 14, marginBottom: 10 }}>
+            <div style={{ color: '#64748b', fontSize: 10, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 }}>
+              Derrateo térmico estimado
+            </div>
+            <div style={{ color: '#f1f5f9', fontSize: 12, lineHeight: 1.6 }}>
+              {derateo.derrateoEstimado}
+            </div>
+          </div>
+
+          <div style={{ background: BG, border: `1px solid ${BORD}`, borderRadius: 10, padding: 14 }}>
+            <div style={{ color: '#64748b', fontSize: 10, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 }}>
+              Clasificación de servicio (IEC 60034-1)
+            </div>
+            <div style={{ color: '#f1f5f9', fontSize: 12, lineHeight: 1.6 }}>
+              {clasificacionServicio}
+            </div>
           </div>
         </div>
 
