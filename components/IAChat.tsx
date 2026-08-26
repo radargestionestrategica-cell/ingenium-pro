@@ -32,6 +32,7 @@ function resolverModuloId(d: DatosExportar): string {
   if (raw.includes('PERFOR'))                               return 'PERFORACION';
   if (raw.includes('ELECTR'))                               return 'ELECTRICIDAD';
   if (raw.includes('GISTM'))                                return 'GISTM_CONFORMIDAD';
+  if (raw.includes('ELECTROMECANICA') || raw.includes('FLOTA')) return 'ELECTROMECANICA_FLOTA';
   return raw;
 }
 

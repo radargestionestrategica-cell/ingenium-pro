@@ -388,4 +388,34 @@ export const MODULOS_INTRO: Record<string, ModuloIntroData> = {
     como_usar: ['Navegá entre los 6 Topics (I a VI) usando las pestañas superiores', 'Dentro de cada Topic revisá los Principles y sus requisitos asociados', 'Marcá el estado de cada requisito: Cumple, No cumple o No aplica', 'Agregá justificación y referencia de evidencia de forma opcional para cada requisito'],
     como_usar_en: ['Navigate between the 6 Topics (I to VI) using the top tabs', 'Within each Topic, review the Principles and their associated requirements', 'Mark the status of each requirement: Compliant, Non-compliant, or Not applicable', 'Optionally add justification and evidence reference for each requirement'],
   },
+
+  // ────────────────────────────────────────────────────────────
+  electromecanica_flota: {
+    color: '#34d399', icono: '🚛',
+    titulo: {
+      es: 'Electromecánica de Flota Pesada',
+      en: 'Heavy Fleet Electromechanics',
+      pt: 'Eletromecânica de Frota Pesada',
+      ar: 'الكهروميكانيكا لأسطول المركبات الثقيلة',
+      fr: 'Électromécanique de Flotte Lourde',
+      ru: 'Электромеханика тяжёлого автопарка',
+      zh: '重型车队机电',
+      id: 'Elektromekanik Armada Berat',
+    },
+    que_es: {
+      es: 'Módulo de diagnóstico y cálculo electromecánico para flota pesada (camiones, maquinaria vial y equipos mineros). Evalúa componentes eléctricos y electromecánicos bajo normativas SAE/API/ASME (12V/24V) o IEC/ISO, cubriendo motores de arranque, alternadores, baterías y sistemas de control.',
+      en: 'Electromechanical diagnostics and calculation module for heavy fleet (trucks, road machinery and mining equipment). Assesses electrical and electromechanical components under SAE/API/ASME (12V/24V) or IEC/ISO standards, covering starter motors, alternators, batteries and control systems.',
+      pt: 'Módulo de diagnóstico e cálculo eletromecânico para frota pesada (caminhões, maquinário rodoviário e equipamentos de mineração). Avalia componentes elétricos e eletromecânicos sob normas SAE/API/ASME (12V/24V) ou IEC/ISO, cobrindo motores de arranque, alternadores, baterias e sistemas de controle.',
+      ar: 'وحدة تشخيص وحساب كهروميكانيكي لأسطول المركبات الثقيلة (الشاحنات وآليات الطرق ومعدات التعدين). تقيّم المكونات الكهربائية والكهروميكانيكية وفق معايير SAE/API/ASME (12 فولت/24 فولت) أو IEC/ISO، وتغطي محركات التشغيل والمولدات والبطاريات وأنظمة التحكم.',
+      fr: 'Module de diagnostic et de calcul électromécanique pour flotte lourde (camions, engins routiers et équipements miniers). Évalue les composants électriques et électromécaniques selon les normes SAE/API/ASME (12V/24V) ou IEC/ISO, couvrant démarreurs, alternateurs, batteries et systèmes de contrôle.',
+      ru: 'Модуль диагностики и расчёта электромеханики для тяжёлого автопарка (грузовики, дорожная техника и горное оборудование). Оценивает электрические и электромеханические компоненты по стандартам SAE/API/ASME (12В/24В) или IEC/ISO, охватывая стартеры, генераторы, аккумуляторы и системы управления.',
+      zh: '重型车队（卡车、道路机械和采矿设备）的机电诊断与计算模块。根据SAE/API/ASME（12V/24V）或IEC/ISO标准评估电气和机电部件，涵盖起动机、交流发电机、蓄电池和控制系统。',
+      id: 'Modul diagnostik dan perhitungan elektromekanik untuk armada berat (truk, mesin jalan, dan peralatan pertambangan). Menilai komponen listrik dan elektromekanik berdasarkan standar SAE/API/ASME (12V/24V) atau IEC/ISO, mencakup motor starter, alternator, baterai, dan sistem kontrol.',
+    },
+    que_calcula: ['Diagnóstico de componentes electromecánicos según marco normativo SAE/API/ASME o IEC/ISO', 'Verificación de sistemas 12V/24V — motores de arranque, alternadores y baterías', 'Evaluación de sistemas de control y cableado de flota pesada', 'Trazabilidad del cálculo por marco normativo y nivel de tensión seleccionado'],
+    que_calcula_en: ['Electromechanical component diagnostics under SAE/API/ASME or IEC/ISO framework', 'Verification of 12V/24V systems — starter motors, alternators and batteries', 'Evaluation of heavy fleet control systems and wiring', 'Calculation traceability by normative framework and selected voltage level'],
+    normativas: ['SAE J1171 · API RP 500 · ASME B31.3', 'IEC 60364 · ISO 8820'],
+    como_usar: ['Seleccioná el marco normativo aplicable: SAE/API/ASME o IEC/ISO', 'Elegí el nivel de tensión del sistema: 12V o 24V', 'Completá los parámetros del equipo cuando estén disponibles (próximamente)', 'Presioná "Generar resultado" para exportar el informe'],
+    como_usar_en: ['Select the applicable normative framework: SAE/API/ASME or IEC/ISO', 'Choose the system voltage level: 12V or 24V', 'Fill in the equipment parameters when available (coming soon)', 'Press "Generate result" to export the report'],
+  },
 }; 
