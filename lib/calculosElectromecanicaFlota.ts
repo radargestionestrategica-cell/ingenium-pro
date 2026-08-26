@@ -185,3 +185,81 @@ export function verificarArranqueDisenoN(
     mensaje: `Par mínimo verificado — IEC 60034-12 Tabla 1, banda ${bandaKw}`,
   };
 }
+
+// ── Caída de tensión en tramo de cable ──────────────────────────────────
+const RESISTIVIDAD_COBRE_20C = 1.68e-8; // ohm·m
+
+export interface ResultadoCaidaTension {
+  caidaV:          number;
+  caidaPorcentaje: number;
+}
+
+export function caidaTension(
+  corrienteA: number,
+  longitudMetros: number,
+  seccionMm2: number,
+  idaYVuelta: boolean,
+  voltajeReferenciaV: number,
+): ResultadoCaidaTension {
+  if (seccionMm2 <= 0 || voltajeReferenciaV <= 0) {
+    return { caidaV: 0, caidaPorcentaje: 0 };
+  }
+
+  const longitudEfectiva = longitudMetros * (idaYVuelta ? 2 : 1);
+  const resistenciaOhm   = RESISTIVIDAD_COBRE_20C * longitudEfectiva / (seccionMm2 * 1e-6);
+  const caidaV           = corrienteA * resistenciaOhm;
+  const caidaPorcentaje  = (caidaV / voltajeReferenciaV) * 100;
+
+  return {
+    caidaV:          +caidaV.toFixed(3),
+    caidaPorcentaje: +caidaPorcentaje.toFixed(2),
+  };
+}
+
+// ── Fusible sugerido — código de colores blade (Littelfuse/Bussmann) ────
+const FUSIBLES_BLADE: { amperaje: number; color: string }[] = [
+  { amperaje: 5,  color: 'tan' },
+  { amperaje: 7.5, color: 'marrón' },
+  { amperaje: 10, color: 'rojo' },
+  { amperaje: 15, color: 'azul' },
+  { amperaje: 20, color: 'amarillo' },
+  { amperaje: 25, color: 'incoloro' },
+  { amperaje: 30, color: 'verde' },
+];
+
+export interface ResultadoFusible {
+  amperaje?: number;
+  color?:    string;
+  mensaje:   string;
+}
+
+export function fusibleSugerido(corrienteA: number): ResultadoFusible {
+  const encontrado = FUSIBLES_BLADE.find(f => f.amperaje >= corrienteA);
+
+  if (!encontrado) {
+    return {
+      mensaje: 'Fuera de rango de fusible blade estándar, consultar fusible de alta corriente',
+    };
+  }
+
+  return {
+    amperaje: encontrado.amperaje,
+    color:    encontrado.color,
+    mensaje:  `Fusible sugerido: ${encontrado.amperaje}A (${encontrado.color})`,
+  };
+}
+
+// ── Ampacidad de cable — pendiente fuente primaria ──────────────────────
+export interface ResultadoAmpacidad {
+  estado:  'no_verificado';
+  mensaje: string;
+}
+
+// NUNCA se inventa una tabla de ampacidad: hasta cargar una fuente primaria
+// verificada (SAE J1292/J2183), esta función siempre devuelve "no_verificado".
+export function verificarAmpacidadCable(): ResultadoAmpacidad {
+  return {
+    estado:  'no_verificado',
+    mensaje: 'Ampacidad de cable - pendiente fuente primaria SAE J1292/J2183',
+  };
+}
