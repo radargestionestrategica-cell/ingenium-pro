@@ -66,3 +66,122 @@ const DEFINICIONES_SERVICIO: Record<TipoServicio, string> = {
 export function definicionServicio(tipo: TipoServicio): string {
   return DEFINICIONES_SERVICIO[tipo];
 }
+
+// ── Límite de temperatura de bobinado — IEC 60034-11 ────────────────────
+export type ClaseTermica = '130' | '155' | '180' | '200';
+export type MetodoDeteccion = 'lento' | 'rapido';
+
+// Tabla 1 IEC 60034-11 (método lento) y Tabla 2 (método rápido) — límites
+// verificados en °C por clase térmica.
+const LIMITE_TEMP_LENTO: Record<ClaseTermica, number> = {
+  '130': 145,
+  '155': 170,
+  '180': 195,
+  '200': 215,
+};
+
+const LIMITE_TEMP_RAPIDO: Record<ClaseTermica, number> = {
+  '130': 225,
+  '155': 250,
+  '180': 275,
+  '200': 295,
+};
+
+export function limiteTemperaturaBobinado(
+  claseTermica: ClaseTermica,
+  metodo: MetodoDeteccion,
+): number {
+  return metodo === 'lento' ? LIMITE_TEMP_LENTO[claseTermica] : LIMITE_TEMP_RAPIDO[claseTermica];
+}
+
+// ── Verificación de arranque — IEC 60034-12 Diseño N ────────────────────
+export interface ResultadoArranqueDisenoN {
+  estado: 'verificado' | 'no_verificado';
+  bandaKw?: string;
+  parLockedRotorPu?: number;
+  parPullUpPu?: number;
+  parBreakdownPu?: number;
+  mensaje: string;
+}
+
+interface BandaPotenciaKw {
+  min: number;
+  max: number;
+}
+
+// Bandas de potencia con verificación pendiente/parcial (IEC 60034-12 Tabla 1).
+const BANDAS_VERIFICADAS_KW: BandaPotenciaKw[] = [
+  { min: 0.12, max: 0.63 },
+  { min: 4.0,  max: 6.3  },
+  { min: 63,   max: 100  },
+  { min: 250,  max: 400  },
+  { min: 630,  max: 1600 },
+];
+
+// Par mínimo verificado (locked-rotor / pull-up / breakdown, en pu) —
+// IEC 60034-12 Tabla 1, Diseño N. Fuera de estas 5 bandas de potencia,
+// la función NUNCA inventa ni interpola: devuelve "no_verificado".
+const TABLA_PAR_ARRANQUE_DISENO_N: Record<
+  string,
+  { lockedRotorPu: number; pullUpPu: number; breakdownPu: number } | undefined
+> = {
+  '0.12-0.63_2': { lockedRotorPu: 1.9,  pullUpPu: 1.3, breakdownPu: 2.0 },
+  '0.12-0.63_4': { lockedRotorPu: 2.0,  pullUpPu: 1.4, breakdownPu: 2.0 },
+  '0.12-0.63_6': { lockedRotorPu: 2.0,  pullUpPu: 1.4, breakdownPu: 2.0 },
+  '0.12-0.63_8': { lockedRotorPu: 2.0,  pullUpPu: 1.4, breakdownPu: 2.0 },
+
+  '4-6.3_2': { lockedRotorPu: 1.5, pullUpPu: 1.0, breakdownPu: 2.0 },
+  '4-6.3_4': { lockedRotorPu: 1.5, pullUpPu: 1.0, breakdownPu: 2.0 },
+  '4-6.3_6': { lockedRotorPu: 1.5, pullUpPu: 1.0, breakdownPu: 2.0 },
+  '4-6.3_8': { lockedRotorPu: 1.5, pullUpPu: 1.0, breakdownPu: 2.0 },
+
+  '63-100_2': { lockedRotorPu: 1.0, pullUpPu: 0.7, breakdownPu: 1.8 },
+  '63-100_4': { lockedRotorPu: 1.0, pullUpPu: 0.7, breakdownPu: 1.8 },
+  '63-100_6': { lockedRotorPu: 1.0, pullUpPu: 0.7, breakdownPu: 1.8 },
+  '63-100_8': { lockedRotorPu: 1.0, pullUpPu: 0.7, breakdownPu: 1.8 },
+
+  '250-400_2': { lockedRotorPu: 0.75, pullUpPu: 0.6, breakdownPu: 1.6 },
+  '250-400_4': { lockedRotorPu: 0.75, pullUpPu: 0.6, breakdownPu: 1.6 },
+  '250-400_6': { lockedRotorPu: 0.75, pullUpPu: 0.6, breakdownPu: 1.6 },
+  '250-400_8': { lockedRotorPu: 0.75, pullUpPu: 0.6, breakdownPu: 1.6 },
+
+  '630-1600_2': { lockedRotorPu: 0.5, pullUpPu: 0.3, breakdownPu: 1.6 },
+  '630-1600_4': { lockedRotorPu: 0.5, pullUpPu: 0.3, breakdownPu: 1.6 },
+  '630-1600_6': { lockedRotorPu: 0.5, pullUpPu: 0.3, breakdownPu: 1.6 },
+  '630-1600_8': { lockedRotorPu: 0.5, pullUpPu: 0.3, breakdownPu: 1.6 },
+};
+
+export function verificarArranqueDisenoN(
+  potenciaKw: number,
+  polos: string,
+): ResultadoArranqueDisenoN {
+  const banda = BANDAS_VERIFICADAS_KW.find(b => potenciaKw >= b.min && potenciaKw <= b.max);
+
+  if (!banda) {
+    return {
+      estado: 'no_verificado',
+      mensaje: 'Fuera de rango verificado, pendiente fuente primaria IEC 60034-12 Tabla 1',
+    };
+  }
+
+  const bandaKw = `${banda.min}-${banda.max} kW`;
+  const clave = `${banda.min}-${banda.max}_${polos}`;
+  const datos = TABLA_PAR_ARRANQUE_DISENO_N[clave];
+
+  if (!datos) {
+    return {
+      estado: 'no_verificado',
+      bandaKw,
+      mensaje: 'Banda de potencia reconocida, pero valores de par aún no cargados en la tabla — pendiente fuente primaria IEC 60034-12 Tabla 1',
+    };
+  }
+
+  return {
+    estado: 'verificado',
+    bandaKw,
+    parLockedRotorPu: datos.lockedRotorPu,
+    parPullUpPu:      datos.pullUpPu,
+    parBreakdownPu:   datos.breakdownPu,
+    mensaje: `Par mínimo verificado — IEC 60034-12 Tabla 1, banda ${bandaKw}`,
+  };
+}
