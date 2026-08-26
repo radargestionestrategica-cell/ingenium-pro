@@ -263,3 +263,43 @@ export function verificarAmpacidadCable(): ResultadoAmpacidad {
     mensaje: 'Ampacidad de cable - pendiente fuente primaria SAE J1292/J2183',
   };
 }
+
+// ── CCA disponible por temperatura — SAE J537 ───────────────────────────
+// El CCA nominal se mide a -18°C. Tasa de corrección: 1.1% por cada grado
+// °C de diferencia respecto a -18°C (fuente: SENS-USA, ejemplo verificado
+// 1805 CCA a 0°C → 1444 CCA a -18°C).
+export interface ResultadoCCA {
+  ccaDisponible: number;
+  mensaje:       string;
+}
+
+export function ccaDisponible(ccaNominal: number, tempAmbienteC: number): ResultadoCCA {
+  const extrapolado  = tempAmbienteC > 0;
+  const tempCalculo  = extrapolado ? 0 : tempAmbienteC;
+  const cca          = ccaNominal * (1 + 0.011 * (tempCalculo - (-18)));
+
+  const mensaje = extrapolado
+    ? 'CCA disponible estimado — corrección SAE J537 (1.1%/°C respecto a -18°C, fuente SENS-USA); extrapolado sobre el rango verificado (-18°C a 0°C).'
+    : 'CCA disponible estimado — corrección SAE J537 (1.1%/°C respecto a -18°C, fuente SENS-USA).';
+
+  return { ccaDisponible: +cca.toFixed(0), mensaje };
+}
+
+// ── Alternador requerido — metodología Delco Remy ───────────────────────
+export interface ResultadoAlternador {
+  alternadorMinimoA: number;
+  mensaje:           string;
+}
+
+export function alternadorRequerido(
+  cargaContinuaA: number,
+  cargaIntermitenteA: number,
+): ResultadoAlternador {
+  const cargaTotal        = cargaContinuaA + (0.25 * cargaIntermitenteA) + (0.20 * cargaContinuaA);
+  const alternadorMinimoA = cargaTotal * 1.5;
+
+  return {
+    alternadorMinimoA: +alternadorMinimoA.toFixed(1),
+    mensaje: 'Metodología de fabricante (Delco Remy), no es tabla normativa SAE/ISO - verificar contra especificación vigente del fabricante antes de aplicar en obra.',
+  };
+}
