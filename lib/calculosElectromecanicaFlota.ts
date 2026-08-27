@@ -354,3 +354,42 @@ export function verificarBonding(resistenciaMedidaOhms: number): ResultadoBondin
       : `No apto, verificar conexión — resistencia de bonding ${resistenciaMedidaOhms} Ω > 10 Ω (límite API RP 2003).`,
   };
 }
+
+// ── Método de refrigeración — código IC, IEC 60034-6 ────────────────────
+// Tabla fija, fuente IEC 60034-6:1991, reproducida idéntica sin
+// desviaciones en IS 6362:1995. Descriptivo/informativo — no modifica
+// el cálculo de derrateo térmico por altitud/temperatura ya existente,
+// solo lo complementa con contexto sobre el método de refrigeración.
+export type CodigoIC = 'IC01' | 'IC411' | 'IC416' | 'IC611' | 'IC81W';
+
+export interface ResultadoCodigoIC {
+  descripcion: string;
+  implicancia: string;
+}
+
+const TABLA_CODIGO_IC: Record<CodigoIC, ResultadoCodigoIC> = {
+  IC01: {
+    descripcion: 'Autoventilado, circuito abierto (ventilador en el eje)',
+    implicancia: 'Pierde refrigeración proporcional a la velocidad del eje - aplica derrateo completo por altitud y por baja velocidad VFD',
+  },
+  IC411: {
+    descripcion: 'Autoventilado, superficie de carcasa (TEFC - ventilador en el eje)',
+    implicancia: 'Misma que IC01 - aplica derrateo completo por altitud y baja velocidad VFD',
+  },
+  IC416: {
+    descripcion: 'Ventilación forzada independiente sobre carcasa (TEFV - soplador con motor propio)',
+    implicancia: 'No pierde refrigeración a baja velocidad del eje - el derrateo por baja velocidad VFD NO aplica. El derrateo por altitud sí aplica (sigue siendo aire)',
+  },
+  IC611: {
+    descripcion: 'Intercambiador de calor aire-aire montado en la máquina (CACA), ambos circuitos autoventilados',
+    implicancia: 'Derrateo por altitud aplica de forma indirecta - verificar curva del fabricante',
+  },
+  IC81W: {
+    descripcion: 'Intercambiador de calor aire-agua montado en la máquina (CACW), agua a presión',
+    implicancia: 'El agua es la vía principal de disipación de calor - el derrateo estándar por densidad de aire (altitud) NO aplica de la misma manera - verificar con fabricante',
+  },
+};
+
+export function decodificarCodigoIC(codigo: CodigoIC): ResultadoCodigoIC {
+  return TABLA_CODIGO_IC[codigo];
+}
