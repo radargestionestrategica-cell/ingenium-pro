@@ -10,14 +10,15 @@ import {
   caidaTension, fusibleSugerido, verificarAmpacidadCable,
   ccaDisponible, alternadorRequerido,
   verificarClaseTemperatura, verificarBonding,
+  decodificarCodigoIC,
 } from '@/lib/calculosElectromecanicaFlota';
-import type { TipoServicio, ClaseTermica, MetodoDeteccion } from '@/lib/calculosElectromecanicaFlota';
+import type { TipoServicio, ClaseTermica, MetodoDeteccion, CodigoIC } from '@/lib/calculosElectromecanicaFlota';
 
 // Módulo 18 — Electromecánica de Flota Pesada
 // Secciones "Motores y Generadores", "Arranque y Protección Térmica",
-// "Cableado y Protección", "Batería y Alternador" y "Zona Clasificada y
-// Bonding" — cálculos orientativos, sin tabla kVA/kW todavía (queda
-// para otra tanda).
+// "Método de Refrigeración (Código IC)", "Cableado y Protección",
+// "Batería y Alternador" y "Zona Clasificada y Bonding" — cálculos
+// orientativos, sin tabla kVA/kW todavía (queda para otra tanda).
 
 type MarcoNormativo = 'SAE_API_ASME' | 'IEC_ISO';
 type Voltaje = '12V' | '24V';
@@ -34,6 +35,7 @@ const METODOS_DETECCION: { id: MetodoDeteccion; label: string }[] = [
 ];
 const ZONAS_POZO: ZonaPozo[] = ['Zona 0', 'Zona 1', 'Zona 2'];
 const METODOS_PROTECCION: MetodoProteccion[] = ['Ex d', 'Ex e', 'Ex ia'];
+const CODIGOS_IC: CodigoIC[] = ['IC01', 'IC411', 'IC416', 'IC611', 'IC81W'];
 
 const MARCOS: { id: MarcoNormativo; label: string }[] = [
   { id: 'SAE_API_ASME', label: 'SAE / API / ASME' },
@@ -66,6 +68,9 @@ export default function ModuloElectromecanicaFlota() {
   const [claseTermica, setClaseTermica] = useState<ClaseTermica>('155');
   const [metodoDeteccion, setMetodoDeteccion] = useState<MetodoDeteccion>('lento');
 
+  // Método de Refrigeración (Código IC)
+  const [codigoIC, setCodigoIC] = useState<CodigoIC>('IC411');
+
   // Cableado y Protección
   const [corrienteCircuito, setCorrienteCircuito] = useState('');
   const [longitudTramo, setLongitudTramo] = useState('');
@@ -94,6 +99,7 @@ export default function ModuloElectromecanicaFlota() {
   const clasificacionServicio = definicionServicio(tipoServicio);
   const limiteTemp = limiteTemperaturaBobinado(claseTermica, metodoDeteccion);
   const arranque = verificarArranqueDisenoN(Number(potenciaNominal) || 0, polos);
+  const codigoICInfo = decodificarCodigoIC(codigoIC);
 
   const caida = caidaTension(
     Number(corrienteCircuito) || 0,
@@ -140,6 +146,7 @@ export default function ModuloElectromecanicaFlota() {
         'Temperatura ambiente (C)':     Number(temperaturaAmbiente) || 0,
         'Clase termica':                claseTermica,
         'Metodo deteccion':             metodoDeteccion,
+        'Metodo de refrigeracion (codigo IC)': codigoIC,
         'Corriente circuito (A)':       Number(corrienteCircuito) || 0,
         'Longitud tramo (m)':           Number(longitudTramo) || 0,
         'Seccion cable (mm2)':          Number(seccionCable) || 0,
@@ -161,6 +168,8 @@ export default function ModuloElectromecanicaFlota() {
         'Limite temperatura bobinado (C)':   limiteTemp,
         'Arranque Diseno N - estado':        arranque.estado,
         'Arranque Diseno N - mensaje':       arranque.mensaje,
+        'Codigo IC - descripcion':           codigoICInfo.descripcion,
+        'Codigo IC - implicancia':           codigoICInfo.implicancia,
         'Caida de tension (V)':              caida.caidaV,
         'Caida de tension (%)':              caida.caidaPorcentaje,
         'Fusible sugerido':                  fusible.mensaje,
@@ -371,6 +380,46 @@ export default function ModuloElectromecanicaFlota() {
             </div>
             <div style={{ color: '#f1f5f9', fontSize: 12, lineHeight: 1.6 }}>
               {arranque.mensaje}
+            </div>
+          </div>
+        </div>
+
+        {/* MÉTODO DE REFRIGERACIÓN (CÓDIGO IC) */}
+        <div style={{ background: PANEL, border: `1px solid ${BORD}`, borderRadius: 12, padding: 20, marginBottom: 20 }}>
+          <div style={{ color: TEAL, fontWeight: 700, fontSize: 12, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 16 }}>
+            Método de Refrigeración (Código IC)
+          </div>
+
+          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 16 }}>
+            <div style={{ flex: '1 1 220px' }}>
+              <label style={{ display: 'block', color: '#94a3b8', fontSize: 11, marginBottom: 6 }}>
+                Método de refrigeración (código IC)
+              </label>
+              <select
+                value={codigoIC}
+                onChange={e => setCodigoIC(e.target.value as CodigoIC)}
+                style={{ width: '100%', background: BG, border: `1px solid ${BORD}`, borderRadius: 8, padding: '8px 10px', color: '#f1f5f9', fontSize: 12 }}
+              >
+                {CODIGOS_IC.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
+          </div>
+
+          <div style={{ background: BG, border: `1px solid ${BORD}`, borderRadius: 10, padding: 14, marginBottom: 10 }}>
+            <div style={{ color: '#64748b', fontSize: 10, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 }}>
+              Descripción ({codigoIC})
+            </div>
+            <div style={{ color: '#f1f5f9', fontSize: 12, lineHeight: 1.6 }}>
+              {codigoICInfo.descripcion}
+            </div>
+          </div>
+
+          <div style={{ background: BG, border: `1px solid ${BORD}`, borderRadius: 10, padding: 14 }}>
+            <div style={{ color: '#64748b', fontSize: 10, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 }}>
+              Implicancia sobre derrateo
+            </div>
+            <div style={{ color: '#f1f5f9', fontSize: 12, lineHeight: 1.6 }}>
+              {codigoICInfo.implicancia}
             </div>
           </div>
         </div>
