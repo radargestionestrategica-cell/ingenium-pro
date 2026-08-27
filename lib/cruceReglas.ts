@@ -65,7 +65,7 @@ function ultimo(snaps: CalculoSnap[], ...tipos: string[]): CalculoSnap | null {
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-// REGLAS DE CRUCE — 10 reglas determinísticas
+// REGLAS DE CRUCE — 11 reglas determinísticas
 // snaps debe estar ordenado por createdAt DESC (el más reciente primero).
 // ════════════════════════════════════════════════════════════════════════════
 
@@ -78,6 +78,7 @@ export function aplicarReglasDecruce(snaps: CalculoSnap[]): RiesgoDetectado[] {
   const ariete     = ultimo(snaps, 'GOLPE_ARIETE', 'JOUKOWSKY');
   const caneria    = ultimo(snaps, 'CANERIAS_ESPESOR', 'CANERIAS_HOOP', 'CANERIAS');
   const perfo      = ultimo(snaps, 'PERFORACION');
+  const electro    = ultimo(snaps, 'ELECTROMECANICA_FLOTA');
   const suelda     = ultimo(snaps, 'PRECALENTAMIENTO', 'SELECTOR_SOLDADURA', 'HEAT_INPUT');
   const talud      = ultimo(snaps, 'ESTABILIDAD_TALUD');
   const excav      = ultimo(snaps, 'EXCAVACION_MMO', 'EXCAVACION');
@@ -279,6 +280,33 @@ export function aplicarReglasDecruce(snaps: CalculoSnap[]): RiesgoDetectado[] {
         normativa:   'ASCE 7-22 §27: cargas de viento de diseño. AASHTO 1993: SN mínimo según tránsito y vehículos de servicio. Umbrales de disparo: criterio conservador de la plataforma.',
         accion:      'Verificar capacidad portante de vía de acceso. Considerar mejoramiento de base granular si se requiere maquinaria pesada.',
         evidencia:   { 'P viento (kPa)': +p_kPa.toFixed(2), 'SN pavimento': +SN.toFixed(2) },
+      });
+    }
+  }
+
+  // ── REGLA 013: Zona clasificada del pozo vs equipo electromecánico ────────
+  if (electro && perfo) {
+    const zonaEquipo       = str(electro.parametros, 'Zona del pozo');
+    const zonaPozo         = str(perfo.parametros,   'Zona clasificada del pozo');
+    const metodoProteccion = str(electro.parametros, 'Metodo de proteccion');
+    const advertenciaActiva = !!electro.resultado['Advertencia zona clasificada'];
+
+    if (zonaEquipo && zonaPozo && (zonaEquipo !== zonaPozo || advertenciaActiva)) {
+      // Rango de exigencia: Zona 0 = mas exigente (mas peligrosa), Zona 2 = menos exigente.
+      const RANGO_ZONA: Record<string, number> = { 'Zona 0': 0, 'Zona 1': 1, 'Zona 2': 2 };
+      const rankEquipo = RANGO_ZONA[zonaEquipo] ?? -1;
+      const rankPozo   = RANGO_ZONA[zonaPozo]   ?? -1;
+      const menosExigente = rankEquipo > rankPozo;
+
+      alertas.push({
+        id:          'CRUCE-013',
+        nivel:       menosExigente ? 'CRITICO' : 'ALTO',
+        titulo:      'Equipo electromecanico no certificado para zona clasificada del pozo',
+        descripcion: `Equipo electromecánico configurado para ${zonaEquipo} (${metodoProteccion || 'método de protección no especificado'}), pero el pozo está clasificado como ${zonaPozo}.`,
+        modulos:     [electro.tipo, perfo.tipo],
+        normativa:   'IEC 60079-14 Tabla 1 - relacion EPL/zona clasificada',
+        accion:      'Verificar certificacion Ex del equipo antes de operar en esta locacion',
+        evidencia:   { 'Zona del pozo': zonaPozo, 'Metodo de proteccion equipo': metodoProteccion, 'Zona seleccionada equipo': zonaEquipo },
       });
     }
   }
