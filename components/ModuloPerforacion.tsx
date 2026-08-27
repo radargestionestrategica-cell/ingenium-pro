@@ -87,6 +87,7 @@ export default function ModuloPerforacion() {
   const [r3,   setR3]   = useState('5');
   const [r6,   setR6]   = useState('8');
   const [modeloReologico, setModeloReologico] = useState('bingham');
+  const [zonaClasificadaPozo, setZonaClasificadaPozo] = useState('Zona 1');
   const [res, setRes] = useState<null | {
     bhp: ReturnType<typeof calcBHP>;
     frac: ReturnType<typeof calcFractureGradient>;
@@ -199,6 +200,7 @@ export default function ModuloPerforacion() {
         'Viscosímetro 3 rpm (R3)':           r3,
         'Viscosímetro 6 rpm (R6)':           r6,
         'Modelo reológico':                  modeloReologico,
+        'Zona clasificada del pozo':         zonaClasificadaPozo,
       },
       resultado: {
         'BHP (psi)':                         r.bhp.bhp,
@@ -266,6 +268,16 @@ export default function ModuloPerforacion() {
               style={{ width: '100%', background: '#0f172a', border: '1px solid #475569', borderRadius: 8, padding: '10px 12px', color: '#f8fafc', fontSize: 15, boxSizing: 'border-box' as const }}>
               <option value="manual">Manual</option>
               <option value="moore">Moore</option>
+            </select>
+          </div>
+
+          <div style={{ marginBottom: 16 }}>
+            <label style={{ color: '#94a3b8', fontSize: 12, display: 'block', marginBottom: 6 }}>Zona clasificada del pozo</label>
+            <select value={zonaClasificadaPozo} onChange={e => setZonaClasificadaPozo(e.target.value)}
+              style={{ width: '100%', background: '#0f172a', border: '1px solid #475569', borderRadius: 8, padding: '10px 12px', color: '#f8fafc', fontSize: 15, boxSizing: 'border-box' as const }}>
+              <option value="Zona 0">Zona 0</option>
+              <option value="Zona 1">Zona 1</option>
+              <option value="Zona 2">Zona 2</option>
             </select>
           </div>
 
