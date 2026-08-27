@@ -303,3 +303,54 @@ export function alternadorRequerido(
     mensaje: 'Metodología de fabricante (Delco Remy), no es tabla normativa SAE/ISO - verificar contra especificación vigente del fabricante antes de aplicar en obra.',
   };
 }
+
+// ── Clase de temperatura — IEC 60079-0 ──────────────────────────────────
+export type ClaseTemperaturaIEC = 'T1' | 'T2' | 'T3' | 'T4' | 'T5' | 'T6';
+
+export interface ResultadoClaseTemperatura {
+  clase:   ClaseTemperaturaIEC | null;
+  mensaje: string;
+}
+
+// Temperatura superficial máxima por clase, IEC 60079-0.
+const TABLA_CLASE_TEMPERATURA: { clase: ClaseTemperaturaIEC; maxC: number }[] = [
+  { clase: 'T1', maxC: 450 },
+  { clase: 'T2', maxC: 300 },
+  { clase: 'T3', maxC: 200 },
+  { clase: 'T4', maxC: 135 },
+  { clase: 'T5', maxC: 100 },
+  { clase: 'T6', maxC: 85  },
+];
+
+export function verificarClaseTemperatura(temperaturaAutoignicionC: number): ResultadoClaseTemperatura {
+  if (temperaturaAutoignicionC <= 85) {
+    return { clase: null, mensaje: 'Requiere T6 o consultar caso especial' };
+  }
+
+  const validas = TABLA_CLASE_TEMPERATURA.filter(t => t.maxC < temperaturaAutoignicionC);
+  // Clase mínima requerida = la de MAYOR temperatura superficial máxima
+  // que siga siendo estrictamente menor al AIT (evita sobredimensionar).
+  const minimaRequerida = validas.reduce((prev, cur) => (cur.maxC > prev.maxC ? cur : prev));
+
+  return {
+    clase:   minimaRequerida.clase,
+    mensaje: `Clase de temperatura mínima requerida: ${minimaRequerida.clase} (IEC 60079-0) — temp. superficial máxima ${minimaRequerida.maxC}°C, AIT del hidrocarburo ${temperaturaAutoignicionC}°C.`,
+  };
+}
+
+// ── Verificación de bonding — API RP 2003 ───────────────────────────────
+export interface ResultadoBonding {
+  apto:    boolean;
+  mensaje: string;
+}
+
+export function verificarBonding(resistenciaMedidaOhms: number): ResultadoBonding {
+  const apto = resistenciaMedidaOhms <= 10;
+
+  return {
+    apto,
+    mensaje: apto
+      ? `Apto — resistencia de bonding ${resistenciaMedidaOhms} Ω ≤ 10 Ω (límite API RP 2003).`
+      : `No apto, verificar conexión — resistencia de bonding ${resistenciaMedidaOhms} Ω > 10 Ω (límite API RP 2003).`,
+  };
+}
