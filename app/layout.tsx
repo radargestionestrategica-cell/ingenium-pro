@@ -1,6 +1,7 @@
 import './globals.css';
 import type { Metadata, Viewport } from 'next';
 import Script from 'next/script';
+import ServiceWorkerRegister from '@/components/ServiceWorkerRegister';
 
 const BASE_URL = 'https://ingeniumpro.store';
 const GTM_ID = 'GTM-53LNQJKB';
@@ -137,6 +138,7 @@ export default function RootLayout({
             style={{ display: 'none', visibility: 'hidden' }}
           />
         </noscript>
+        <ServiceWorkerRegister />
         {children}
       </body>
     </html>
