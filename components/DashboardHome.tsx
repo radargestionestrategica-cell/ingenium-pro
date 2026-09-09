@@ -55,7 +55,7 @@ export default function DashboardHome({ onSelectModulo }: Props) {
       }}>
         <div style={{ position:'absolute', top:0, right:0, width:320, height:200, background:'radial-gradient(ellipse at 80% 20%,rgba(232,160,32,.08),transparent 70%)', pointerEvents:'none' }} />
         <div style={{ display:'flex', alignItems:'flex-start', gap:20, flexWrap:'wrap' }}>
-          <div style={{ flex:1, minWidth:280 }}>
+          <div style={{ flex:1, minWidth:'min(280px, 100%)' }}>
             <div style={{ fontSize:11, color:GOLD, fontWeight:900, letterSpacing:3, textTransform:'uppercase', marginBottom:8 }}>INGENIUM PRO v8.1</div>
             <div style={{ fontSize:22, fontWeight:950, color:'#f1f5f9', marginBottom:8, letterSpacing:-.5, lineHeight:1.15 }}>
               Plataforma de cálculo técnico<br />
