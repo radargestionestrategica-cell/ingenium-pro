@@ -14,6 +14,14 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   metadataBase: new URL(BASE_URL),
   applicationName: 'INGENIUM PRO',
+  manifest: '/manifest.webmanifest',
+  icons: {
+    apple: '/apple-touch-icon.png',
+  },
+  appleWebApp: {
+    capable: true,
+    title: 'INGENIUM',
+  },
   title: 'INGENIUM PRO | Plataforma de Ingeniería Industrial — ASME API ISO',
   description:
     'Plataforma de cálculo técnico para ingeniería industrial. ASME B31.8, API 6D, ISO, IEC. ' +
