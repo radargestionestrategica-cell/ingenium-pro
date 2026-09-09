@@ -796,11 +796,23 @@ export default function ModuloElectricidad() {
     if (voltajeKV <= 0.6) {
       const iarc600Crudo = calcularIarcIntermedia(afConfigElectrodo, 0.6, ibfKA, gapMM);
       const iarcNormal    = calcularIarcFinalBajaTension(afConfigElectrodo, voltajeKV, ibfKA, gapMM);
+      if (iarc600Crudo === null || iarcNormal === null) {
+        alert('No se pudo calcular Iarc — verificá corriente de falla, gap y tensión.');
+        return;
+      }
       const varCfLV       = calcularVarCf(afConfigElectrodo, voltajeKV);
       const iarcReducida  = calcularIarcReducida(iarcNormal, varCfLV);
 
       const eesLV = calcularEES(afConfigElectrodo, voltajeKV, alturaMM, anchoMM, clasificacion);
+      if (eesLV === null) {
+        alert('No se pudo calcular el tamaño equivalente de gabinete (EES) — verificá altura y ancho del gabinete.');
+        return;
+      }
       const cfLV  = calcularCF(afConfigElectrodo, clasificacion, eesLV);
+      if (cfLV === null) {
+        alert('No se pudo calcular el factor de corrección de gabinete (CF).');
+        return;
+      }
 
       // iarc600Crudo (Iarc intermedio SIN corregir por Ecuación 25) no
       // cambia entre escenarios — solo el 4to parámetro (iarcKA) difiere
@@ -811,9 +823,17 @@ export default function ModuloElectricidad() {
       const energiaReducidaLV = calcularEnergiaIncidente(
         afConfigElectrodo, 0.6, tiempoReducidoMS, iarcReducida, ibfKA, gapMM, cfLV, distanciaTrabajoMM, iarc600Crudo,
       );
+      if (energiaNormalLV === null || energiaReducidaLV === null) {
+        alert('No se pudo calcular la energía incidente — verificá tiempo de arco y demás parámetros.');
+        return;
+      }
 
       const afbNormalLV   = calcularArcFlashBoundary(afConfigElectrodo, 0.6, energiaNormalLV, distanciaTrabajoMM);
       const afbReducidaLV = calcularArcFlashBoundary(afConfigElectrodo, 0.6, energiaReducidaLV, distanciaTrabajoMM);
+      if (afbNormalLV === null || afbReducidaLV === null) {
+        alert('No se pudo calcular la distancia límite (Arc Flash Boundary).');
+        return;
+      }
 
       const peorCasoLV = elegirPeorCaso(energiaNormalLV, afbNormalLV, energiaReducidaLV, afbReducidaLV);
       setResArcFlash(peorCasoLV);
@@ -848,6 +868,10 @@ export default function ModuloElectricidad() {
     const iarc600   = calcularIarcIntermedia(afConfigElectrodo, 0.6,  ibfKA, gapMM);
     const iarc2700  = calcularIarcIntermedia(afConfigElectrodo, 2.7,  ibfKA, gapMM);
     const iarc14300 = calcularIarcIntermedia(afConfigElectrodo, 14.3, ibfKA, gapMM);
+    if (iarc600 === null || iarc2700 === null || iarc14300 === null) {
+      alert('No se pudo calcular Iarc — verificá corriente de falla y gap.');
+      return;
+    }
     interpolarArcFlash(iarc600, iarc2700, iarc14300, voltajeKV); // Iarc normal — informativo, no se reusa río abajo
 
     const varCf = calcularVarCf(afConfigElectrodo, voltajeKV);
@@ -858,21 +882,35 @@ export default function ModuloElectricidad() {
     interpolarArcFlash(iarc600Red, iarc2700Red, iarc14300Red, voltajeKV); // Iarc reducida — informativo
 
     const ees = calcularEES(afConfigElectrodo, voltajeKV, alturaMM, anchoMM, clasificacion);
+    if (ees === null) {
+      alert('No se pudo calcular el tamaño equivalente de gabinete (EES) — verificá altura y ancho del gabinete.');
+      return;
+    }
     const cf  = calcularCF(afConfigElectrodo, clasificacion, ees);
+    if (cf === null) {
+      alert('No se pudo calcular el factor de corrección de gabinete (CF).');
+      return;
+    }
 
     // Energía y AFB interpolados cada uno por separado (no se deriva el
     // AFB de la energía ya interpolada) — mismo patrón validado en
     // lib/__tests__/arcflash-anexo-d1.test.ts.
-    const { energia: energiaNormal, afb: afbNormal } = calcularEnergiaYBoundaryFinal(
+    const resNormal = calcularEnergiaYBoundaryFinal(
       afConfigElectrodo, voltajeKV, tiempoNormalMS,
       iarc600, iarc2700, iarc14300,
       ibfKA, gapMM, cf, distanciaTrabajoMM,
     );
-    const { energia: energiaReducida, afb: afbReducida } = calcularEnergiaYBoundaryFinal(
+    const resReducida = calcularEnergiaYBoundaryFinal(
       afConfigElectrodo, voltajeKV, tiempoReducidoMS,
       iarc600Red, iarc2700Red, iarc14300Red,
       ibfKA, gapMM, cf, distanciaTrabajoMM,
     );
+    if (resNormal === null || resReducida === null) {
+      alert('No se pudo calcular la energía incidente / distancia límite (Arc Flash Boundary).');
+      return;
+    }
+    const { energia: energiaNormal, afb: afbNormal } = resNormal;
+    const { energia: energiaReducida, afb: afbReducida } = resReducida;
 
     const peorCaso = elegirPeorCaso(energiaNormal, afbNormal, energiaReducida, afbReducida);
     setResArcFlash(peorCaso);

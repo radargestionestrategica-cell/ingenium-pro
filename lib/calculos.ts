@@ -575,7 +575,12 @@ export function calcularIarcIntermedia(
   voltajeReferencia: 0.6 | 2.7 | 14.3,
   IbfKA: number,
   gapMM: number,
-): number {
+): number | null {
+  // Guarda de dominio: Math.log10 de IbfKA/gapMM <=0 no es un numero real
+  // valido para esta formula (Ec. 1-2, IEEE 1584-2018). Nunca se devuelve un
+  // numero invalido silencioso: se devuelve null como estado de error explicito.
+  if (!(IbfKA > 0) || !(gapMM > 0)) return null;
+
   const clave = `${config}_${voltajeReferencia}`;
   const k = TABLA1_COEFICIENTES_ARCFLASH[clave];
   if (!k) {
@@ -584,7 +589,8 @@ export function calcularIarcIntermedia(
   const x1 = k.k1 + k.k2 * Math.log10(IbfKA) + k.k3 * Math.log10(gapMM);
   const x2 = k.k4 * IbfKA ** 6 + k.k5 * IbfKA ** 5 + k.k6 * IbfKA ** 4
            + k.k7 * IbfKA ** 3 + k.k8 * IbfKA ** 2 + k.k9 * IbfKA + k.k10;
-  return Math.pow(10, x1) * x2;
+  const resultado = Math.pow(10, x1) * x2;
+  return Number.isFinite(resultado) ? resultado : null;
 }
 
 // IEEE 1584-2018 Ec. 16-18 (misma forma que Ec. 19-21 e Ec. 22-24),
@@ -621,15 +627,25 @@ export function calcularIarcFinalBajaTension(
   voltajeRealKV: number,
   IbfKA: number,
   gapMM: number,
-): number {
+): number | null {
+  // Guarda de dominio: voltajeRealKV/IbfKA<=0 son denominadores de x1/x3;
+  // IarcVCB600=0 (o null, si calcularIarcIntermedia ya invalido el calculo)
+  // es denominador de x2 (division por cero en 1/(IarcVCB600**2)).
+  if (!(voltajeRealKV > 0) || !(IbfKA > 0)) return null;
+
   const IarcVCB600 = calcularIarcIntermedia(config, 0.6, IbfKA, gapMM);
+  if (IarcVCB600 === null || IarcVCB600 === 0) return null;
 
   const x1 = (0.6 / voltajeRealKV) ** 2;
   const x2 = 1 / (IarcVCB600 ** 2);
   const x3 = (0.6 ** 2 - voltajeRealKV ** 2) / (0.6 ** 2 * IbfKA ** 2);
-  const x4 = Math.sqrt(x1 * (x2 - x3));
+  const discriminante = x1 * (x2 - x3);
+  if (discriminante < 0) return null; // Math.sqrt de negativo no es un numero real valido
+  const x4 = Math.sqrt(discriminante);
+  if (x4 === 0) return null; // denominador de 1/x4
 
-  return 1 / x4;
+  const resultado = 1 / x4;
+  return Number.isFinite(resultado) ? resultado : null;
 }
 
 interface CoeficientesVarCf {
@@ -676,7 +692,12 @@ export function calcularEES(
   alturaMM: number,
   anchoMM: number,
   clasificacion: ClasificacionEnclosure,
-): number {
+): number | null {
+  // Guarda de dominio: alturaMM/anchoMM/voltajeRealKV <=0 no son dimensiones
+  // ni tension fisicamente validas para esta formula — validarEntradaArcFlash
+  // no cubre alturaMM/anchoMM (ver auditoria).
+  if (!(voltajeRealKV > 0) || !(alturaMM > 0) || !(anchoMM > 0)) return null;
+
   if (config !== 'VCB' && config !== 'VCBB' && config !== 'HCB') {
     throw new Error(`calcularEES (Ec. 11-13) solo aplica a configuraciones en caja (VCB/VCBB/HCB) — "${config}" es en aire abierto.`);
   }
@@ -713,7 +734,8 @@ export function calcularEES(
     altura_1 = config === 'VCB' ? 49 : eq1112(1244.6);
   }
 
-  return (altura_1 + ancho_1) / 2;
+  const resultado = (altura_1 + ancho_1) / 2;
+  return Number.isFinite(resultado) ? resultado : null;
 }
 
 interface CoeficientesCF {
@@ -737,7 +759,7 @@ export function calcularCF(
   config: ConfiguracionElectrodoArcFlash,
   clasificacion: ClasificacionEnclosure,
   ees: number,
-): number {
+): number | null {
   if (!requiereCorreccionEnclosure(config)) {
     return 1;
   }
@@ -749,7 +771,12 @@ export function calcularCF(
   }
 
   const x1 = b.b1 * ees ** 2 + b.b2 * ees + b.b3;
-  return clasificacion === 'Typical' ? x1 : 1 / x1;
+  if (clasificacion !== 'Typical' && x1 === 0) return null; // denominador de 1/x1
+
+  const resultado = clasificacion === 'Typical' ? x1 : 1 / x1;
+  // cf<=0 no tiene sentido fisico como factor de correccion y rompe
+  // Math.log10(1/cf) en calcularEnergiaIncidente — se invalida aca mismo.
+  return (Number.isFinite(resultado) && resultado > 0) ? resultado : null;
 }
 
 interface CoeficientesEnergiaArcFlash {
@@ -789,7 +816,16 @@ export function calcularEnergiaIncidente(
   cf: number,
   distanciaTrabajoMM: number,
   iarc600KA?: number,
-): number {
+): number | null {
+  // Guarda de dominio: gapMM/ibfKA/iarcKA/distanciaTrabajoMM<=0 son
+  // argumentos de Math.log10; cf<=0 es el argumento de Math.log10(1/cf).
+  // Ninguno de estos esta cubierto por validarEntradaArcFlash salvo
+  // gapMM/ibfKA/distanciaTrabajoMM (y solo en el llamador que la invoca).
+  if (!(gapMM > 0) || !(ibfKA > 0) || !(iarcKA > 0) || !(cf > 0) || !(distanciaTrabajoMM > 0)) {
+    return null;
+  }
+  if (iarc600KA !== undefined && !(iarc600KA > 0)) return null;
+
   const clave = `${config}_${voltajeReferencia}`;
   const k = TABLA345_ENERGIA_ARCFLASH[clave];
   if (!k) {
@@ -801,11 +837,13 @@ export function calcularEnergiaIncidente(
   const x3num = iarc600KA !== undefined ? k.k3 * iarc600KA : k.k3 * iarcKA;
   const x3den = k.k4 * ibfKA ** 7 + k.k5 * ibfKA ** 6 + k.k6 * ibfKA ** 5 + k.k7 * ibfKA ** 4
               + k.k8 * ibfKA ** 3 + k.k9 * ibfKA ** 2 + k.k10 * ibfKA;
+  if (x3den === 0) return null;
   const x3 = x3num / x3den;
   const x4 = k.k11 * Math.log10(ibfKA) + k.k13 * Math.log10(iarcKA) + Math.log10(1 / cf);
   const x5 = k.k12 * Math.log10(distanciaTrabajoMM);
 
-  return x1 * Math.pow(10, x2 + x3 + x4 + x5);
+  const resultado = x1 * Math.pow(10, x2 + x3 + x4 + x5);
+  return Number.isFinite(resultado) ? resultado : null;
 }
 
 // IEEE 1584-2018 Ecuaciones 7-10 — arc-flash boundary, en mm. Reusa
@@ -818,7 +856,11 @@ export function calcularArcFlashBoundary(
   voltajeReferencia: 0.6 | 2.7 | 14.3,
   energiaIncidente: number,
   distanciaTrabajoMM: number,
-): number {
+): number | null {
+  // Guarda de dominio: energiaIncidente/distanciaTrabajoMM<=0 no tienen
+  // sentido fisico para esta formula (Ec. 7-10, IEEE 1584-2018).
+  if (!(energiaIncidente > 0) || !(distanciaTrabajoMM > 0)) return null;
+
   const clave = `${config}_${voltajeReferencia}`;
   const k = TABLA345_ENERGIA_ARCFLASH[clave];
   if (!k) {
@@ -826,7 +868,10 @@ export function calcularArcFlashBoundary(
   }
 
   const F = energiaIncidente / Math.pow(distanciaTrabajoMM, k.k12);
-  return Math.pow(5.0208 / F, 1 / k.k12);
+  if (F === 0) return null; // denominador de 5.0208/F
+
+  const resultado = Math.pow(5.0208 / F, 1 / k.k12);
+  return Number.isFinite(resultado) ? resultado : null;
 }
 
 // IEEE 1584-2018 — combina las 3 energías incidentes intermedias
@@ -850,9 +895,13 @@ export function calcularEnergiaFinal(
   cf: number,
   distanciaTrabajoMM: number,
 ): number {
-  const E600   = calcularEnergiaIncidente(config, 0.6,  tiempoMS, iarc600,   ibfKA, gapMM, cf, distanciaTrabajoMM);
-  const E2700  = calcularEnergiaIncidente(config, 2.7,  tiempoMS, iarc2700,  ibfKA, gapMM, cf, distanciaTrabajoMM);
-  const E14300 = calcularEnergiaIncidente(config, 14.3, tiempoMS, iarc14300, ibfKA, gapMM, cf, distanciaTrabajoMM);
+  // Nota: calcularEnergiaFinal es codigo muerto (no se usa fuera de este
+  // archivo, ver auditoria) — se deja sin guardas propias, solo el ajuste de
+  // tipos minimo (!) necesario para que siga compilando tras el cambio de
+  // firma de calcularEnergiaIncidente a number | null.
+  const E600   = calcularEnergiaIncidente(config, 0.6,  tiempoMS, iarc600,   ibfKA, gapMM, cf, distanciaTrabajoMM)!;
+  const E2700  = calcularEnergiaIncidente(config, 2.7,  tiempoMS, iarc2700,  ibfKA, gapMM, cf, distanciaTrabajoMM)!;
+  const E14300 = calcularEnergiaIncidente(config, 14.3, tiempoMS, iarc14300, ibfKA, gapMM, cf, distanciaTrabajoMM)!;
 
   return interpolarArcFlash(E600, E2700, E14300, voltajeRealKV);
 }
@@ -879,14 +928,18 @@ export function calcularEnergiaYBoundaryFinal(
   cf: number,
   distanciaTrabajoMM: number,
   iarc600Override?: number,
-): { energia: number; afb: number } {
+): { energia: number; afb: number } | null {
   const E600   = calcularEnergiaIncidente(config, 0.6,  tiempoMS, iarc600,   ibfKA, gapMM, cf, distanciaTrabajoMM, iarc600Override);
   const E2700  = calcularEnergiaIncidente(config, 2.7,  tiempoMS, iarc2700,  ibfKA, gapMM, cf, distanciaTrabajoMM, iarc600Override);
   const E14300 = calcularEnergiaIncidente(config, 14.3, tiempoMS, iarc14300, ibfKA, gapMM, cf, distanciaTrabajoMM, iarc600Override);
+  // Propaga el estado de error explicito de calcularEnergiaIncidente en vez
+  // de dejar pasar un null hacia interpolarArcFlash (que espera number).
+  if (E600 === null || E2700 === null || E14300 === null) return null;
 
   const AFB600   = calcularArcFlashBoundary(config, 0.6,  E600,   distanciaTrabajoMM);
   const AFB2700  = calcularArcFlashBoundary(config, 2.7,  E2700,  distanciaTrabajoMM);
   const AFB14300 = calcularArcFlashBoundary(config, 14.3, E14300, distanciaTrabajoMM);
+  if (AFB600 === null || AFB2700 === null || AFB14300 === null) return null;
 
   return {
     energia: interpolarArcFlash(E600, E2700, E14300, voltajeRealKV),

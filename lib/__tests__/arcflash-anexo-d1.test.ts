@@ -47,9 +47,13 @@ describe('Pipeline IEEE 1584-2018 — Anexo D.1 (VCB, 4.16kV, Ibf=15kA)', () => 
     console.log(`\nclasificarEnclosure: ${clasificacion}`);
 
     // 2) Iarc intermedia en las 3 tensiones de referencia
-    const iarc600   = calcularIarcIntermedia(CONFIG, 0.6,  IBF_KA, GAP_MM);
-    const iarc2700  = calcularIarcIntermedia(CONFIG, 2.7,  IBF_KA, GAP_MM);
-    const iarc14300 = calcularIarcIntermedia(CONFIG, 14.3, IBF_KA, GAP_MM);
+    // Los "!" de abajo son aserciones de no-nulidad: los valores del Anexo
+    // D.1 son validos por definicion, asi que estas funciones (ahora
+    // nullable por las guardas de dominio agregadas) nunca devuelven null
+    // en este test — el caso null ya esta cubierto por sus propias guardas.
+    const iarc600   = calcularIarcIntermedia(CONFIG, 0.6,  IBF_KA, GAP_MM)!;
+    const iarc2700  = calcularIarcIntermedia(CONFIG, 2.7,  IBF_KA, GAP_MM)!;
+    const iarc14300 = calcularIarcIntermedia(CONFIG, 14.3, IBF_KA, GAP_MM)!;
     console.log(`calcularIarcIntermedia 0.6kV:  ${iarc600.toFixed(4)} kA`);
     console.log(`calcularIarcIntermedia 2.7kV:  ${iarc2700.toFixed(4)} kA`);
     console.log(`calcularIarcIntermedia 14.3kV: ${iarc14300.toFixed(4)} kA`);
@@ -75,11 +79,11 @@ describe('Pipeline IEEE 1584-2018 — Anexo D.1 (VCB, 4.16kV, Ibf=15kA)', () => 
     console.log(`interpolarArcFlash Iarc reducida @ ${VOLTAJE_REAL_KV}kV: ${iarcReducida.toFixed(4)} kA`);
 
     // 7) Equivalent Enclosure Size
-    const ees = calcularEES(CONFIG, VOLTAJE_REAL_KV, ALTURA_MM, ANCHO_MM, clasificacion);
+    const ees = calcularEES(CONFIG, VOLTAJE_REAL_KV, ALTURA_MM, ANCHO_MM, clasificacion)!;
     console.log(`calcularEES: ${ees.toFixed(4)} in`);
 
     // 8) Factor de corrección de enclosure
-    const cf = calcularCF(CONFIG, clasificacion, ees);
+    const cf = calcularCF(CONFIG, clasificacion, ees)!;
     console.log(`calcularCF: ${cf.toFixed(6)}`);
 
     // 9-10) Energía incidente y arc-flash boundary final — cada uno
@@ -89,12 +93,12 @@ describe('Pipeline IEEE 1584-2018 — Anexo D.1 (VCB, 4.16kV, Ibf=15kA)', () => 
       CONFIG, VOLTAJE_REAL_KV, TIEMPO_NORMAL_MS,
       iarc600, iarc2700, iarc14300,
       IBF_KA, GAP_MM, cf, DISTANCIA_TRABAJO_MM,
-    );
+    )!;
     const { energia: energiaReducida, afb: afbReducida } = calcularEnergiaYBoundaryFinal(
       CONFIG, VOLTAJE_REAL_KV, TIEMPO_REDUCIDO_MS,
       iarc600Red, iarc2700Red, iarc14300Red,
       IBF_KA, GAP_MM, cf, DISTANCIA_TRABAJO_MM,
-    );
+    )!;
     console.log(`calcularEnergiaYBoundaryFinal normal (t=${TIEMPO_NORMAL_MS}ms):   energia=${energiaNormal.toFixed(4)}  afb=${afbNormal.toFixed(4)}`);
     console.log(`calcularEnergiaYBoundaryFinal reducida (t=${TIEMPO_REDUCIDO_MS}ms): energia=${energiaReducida.toFixed(4)}  afb=${afbReducida.toFixed(4)}`);
 

@@ -50,11 +50,15 @@ describe('Pipeline IEEE 1584-2018 — Anexo D.2 (rama LV, VCB, 0.48kV, Ibf=45kA)
     // 2) Iarc600 crudo (intermedio, SIN corregir por Ecuación 25) — no
     // cambia entre escenarios, se reusa como iarc600KA en ambas llamadas
     // a calcularEnergiaIncidente más abajo.
-    const iarc600Crudo = calcularIarcIntermedia(CONFIG, 0.6, IBF_KA, GAP_MM);
+    // Los "!" de abajo son aserciones de no-nulidad: los valores del Anexo
+    // D.2 son validos por definicion, asi que estas funciones (ahora
+    // nullable por las guardas de dominio agregadas) nunca devuelven null
+    // en este test — el caso null ya esta cubierto por sus propias guardas.
+    const iarc600Crudo = calcularIarcIntermedia(CONFIG, 0.6, IBF_KA, GAP_MM)!;
     console.log(`calcularIarcIntermedia (iarc600Crudo): ${iarc600Crudo.toFixed(4)} kA`);
 
     // Iarc normal — Ecuación 25, directo (sin interpolar entre tensiones)
-    const iarcNormal = calcularIarcFinalBajaTension(CONFIG, VOLTAJE_REAL_KV, IBF_KA, GAP_MM);
+    const iarcNormal = calcularIarcFinalBajaTension(CONFIG, VOLTAJE_REAL_KV, IBF_KA, GAP_MM)!;
     console.log(`calcularIarcFinalBajaTension (Iarc normal): ${iarcNormal.toFixed(4)} kA`);
 
     // 3) Factor de variación de corriente de arco
@@ -66,11 +70,11 @@ describe('Pipeline IEEE 1584-2018 — Anexo D.2 (rama LV, VCB, 0.48kV, Ibf=45kA)
     console.log(`calcularIarcReducida: ${iarcReducida.toFixed(4)} kA`);
 
     // 5) Equivalent Enclosure Size
-    const ees = calcularEES(CONFIG, VOLTAJE_REAL_KV, ALTURA_MM, ANCHO_MM, clasificacion);
+    const ees = calcularEES(CONFIG, VOLTAJE_REAL_KV, ALTURA_MM, ANCHO_MM, clasificacion)!;
     console.log(`calcularEES: ${ees.toFixed(4)} in`);
 
     // 6) Factor de corrección de enclosure
-    const cf = calcularCF(CONFIG, clasificacion, ees);
+    const cf = calcularCF(CONFIG, clasificacion, ees)!;
     console.log(`calcularCF: ${cf.toFixed(6)}`);
 
     // 7) Energía incidente — escenario normal y reducido, voltajeReferencia
@@ -79,16 +83,16 @@ describe('Pipeline IEEE 1584-2018 — Anexo D.2 (rama LV, VCB, 0.48kV, Ibf=45kA)
     // cambia entre escenarios; solo el 4to parámetro (iarcKA) difiere.
     const energiaNormal = calcularEnergiaIncidente(
       CONFIG, 0.6, TIEMPO_NORMAL_MS, iarcNormal, IBF_KA, GAP_MM, cf, DISTANCIA_TRABAJO_MM, iarc600Crudo,
-    );
+    )!;
     const energiaReducida = calcularEnergiaIncidente(
       CONFIG, 0.6, TIEMPO_REDUCIDO_MS, iarcReducida, IBF_KA, GAP_MM, cf, DISTANCIA_TRABAJO_MM, iarc600Crudo,
-    );
+    )!;
     console.log(`calcularEnergiaIncidente normal (t=${TIEMPO_NORMAL_MS}ms):   ${energiaNormal.toFixed(4)}`);
     console.log(`calcularEnergiaIncidente reducida (t=${TIEMPO_REDUCIDO_MS}ms): ${energiaReducida.toFixed(4)}`);
 
     // 8) Arc-flash boundary — ambos escenarios, voltajeReferencia 0.6kV
-    const afbNormal   = calcularArcFlashBoundary(CONFIG, 0.6, energiaNormal, DISTANCIA_TRABAJO_MM);
-    const afbReducida = calcularArcFlashBoundary(CONFIG, 0.6, energiaReducida, DISTANCIA_TRABAJO_MM);
+    const afbNormal   = calcularArcFlashBoundary(CONFIG, 0.6, energiaNormal, DISTANCIA_TRABAJO_MM)!;
+    const afbReducida = calcularArcFlashBoundary(CONFIG, 0.6, energiaReducida, DISTANCIA_TRABAJO_MM)!;
     console.log(`calcularArcFlashBoundary normal:   ${afbNormal.toFixed(4)} mm`);
     console.log(`calcularArcFlashBoundary reducida: ${afbReducida.toFixed(4)} mm`);
 
