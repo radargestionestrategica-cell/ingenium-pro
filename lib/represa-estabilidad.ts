@@ -43,9 +43,17 @@ export interface ResultadoEstabilidadRepresa {
 export function calcularEstabilidadMuroRepresa(
   geometria: GeometriaMuroRepresa,
   params: ParametrosEstabilidadRepresa,
-): ResultadoEstabilidadRepresa {
+): ResultadoEstabilidadRepresa | null {
   const { anchoCoronamiento, profundidad: H, talud } = geometria;
   const { pesoEspecificoHormigon: gammaH, coeficienteFriccionBase: f } = params;
+
+  // Guarda de dominio: con cualquiera de estos valores en 0 (o negativo) el
+  // muro no tiene geometria fisica valida y varias divisiones mas abajo
+  // (empujeHidrostatico, sumaVertical) degeneran en division por cero.
+  if (!(H > 0) || !(talud > 0) || !(anchoCoronamiento > 0) || !(gammaH > 0) || !(f > 0)) {
+    return null;
+  }
+
   const h = Math.min(Math.max(params.nivelAgua, 0), H);
 
   const baseAncho = anchoCoronamiento + talud * H;
@@ -53,6 +61,12 @@ export function calcularEstabilidadMuroRepresa(
   const pesoMuro = gammaH * H * (anchoCoronamiento + baseAncho) / 2;
   const empujeHidrostatico = (GAMMA_AGUA * h * h) / 2;
   const subpresion = (GAMMA_AGUA * h * baseAncho) / 2;
+
+  // nivelAgua=0 (sin agua) es un valor de entrada valido, pero deja
+  // empujeHidrostatico=0: el FS al deslizamiento de esta formula no esta
+  // definido en ese caso (division por cero) — estado de error explicito,
+  // nunca Infinity/NaN silencioso.
+  if (!(empujeHidrostatico > 0)) return null;
 
   const factorSeguridadDeslizamiento = ((pesoMuro - subpresion) * f) / empujeHidrostatico;
 
@@ -71,10 +85,19 @@ export function calcularEstabilidadMuroRepresa(
   const momentoVolcante = empujeHidrostatico * brazoH;
   const sumaVertical = pesoMuro - subpresion;
 
+  // sumaVertical=0 (subpresion igual al peso del muro) deja indefinida la
+  // ubicacion de la resultante (division por cero) — mismo criterio: error
+  // explicito en vez de un numero invalido silencioso.
+  if (sumaVertical === 0) return null;
+
   const distanciaResultanteDesdePuntera = (momentoResistente - momentoVolcante) / sumaVertical;
   const distanciaResultanteDesdeTalon = baseAncho - distanciaResultanteDesdePuntera;
   const excentricidad = baseAncho / 2 - distanciaResultanteDesdeTalon;
   const resultanteEnTercioMedio = Math.abs(excentricidad) <= baseAncho / 6;
+
+  if (!Number.isFinite(factorSeguridadDeslizamiento) || !Number.isFinite(distanciaResultanteDesdeTalon)) {
+    return null;
+  }
 
   const semaforo: SemaforoEstabilidad =
     factorSeguridadDeslizamiento > 2.0 ? 'verde' :

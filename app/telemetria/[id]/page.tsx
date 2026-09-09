@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { calcularPileta, calcularEstabilidadPared } from '@/lib/telemetria-calculo';
+import { calcularPileta, calcularEstabilidadPared, validarGeometriaSegura } from '@/lib/telemetria-calculo';
 import { buscarFSCritico } from '@/lib/bishop-buscador';
 import { calcularEstabilidadMuroRepresa } from '@/lib/represa-estabilidad';
 import { PAISES_SISMICOS, pgaAKh, clasificarZonaMexico, TERRENOS_EC8, calcularKhEurocodigo8, type TipoTerrenoEC8 } from '@/lib/sismica-zonificacion';
@@ -319,7 +319,7 @@ export default function FichaActivoPage() {
     }
     setGuardandoLectura(true);
     setMensajeLectura('');
-    const fsPreview = (geometria && activo?.cohesion != null && activo?.friccionGrados != null && activo?.pesoEspecifico != null)
+    const fsPreview = (datosSueloValidacion.valido && geometria && activo?.cohesion != null && activo?.friccionGrados != null && activo?.pesoEspecifico != null)
       ? buscarFSCritico(geometria.profundidad, geometria.talud, activo.cohesion, activo.friccionGrados, activo.pesoEspecifico, tipoRevestimiento === 'revestida' ? null : valor)
       : null;
     try {
@@ -335,7 +335,9 @@ export default function FichaActivoPage() {
         if (geometria) {
           const r1 = calcularPileta(geometria, valor);
           const r2 = calcularEstabilidadPared(valor, 9.81, 30, geometria.talud);
-          setResultados({ volumenActual: r1.volumenActual, capacidadRestante: r1.capacidadRestante, camiones30m3: r1.camiones30m3, empujeHidrostatico: r2.empujeHidrostatico, factorSeguridadDeslizamiento: r2.factorSeguridadDeslizamiento, nivel: valor, hash: json.lectura?.hash ?? '', norma: `${r1.norma} · ${r2.norma}` });
+          if (r2) {
+            setResultados({ volumenActual: r1.volumenActual, capacidadRestante: r1.capacidadRestante, camiones30m3: r1.camiones30m3, empujeHidrostatico: r2.empujeHidrostatico, factorSeguridadDeslizamiento: r2.factorSeguridadDeslizamiento, nivel: valor, hash: json.lectura?.hash ?? '', norma: `${r1.norma} · ${r2.norma}` });
+          }
         }
         setNivelMedido('');
         inputRef.current?.focus();
@@ -383,9 +385,27 @@ export default function FichaActivoPage() {
     }
   };
 
-  const geometria: GeometriaPileta | null = (() => {
-    try { return activo ? JSON.parse(activo.geometriaJson) : null; } catch { return null; }
-  })();
+  // validarGeometriaSegura reemplaza el JSON.parse crudo: ademas de chequear
+  // que los campos sean numeros, verifica que esten en un rango fisicamente
+  // valido (talud>0, profundidad>0, anchoCoronamiento>0). Si algo no cumple,
+  // geometria queda en null y ningun calculo de Bishop/pared/represa se ejecuta
+  // (todos los usos de abajo ya estan condicionados a "geometria &&").
+  const geometriaValidacion = validarGeometriaSegura(activo?.geometriaJson);
+  const geometria: GeometriaPileta | null = geometriaValidacion.geometria;
+  const geometriaInvalidaMotivo = (activo?.geometriaJson && !geometriaValidacion.valido)
+    ? geometriaValidacion.motivo
+    : null;
+
+  // Version con validacion adicional de suelo (cohesion/friccion/peso especifico)
+  // — la usan los calculos de Bishop (buscarFSCritico) y de muro de represa,
+  // que ademas de la geometria necesitan estos 3 parametros dentro de rango.
+  const datosSueloValidacion = activo
+    ? validarGeometriaSegura(activo.geometriaJson, {
+        cohesion: activo.cohesion,
+        friccionGrados: activo.friccionGrados,
+        pesoEspecifico: activo.pesoEspecifico,
+      })
+    : { valido: false, geometria: null as GeometriaPileta | null, motivo: null as string | null };
 
   const lecturasDesplazamiento = historial.filter(l => l.magnitud === 'desplazamiento');
 
@@ -420,6 +440,16 @@ export default function FichaActivoPage() {
             <div style={{ fontSize: 11, color: '#475569', marginBottom: 24 }}>
               Tipo: {activo.tipoActivo} · Creado: {new Date(activo.createdAt).toLocaleDateString()}
             </div>
+
+            {geometriaInvalidaMotivo && (
+              <div style={{
+                border: '1px solid rgba(248,113,113,0.4)', borderRadius: 12,
+                background: 'rgba(127,29,29,0.2)', padding: 16, marginBottom: 16,
+                fontSize: 12, color: '#f87171',
+              }}>
+                ⚠️ Geometría del activo inválida — no se pueden calcular estabilidad de pared ni de talud: {geometriaInvalidaMotivo}
+              </div>
+            )}
 
             {geometria && (
               <div style={{
@@ -576,7 +606,10 @@ export default function FichaActivoPage() {
               const c    = activo?.cohesion;
               const fric = activo?.friccionGrados;
               const peso = activo?.pesoEspecifico;
-              const tieneMaterial = c != null && fric != null && peso != null;
+              // datosSueloValidacion ya valida rango (cohesion>=0, friccion 0-90,
+              // peso>0) ademas de existencia — reemplaza el chequeo != null que
+              // dejaba pasar valores fuera de rango a buscarFSCritico.
+              const tieneMaterial = datosSueloValidacion.valido;
               const fsTalud = (tieneMaterial && geometria)
                 ? buscarFSCritico(geometria.profundidad, geometria.talud, c!, fric!, peso!, tipoRevestimiento === 'revestida' ? null : resultados.nivel)
                 : null;
@@ -699,16 +732,18 @@ export default function FichaActivoPage() {
                   {mensajeMaterial && (
                     <div style={{ marginBottom: 10, fontSize: 11, fontWeight: 600, color: mensajeMaterial.startsWith('✅') ? '#4ade80' : '#f87171' }}>{mensajeMaterial}</div>
                   )}
-                  {!tieneMaterial ? (
+                  {fsTalud == null ? (
                     <div style={{ fontSize: 11, color: '#475569', fontStyle: 'italic' }}>
-                      Faltan datos de material del suelo para el factor de seguridad de talud.
+                      {!tieneMaterial
+                        ? 'Faltan datos de material del suelo (o están fuera de rango) para el factor de seguridad de talud.'
+                        : 'No se pudo calcular el factor de seguridad de talud con la geometría/nivel actuales.'}
                     </div>
                   ) : (
                     <>
                       <div style={{ marginTop: 0, display: 'flex', alignItems: 'center', gap: 10 }}>
                         <div style={{ width: 16, height: 16, borderRadius: '50%', background: color, boxShadow: `0 0 8px ${color}`, flexShrink: 0 }} />
                         <div style={{ fontSize: 11, fontWeight: 700, color }}>
-                          Factor de seguridad del talud: {fsTalud!.toFixed(3)} — {label}
+                          Factor de seguridad del talud: {fsTalud.toFixed(3)} — {label}
                         </div>
                       </div>
                       <div style={{ marginTop: 12, paddingTop: 10, borderTop: '1px solid rgba(99,102,241,0.1)' }}>
@@ -767,28 +802,30 @@ export default function FichaActivoPage() {
                         <div style={{ fontSize: 9, color: '#334155', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>
                           Estabilidad del muro de hormigón
                         </div>
-                        {!tieneDatosMuro ? (
+                        {!estMuro ? (
                           <div style={{ fontSize: 11, color: '#475569', fontStyle: 'italic' }}>
-                            Faltan datos de hormigón (peso específico, coeficiente de fricción de base) para el factor de seguridad al deslizamiento.
+                            {!tieneDatosMuro
+                              ? 'Faltan datos de hormigón (peso específico, coeficiente de fricción de base) para el factor de seguridad al deslizamiento.'
+                              : 'No se pudo calcular la estabilidad del muro con la geometría/nivel de agua actuales.'}
                           </div>
                         ) : (
                           <>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                               <div style={{ width: 16, height: 16, borderRadius: '50%', background: colorMuro, boxShadow: `0 0 8px ${colorMuro}`, flexShrink: 0 }} />
                               <div style={{ fontSize: 11, fontWeight: 700, color: colorMuro }}>
-                                FS deslizamiento: {estMuro!.factorSeguridadDeslizamiento.toFixed(3)} — {estMuro!.semaforo.toUpperCase()}
+                                FS deslizamiento: {estMuro.factorSeguridadDeslizamiento.toFixed(3)} — {estMuro.semaforo.toUpperCase()}
                               </div>
                             </div>
-                            <div style={{ marginTop: 8, fontSize: 11, color: estMuro!.resultanteEnTercioMedio ? '#4ade80' : '#f87171' }}>
-                              Resultante {estMuro!.resultanteEnTercioMedio ? 'dentro' : 'fuera'} del tercio medio de la base
-                              {' '}(e = {estMuro!.excentricidad.toFixed(3)} m, L/6 = {(estMuro!.baseAncho / 6).toFixed(3)} m)
+                            <div style={{ marginTop: 8, fontSize: 11, color: estMuro.resultanteEnTercioMedio ? '#4ade80' : '#f87171' }}>
+                              Resultante {estMuro.resultanteEnTercioMedio ? 'dentro' : 'fuera'} del tercio medio de la base
+                              {' '}(e = {estMuro.excentricidad.toFixed(3)} m, L/6 = {(estMuro.baseAncho / 6).toFixed(3)} m)
                             </div>
                             <div style={{ marginTop: 8, fontSize: 10, color: '#94a3b8' }}>
-                              W = {estMuro!.pesoMuro.toFixed(1)} kN/m · H = {estMuro!.empujeHidrostatico.toFixed(1)} kN/m · U = {estMuro!.subpresion.toFixed(1)} kN/m · L = {estMuro!.baseAncho.toFixed(2)} m
+                              W = {estMuro.pesoMuro.toFixed(1)} kN/m · H = {estMuro.empujeHidrostatico.toFixed(1)} kN/m · U = {estMuro.subpresion.toFixed(1)} kN/m · L = {estMuro.baseAncho.toFixed(2)} m
                             </div>
                             <div style={{ marginTop: 12, paddingTop: 10, borderTop: '1px solid rgba(99,102,241,0.1)' }}>
                               <div style={{ fontSize: 9, color: '#334155', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 }}>Norma aplicada</div>
-                              <div style={{ fontSize: 10, color: '#94a3b8', fontFamily: 'ui-monospace,SFMono-Regular,monospace', fontWeight: 700 }}>{estMuro!.norma}</div>
+                              <div style={{ fontSize: 10, color: '#94a3b8', fontFamily: 'ui-monospace,SFMono-Regular,monospace', fontWeight: 700 }}>{estMuro.norma}</div>
                             </div>
                           </>
                         )}

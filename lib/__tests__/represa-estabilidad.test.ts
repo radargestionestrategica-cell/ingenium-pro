@@ -3,6 +3,10 @@ import { calcularEstabilidadMuroRepresa } from '../represa-estabilidad';
 
 // ════════════════════════════════════════════════════════════════
 // Estabilidad muro de represa — USACE EM 1110-2-2200 Cap.4
+// Todos los inputs de estos casos son validos (talud/profundidad/anchoCoronamiento/
+// pesoEspecificoHormigon/coeficienteFriccionBase > 0), asi que la funcion nunca
+// devuelve null aqui — se usa "!" porque el caso de retorno null ya esta cubierto
+// por las guardas de dominio dentro de calcularEstabilidadMuroRepresa, no por estos tests.
 // ════════════════════════════════════════════════════════════════
 describe('calcularEstabilidadMuroRepresa', () => {
 
@@ -10,7 +14,7 @@ describe('calcularEstabilidadMuroRepresa', () => {
     const r = calcularEstabilidadMuroRepresa(
       { anchoCoronamiento: 2, profundidad: 5, talud: 0.75 },
       { pesoEspecificoHormigon: 23.5, coeficienteFriccionBase: 0.70, nivelAgua: 5 },
-    );
+    )!;
     expect(r.baseAncho).toBeCloseTo(5.75, 3);
     expect(r.pesoMuro).toBeCloseTo(455.3125, 3);
     expect(r.empujeHidrostatico).toBeCloseTo(122.625, 3);
@@ -24,7 +28,7 @@ describe('calcularEstabilidadMuroRepresa', () => {
     const r = calcularEstabilidadMuroRepresa(
       { anchoCoronamiento: 4, profundidad: 5, talud: 0.75 },
       { pesoEspecificoHormigon: 23.5, coeficienteFriccionBase: 0.70, nivelAgua: 5 },
-    );
+    )!;
     expect(r.factorSeguridadDeslizamiento).toBeGreaterThan(2.0);
     expect(r.semaforo).toBe('verde');
   });
@@ -33,7 +37,7 @@ describe('calcularEstabilidadMuroRepresa', () => {
     const r = calcularEstabilidadMuroRepresa(
       { anchoCoronamiento: 1, profundidad: 5, talud: 0.3 },
       { pesoEspecificoHormigon: 23.5, coeficienteFriccionBase: 0.55, nivelAgua: 5 },
-    );
+    )!;
     expect(r.factorSeguridadDeslizamiento).toBeLessThan(1.3);
     expect(r.semaforo).toBe('rojo');
   });
@@ -42,11 +46,11 @@ describe('calcularEstabilidadMuroRepresa', () => {
     const conNivelExcedido = calcularEstabilidadMuroRepresa(
       { anchoCoronamiento: 2, profundidad: 5, talud: 0.75 },
       { pesoEspecificoHormigon: 23.5, coeficienteFriccionBase: 0.70, nivelAgua: 999 },
-    );
+    )!;
     const conNivelAlTope = calcularEstabilidadMuroRepresa(
       { anchoCoronamiento: 2, profundidad: 5, talud: 0.75 },
       { pesoEspecificoHormigon: 23.5, coeficienteFriccionBase: 0.70, nivelAgua: 5 },
-    );
+    )!;
     expect(conNivelExcedido.factorSeguridadDeslizamiento).toBeCloseTo(conNivelAlTope.factorSeguridadDeslizamiento, 6);
   });
 
@@ -54,7 +58,23 @@ describe('calcularEstabilidadMuroRepresa', () => {
     const r = calcularEstabilidadMuroRepresa(
       { anchoCoronamiento: 2, profundidad: 5, talud: 0.75 },
       { pesoEspecificoHormigon: 23.5, coeficienteFriccionBase: 0.70, nivelAgua: 5 },
-    );
+    )!;
     expect(r.norma).toContain('EM 1110-2-2200');
+  });
+
+  it('devuelve null si el talud es 0 (division por cero evitada)', () => {
+    const r = calcularEstabilidadMuroRepresa(
+      { anchoCoronamiento: 2, profundidad: 5, talud: 0 },
+      { pesoEspecificoHormigon: 23.5, coeficienteFriccionBase: 0.70, nivelAgua: 5 },
+    );
+    expect(r).toBeNull();
+  });
+
+  it('devuelve null si no hay agua (empujeHidrostatico=0, division por cero evitada)', () => {
+    const r = calcularEstabilidadMuroRepresa(
+      { anchoCoronamiento: 2, profundidad: 5, talud: 0.75 },
+      { pesoEspecificoHormigon: 23.5, coeficienteFriccionBase: 0.70, nivelAgua: 0 },
+    );
+    expect(r).toBeNull();
   });
 });

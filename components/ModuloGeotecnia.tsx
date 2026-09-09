@@ -88,6 +88,7 @@ function calcEstabilidadTalud(
   const gammaKN = gamma * 9.81 / 1000;
 
   const FS = buscarFSCritico(H, pend, c, phi_deg, gammaKN, Dw);
+  if (FS === null) return null;
 
   const riesgo = FS < 1.0 ? 'CRITICAL' : FS < 1.3 ? 'HIGH' : FS < 1.5 ? 'MEDIUM' : 'LOW';
   const estado = FS >= 1.5

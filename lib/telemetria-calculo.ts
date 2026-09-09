@@ -32,6 +32,60 @@ export function parsearGeometriaSegura(geometriaJson: string | null | undefined)
   }
 }
 
+export interface DatosSueloTalud {
+  cohesion: number | null | undefined;
+  friccionGrados: number | null | undefined;
+  pesoEspecifico: number | null | undefined;
+}
+
+export interface ResultadoValidacionGeometria {
+  valido: boolean;
+  geometria: GeometriaPileta | null;
+  motivo: string | null;
+}
+
+// Blinda el flujo geometria -> Bishop / estabilidad de pared / estabilidad de
+// muro de represa. parsearGeometriaSegura solo verifica que los campos sean
+// `number`; esta funcion agrega el chequeo de RANGO que faltaba (talud=0 o
+// profundidad=0 producen division por cero / NaN mas adelante en
+// lib/bishop-buscador.ts, lib/bishop.ts y lib/represa-estabilidad.ts).
+// datosSuelo es opcional: si se pasa, tambien valida cohesion/friccionGrados/
+// pesoEspecifico (requeridos por Bishop y por el muro de represa); si no se
+// pasa, solo valida la geometria (uso para mostrar los datos del activo).
+export function validarGeometriaSegura(
+  geometriaJson: string | null | undefined,
+  datosSuelo?: DatosSueloTalud,
+): ResultadoValidacionGeometria {
+  const geometria = parsearGeometriaSegura(geometriaJson);
+  if (!geometria) {
+    return { valido: false, geometria: null, motivo: 'Geometria invalida o incompleta: no se pudo interpretar el JSON de geometria del activo.' };
+  }
+  if (!(geometria.talud > 0)) {
+    return { valido: false, geometria: null, motivo: `Talud invalido (${geometria.talud}): debe ser mayor a 0.` };
+  }
+  if (!(geometria.profundidad > 0)) {
+    return { valido: false, geometria: null, motivo: `Profundidad invalida (${geometria.profundidad}): debe ser mayor a 0.` };
+  }
+  if (!(geometria.anchoCoronamiento > 0)) {
+    return { valido: false, geometria: null, motivo: `Ancho de coronamiento invalido (${geometria.anchoCoronamiento}): debe ser mayor a 0.` };
+  }
+
+  if (datosSuelo) {
+    const { cohesion, friccionGrados, pesoEspecifico } = datosSuelo;
+    if (cohesion == null || !(cohesion >= 0)) {
+      return { valido: false, geometria: null, motivo: `Cohesion invalida (${cohesion}): debe ser mayor o igual a 0.` };
+    }
+    if (friccionGrados == null || !(friccionGrados >= 0 && friccionGrados <= 90)) {
+      return { valido: false, geometria: null, motivo: `Angulo de friccion invalido (${friccionGrados}): debe estar entre 0 y 90 grados.` };
+    }
+    if (pesoEspecifico == null || !(pesoEspecifico > 0)) {
+      return { valido: false, geometria: null, motivo: `Peso especifico invalido (${pesoEspecifico}): debe ser mayor a 0.` };
+    }
+  }
+
+  return { valido: true, geometria, motivo: null };
+}
+
 export interface ResultadoPileta {
   volumenActual: number;       // metros cubicos contenidos hasta el nivel medido
   capacidadTotal: number;      // metros cubicos totales de la pileta llena
@@ -115,13 +169,23 @@ export function calcularEstabilidadPared(
   pesoEspecificoLiquido: number,
   anguloFriccionGrados: number,
   talud: number,
-): ResultadoEstabilidadPared {
+): ResultadoEstabilidadPared | null {
+  // Guarda de dominio: talud<=0 hace que Math.atan(1/talud) degenere (division
+  // por cero); un peso especifico <=0 o un angulo de friccion fuera de [0,90]
+  // tampoco tienen sentido fisico para esta formula. Nunca se devuelve un
+  // numero NaN/Infinity silencioso: se devuelve null como estado de error explicito.
+  if (!(talud > 0) || !(pesoEspecificoLiquido > 0) || !(anguloFriccionGrados >= 0 && anguloFriccionGrados <= 90)) {
+    return null;
+  }
+
   const empujeHidrostatico = (pesoEspecificoLiquido * nivelMedido * nivelMedido) / 2;
   const puntoAplicacion = nivelMedido / 3;
 
   const anguloFriccionRadianes = (anguloFriccionGrados * Math.PI) / 180;
   const anguloTaludRadianes = Math.atan(1 / talud);
   const factorSeguridadDeslizamiento = Math.tan(anguloFriccionRadianes) / Math.tan(anguloTaludRadianes);
+
+  if (!Number.isFinite(factorSeguridadDeslizamiento)) return null;
 
   return { empujeHidrostatico, puntoAplicacion, factorSeguridadDeslizamiento, norma: 'USACE EM 1110-2-1902' };
 }
