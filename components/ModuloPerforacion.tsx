@@ -30,11 +30,21 @@ function calcHidraulica(
   Q: number, Dh: number, Dt: number,
   R600: number, R300: number, mw: number,
   R3: number, R6: number, modelo: string
-): { Va: number; Pa: number; ecd: number; PV?: number; YP?: number; na?: number; ka?: number; ty?: number } {
+): { Va: number; Pa: number; ecd: number; PV?: number; YP?: number; na?: number; ka?: number; ty?: number } | null {
+  // Guarda de dominio: sin esto, Dh<=Dt deja Va en Infinity/NaN (division por
+  // cero en Dh*Dh-Dt*Dt) y ese valor se arrastra silencioso a shear/Pa/ecd en
+  // las 3 ramas de abajo. Q/R600/R300/R6 <=0 tampoco tienen sentido fisico
+  // para esta formula (API RP 13D). Nunca se devuelve un numero invalido
+  // silencioso: se devuelve null como estado de error explicito.
+  if (Q <= 0 || Dh <= 0 || Dt <= 0 || Dh <= Dt || R600 <= 0 || R300 <= 0 || R6 <= 0) {
+    return null;
+  }
+
   const Va = (24.51 * Q) / (Dh * Dh - Dt * Dt);                                   // ft/min — común a todos los modelos
 
   if (modelo === 'herschelbulkley') {
     const ty    = Math.min(Math.max(2 * R3 - R6, 0), 0.999 * R300);               // esfuerzo de cedencia (lbf/100 ft²) — acotado para mantener R300 − τy > 0
+    if (R300 === ty) return null;                                                 // evita division por cero en na/Pa (R300 - ty como denominador)
     const na    = 3.32 * Math.log10((R600 - ty) / (R300 - ty));                   // índice de flujo
     const ka    = (R300 - ty) / Math.pow(511, na);                                // factor de consistencia (lbf·sⁿ/100 ft²)
     const shear = 144 * Va / (Dh - Dt);                                           // tasa de corte anular (1/s)
@@ -92,11 +102,13 @@ export default function ModuloPerforacion() {
     bhp: ReturnType<typeof calcBHP>;
     frac: ReturnType<typeof calcFractureGradient>;
     mud: ReturnType<typeof calcMudWeight>;
-    hid: ReturnType<typeof calcHidraulica>;
+    hid: NonNullable<ReturnType<typeof calcHidraulica>>; // setRes solo se llama despues de descartar el caso null (ver guarda en calcular())
   }>(null);
   const [datos, setDatos] = useState<DatosExportar | null>(null);
+  const [errorHidraulica, setErrorHidraulica] = useState('');
 
   const calcular = () => {
+    setErrorHidraulica('');
     const tvd = parseFloat(TVD);
     const mw  = parseFloat(mudWeight);
     const ob  = parseFloat(overburden);
@@ -122,6 +134,10 @@ export default function ModuloPerforacion() {
     const drVal  = isNaN(drv) ? 21 : drv;                                  // default densidad recortes 21 ppg
 
     const hid = calcHidraulica(Q, Dh, Dt, R600v, R300v, mw, R3v, R6v, modeloReologico);
+    if (!hid) {
+      setErrorHidraulica('Verificá diámetros y lecturas de viscosímetro: el diámetro del pozo debe ser mayor al de la tubería, y caudal/diámetros/R600/R300/R6 deben ser mayores a 0.');
+      return;
+    }
 
     // Viscosidad aparente de Moore — paso intermedio, aún no conectado a CCA
     const espacioAnular = Dh - Dt;
@@ -314,6 +330,12 @@ export default function ModuloPerforacion() {
             style={{ width: '100%', background: 'linear-gradient(135deg,#f59e0b,#d97706)', border: 'none', borderRadius: 10, padding: '14px 0', color: '#000', fontWeight: 800, fontSize: 16, cursor: 'pointer' }}>
             CALCULAR PERFORACION
           </button>
+
+          {errorHidraulica && (
+            <div style={{ marginTop: 12, padding: '10px 14px', borderRadius: 8, background: 'rgba(127,29,29,0.2)', border: '1px solid rgba(248,113,113,0.4)', color: '#f87171', fontSize: 13 }}>
+              ⚠️ {errorHidraulica}
+            </div>
+          )}
         </div>
 
         {res && (
