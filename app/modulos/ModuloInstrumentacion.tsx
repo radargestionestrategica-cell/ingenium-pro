@@ -257,6 +257,17 @@ export default function ModuloInstrumentacion() {
       setError(`Ingresá un valor numérico válido de señal (${unidadSenal}).`);
       return;
     }
+    if (sensor.kind === 'rtd') {
+      // Rango fisicamente posible para un RTD: el maximo real de R/R0 es
+      // ~3.9 (a 850°C, tope de IEC 60751); se acota a 4x r0 con margen —
+      // mismo criterio que linealizarRTD usa para invalidar el discriminante
+      // (que recien se vuelve negativo por encima de ~7.6x r0).
+      const limiteMaxOhms = 4 * sensor.r0;
+      if (valor <= 0 || valor > limiteMaxOhms) {
+        setError(`Resistencia fuera del rango físico para Pt${sensor.r0}: debe estar entre 0 y ${limiteMaxOhms} Ω (rango IEC 60751, -200°C a 850°C).`);
+        return;
+      }
+    }
     const r = sensor.kind === 'termocupla'
       ? linealizarTermocupla(sensor.tipo, valor)
       : linealizarRTD(sensor.r0, valor);
@@ -264,7 +275,9 @@ export default function ModuloInstrumentacion() {
 
     // Nueva temperatura invalida tolerancia e incertidumbre (ya reseteadas
     // arriba) — el error de cable no depende de la temperatura, se conserva.
-    const resultado = conErrorCable(construirResultadoBase(r), resErrorCable);
+    // r.celsius! es seguro aca: la guarda de rango de arriba ya descartó
+    // cualquier resistenciaOhms que hiciera que linealizarRTD devuelva null.
+    const resultado = conErrorCable(construirResultadoBase({ ...r, celsius: r.celsius! }), resErrorCable);
 
     const payload: DatosExportar = {
       tipo:       sensor.tipoCalculo,
@@ -294,12 +307,14 @@ export default function ModuloInstrumentacion() {
     const sensorTolerancia: SensorTolerancia = sensor.kind === 'termocupla'
       ? { familia: 'termocupla', clase: claseSeleccionada as ClaseTermocupla }
       : { familia: 'rtd', clase: claseSeleccionada as ClaseRTD };
-    const rt = evaluarTolerancia(sensorTolerancia, esperada, res.celsius);
+    // res.celsius! es seguro aca: res solo se setea (en calcular()) despues
+    // de pasar la guarda de rango para RTD, asi que nunca queda en null.
+    const rt = evaluarTolerancia(sensorTolerancia, esperada, res.celsius!);
     setResTolerancia(rt);
 
     // Incertidumbre ya se reseteó arriba (dependía de la tolerancia vieja).
     if (datos) {
-      const resultado = conTolerancia(conErrorCable(construirResultadoBase(res), resErrorCable), rt);
+      const resultado = conTolerancia(conErrorCable(construirResultadoBase({ ...res, celsius: res.celsius! }), resErrorCable), rt);
       const payloadActualizado: DatosExportar = { ...datos, resultado };
       setDatos(payloadActualizado);
       publicarResultado(payloadActualizado);
@@ -320,7 +335,7 @@ export default function ModuloInstrumentacion() {
 
     if (datos && res) {
       const resultado = conIncertidumbre(
-        conTolerancia(conErrorCable(construirResultadoBase(res), r), resTolerancia),
+        conTolerancia(conErrorCable(construirResultadoBase({ ...res, celsius: res.celsius! }), r), resTolerancia),
         resIncertidumbre,
       );
       const payloadActualizado: DatosExportar = { ...datos, resultado };
@@ -361,7 +376,7 @@ export default function ModuloInstrumentacion() {
 
     if (datos && res) {
       const resultado = conIncertidumbre(
-        conTolerancia(conErrorCable(construirResultadoBase(res), resErrorCable), resTolerancia),
+        conTolerancia(conErrorCable(construirResultadoBase({ ...res, celsius: res.celsius! }), resErrorCable), resTolerancia),
         r,
       );
       const payloadActualizado: DatosExportar = { ...datos, resultado };
@@ -662,7 +677,7 @@ export default function ModuloInstrumentacion() {
             <div style={{ marginBottom: 16 }}>
               <div style={{ background: '#0f172a', borderRadius: 8, padding: 14, textAlign: 'center' as const }}>
                 <div style={{ color: '#64748b', fontSize: 11, marginBottom: 4 }}>Temperatura calculada</div>
-                <div style={{ color: res.dentroDeRango ? TEAL : '#ef4444', fontSize: 28, fontWeight: 800 }}>{res.celsius.toFixed(2)} °C</div>
+                <div style={{ color: res.dentroDeRango ? TEAL : '#ef4444', fontSize: 28, fontWeight: 800 }}>{res.celsius!.toFixed(2)} °C</div>
                 <div style={{ color: '#475569', fontSize: 10 }}>
                   {'tipo' in res
                     ? `Tipo ${res.tipo} · ${res.milivoltios} mV medidos`
@@ -677,7 +692,7 @@ export default function ModuloInstrumentacion() {
               </div>
               {'tipo' in res
                 ? 't90 = Σ dᵢ·Eᵢ, i = 0..9, E en mV'
-                : res.celsius >= 0
+                : res.celsius! >= 0
                   ? 'R = R0·(1 + A·T + B·T²) — cuadrática directa'
                   : 'R = R0·(1 + A·T + B·T² + C·(T−100)·T³) — Newton-Raphson'}
               <div style={{ marginTop: 8, color: '#64748b' }}>
@@ -784,7 +799,7 @@ export default function ModuloInstrumentacion() {
                     <div style={{ textAlign: 'center' as const, marginBottom: 14 }}>
                       <div style={{ color: '#64748b', fontSize: 10, marginBottom: 4 }}>Resultado final</div>
                       <div style={{ color: TEAL, fontSize: 22, fontWeight: 800 }}>
-                        {res!.celsius.toFixed(3)} °C ± {resIncertidumbre.incertidumbreExpandida.toFixed(4)} °C
+                        {res!.celsius!.toFixed(3)} °C ± {resIncertidumbre.incertidumbreExpandida.toFixed(4)} °C
                       </div>
                       <div style={{ color: '#475569', fontSize: 10 }}>U expandida, k = {resIncertidumbre.factorCobertura} (≈95% de confianza)</div>
                     </div>

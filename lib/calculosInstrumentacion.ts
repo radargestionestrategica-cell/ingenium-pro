@@ -94,14 +94,16 @@ const RTD_RANGO = { min: -200, max: 850 }; // IEC 60751:2022, curva α=0.00385 (
 export interface ResultadoRTD {
   r0: TipoRTD;
   resistenciaOhms: number;
-  celsius: number;
+  celsius: number | null;
   dentroDeRango: boolean;
   rango: { min: number; max: number };
   norma: string;
+  motivo?: string;
 }
 
 export function linealizarRTD(r0: TipoRTD, resistenciaOhms: number): ResultadoRTD {
-  let celsius: number;
+  let celsius: number | null;
+  let motivo: string | undefined;
 
   if (resistenciaOhms >= r0) {
     // T ≥ 0 — B·T² + A·T + (1 − R/R0) = 0
@@ -109,7 +111,16 @@ export function linealizarRTD(r0: TipoRTD, resistenciaOhms: number): ResultadoRT
     const b = RTD_A;
     const c = 1 - resistenciaOhms / r0;
     const discriminante = b * b - 4 * a * c;
-    celsius = (-b + Math.sqrt(discriminante)) / (2 * a);
+    if (discriminante < 0) {
+      // resistenciaOhms muy por fuera del rango fisico real de un RTD
+      // (para Pt100 esto ocurre recien por encima de ~7610 Ω, muy por
+      // arriba del maximo real ~390 Ω a 850°C) — se devuelve celsius:null
+      // con motivo explicito en vez de Math.sqrt(negativo) = NaN silencioso.
+      celsius = null;
+      motivo = `Resistencia ${resistenciaOhms} Ω fuera del rango físicamente calculable para Pt${r0} (discriminante negativo en la fórmula de Callendar-Van Dusen).`;
+    } else {
+      celsius = (-b + Math.sqrt(discriminante)) / (2 * a);
+    }
   } else {
     // T < 0 — Newton-Raphson sobre Callendar-Van Dusen completa
     const f  = (T: number) => r0 * (1 + RTD_A * T + RTD_B * T * T + RTD_C * (T - 100) * T * T * T) - resistenciaOhms;
@@ -125,7 +136,7 @@ export function linealizarRTD(r0: TipoRTD, resistenciaOhms: number): ResultadoRT
     celsius = T;
   }
 
-  const dentroDeRango = celsius >= RTD_RANGO.min && celsius <= RTD_RANGO.max;
+  const dentroDeRango = celsius !== null && celsius >= RTD_RANGO.min && celsius <= RTD_RANGO.max;
 
   return {
     r0,
@@ -134,6 +145,7 @@ export function linealizarRTD(r0: TipoRTD, resistenciaOhms: number): ResultadoRT
     dentroDeRango,
     rango: { ...RTD_RANGO },
     norma: `IEC 60751:2022 — Callendar-Van Dusen, Pt${r0}`,
+    motivo,
   };
 }
 
