@@ -19,7 +19,7 @@ const PLANES = [
     destacado:  true,
     features: [
       '1 usuario',
-      '15 módulos de ingeniería',
+      '18 módulos de ingeniería',
       'PDF + QR verificable + Excel + DXF',
       'IA análisis normativo ilimitado',
       'Historial ilimitado de cálculos',

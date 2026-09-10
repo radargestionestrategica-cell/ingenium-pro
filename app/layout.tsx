@@ -38,7 +38,7 @@ export const metadata: Metadata = {
     description:
       'Cálculo técnico profesional: ASME B31.8, API 6D, ISO, IEC. ' +
       'PDF verificable, Excel con fórmulas reales, DXF para fabricación. ' +
-      '15 módulos técnicos y 2 capacidades avanzadas: tuberías, válvulas, perforación, geotecnia y más.',
+      '18 módulos técnicos y 2 capacidades avanzadas: tuberías, válvulas, perforación, geotecnia y más.',
     locale: 'es_AR',
     images: [{
       url: '/opengraph-image',
@@ -51,7 +51,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'INGENIUM PRO | Ingeniería Industrial Online',
     description:
-      'Cálculo MAOP, Cv válvulas, ASME B31.8. PDF con QR verificable, Excel y DXF. 15 módulos técnicos + 2 capacidades avanzadas.',
+      'Cálculo MAOP, Cv válvulas, ASME B31.8. PDF con QR verificable, Excel y DXF. 18 módulos técnicos + 2 capacidades avanzadas.',
     creator: '@ingeniumpro',
     images: ['/opengraph-image'],
   },
@@ -81,7 +81,7 @@ const jsonLd = [
     },
     description:
       'Plataforma de cálculo técnico para ingeniería industrial. ' +
-      'ASME B31.8, API 6D, ISO, IEC. 15 módulos técnicos y 2 capacidades avanzadas: tuberías, válvulas, perforación, geotecnia, minería y más.',
+      'ASME B31.8, API 6D, ISO, IEC. 18 módulos técnicos y 2 capacidades avanzadas: tuberías, válvulas, perforación, geotecnia, minería y más.',
     author: {
       '@type': 'Organization',
       name: 'INGENIUM PRO',

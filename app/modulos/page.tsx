@@ -3,7 +3,7 @@ import type { Metadata } from 'next'
 export const metadata: Metadata = {
   title: 'Módulos técnicos de ingeniería — INGENIUM PRO',
   description:
-    '15 módulos técnicos de INGENIUM PRO (petróleo, cañerías, hidráulica, MMO, térmica y más) y 2 capacidades avanzadas: Telemetría e Inteligencia Cruzada.',
+    '18 módulos técnicos de INGENIUM PRO (petróleo, cañerías, hidráulica, MMO, térmica y más) y 2 capacidades avanzadas: Telemetría e Inteligencia Cruzada.',
   alternates: {
     canonical: 'https://ingeniumpro.store/modulos',
   },
@@ -83,7 +83,7 @@ export default function ModulosIndexPage() {
             Módulos técnicos
           </div>
           <h1 style={{ fontSize: 32, fontWeight: 900, lineHeight: 1.2, marginBottom: 16 }}>
-            15 módulos técnicos
+            18 módulos técnicos
           </h1>
           <p style={{ fontSize: 16, color: LIGHT, lineHeight: 1.8, maxWidth: 720 }}>
             Cada módulo aplica fórmulas y normas identificables — ASME, API, AWS, ACI, AISC, AASHTO, NEC, IEC
@@ -126,7 +126,7 @@ export default function ModulosIndexPage() {
           </section>
         ))}
 
-        {/* CAPACIDADES AVANZADAS — sección independiente, visualmente separada de los 15 módulos técnicos */}
+        {/* CAPACIDADES AVANZADAS — sección independiente, visualmente separada de los 18 módulos técnicos */}
         <div style={{ borderTop: `1px solid ${BORD}`, paddingTop: 40, marginTop: 8 }}>
           <section style={{ marginBottom: 40 }}>
             <h2 style={{ fontSize: 13, fontWeight: 800, letterSpacing: 1.5, textTransform: 'uppercase', color: GRAY, marginBottom: 16 }}>

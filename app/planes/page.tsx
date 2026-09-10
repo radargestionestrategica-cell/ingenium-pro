@@ -27,7 +27,7 @@ const PLANES = [
     destacado: false,
     descripcion: 'Acceso completo a todos los módulos durante 3 días. Ideal para evaluar la plataforma antes de suscribirte.',
     features: [
-      '15 módulos de ingeniería',
+      '18 módulos de ingeniería',
       'PDF verificable con QR',
       'Excel con fórmulas reales',
       'DXF para AutoCAD / FreeCAD',
@@ -94,7 +94,7 @@ const PLANES = [
     descripcion: 'Todos los módulos para el ingeniero independiente que necesita informes profesionales verificables.',
     features: [
       '1 usuario',
-      '15 módulos de ingeniería',
+      '18 módulos de ingeniería',
       'PDF + QR verificable + Excel + DXF',
       '550 consultas IA por mes',
       'Historial ilimitado de cálculos',
