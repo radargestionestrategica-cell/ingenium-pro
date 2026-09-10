@@ -8,7 +8,7 @@ import DemoMAOPAutoplay from '@/components/DemoMAOPAutoplay';
 export const metadata: Metadata = {
   title: 'INGENIUM Pro | Plataforma de cálculo técnico, auditoría IA y documentación profesional',
   description:
-    'Plataforma profesional con 15 módulos técnicos, 130+ normativas internacionales, auditoría IA, exportación PDF/Excel/DXF y trazabilidad QR. Petróleo, minería, civil, electricidad, soldadura y más.',
+    'Plataforma profesional con 18 módulos técnicos, 130+ normativas internacionales, auditoría IA, exportación PDF/Excel/DXF y trazabilidad QR. Petróleo, minería, civil, electricidad, soldadura y más.',
   keywords: 'ingeniería industrial, cálculo MAOP, ASME B31.8, API 6D, válvulas industriales, DXF CAD ingeniería, plataforma ingeniería online',
 };
 
@@ -51,6 +51,8 @@ const modulos = [
   { n:'14', nombre:'Térmica',               desc:'LMTD · intercambiadores · dilatación · coef. global',       norma:'TEMA · ASME Sec.VIII · Kern 1950',   color:'#f87171',icon:'🌡️', calcs:2  },
   { n:'15', nombre:'Geotecnia',             desc:'Capacidad portante · estabilidad talud · Bishop',            norma:'Meyerhof 63 · Bishop 55 · CIRSOC',   color:'#a3e635',icon:'🌍', calcs:2  },
   { n:'16', nombre:'Electrónica e Instrumentación', desc:'Termocupla K/J · RTD Pt100/Pt1000 · verificación de tolerancia de fábrica', norma:'NIST ITS-90 · IEC 60584-1 · IEC 60751:2022', color: CYAN, icon:'📟', calcs:3 },
+  { n:'17', nombre:'GISTM - Gestión de Relaves', desc:'Clasificación de consecuencia · checklist de cumplimiento en 6 principios', norma:'ICMM · UNEP · PRI (GISTM 2020)', color: CYAN, icon:'⛰️', calcs:1 },
+  { n:'18', nombre:'Electromecánica de Flota Pesada', desc:'Derateo térmico · protección de arranque · código IC · zona clasificada y bonding', norma:'SAE/API/ASME · IEC/ISO', color:'#34d399', icon:'🚛', calcs:11 },
 ];
 
 const flujo = [
@@ -118,7 +120,7 @@ export default function LandingPage() {
 
         /* ── HEADER ── */
         .header{position:sticky;top:0;z-index:50;background:rgba(2,6,9,.88);backdrop-filter:blur(24px) saturate(160%);border-bottom:1px solid rgba(232,160,32,.12);transition:background .3s}
-        .header-inner{height:64px;display:flex;align-items:center;gap:16px;max-width:1200px;margin:0 auto;padding:0 32px}
+        .header-inner{min-height:64px;display:flex;align-items:center;flex-wrap:wrap;gap:16px;max-width:1200px;margin:0 auto;padding:0 32px}
         .brand{display:flex;align-items:center;gap:12px;text-decoration:none;color:${WHITE};flex-shrink:0}
         .brand-mark{width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,${GOLD},${GOLD2});display:flex;align-items:center;justify-content:center;font-weight:950;font-size:19px;color:${BG};animation:glow-gold 3s ease-in-out infinite;letter-spacing:-.5px}
         .brand-text{display:flex;flex-direction:column}
@@ -427,7 +429,7 @@ export default function LandingPage() {
         <div className="wrap">
           <div className="hero-badge">
             <span className="dot-live" aria-hidden="true" />
-            Plataforma activa · 15 módulos + 2 capacidades avanzadas · trazabilidad profesional
+            Plataforma activa · 18 módulos + 2 capacidades avanzadas · trazabilidad profesional
           </div>
 
           <h1>
@@ -436,7 +438,7 @@ export default function LandingPage() {
           </h1>
 
           <p className="hero-copy">
-            INGENIUM Pro centraliza 15 módulos técnicos y 2 capacidades avanzadas —Telemetría e Inteligencia
+            INGENIUM Pro centraliza 18 módulos técnicos y 2 capacidades avanzadas —Telemetría e Inteligencia
             Cruzada— que conectan los cálculos de un mismo proyecto, con más de 130 normativas verificadas,
             exportación PDF · Excel · DXF y firma QR. No es una calculadora aislada: es un único flujo de
             trabajo profesional, verificable de punta a punta.
@@ -452,7 +454,7 @@ export default function LandingPage() {
 
           <div className="hero-stats" aria-label="Indicadores clave de INGENIUM Pro">
             {[
-              { val:'15 + 2',      lbl:'Módulos + capacidades' },
+              { val:'18 + 2',      lbl:'Módulos + capacidades' },
               { val:'130+',        lbl:'Normativas internacionales integradas' },
               { val:'PDF·XLS·DXF', lbl:'Formatos de exportación profesional' },
               { val:'IA + QR',     lbl:'Auditoría y trazabilidad verificable' },
@@ -611,7 +613,7 @@ export default function LandingPage() {
         <div className="wrap">
           <div className="section-head">
             <div className="eyebrow">Cobertura técnica</div>
-            <h2>15 módulos para contextos industriales, energéticos e infraestructura</h2>
+            <h2>18 módulos para contextos industriales, energéticos e infraestructura</h2>
             <p className="section-sub">
               Cada módulo trabaja con fórmulas identificables, datos de entrada claros, normativas reales y resultados
               trazables. El objetivo es potenciar al profesional, no reemplazar su criterio.
