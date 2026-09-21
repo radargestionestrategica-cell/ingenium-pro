@@ -1,0 +1,11 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "store.ingeniumpro.twa",
+      "sha256_cert_fingerprints":
+        ["F9:7D:74:87:61:EC:10:DB:2E:08:5A:F0:CE:C8:38:A6:18:8F:7A:EF:8F:E2:ED:83:8D:99:4F:DF:92:47:FB:DB"]
+    }
+  }
+]
