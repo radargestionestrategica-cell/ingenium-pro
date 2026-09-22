@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
 
 const BG    = '#020609';
 const GOLD  = '#E8A020';
@@ -154,7 +153,6 @@ const PLANES = [
 ];
 
 export default function PlanesPage() {
-  const router = useRouter()
   const [demoExpirado, setDemoExpirado] = useState(false)
   const [loadingDemo, setLoadingDemo]   = useState(false)
 
@@ -177,11 +175,14 @@ export default function PlanesPage() {
       if (res.ok) {
         const data = await res.json().catch(() => ({}))
         if (data.token) localStorage.setItem('ip_token', data.token)
-        // No apagamos loadingDemo acá a propósito: router.push no se espera y la
-        // navegación a /dashboard (RSC + chunks + datos) puede tardar varios
-        // segundos. Si el botón vuelve a su estado normal antes de que la
-        // pantalla cambie, parece que el click no hizo nada.
-        router.push('/dashboard')
+        // Navegación dura, no router.push: en esta versión de Next.js
+        // router.push no devuelve nada observable, así que si la transición
+        // cliente falla en silencio (p.ej. ChunkLoadError por un bundle viejo
+        // en memoria justo después de un deploy — muy probable en una TWA
+        // que queda abierta horas), no hay forma de detectarlo y el botón
+        // queda colgado en "Activando demo..." para siempre. window.location
+        // siempre carga todo fresco del servidor y no tiene ese modo de falla.
+        window.location.href = '/dashboard'
         return
       }
       setLoadingDemo(false)
