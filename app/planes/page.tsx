@@ -177,14 +177,18 @@ export default function PlanesPage() {
       if (res.ok) {
         const data = await res.json().catch(() => ({}))
         if (data.token) localStorage.setItem('ip_token', data.token)
+        // No apagamos loadingDemo acá a propósito: router.push no se espera y la
+        // navegación a /dashboard (RSC + chunks + datos) puede tardar varios
+        // segundos. Si el botón vuelve a su estado normal antes de que la
+        // pantalla cambie, parece que el click no hizo nada.
         router.push('/dashboard')
-      } else {
-        window.location.href = '/Login'
+        return
       }
-    } catch {
-      window.location.href = '/Login'
-    } finally {
       setLoadingDemo(false)
+      window.location.href = '/Login'
+    } catch {
+      setLoadingDemo(false)
+      window.location.href = '/Login'
     }
   }
 
@@ -322,6 +326,7 @@ export default function PlanesPage() {
               ) : (
                 <button
                   type="button"
+                  disabled={plan.id === 'demo' && loadingDemo}
                   onClick={() => { if (plan.id === 'demo') { comenzarDemo(); return; } if (plan.ctaHref) window.location.href = plan.ctaHref }}
                   style={{
                     marginTop: 'auto',
@@ -332,7 +337,7 @@ export default function PlanesPage() {
                     borderRadius: 12,
                     fontWeight: 800,
                     fontSize: 14,
-                    cursor: (plan.id === 'demo' || plan.ctaHref) ? 'pointer' : 'default',
+                    cursor: plan.id === 'demo' ? (loadingDemo ? 'default' : 'pointer') : (plan.ctaHref ? 'pointer' : 'default'),
                     transition: 'opacity .2s',
                     background: plan.destacado
                       ? `linear-gradient(135deg,${GOLD},#c47a10)`
@@ -343,10 +348,10 @@ export default function PlanesPage() {
                       ? 'none'
                       : '1px solid rgba(99,102,241,0.25)',
                     color: plan.destacado || plan.id === 'demo' ? BG : '#a5b4fc',
-                    opacity: (plan.id === 'demo' || plan.ctaHref) ? 1 : 0.5,
+                    opacity: (plan.id === 'demo' && loadingDemo) ? 0.7 : (plan.id === 'demo' || plan.ctaHref) ? 1 : 0.5,
                   }}
                 >
-                  {plan.id === 'demo' && loadingDemo ? '...' : plan.cta}
+                  {plan.id === 'demo' && loadingDemo ? 'Activando demo...' : plan.cta}
                 </button>
               )}
 

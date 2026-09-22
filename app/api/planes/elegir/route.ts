@@ -39,24 +39,30 @@ export async function POST(req: Request) {
 
     const now = new Date();
 
-    if (plan === 'demo') {
-      await prisma.usuario.update({
-        where: { id: payload.id },
-        data:  { planElegido: true, demoStartAt: now },
-      });
-    } else {
-      await prisma.usuario.update({
-        where: { id: payload.id },
-        data:  { planElegido: true, plan },
-      });
-    }
+    const usuarioActualizado = plan === 'demo'
+      ? await prisma.usuario.update({
+          where:  { id: payload.id },
+          data:   { planElegido: true, demoStartAt: now },
+          select: { plan: true },
+        })
+      : await prisma.usuario.update({
+          where:  { id: payload.id },
+          data:   { planElegido: true, plan },
+          select: { plan: true },
+        });
+
+    // El token siempre refleja el plan real de la BD, nunca el valor pedido en
+    // el body: elegir "demo" no toca la columna `plan` (rama de arriba), así
+    // que una cuenta que ya tenía un plan pago debe seguir viendo ese plan en
+    // su token, no "demo".
+    const planReal = usuarioActualizado.plan;
 
     const token = generarToken({
       id:          payload.id,
       email:       payload.email ?? '',
-      plan,
+      plan:        planReal,
       planElegido: true,
-      ...((plan === 'demo' || plan === 'trial')
+      ...((planReal === 'demo' || planReal === 'trial')
         ? { demoExpira: now.getTime() + 259_200_000 }
         : {}),
     });
