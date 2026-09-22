@@ -42,8 +42,12 @@ const RISK_COLOR: Record<string, string> = {
 // Valores de ejemplo — mismos defaults que components/DemoMAOP.tsx
 const EJEMPLO = { smys: 52000, od: 16.00, t: 0.375, f: 0.72, temp: 20 };
 
+// Locale explícito: toLocaleString() sin argumento usa el locale del entorno
+// (en-US en el servidor, el del navegador en el cliente) y rompe la hidratación (#418).
+const fmt = (n: number) => n.toLocaleString('es-AR');
+
 const CAMPOS = [
-  { lbl: 'SMYS (psi)',           val: EJEMPLO.smys.toLocaleString() },
+  { lbl: 'SMYS (psi)',           val: fmt(EJEMPLO.smys) },
   { lbl: 'Diámetro ext. (in)',   val: EJEMPLO.od.toFixed(2) },
   { lbl: 'Espesor pared (in)',   val: EJEMPLO.t.toFixed(3) },
   { lbl: 'Factor diseño F',      val: EJEMPLO.f.toFixed(2) },
@@ -116,7 +120,7 @@ export default function DemoMAOPAutoplay() {
       >
         <div className="preview-res-card">
           <div className="preview-res-lbl">MAOP</div>
-          <div className="preview-res-val">{r ? `${r.psi.toLocaleString()} psi` : '—'}</div>
+          <div className="preview-res-val">{r ? `${fmt(r.psi)} psi` : '—'}</div>
           <div className="preview-res-sub">{r ? `${r.bar} bar` : ''}</div>
         </div>
         <div className="preview-res-card">
