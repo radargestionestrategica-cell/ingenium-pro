@@ -145,9 +145,13 @@ export async function middleware(request: NextRequest) {
   }
 
   // Demo / trial: verificar expiración
+  // Usa demoStartAt (fecha real de activación de la demo) igual que REGLA 4 —
+  // no createdAt solo. Un usuario puede registrarse y elegir "demo" días
+  // después; createdAt.getTime()+3días ya estaría vencido pese a que la demo
+  // recién arrancó, rebotándolo a /planes en un loop imposible de romper.
   if (plan === 'demo' || plan === 'trial') {
     const expira = (dbOk && typeof dbCreatedAt === 'number')
-      ? dbCreatedAt + 259_200_000
+      ? (dbDemoStart ?? dbCreatedAt) + 259_200_000
       : payload.demoExpira;
 
     if (typeof expira === 'number' && Date.now() > expira) {

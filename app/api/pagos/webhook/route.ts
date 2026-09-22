@@ -44,16 +44,19 @@ async function activatePlan(
   payerEmail:  string | undefined,
   planSlug:    string,
 ): Promise<{ ok: boolean; msg?: string }> {
+  // planElegido:true siempre — un usuario que paga directo desde el link de
+  // MercadoPago (sin pasar por /planes) quedaba con planElegido:false pese a
+  // haber pagado, y dashboard/layout.tsx lo rebotaba a /planes igual.
   if (externalRef) {
     const updated = await prisma.usuario.updateMany({
       where: { id: externalRef },
-      data:  { plan: planSlug },
+      data:  { plan: planSlug, planElegido: true },
     })
     if (updated.count > 0) return { ok: true }
     console.error(`[webhook/mp] external_reference "${externalRef}" no coincide con ningún usuario`)
   }
   if (!payerEmail) return { ok: false, msg: 'sin email ni external_reference' }
-  await prisma.usuario.updateMany({ where: { email: payerEmail }, data: { plan: planSlug } })
+  await prisma.usuario.updateMany({ where: { email: payerEmail }, data: { plan: planSlug, planElegido: true } })
   return { ok: true }
 }
 
