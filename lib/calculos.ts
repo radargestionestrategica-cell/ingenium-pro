@@ -277,24 +277,43 @@ export function calcDilatacionLineal(
 
 // ── CIVIL — ACI 318-19 ────────────────────────────────────────────
 // Pu en kN, Mu en kN·m, b/h en mm, As en mm², fc/fy en MPa
+// Capacidad axial pura (ACI 22.4.2.1) — no contempla interacción P-M;
+// Mu solo se usa para informar la excentricidad e = Mu/Pu.
 export function calcColumnaHormigon(
   Pu_kN: number, Mu_kNm: number,
   b_mm: number, h_mm: number,
   As_mm2: number, fc_MPa: number, fy_MPa: number,
 ) {
-  if (b_mm <= 0 || h_mm <= 0 || fc_MPa <= 0 || fy_MPa <= 0 || As_mm2 < 0) return null;
+  // Number.isFinite rechaza NaN (campo vacío) y ±Infinity, que antes pasaban
+  // la guarda (NaN <= 0 es false) y terminaban en CRITICAL/NaN sin error.
+  // Pu <= 0 (sin carga o tracción) no es un caso de columna a compresión:
+  // antes devolvía LOW ("APTO") en silencio.
+  if (![Pu_kN, Mu_kNm, b_mm, h_mm, As_mm2, fc_MPa, fy_MPa].every(Number.isFinite)) return null;
+  if (Pu_kN <= 0 || b_mm <= 0 || h_mm <= 0 || fc_MPa <= 0 || fy_MPa <= 0 || As_mm2 < 0) return null;
   const Ag      = b_mm * h_mm;
   const rho     = As_mm2 / Ag;
   const Pn_max  = 0.80 * (0.85 * fc_MPa * (Ag - As_mm2) + fy_MPa * As_mm2);
-  const phi_Pn  = +(0.65 * Pn_max / 1000).toFixed(1);   // kN
+  const phi_Pn  = 0.65 * Pn_max / 1000;   // kN — sin redondear para comparar
+  const util_P  = (Pu_kN / phi_Pn) * 100;
   const ok_P    = Pu_kN <= phi_Pn;
   const ok_rho  = rho >= 0.01 && rho <= 0.08;
-  const riesgo  =
-    !ok_P   ? 'CRITICAL' :
-    !ok_rho ? 'HIGH'     :
-    Pu_kN / phi_Pn > 0.9 ? 'HIGH' :
-    Pu_kN / phi_Pn > 0.7 ? 'MEDIUM' : 'LOW';
-  return { phi_Pn, ok_P, ok_rho, rho: +(rho * 100).toFixed(2), riesgo };
+  const e_mm    = Mu_kNm > 0 ? (Mu_kNm * 1e6) / (Pu_kN * 1000) : 0;
+  const e_min   = Math.max(15, 0.03 * h_mm);   // excentricidad mínima: max(15 mm, 0.03·h)
+  const riesgo: 'LOW'|'MEDIUM'|'HIGH'|'CRITICAL' =
+    !ok_P        ? 'CRITICAL' :
+    !ok_rho      ? 'HIGH'     :
+    util_P > 90  ? 'HIGH'     :
+    util_P > 70  ? 'MEDIUM'   : 'LOW';
+  return {
+    phi_Pn: +phi_Pn.toFixed(1),
+    util_P: +util_P.toFixed(1),
+    ok_P, ok_rho,
+    rho:    +(rho * 100).toFixed(2),
+    e_mm:   +e_mm.toFixed(1),
+    e_min:  +e_min.toFixed(1),
+    Ag_cm2: +(Ag / 100).toFixed(1),
+    riesgo,
+  };
 }
 
 // ── MINERÍA — RMR Bieniawski 1989 ────────────────────────────────

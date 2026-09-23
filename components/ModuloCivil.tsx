@@ -1,6 +1,7 @@
 ﻿'use client';
 import { publicarResultado } from '@/components/ResultadoContexto';
 import BotonesExportar, { DatosExportar } from '@/components/BotonesExportar';
+import { calcColumnaHormigon as calcColumnaHormigonCore } from '@/lib/calculos';
 import { useState } from 'react';
 
 // Tipos de acero estructural para perfiles W
@@ -119,46 +120,19 @@ function calcVigaAcero(
 
 // Diseno de columnas de hormigon armado - ACI 318-19
 // Referencia: ACI 318-19 Capitulo 22
+// El cálculo (φPn, utilización, cuantía, excentricidad, riesgo 70/90 %) es
+// calcColumnaHormigon de @/lib/calculos (fuente única, con tests). Acá solo
+// se traducen nombres (ok_rho→acero_ok, rho→rho_pct) para que la UI y la
+// exportación PDF/Excel/DXF sigan leyendo los mismos campos.
 function calcColumnaHormigon(
-  Pu_kN: number, // Carga axial ultima (kN)
-  Mu_kNm: number, // Momento ultimo (kN.m)
-  b_mm: number, // Ancho seccion (mm)
-  h_mm: number, // Alto seccion (mm)
-  As_mm2: number, // Area acero (mm2)
-  fc_MPa: number, // Resistencia hormigon
-  fy_MPa: number // Resistencia acero
+  Pu_kN: number, Mu_kNm: number,
+  b_mm: number, h_mm: number,
+  As_mm2: number, fc_MPa: number, fy_MPa: number
 ) {
-  if (b_mm <= 0 || h_mm <= 0 || Pu_kN <= 0) return null;
-
-  const phi = 0.65; // Factor reduccion columna
-  const Ag = b_mm * h_mm;
-  const rho = As_mm2 / Ag;
-
-  // Capacidad axial maxima (ACI 22.4.2.1)
-  const Pn_max = 0.80 * (0.85 * fc_MPa * (Ag - As_mm2) + fy_MPa * As_mm2);
-  const phi_Pn = phi * Pn_max / 1000; // kN
-
-  // Excentricidad
-  const e_mm = Mu_kNm > 0 ? (Mu_kNm * 1e6) / (Pu_kN * 1000) : 0;
-  const e_min = Math.max(15, 0.03 * h_mm); // excentricidad minima ACI
-
-  // Verificacion acero minimo y maximo (ACI 10.6.1.1)
-  const rho_min = 0.01;
-  const rho_max = 0.08;
-  const acero_ok = rho >= rho_min && rho <= rho_max;
-
-  const util_P = (Pu_kN / phi_Pn) * 100;
-  const ok_P = Pu_kN <= phi_Pn;
-  const riesgo = !ok_P ? 'CRITICAL' : !acero_ok ? 'HIGH' : util_P > 80 ? 'MEDIUM' : 'LOW';
-
-  return {
-    phi_Pn: +phi_Pn.toFixed(1),
-    util_P: +util_P.toFixed(1),
-    rho_pct: +(rho * 100).toFixed(2),
-    e_mm: +e_mm.toFixed(1), e_min: +e_min.toFixed(1),
-    ok_P, acero_ok, riesgo,
-    Ag_cm2: +(Ag / 100).toFixed(1)
-  };
+  const core = calcColumnaHormigonCore(Pu_kN, Mu_kNm, b_mm, h_mm, As_mm2, fc_MPa, fy_MPa);
+  if (!core) return null;
+  const { ok_rho, rho, ...resto } = core;
+  return { ...resto, acero_ok: ok_rho, rho_pct: rho };
 }
 
 const PERFILES_W = [

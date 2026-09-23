@@ -550,12 +550,64 @@ describe('calcDilatacionLineal', () => {
 // ════════════════════════════════════════════════════════════════
 describe('calcColumnaHormigon', () => {
   it('phi_Pn correcta — columna 300×300, fc=25, fy=420', () => {
-    // Ag=90000, Pn_max = 0.80×(0.85×25×(90000-1800)+420×1800) = 2111.7 kN
-    // phi_Pn = 0.65 × 2111.7 = 1372.6 kN
+    // Ag=90000, Pn_max = 0.80×(0.85×25×(90000-1800)+420×1800) = 2104.2 kN
+    // phi_Pn = 0.65 × 2104.2 = 1367.7 kN
     const r = calcColumnaHormigon(1200, 50, 300, 300, 1800, 25, 420);
     expect(r).not.toBeNull();
-    expect(r!.phi_Pn).toBeGreaterThan(1300);
+    expect(r!.phi_Pn).toBeCloseTo(1367.7, 1);
     expect(r!.ok_P).toBe(true);
+  });
+
+  it('campos derivados: util_P, e_mm, e_min, Ag_cm2', () => {
+    const r = calcColumnaHormigon(1200, 50, 300, 300, 1800, 25, 420)!;
+    // util = 1200 / 1367.73 = 87.7 %
+    expect(r.util_P).toBeCloseTo(87.7, 1);
+    // e = 50e6 N·mm / 1.2e6 N = 41.7 mm
+    expect(r.e_mm).toBeCloseTo(41.7, 1);
+    // e_min = max(15, 0.03×300=9) = 15
+    expect(r.e_min).toBe(15);
+    expect(r.Ag_cm2).toBe(900);
+  });
+
+  it('e_min = 0.03·h cuando supera 15 mm; Mu=0 → e_mm=0', () => {
+    const r = calcColumnaHormigon(1000, 0, 600, 600, 7200, 25, 420)!;
+    expect(r.e_min).toBe(18);
+    expect(r.e_mm).toBe(0);
+  });
+
+  it('umbrales de riesgo 70/90 % sobre φPn=1367.73 kN', () => {
+    const riesgo = (Pu: number) => calcColumnaHormigon(Pu, 0, 300, 300, 1800, 25, 420)!.riesgo;
+    expect(riesgo(900)).toBe('LOW');       // 65.8 %
+    expect(riesgo(1050)).toBe('MEDIUM');   // 76.8 %
+    expect(riesgo(1300)).toBe('HIGH');     // 95.0 %
+    expect(riesgo(1400)).toBe('CRITICAL'); // 102.4 %
+  });
+
+  it('ok_P compara contra φPn sin redondear', () => {
+    // φPn real = 1367.73 kN → se muestra 1367.7. Pu=1367.72 cumple aunque
+    // sea mayor que el valor redondeado mostrado.
+    const r = calcColumnaHormigon(1367.72, 0, 300, 300, 1800, 25, 420)!;
+    expect(r.phi_Pn).toBe(1367.7);
+    expect(r.ok_P).toBe(true);
+  });
+
+  it('retorna null con Pu <= 0 (sin carga o tracción)', () => {
+    expect(calcColumnaHormigon(0,   0, 300, 300, 1800, 25, 420)).toBeNull();
+    expect(calcColumnaHormigon(-50, 0, 300, 300, 1800, 25, 420)).toBeNull();
+  });
+
+  it('retorna null con fc, fy <= 0 o As < 0', () => {
+    expect(calcColumnaHormigon(1000, 0, 300, 300, 1800, 0,  420)).toBeNull();
+    expect(calcColumnaHormigon(1000, 0, 300, 300, 1800, 25, 0)).toBeNull();
+    expect(calcColumnaHormigon(1000, 0, 300, 300, -1,   25, 420)).toBeNull();
+  });
+
+  it('retorna null con entradas no finitas (NaN / Infinity)', () => {
+    expect(calcColumnaHormigon(NaN,      0,   300, 300, 1800, 25, 420)).toBeNull();
+    expect(calcColumnaHormigon(1000,     NaN, 300, 300, 1800, 25, 420)).toBeNull();
+    expect(calcColumnaHormigon(1000,     0,   NaN, 300, 1800, 25, 420)).toBeNull();
+    expect(calcColumnaHormigon(Infinity, 0,   300, 300, 1800, 25, 420)).toBeNull();
+    expect(calcColumnaHormigon(1000,     0,   300, 300, 1800, 25, Infinity)).toBeNull();
   });
 
   it('Pu > phi_Pn → ok_P=false, riesgo=CRITICAL', () => {
