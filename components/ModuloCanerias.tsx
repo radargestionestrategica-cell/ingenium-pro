@@ -275,7 +275,9 @@ export default function ModuloCanerias() {
     R(); setResHoop(null);
     const D = parseFloat(hDmm), t = parseFloat(hTmm), P_bar = parseFloat(hPbar);
     const TempC = parseFloat(hTempC);
-    if ([D, t, P_bar, TempC].some(n => isNaN(n) || n <= 0)) { setErr('Valores inválidos'); return; }
+    // Number.isFinite también rechaza NaN y ±Infinity ("1e400", "Infinity"),
+    // que antes pasaban y daban hoop stress / % de uso = Infinity.
+    if ([D, t, P_bar, TempC].some(n => !Number.isFinite(n) || n <= 0)) { setErr('Valores inválidos'); return; }
     if (t >= D / 2) { setErr('Espesor ≥ radio exterior — verificar datos'); return; }
 
     const D_in  = D / 25.4;
