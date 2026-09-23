@@ -1,84 +1,35 @@
 ﻿'use client';
 import { publicarResultado } from '@/components/ResultadoContexto';
 import BotonesExportar, { DatosExportar } from '@/components/BotonesExportar';
+import { calcRMR as calcRMRCore } from '@/lib/calculos';
 import { useState } from 'react';
 
 // RMR - Rock Mass Rating (Bieniawski 1989)
 // Referencia: Bieniawski Z.T. (1989) Engineering Rock Mass Classifications
+// El cálculo (p1-p5, ajuste, rmr, clase, riesgo) es calcRMR de @/lib/calculos
+// (fuente única, con tests — incluye la tabla P4 corregida a escala real de
+// Bieniawski, 30 puntos). Acá solo queda la descripción/soporte recomendado
+// por clase, que es texto estático derivado de "clase", no un cálculo.
+const CLASE_INFO: Record<string, { descripcion: string; soporte: string }> = {
+  I:   { descripcion: 'Roca muy buena', soporte: 'Generalmente no se requiere soporte. Ocasionalmente pernos puntuales.' },
+  II:  { descripcion: 'Roca buena', soporte: 'Pernos de roca 3m c/2.5m. Malla ocasional. Concreto lanzado 50mm si es necesario.' },
+  III: { descripcion: 'Roca regular', soporte: 'Pernos 4m c/2m con malla. Concreto lanzado 50-100mm. Cerchas ligeras ocasionales.' },
+  IV:  { descripcion: 'Roca mala', soporte: 'Pernos 4-5m c/1-1.5m con malla. Concreto lanzado 100-150mm. Cerchas metalicas c/1.5m.' },
+  V:   { descripcion: 'Roca muy mala', soporte: 'Soporte inmediato. Pernos + malla + concreto lanzado 150-200mm. Cerchas c/0.75m. Posible sostenimiento especial.' },
+};
+
 function calcRMR(
-  ucs: number, // Resistencia compresion uniaxial (MPa)
-  rqd: number, // Rock Quality Designation (%)
-  espaciado: number, // Espaciado discontinuidades (mm)
-  condicion: string, // Condicion de discontinuidades
-  agua: string, // Condicion agua subterranea
-  orientacion: string // Orientacion discontinuidades
-): { rmr: number; clase: string; descripcion: string; soporte: string; riesgo: string } {
-
-  // Parametro 1: Resistencia compresion uniaxial
-  let p1 = 0;
-  if (ucs > 250) p1 = 15;
-  else if (ucs > 100) p1 = 12;
-  else if (ucs > 50) p1 = 7;
-  else if (ucs > 25) p1 = 4;
-  else if (ucs > 5) p1 = 2;
-  else if (ucs > 1) p1 = 1;
-
-  // Parametro 2: RQD
-  let p2 = 0;
-  if (rqd > 90) p2 = 20;
-  else if (rqd > 75) p2 = 17;
-  else if (rqd > 50) p2 = 13;
-  else if (rqd > 25) p2 = 8;
-  else p2 = 3;
-
-  // Parametro 3: Espaciado discontinuidades
-  let p3 = 0;
-  if (espaciado > 2000) p3 = 20;
-  else if (espaciado > 600) p3 = 15;
-  else if (espaciado > 200) p3 = 10;
-  else if (espaciado > 60) p3 = 8;
-  else p3 = 5;
-
-  // Parametro 4: Condicion discontinuidades
-  const condMap: Record<string, number> = {
-    muy_buena: 30, buena: 25, regular: 20, mala: 10, muy_mala: 0
-  };
-  const p4 = condMap[condicion] ?? 20;
-
-  // Parametro 5: Agua subterranea
-  const aguaMap: Record<string, number> = {
-    seco: 15, humedo: 10, mojado: 7, goteo: 4, flujo: 0
-  };
-  const p5 = aguaMap[agua] ?? 10;
-
-  // Ajuste orientacion
-  const orientMap: Record<string, number> = {
-    muy_favorable: 0, favorable: -2, regular: -5, desfavorable: -10, muy_desfavorable: -12
-  };
-  const ajuste = orientMap[orientacion] ?? -5;
-
-  const rmr = p1 + p2 + p3 + p4 + p5 + ajuste;
-
-  let clase = '', descripcion = '', soporte = '';
-  if (rmr >= 81) {
-    clase = 'I'; descripcion = 'Roca muy buena';
-    soporte = 'Generalmente no se requiere soporte. Ocasionalmente pernos puntuales.';
-  } else if (rmr >= 61) {
-    clase = 'II'; descripcion = 'Roca buena';
-    soporte = 'Pernos de roca 3m c/2.5m. Malla ocasional. Concreto lanzado 50mm si es necesario.';
-  } else if (rmr >= 41) {
-    clase = 'III'; descripcion = 'Roca regular';
-    soporte = 'Pernos 4m c/2m con malla. Concreto lanzado 50-100mm. Cerchas ligeras ocasionales.';
-  } else if (rmr >= 21) {
-    clase = 'IV'; descripcion = 'Roca mala';
-    soporte = 'Pernos 4-5m c/1-1.5m con malla. Concreto lanzado 100-150mm. Cerchas metalicas c/1.5m.';
-  } else {
-    clase = 'V'; descripcion = 'Roca muy mala';
-    soporte = 'Soporte inmediato. Pernos + malla + concreto lanzado 150-200mm. Cerchas c/0.75m. Posible sostenimiento especial.';
-  }
-
-  const riesgo = rmr < 21 ? 'CRITICAL' : rmr < 41 ? 'HIGH' : rmr < 61 ? 'MEDIUM' : 'LOW';
-  return { rmr, clase, descripcion, soporte, riesgo };
+  ucs: number, rqd: number, espaciado: number,
+  condicion: string, agua: string, orientacion: string,
+) {
+  const core = calcRMRCore(
+    ucs, rqd, espaciado,
+    condicion as Parameters<typeof calcRMRCore>[3],
+    agua as Parameters<typeof calcRMRCore>[4],
+    orientacion as Parameters<typeof calcRMRCore>[5],
+  );
+  const info = CLASE_INFO[core.clase] ?? { descripcion: '', soporte: '' };
+  return { ...core, ...info };
 }
 
 // Ventilacion subterranea — factores de caudal minimo segun reglamento seleccionado
