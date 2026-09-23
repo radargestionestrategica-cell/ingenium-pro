@@ -1,8 +1,7 @@
 'use client';
 // components/DemoMAOPAutoplay.tsx
 // Version autoplay/loop de la demo MAOP para landing — decorativa, sin inputs editables.
-// Mismo calcMAOP y mismo CSS .preview-* que DemoMAOP.tsx — no modifica ese archivo.
-// Aun no conectada a la landing.
+// Se usa en la landing (app/page.tsx).
 
 import { useEffect, useState } from 'react';
 
@@ -39,8 +38,25 @@ const RISK_COLOR: Record<string, string> = {
   LOW: '#22c55e', MEDIUM: '#E8A020', HIGH: '#ef4444', CRITICAL: '#dc2626',
 };
 
-// Valores de ejemplo — mismos defaults que components/DemoMAOP.tsx
+// Valores de ejemplo en unidades imperiales (psi / in), como se muestran en pantalla.
 const EJEMPLO = { smys: 52000, od: 16.00, t: 0.375, f: 0.72, temp: 20 };
+
+// calcMAOP trabaja en MPa y mm (P se devuelve en MPa y de ahí salen bar y psi).
+// Antes se le pasaban psi/in directo: Barlow devolvía 1755 (psi) y la función
+// lo trataba como MPa → la landing mostraba 254.545 psi / 17.550 bar en vez de
+// 1.755 psi / 121 bar. Se convierte a SI antes de calcular.
+const PSI_A_MPA = 0.00689476;
+const IN_A_MM   = 25.4;
+const EJEMPLO_SI = {
+  smys_MPa: EJEMPLO.smys * PSI_A_MPA,
+  od_mm:    EJEMPLO.od * IN_A_MM,
+  t_mm:     EJEMPLO.t * IN_A_MM,
+};
+
+// Fórmula mostrada con los mismos valores imperiales que ve el usuario —
+// Barlow es homogénea en unidades, con psi/in el resultado sale en psi.
+const FORMULA_EJEMPLO =
+  `Pb = (2 × ${EJEMPLO.smys} × ${EJEMPLO.t} × ${EJEMPLO.f} × 1.0 × 1.0) / ${EJEMPLO.od} psi`;
 
 // Locale explícito: toLocaleString() sin argumento usa el locale del entorno
 // (en-US en el servidor, el del navegador en el cliente) y rompe la hidratación (#418).
@@ -84,7 +100,7 @@ export default function DemoMAOPAutoplay() {
   const mostrarResultado  = !enReset && elapsed >= RESULT_AT_MS;
 
   const r = mostrarResultado
-    ? calcMAOP(EJEMPLO.od, EJEMPLO.t, EJEMPLO.smys, EJEMPLO.f, 1.0, EJEMPLO.temp)
+    ? calcMAOP(EJEMPLO_SI.od_mm, EJEMPLO_SI.t_mm, EJEMPLO_SI.smys_MPa, EJEMPLO.f, 1.0, EJEMPLO.temp)
     : null;
 
   return (
@@ -142,7 +158,7 @@ export default function DemoMAOPAutoplay() {
       </div>
 
       <div className="preview-norm-tag" style={{ opacity: mostrarResultado ? 1 : 0, transition: 'opacity .5s ease' }}>
-        {r ? r.formula : 'ASME B31.8-2022 § 841.1.1'}
+        {r ? (r.reg.startsWith('PARED DELGADA') ? FORMULA_EJEMPLO : r.formula) : 'ASME B31.8-2022 § 841.1.1'}
       </div>
     </div>
   );
