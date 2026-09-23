@@ -1,29 +1,17 @@
 'use client';
 import { publicarResultado } from '@/components/ResultadoContexto';
 import BotonesExportar, { DatosExportar } from '@/components/BotonesExportar';
+import { calcBHP, calcMudWeight, calcFractureGradient } from '@/lib/calculos';
 import { useState } from 'react';
 
 type RiskLevel = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
 
-function calcBHP(TVD: number, mudWeight: number, cuttingsLoad = 0) {
-  const hydrostaticPsi = 0.052 * mudWeight * TVD;
-  const bhp = hydrostaticPsi + cuttingsLoad;
-  const risk: RiskLevel = bhp > 10000 ? 'CRITICAL' : bhp > 7000 ? 'HIGH' : bhp > 4000 ? 'MEDIUM' : 'LOW';
-  return { bhp: +bhp.toFixed(0), hydrostaticPsi: +hydrostaticPsi.toFixed(0), risk };
-}
-
-function calcFractureGradient(depth: number, overburdenGrad: number, poreGrad = 0.433, poissonRatio = 0.25) {
-  // Gradiente de fractura — método de Eaton (1969), coeficiente de Poisson variable acotado entre 0 y 0.49
-  const fracGrad = (poissonRatio / (1 - poissonRatio)) * (overburdenGrad - poreGrad) + poreGrad;
-  const fracPressure = fracGrad * depth;
-  return { fracGrad: +fracGrad.toFixed(3), fracPressure: +fracPressure.toFixed(0) };
-}
-
-function calcMudWeight(porePresGrad: number, safetyFactor = 0.5) {
-  const mudWeight = porePresGrad + safetyFactor;
-  const risk: RiskLevel = mudWeight > 18 ? 'CRITICAL' : mudWeight > 15 ? 'HIGH' : mudWeight > 12 ? 'MEDIUM' : 'LOW';
-  return { mudWeight: +mudWeight.toFixed(2), risk };
-}
+// calcBHP, calcMudWeight y calcFractureGradient — importadas de @/lib/calculos
+// (fuente única de verdad, con tests). Antes eran copias manuales acá, sin
+// validar ningún input: calcFractureGradient además tenía poreGrad
+// hardcodeado en 0.433 en la versión de lib/ (ya corregido para aceptar el
+// valor real del formulario) y ninguna de las dos acotaba poissonRatio, que
+// con ν→1 da Infinity y con ν>=0.5 invierte el signo de la fórmula de Eaton.
 
 // API RP 13D — Bingham Plastic, Power Law y Herschel-Bulkley
 function calcHidraulica(
@@ -99,9 +87,9 @@ export default function ModuloPerforacion() {
   const [modeloReologico, setModeloReologico] = useState('bingham');
   const [zonaClasificadaPozo, setZonaClasificadaPozo] = useState('Zona 1');
   const [res, setRes] = useState<null | {
-    bhp: ReturnType<typeof calcBHP>;
-    frac: ReturnType<typeof calcFractureGradient>;
-    mud: ReturnType<typeof calcMudWeight>;
+    bhp: NonNullable<ReturnType<typeof calcBHP>>;
+    frac: NonNullable<ReturnType<typeof calcFractureGradient>>;
+    mud: NonNullable<ReturnType<typeof calcMudWeight>>;
     hid: NonNullable<ReturnType<typeof calcHidraulica>>; // setRes solo se llama despues de descartar el caso null (ver guarda en calcular())
   }>(null);
   const [datos, setDatos] = useState<DatosExportar | null>(null);
@@ -182,10 +170,21 @@ export default function ModuloPerforacion() {
     const ccaRaw = (ropVal * Dh * Dh) / (1471 * Q * trVal);                // CCA — API RP 13D, concentración de recortes en anular
     const ccaVal = Math.min(Math.max(ccaRaw, 0), 1);                       // acotado a [0, 1] por seguridad
     const mwEfectiva = mw * (1 - ccaVal) + drVal * ccaVal;                 // densidad efectiva de la mezcla lodo + recortes
-    const mudCalc = calcMudWeight(pgVal, sfVal);
+
+    // calcBHP/calcFractureGradient/calcMudWeight ahora validan sus inputs (ver
+    // lib/calculos.ts) y pueden devolver null — antes las copias locales de
+    // este componente nunca validaban nada, así que este chequeo no existía.
+    const bhpCalc  = calcBHP(tvd, mwEfectiva);
+    const fracCalc = calcFractureGradient(tvd, ob, pgVal, nuVal);
+    const mudCalc  = calcMudWeight(pgVal, sfVal);
+    if (!bhpCalc || !fracCalc || !mudCalc) {
+      setErrorHidraulica('Verificá TVD, gradiente de sobrecarga, gradiente de poros y peso de lodo: deben ser mayores a 0.');
+      return;
+    }
+
     const r = {
-      bhp:  calcBHP(tvd, mwEfectiva),
-      frac: calcFractureGradient(tvd, ob, pgVal, nuVal),
+      bhp:  bhpCalc,
+      frac: fracCalc,
       mud:  mudCalc,
       hid,
     };

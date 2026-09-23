@@ -133,18 +133,23 @@ export function calcBHP(TVD: number, mudWeight: number, cuttingsLoad = 0) {
   if (TVD <= 0 || mudWeight <= 0) return null;
   const hydrostaticPsi = 0.052 * mudWeight * TVD;
   const bhp = hydrostaticPsi + cuttingsLoad;
-  const risk =
+  const risk: 'LOW'|'MEDIUM'|'HIGH'|'CRITICAL' =
     bhp > 10000 ? 'CRITICAL' : bhp > 7000 ? 'HIGH' : bhp > 4000 ? 'MEDIUM' : 'LOW';
   return { hydrostaticPsi: +hydrostaticPsi.toFixed(1), bhp: +bhp.toFixed(1), risk };
 }
 
-// overburdenGrad en psi/ft, resultado en psi/ft y psi
+// overburdenGrad, poreGrad en psi/ft, resultado en psi/ft y psi
 export function calcFractureGradient(
-  depth: number, overburdenGrad: number, poissonRatio = 0.25,
+  depth: number, overburdenGrad: number, poreGrad = 0.433, poissonRatio = 0.25,
 ) {
-  if (depth <= 0 || overburdenGrad <= 0) return null;
+  // poissonRatio interviene como nu/(1-nu): con nu→1 esto da Infinity, y con
+  // nu>=1 el signo se invierte — ningún material real tiene ν>=0.5. Antes
+  // esto se acotaba solo en el sitio de llamada del componente (afuera de
+  // esta función); ahora la función misma no deja pasar un ν fuera de rango,
+  // sin depender de que quien la llame se acuerde de acotarlo.
+  if (depth <= 0 || overburdenGrad <= 0 || poissonRatio < 0 || poissonRatio >= 0.5) return null;
   const nu = poissonRatio;
-  const fracGrad = (nu / (1 - nu)) * (overburdenGrad - 0.433) + 0.433;
+  const fracGrad = (nu / (1 - nu)) * (overburdenGrad - poreGrad) + poreGrad;
   const fracPressure = fracGrad * depth;
   return {
     fracGrad:     +fracGrad.toFixed(3),
@@ -157,7 +162,7 @@ export function calcMudWeight(porePresGrad: number, safetyFactor = 0.5) {
   if (porePresGrad <= 0) return null;
   const mudWeight = porePresGrad + safetyFactor;
   const ecd = +(mudWeight * 1.02).toFixed(2);
-  const risk =
+  const risk: 'LOW'|'MEDIUM'|'HIGH'|'CRITICAL' =
     mudWeight > 18 ? 'CRITICAL' : mudWeight > 15 ? 'HIGH' : mudWeight > 12 ? 'MEDIUM' : 'LOW';
   return { mudWeight: +mudWeight.toFixed(2), ecd, risk };
 }

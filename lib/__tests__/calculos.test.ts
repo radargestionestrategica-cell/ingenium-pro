@@ -332,8 +332,8 @@ describe('calcBHP', () => {
 });
 
 describe('calcFractureGradient', () => {
-  it('fórmula Eaton con Poisson=0.25', () => {
-    const r = calcFractureGradient(3000, 1.0, 0.25);
+  it('fórmula Eaton con Poisson=0.25, poreGrad default (0.433)', () => {
+    const r = calcFractureGradient(3000, 1.0, 0.433, 0.25);
     expect(r).not.toBeNull();
     // nu/(1-nu) = 0.25/0.75 = 0.3333
     // fracGrad = 0.3333 × (1.0 - 0.433) + 0.433 = 0.622
@@ -342,13 +342,41 @@ describe('calcFractureGradient', () => {
   });
 
   it('Poisson más alto → gradiente más alto', () => {
-    const r1 = calcFractureGradient(3000, 1.0, 0.25);
-    const r2 = calcFractureGradient(3000, 1.0, 0.40);
+    const r1 = calcFractureGradient(3000, 1.0, 0.433, 0.25);
+    const r2 = calcFractureGradient(3000, 1.0, 0.433, 0.40);
     expect(r2!.fracGrad).toBeGreaterThan(r1!.fracGrad);
+  });
+
+  it('poreGrad es un parámetro real — cambiarlo cambia el resultado', () => {
+    const rAguaDulce = calcFractureGradient(3000, 1.0, 0.433, 0.25);
+    const rAguaSalada = calcFractureGradient(3000, 1.0, 0.465, 0.25);
+    expect(rAguaSalada!.fracGrad).not.toBeCloseTo(rAguaDulce!.fracGrad, 3);
   });
 
   it('retorna null con depth=0', () => {
     expect(calcFractureGradient(0, 1.0)).toBeNull();
+  });
+
+  // Antes esto se acotaba solo en el sitio de llamada del componente
+  // (fuera de la función) — ahora la función misma lo rechaza.
+  it('retorna null con poissonRatio=1 (antes daba Infinity)', () => {
+    expect(calcFractureGradient(3000, 1.0, 0.433, 1)).toBeNull();
+  });
+
+  it('retorna null con poissonRatio>1 (antes invertía el signo)', () => {
+    expect(calcFractureGradient(3000, 1.0, 0.433, 1.5)).toBeNull();
+  });
+
+  it('retorna null con poissonRatio negativo', () => {
+    expect(calcFractureGradient(3000, 1.0, 0.433, -0.1)).toBeNull();
+  });
+
+  it('retorna null con poissonRatio=0.5 exacto (límite no incluido)', () => {
+    expect(calcFractureGradient(3000, 1.0, 0.433, 0.5)).toBeNull();
+  });
+
+  it('acepta poissonRatio=0 (límite inferior válido)', () => {
+    expect(calcFractureGradient(3000, 1.0, 0.433, 0)).not.toBeNull();
   });
 });
 
