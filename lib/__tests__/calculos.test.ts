@@ -214,6 +214,26 @@ describe('calcGolpeAriete', () => {
   it('retorna null con D=0', () => {
     expect(calcGolpeAriete(20, 0, 8, 500, 200, 2)).toBeNull();
   });
+
+  // Sin esta guarda, E·t_m en el denominador de la raíz de "a" deja el
+  // resultado en Infinity/NaN, y como ninguna comparación con NaN da true,
+  // el clasificador de riesgo caía en 'LOW' por default — un golpe de
+  // ariete sin calcular reportado como si fuera seguro.
+  it('retorna null con t_mm=0 (antes daba a=Infinity y riesgo:LOW silencioso)', () => {
+    expect(calcGolpeAriete(20, 200, 0, 500, 200, 2)).toBeNull();
+  });
+
+  it('retorna null con t_mm negativo', () => {
+    expect(calcGolpeAriete(20, 200, -5, 500, 200, 2)).toBeNull();
+  });
+
+  it('retorna null con E_GPa=0', () => {
+    expect(calcGolpeAriete(20, 200, 8, 500, 0, 2)).toBeNull();
+  });
+
+  it('retorna null con E_GPa negativo', () => {
+    expect(calcGolpeAriete(20, 200, 8, 500, -10, 2)).toBeNull();
+  });
 });
 
 // ════════════════════════════════════════════════════════════════

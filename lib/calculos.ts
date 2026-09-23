@@ -90,7 +90,12 @@ export function calcGolpeAriete(
 ) {
   // Q se valida como dato de contexto de la instalación; no interviene en el cálculo
   // de celeridad, sobrepresión ni tiempo crítico, que dependen de dV.
-  if (Q <= 0 || D <= 0 || L <= 0) return null;
+  // t_mm y E_GPa SÍ intervienen (E·t_m es denominador dentro de la raíz de "a")
+  // — sin esta guarda, t_mm<=0 o E_GPa<=0 dejaban "a" en Infinity/NaN y ese
+  // valor se arrastraba silencioso a dP_MPa/Tc, cayendo por default en
+  // riesgo:'LOW' (ninguna comparación con NaN da true). Nunca se devuelve un
+  // número inválido silencioso: se devuelve null como estado de error explícito.
+  if (Q <= 0 || D <= 0 || L <= 0 || t_mm <= 0 || E_GPa <= 0) return null;
   const D_m   = D / 1000;
   const t_m   = t_mm / 1000;
   const K_agua = 2.2e9;                           // módulo volumétrico agua
