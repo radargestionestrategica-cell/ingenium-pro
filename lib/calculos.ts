@@ -348,22 +348,54 @@ export function calcRMR(
 
 // trabajadores: personas; equipos_diesel_kW: potencia total diesel kW
 // longitud en m; seccion_m2 en m²; gases_ppm: CO medido ppm
+// norma: reglamento de caudal mínimo a aplicar ('generico'|'chile'|'peru')
+// Q_medido: caudal real medido en la galería (m³/s), opcional — si se pasa,
+// evalúa el sistema real contra el caudal requerido en vez de asumir que
+// el caudal teórico requerido es el que efectivamente circula
+const NORMAS_VENT: Record<string, { label: string; porPersona: number; porKW: number; cita: string }> = {
+  generico: { label: 'Genérica — práctica internacional', porPersona: 0.06, porKW: 0.06,  cita: '0.06 m³/s por persona + 0.06 m³/s por kW diesel' },
+  chile:    { label: 'Chile — DS 132 Art. 138',           porPersona: 0.05, porKW: 0.063, cita: '3 m³/min por persona + 2.83 m³/min por HP diesel' },
+  peru:     { label: 'Perú — DS 023-2017-EM Art. 252',    porPersona: 0.05, porKW: 0.067, cita: '3 m³/min por persona (≤1500 msnm) + 3 m³/min por HP diesel' },
+};
+
 export function calcVentilacion(
   trabajadores: number, equipos_diesel_kW: number,
   longitud: number, seccion_m2: number, gases_ppm: number,
+  norma = 'generico', Q_medido?: number,
 ) {
   if (seccion_m2 <= 0 || longitud <= 0) return null;
-  const Q_req = Math.max(trabajadores * 0.06 + equipos_diesel_kW * 0.06, 0.25);
-  const V     = Q_req / seccion_m2;
+  const f = NORMAS_VENT[norma] ?? NORMAS_VENT.generico;
+
+  const Q_personas  = trabajadores * f.porPersona;
+  const Q_diesel    = equipos_diesel_kW * f.porKW;
+  const Q_requerido = Math.max(Q_personas + Q_diesel, 0.25);
+
+  // Con caudal medido se evalúa el sistema real; sin él, velocidad y
+  // renovación son las estimadas para el caudal requerido.
+  const usaMedido     = Q_medido !== undefined && Q_medido > 0;
+  const Q_eval        = usaMedido ? Q_medido : Q_requerido;
+  const cumple_caudal = Q_eval >= Q_requerido;
+
+  const V_galeria    = Q_eval / seccion_m2;
+  const volumen      = longitud * seccion_m2;
+  const t_renovacion = volumen / Q_eval / 60; // minutos
+
   const co_ok = gases_ppm < 25;
-  const riesgo =
-    !co_ok ? 'CRITICAL' :
-    V < 0.25 ? 'HIGH' : V < 0.5 ? 'MEDIUM' : 'LOW';
+  const riesgo_co: 'LOW'|'MEDIUM'|'HIGH'|'CRITICAL' =
+    gases_ppm > 200 ? 'CRITICAL' : gases_ppm > 35 ? 'HIGH' : gases_ppm > 25 ? 'MEDIUM' : 'LOW';
+  const riesgo: 'LOW'|'MEDIUM'|'HIGH'|'CRITICAL' =
+    (!cumple_caudal || V_galeria < 0.25) ? 'CRITICAL' : V_galeria < 0.5 ? 'HIGH' : riesgo_co;
+
   return {
-    Q_req: +Q_req.toFixed(2),
-    V:     +V.toFixed(3),
-    co_ok,
-    riesgo,
+    Q_requerido: +Q_requerido.toFixed(2),
+    Q_personas:  +Q_personas.toFixed(2),
+    Q_diesel:    +Q_diesel.toFixed(2),
+    Q_eval:      +Q_eval.toFixed(2),
+    usaMedido, cumple_caudal,
+    V_galeria:    +V_galeria.toFixed(2),
+    t_renovacion: +t_renovacion.toFixed(1),
+    co_ok, riesgo_co, riesgo,
+    normaLabel: f.label, normaCita: f.cita,
   };
 }
 

@@ -619,26 +619,98 @@ describe('calcRMR', () => {
 });
 
 describe('calcVentilacion', () => {
-  it('caudal mínimo = 0.25 m³/s para galería vacía', () => {
+  it('caudal mínimo = 0.25 m³/s para galería vacía (norma genérica default)', () => {
     const r = calcVentilacion(0, 0, 100, 8, 0);
-    expect(r!.Q_req).toBeCloseTo(0.25, 2);
+    expect(r!.Q_requerido).toBeCloseTo(0.25, 2);
+    expect(r!.normaLabel).toBe('Genérica — práctica internacional');
   });
 
-  it('Q = trabajadores×0.06 + diesel×0.06', () => {
+  it('Q = trabajadores×0.06 + diesel×0.06 (norma genérica)', () => {
     const r = calcVentilacion(10, 200, 500, 8, 15);
-    expect(r!.Q_req).toBeCloseTo(10 * 0.06 + 200 * 0.06, 2);
-    expect(r!.V).toBeCloseTo(r!.Q_req / 8, 3);
+    expect(r!.Q_requerido).toBeCloseTo(10 * 0.06 + 200 * 0.06, 2);
+    // V_galeria se redondea a 2 decimales (mismo criterio que el componente
+    // real, antes esta función redondeaba a 3 — ver commit)
+    expect(r!.V_galeria).toBeCloseTo(r!.Q_requerido / 8, 2);
     expect(r!.co_ok).toBe(true);
   });
 
-  it('CO > 25 ppm → co_ok=false, CRITICAL', () => {
+  // CO entre el TLV-TWA (25 ppm, ACGIH) y el REL (35 ppm, NIOSH): el
+  // componente real (ya en producción, sin cambios) NO lo trata como
+  // CRITICAL automático — usa el nivel granular de riesgo_co, y CRITICAL
+  // en `riesgo` queda reservado para cuando no se cumple el caudal
+  // requerido o la velocidad de galería es insuficiente. La versión vieja
+  // de esta función (nunca conectada al componente) trataba cualquier
+  // co_ok=false como CRITICAL directo — ese comportamiento nunca llegó a
+  // un usuario real.
+  it('CO=30ppm (entre TWA y REL) con caudal/velocidad OK → MEDIUM, no CRITICAL', () => {
     const r = calcVentilacion(5, 50, 100, 4, 30);
     expect(r!.co_ok).toBe(false);
+    expect(r!.riesgo_co).toBe('MEDIUM');
+    expect(r!.cumple_caudal).toBe(true);
+    expect(r!.riesgo).toBe('MEDIUM');
+  });
+
+  it('CO>200ppm (cerca de IDLH) → CRITICAL', () => {
+    const r = calcVentilacion(5, 50, 100, 4, 250);
+    expect(r!.riesgo_co).toBe('CRITICAL');
+    expect(r!.riesgo).toBe('CRITICAL');
+  });
+
+  it('caudal insuficiente → CRITICAL aunque el CO esté OK', () => {
+    // Q_medido muy por debajo del requerido → cumple_caudal=false → CRITICAL
+    const r = calcVentilacion(50, 500, 100, 8, 0, 'generico', 0.5);
+    expect(r!.co_ok).toBe(true);
+    expect(r!.cumple_caudal).toBe(false);
     expect(r!.riesgo).toBe('CRITICAL');
   });
 
   it('retorna null con seccion=0', () => {
     expect(calcVentilacion(10, 50, 100, 0, 0)).toBeNull();
+  });
+
+  it('norma "chile" usa sus propios factores, distintos de "generico"', () => {
+    const rGenerico = calcVentilacion(10, 200, 500, 8, 0, 'generico');
+    const rChile     = calcVentilacion(10, 200, 500, 8, 0, 'chile');
+    // Chile: 10×0.05 + 200×0.063 = 13.1 ; Generico: 10×0.06 + 200×0.06 = 12.6
+    expect(rChile!.Q_requerido).not.toBeCloseTo(rGenerico!.Q_requerido, 1);
+    expect(rChile!.normaLabel).toBe('Chile — DS 132 Art. 138');
+  });
+
+  it('norma "peru" usa sus propios factores', () => {
+    const r = calcVentilacion(10, 200, 500, 8, 0, 'peru');
+    expect(r!.Q_requerido).toBeCloseTo(10 * 0.05 + 200 * 0.067, 2);
+    expect(r!.normaLabel).toBe('Perú — DS 023-2017-EM Art. 252');
+  });
+
+  it('norma desconocida cae a "generico" por default', () => {
+    const r = calcVentilacion(10, 200, 500, 8, 0, 'inexistente');
+    expect(r!.normaLabel).toBe('Genérica — práctica internacional');
+  });
+
+  it('sin Q_medido: usaMedido=false, evalúa contra el caudal requerido', () => {
+    const r = calcVentilacion(10, 0, 100, 8, 0);
+    expect(r!.usaMedido).toBe(false);
+    expect(r!.cumple_caudal).toBe(true);
+    expect(r!.Q_eval).toBeCloseTo(r!.Q_requerido, 2);
+  });
+
+  it('con Q_medido menor al requerido: usaMedido=true, cumple_caudal=false', () => {
+    const r = calcVentilacion(50, 500, 100, 8, 0, 'generico', 1);
+    expect(r!.usaMedido).toBe(true);
+    expect(r!.cumple_caudal).toBe(false);
+    expect(r!.Q_eval).toBeCloseTo(1, 2);
+    expect(r!.riesgo).toBe('CRITICAL'); // no cumple caudal
+  });
+
+  it('Q_medido=0 se ignora (usaMedido=false, se comporta como sin medir)', () => {
+    const r = calcVentilacion(10, 0, 100, 8, 0, 'generico', 0);
+    expect(r!.usaMedido).toBe(false);
+  });
+
+  it('t_renovacion = volumen / Q_eval / 60', () => {
+    const r = calcVentilacion(10, 0, 100, 8, 0);
+    const volumen = 100 * 8;
+    expect(r!.t_renovacion).toBeCloseTo(volumen / r!.Q_eval / 60, 1);
   });
 });
 
