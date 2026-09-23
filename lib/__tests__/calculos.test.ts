@@ -386,6 +386,46 @@ describe('calcCapacidadPortante', () => {
   it('retorna null con FS=0', () => {
     expect(calcCapacidadPortante('grava', 2, 2, 1, 100, 0, 99)).toBeNull();
   });
+
+  it('retorna null con Q_kN=0', () => {
+    expect(calcCapacidadPortante('grava', 2, 2, 1, 0, 3, 99)).toBeNull();
+  });
+
+  // Nq/Nc/Ng derivados de φ con las fórmulas de Vesic (1973) — reemplaza la
+  // tabla fija que tenía esta función y la copia manual, ya eliminada, que
+  // vivía en components/ModuloGeotecnia.tsx con valores distintos.
+  it('Nq/Nc/Ng de Vesic — arena_suelta (φ=30°)', () => {
+    const r = calcCapacidadPortante('arena_suelta', 2, 2, 1, 100, 3, 99);
+    expect(r!.phi).toBe(30);
+    expect(r!.Nq).toBeCloseTo(18.40, 1);
+    expect(r!.Nc).toBeCloseTo(30.14, 1);
+    expect(r!.Ng).toBeCloseTo(22.40, 1);
+  });
+
+  it('Nq/Nc/Ng de Vesic — grava (φ=40°), ya no igual a arena_compacta', () => {
+    const r = calcCapacidadPortante('grava', 2, 2, 1, 100, 3, 99);
+    expect(r!.phi).toBe(40);
+    expect(r!.Nq).toBeCloseTo(64.20, 1);
+    expect(r!.Nc).toBeCloseTo(75.31, 1);
+    expect(r!.Ng).toBeCloseTo(109.41, 1);
+  });
+
+  it('Nq/Nc/Ng de Vesic — arcilla (φ=0°): Nc=π+2, Nq=1, Ng=0', () => {
+    const r = calcCapacidadPortante('arcilla_media', 2, 2, 1, 100, 3, 99);
+    expect(r!.phi).toBe(0);
+    expect(r!.Nq).toBeCloseTo(1.0, 2);
+    expect(r!.Nc).toBeCloseTo(5.14, 2);
+    expect(r!.Ng).toBe(0);
+  });
+
+  it('devuelve riesgo, freatic, utilizacion y c para consumo de UI', () => {
+    const r = calcCapacidadPortante('arena_compacta', 3, 3, 1.5, 1000, 3, 99);
+    expect(r).not.toBeNull();
+    expect(['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']).toContain(r!.riesgo);
+    expect(typeof r!.utilizacion).toBe('number');
+    expect(r!.freatic).toBe('Sin efecto freatico');
+    expect(r!.c).toBe(0);
+  });
 });
 
 // ════════════════════════════════════════════════════════════════

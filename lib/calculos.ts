@@ -157,50 +157,62 @@ export function calcMudWeight(porePresGrad: number, safetyFactor = 0.5) {
   return { mudWeight: +mudWeight.toFixed(2), ecd, risk };
 }
 
-// ── GEOTECNIA — Meyerhof (1963) ───────────────────────────────────
-// Factores Nq/Nc/Ng precalculados según Meyerhof (1963); cada fila corresponde a un
-// ángulo de fricción interno φ específico:
-//   arena_suelta   → φ ≈ 25°  (Nq=10.66)
-//   arena_compacta → φ = 35°  (Nq=33.30, Nc=46.12, Ng=48.03)
-//   grava          → φ = 35°, mismos factores que arena_compacta: criterio CONSERVADOR
-//                    de plataforma, dado que la grava real suele tener φ > 35°
-//   arcillas       → φ = 0 (condición no drenada; Nc=5.14=2+π, Nq=1, Ng=0)
+// ── GEOTECNIA — Meyerhof (1963) con factores de Vesic (1973) ──────
+// Fuente única de verdad para capacidad portante — antes duplicada a mano en
+// components/ModuloGeotecnia.tsx con una tabla Nq/Nc/Ng distinta y sin
+// validar FS<=0 / Q_kN<=0. φ por categoría es el que ya usaba esa UI en
+// producción; Nq/Nc/Ng se derivan de φ con Vesic (1973) — el método usado
+// por los códigos de diseño reales (API, AASHTO, IS 6403):
+//   Nq = e^(π·tanφ) · tan²(45° + φ/2)
+//   Nc = (Nq − 1) · cot(φ)      [φ=0 → Nc = π + 2 = 5.14]
+//   Ng = 2·(Nq + 1)·tan(φ)
+// gamma / gamma_sat en kg/m³ (peso específico natural y saturado).
 type SueloId = 'arena_suelta'|'arena_compacta'|'arcilla_blanda'|'arcilla_media'|'arcilla_firme'|'grava';
-const SUELOS: Record<SueloId, { Nq:number; Nc:number; Ng:number; c:number; gamma:number }> = {
-  arena_suelta:   { Nq:10.66, Nc:25.80, Ng:9.70,  c:0,   gamma:16 },
-  arena_compacta: { Nq:33.30, Nc:46.12, Ng:48.03, c:0,   gamma:18 },
-  arcilla_blanda: { Nq:1.00,  Nc:5.14,  Ng:0.00,  c:20,  gamma:17 },
-  arcilla_media:  { Nq:1.00,  Nc:5.14,  Ng:0.00,  c:50,  gamma:18 },
-  arcilla_firme:  { Nq:1.00,  Nc:5.14,  Ng:0.00,  c:100, gamma:19 },
-  grava:          { Nq:33.30, Nc:46.12, Ng:48.03, c:0,   gamma:20 },
+const SUELOS: Record<SueloId, { Nq:number; Nc:number; Ng:number; c:number; phi:number; gamma:number; gamma_sat:number }> = {
+  arena_suelta:   { Nq:18.40, Nc:30.14, Ng:22.40,  c:0,   phi:30, gamma:1600, gamma_sat:1900 },
+  arena_compacta: { Nq:33.30, Nc:46.12, Ng:48.03,  c:0,   phi:35, gamma:1850, gamma_sat:2050 },
+  arcilla_blanda: { Nq:1.00,  Nc:5.14,  Ng:0.00,   c:25,  phi:0,  gamma:1500, gamma_sat:1750 },
+  arcilla_media:  { Nq:1.00,  Nc:5.14,  Ng:0.00,   c:50,  phi:0,  gamma:1700, gamma_sat:1900 },
+  arcilla_firme:  { Nq:1.00,  Nc:5.14,  Ng:0.00,   c:100, phi:0,  gamma:1800, gamma_sat:1980 },
+  grava:          { Nq:64.20, Nc:75.31, Ng:109.41, c:0,   phi:40, gamma:2000, gamma_sat:2200 },
 };
 
 // B, L en m; Df profundidad cimentación m; Q_kN carga aplicada kN;
 // FS factor de seguridad; Dw profundidad napa m
 export function calcCapacidadPortante(
-  suelo: SueloId, B: number, L: number, Df: number,
+  suelo: string, B: number, L: number, Df: number,
   Q_kN: number, FS = 3, Dw = 99,
 ) {
   if (B <= 0 || L <= 0 || Df < 0 || Q_kN <= 0 || FS <= 0) return null;
-  const s = SUELOS[suelo];
+  const s = SUELOS[suelo as SueloId];
   if (!s) return null;
   const A  = B * L;
   const sc = 1 + 0.2 * (B / L);
   const sq = 1 + 0.1 * (B / L);
-  const sg = 1 - 0.4 * (B / L);
-  // Reducción por napa: el factor 2 (γ/2) es una SIMPLIFICACIÓN de plataforma, no la
-  // formulación rigurosa de Meyerhof con peso específico efectivo γ' = γ_sat − γ_w.
-  const gamma_ef = Dw < Df ? s.gamma / 2 : s.gamma;
-  const q  = s.gamma * Df;
-  const qu = s.c * s.Nc * sc + q * s.Nq * sq + 0.5 * gamma_ef * B * s.Ng * sg;
+  const sg = Math.max(0.1, 1 - 0.4 * (B / L)); // piso 0.1 — evita sg negativo con B/L muy grande
+  const gamma_w = 9.81;
+  // Peso específico efectivo con nivel freático — Meyerhof, γ' = γ_sat − γ_w
+  // (formulación rigurosa; NO la simplificación γ/2 que tenía esta función antes).
+  const gamma_ef = Dw <= Df
+    ? (s.gamma_sat - 1000) * gamma_w / 1000
+    : s.gamma / 1000 * gamma_w;
+  const gamma_base   = s.gamma / 1000 * gamma_w;
+  const q_sobrecarga = gamma_base * Df;
+  const qu = s.c * s.Nc * sc + q_sobrecarga * s.Nq * sq + 0.5 * gamma_ef * B * s.Ng * sg;
   const qa = qu / FS;
-  const q_aplicada = Q_kN / A;
-  const ok = q_aplicada <= qa;
+  const q_aplicada  = Q_kN / A;
+  const ok          = q_aplicada <= qa;
+  const utilizacion = (q_aplicada / qa) * 100;
+  const freatic = Dw <= Df ? 'NIVEL FREATICO REDUCE PORTANTE' : 'Sin efecto freatico';
+  const riesgo: 'LOW'|'MEDIUM'|'HIGH'|'CRITICAL' =
+    q_aplicada > qa ? 'CRITICAL' : utilizacion > 80 ? 'HIGH' : utilizacion > 60 ? 'MEDIUM' : 'LOW';
   return {
     qu:          +qu.toFixed(1),
     qa:          +qa.toFixed(1),
     q_aplicada:  +q_aplicada.toFixed(1),
-    ok,
+    utilizacion: +utilizacion.toFixed(1),
+    ok, freatic, riesgo,
+    phi: s.phi, c: s.c, Nq: s.Nq, Nc: s.Nc, Ng: s.Ng,
   };
 }
 

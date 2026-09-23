@@ -2,6 +2,7 @@
 import { publicarResultado } from '@/components/ResultadoContexto';
 import BotonesExportar, { DatosExportar } from '@/components/BotonesExportar';
 import { buscarFSCritico } from '@/lib/bishop-buscador';
+import { calcCapacidadPortante } from '@/lib/calculos';
 import { useState, useEffect } from 'react';
 
 interface ActivoGeotecniaOption {
@@ -24,55 +25,9 @@ function ipAuthHeader(): Record<string, string> {
   return t ? { Authorization: `Bearer ${t}` } : {};
 }
 
-// Capacidad portante - Meyerhof con nivel freatico
-// Referencia: Meyerhof (1963) + Das (2011) Principles of Foundation Engineering
-function calcCapacidadPortante(
-  suelo: string, B: number, L: number, Df: number,
-  Q_kN: number, FS: number, Dw: number
-) {
-  if (B <= 0 || L <= 0 || Df <= 0) return null;
-
-  const DB: Record<string, { Nq: number; Nc: number; Ng: number; c: number; phi: number; gamma: number; gamma_sat: number }> = {
-    arena_suelta:   { Nq: 14.7, Nc: 25.8, Ng: 12.4, c: 0,   phi: 30, gamma: 1600, gamma_sat: 1900 },
-    arena_compacta: { Nq: 33.3, Nc: 46.1, Ng: 37.2, c: 0,   phi: 35, gamma: 1850, gamma_sat: 2050 },
-    arcilla_blanda: { Nq: 1.0,  Nc: 5.14, Ng: 0,    c: 25,  phi: 0,  gamma: 1500, gamma_sat: 1750 },
-    arcilla_media:  { Nq: 1.0,  Nc: 5.14, Ng: 0,    c: 50,  phi: 0,  gamma: 1700, gamma_sat: 1900 },
-    arcilla_firme:  { Nq: 1.0,  Nc: 5.14, Ng: 0,    c: 100, phi: 0,  gamma: 1800, gamma_sat: 1980 },
-    grava:          { Nq: 64.2, Nc: 75.3, Ng: 93.7, c: 0,   phi: 40, gamma: 2000, gamma_sat: 2200 },
-  };
-
-  const d = DB[suelo] || DB.arcilla_media;
-  const gamma_w = 9.81;
-
-  // Peso especifico efectivo con nivel freatico (Meyerhof)
-  const gamma_ef = Dw <= Df
-    ? (d.gamma_sat - 1000) * gamma_w / 1000
-    : d.gamma / 1000 * gamma_w;
-
-  const gamma_base   = d.gamma / 1000 * gamma_w;
-  const q_sobrecarga = gamma_base * Df;
-
-  // Factores de forma (Meyerhof)
-  const sc = 1 + 0.2 * (B / L);
-  const sq = 1 + 0.1 * (B / L);
-  const sg = Math.max(0.1, 1 - 0.4 * (B / L));
-
-  // Capacidad portante ultima
-  const qu = d.c * d.Nc * sc + q_sobrecarga * d.Nq * sq + 0.5 * gamma_ef * B * d.Ng * sg;
-  const qa = qu / FS;
-  const q_aplicada  = Q_kN / (B * L);
-  const utilizacion = (q_aplicada / qa) * 100;
-
-  const freatic = Dw <= Df ? 'NIVEL FREATICO REDUCE PORTANTE' : 'Sin efecto freatico';
-  const riesgo  = q_aplicada > qa ? 'CRITICAL' : utilizacion > 80 ? 'HIGH' : utilizacion > 60 ? 'MEDIUM' : 'LOW';
-
-  return {
-    qu: +qu.toFixed(1), qa: +qa.toFixed(1), q_aplicada: +q_aplicada.toFixed(1),
-    utilizacion: +utilizacion.toFixed(1), ok: q_aplicada <= qa,
-    freatic, riesgo, phi: d.phi, c: d.c,
-    Nq: d.Nq, Nc: d.Nc, Ng: d.Ng
-  };
-}
+// calcCapacidadPortante — importada de @/lib/calculos (fuente única de verdad,
+// con tests). Antes era una copia manual acá, con su propia tabla Nq/Nc/Ng y
+// sin validar FS<=0 / Q_kN<=0.
 
 // Estabilidad de taludes - motor buscarFSCritico (lib/bishop-buscador)
 // Verificado contra benchmark ACADS EX1. Referencia: Bishop (1955) - práctica geotécnica estándar (FS mínimo 1.5 para taludes permanentes)
