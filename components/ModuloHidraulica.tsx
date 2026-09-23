@@ -3,6 +3,7 @@ import { publicarResultado } from '@/components/ResultadoContexto';
 import BotonesExportar, { DatosExportar } from '@/components/BotonesExportar';
 import { useState, useEffect } from 'react';
 import { parsearGeometriaSegura, calcularCaudalMedido, type ResultadoCaudalMedido } from '@/lib/telemetria-calculo';
+import { calcDarcyWeisbach, calcGolpeAriete } from '@/lib/calculos';
 
 interface ActivoTelemetriaOption {
   id: string;
@@ -22,54 +23,9 @@ function ipAuthHeader(): Record<string, string> {
   return t ? { Authorization: `Bearer ${t}` } : {};
 }
 
-function calcDarcyWeisbach(Q: number, D: number, L: number, rugosidad: number, K_menor: number) {
-  if (Q <= 0 || D <= 0 || L <= 0) return null;
-  const D_m = D / 1000;
-  const A = Math.PI / 4 * D_m * D_m;
-  const V = (Q / 1000) / A;
-  const nu = 1.004e-6;
-  const Re = V * D_m / nu;
-  const er = (rugosidad / 1000) / D_m;
-  let f: number;
-  if (Re < 2300) {
-    f = 64 / Re;
-  } else {
-    f = 0.25 / Math.pow(Math.log10(er / 3.7 + 5.74 / Math.pow(Re, 0.9)), 2);
-  }
-  const hf_mayor = f * (L / D_m) * V * V / (2 * 9.81);
-  const hf_menor = K_menor * V * V / (2 * 9.81);
-  const hf_total = hf_mayor + hf_menor;
-  const dP_Pa = 998 * 9.81 * hf_total;
-  const regimen = Re < 2300 ? 'LAMINAR' : Re < 4000 ? 'TRANSICION' : 'TURBULENTO';
-  const riesgo = V > 3 ? 'CRITICAL' : V > 2 ? 'HIGH' : V > 1.5 ? 'MEDIUM' : 'LOW';
-  return {
-    V: +V.toFixed(3), Re: +Re.toFixed(0), f: +f.toFixed(6),
-    hf_mayor: +hf_mayor.toFixed(3), hf_menor: +hf_menor.toFixed(3),
-    hf_total: +hf_total.toFixed(3), dP_Pa: +dP_Pa.toFixed(0),
-    dP_bar: +(dP_Pa / 1e5).toFixed(4), dP_mca: +hf_total.toFixed(3),
-    regimen, riesgo
-  };
-}
-
-function calcGolpeAriete(Q: number, D: number, t_mm: number, L: number, E_GPa: number, dV: number) {
-  if (Q <= 0 || D <= 0 || L <= 0) return null;
-  const D_m = D / 1000;
-  const t_m = t_mm / 1000;
-  const K_agua = 2.2e9;
-  const E = E_GPa * 1e9;
-  const rho = 998;
-  const a = Math.sqrt(K_agua / rho / (1 + K_agua * D_m / (E * t_m)));
-  const dP_MPa = rho * a * dV / 1e6;
-  const Tc = 2 * L / a;
-  const riesgo = dP_MPa > 2 ? 'CRITICAL' : dP_MPa > 1 ? 'HIGH' : dP_MPa > 0.5 ? 'MEDIUM' : 'LOW';
-  return {
-    a: +a.toFixed(0),
-    dP_MPa: +dP_MPa.toFixed(3),
-    dP_bar: +(dP_MPa * 10).toFixed(2),
-    Tc: +Tc.toFixed(2),
-    riesgo
-  };
-}
+// calcDarcyWeisbach y calcGolpeAriete — importadas de @/lib/calculos (fuente
+// única de verdad, con tests). Antes eran copias manuales acá, idénticas en
+// fórmula a las de lib/, pero invisibles para el test suite.
 
 const MATERIALES = [
   { label: 'Acero comercial', rugosidad: 0.046 },
