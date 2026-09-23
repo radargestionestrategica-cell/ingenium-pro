@@ -203,6 +203,7 @@ export default function ModuloCanerias() {
     const D = parseFloat(eDmm), P_bar = parseFloat(ePbar);
     const CA = parseFloat(eCA), TempC = parseFloat(eTempC);
     if ([D, P_bar, CA, TempC].some(n => isNaN(n) || n < 0)) { setErr('Valores inválidos'); return; }
+    if (P_bar <= 0) { setErr('La presión de diseño debe ser mayor a 0.'); return; }
 
     const D_in  = D / 25.4;
     const P_psi = P_bar * 14.5038;
@@ -214,6 +215,11 @@ export default function ModuloCanerias() {
     const norma = eCod === 'B318' ? 'ASME B31.8-2020 §841.1.1' : 'ASME B31.4-2019 §403.2.1';
 
     const t_min_in  = (P_psi * D_in) / (2 * S_psi * F * E * T);
+    // Guarda: t_min_in se usa como divisor de sigma_h_psi más abajo. Con
+    // D=0 (pasaba la validación de arriba, que solo rechazaba negativos)
+    // t_min_in daba 0, y sigma_h_psi quedaba en NaN (0/0) en vez de un
+    // error explícito — mismo patrón que calcGolpeAriete.
+    if (t_min_in <= 0) { setErr('Verificar diámetro y presión: el espesor mínimo calculado no es válido.'); return; }
     const t_min_mm  = Math.round(t_min_in * 25.4 * 100) / 100;
     const t_dis_mm  = Math.round((t_min_mm + CA) * 100) / 100;
 
