@@ -228,6 +228,7 @@ export function calcCapacidadPortante(
 
 // ── TÉRMICA — LMTD ───────────────────────────────────────────────
 // Q en kW, temperaturas en °C, U en W/(m²·K)
+// Referencia: Kern (1950) Process Heat Transfer
 export function calcIntercambiador(
   Q_kW: number,
   T_hot_in: number, T_hot_out: number,
@@ -235,7 +236,14 @@ export function calcIntercambiador(
   U_Wm2K: number,
   tipo: 'contracorriente' | 'paralelo' = 'contracorriente',
 ) {
+  // Number.isFinite rechaza NaN (campo vacío) y ±Infinity: antes pasaban
+  // todas las guardas (NaN <= 0 es false) y devolvían A=NaN con riesgo LOW.
+  if (![Q_kW, T_hot_in, T_hot_out, T_cold_in, T_cold_out, U_Wm2K].every(Number.isFinite)) return null;
   if (Q_kW <= 0 || U_Wm2K <= 0) return null;
+  // Sentido físico: el caliente no puede calentarse ni el frío enfriarse.
+  // La igualdad SÍ se acepta — lado isotérmico por cambio de fase
+  // (condensador: Thi == Tho; evaporador: Tci == Tco).
+  if (T_hot_in < T_hot_out || T_cold_out < T_cold_in) return null;
   const dT1 = tipo === 'contracorriente'
     ? T_hot_in  - T_cold_out
     : T_hot_in  - T_cold_in;
@@ -243,36 +251,142 @@ export function calcIntercambiador(
     ? T_hot_out - T_cold_in
     : T_hot_out - T_cold_out;
   if (dT1 <= 0 || dT2 <= 0) return null;
+  // Con ΔT1 ≈ ΔT2 la fórmula logarítmica tiende a 0/0; el límite es la media.
   const LMTD = Math.abs(dT1 - dT2) < 0.01
-    ? dT1
+    ? (dT1 + dT2) / 2
     : (dT1 - dT2) / Math.log(dT1 / dT2);
   const A_m2 = (Q_kW * 1000) / (U_Wm2K * LMTD);
-  const efectividad = ((T_hot_in - T_hot_out) / (T_hot_in - T_cold_in)) * 100;
+  // Efectividad del lado caliente: (Thi−Tho)/(Thi−Tci). Denominador > 0
+  // garantizado: Thi ≥ Tho > Tci (contra) o Thi − Tci = ΔT1 > 0 (paralelo).
+  // Con el lado caliente isotérmico (condensación) esa relación da 0 % y no
+  // describe al equipo → null + nota. Con solo el lado frío isotérmico
+  // (evaporación) el valor sigue siendo significativo: se informa con nota.
+  const isoCaliente = T_hot_in === T_hot_out;
+  const isoFrio     = T_cold_in === T_cold_out;
+  const efectividad = isoCaliente
+    ? null
+    : +(((T_hot_in - T_hot_out) / (T_hot_in - T_cold_in)) * 100).toFixed(1);
+  const notaEfectividad =
+    isoCaliente && isoFrio ? 'Efectividad no aplica — ambos fluidos a temperatura constante por cambio de fase' :
+    isoCaliente            ? 'Efectividad no aplica — fluido caliente a temperatura constante por cambio de fase (condensación)' :
+    isoFrio                ? 'Fluido frío a temperatura constante por cambio de fase (evaporación) — efectividad calculada sobre el fluido caliente' :
+    null;
+  // Heurístico interno por área de intercambio (m²) — no es una verificación
+  // de presión de diseño ni corresponde a ASME VIII Div.1
+  // Tipado con los 4 niveles comunes (nunca CRITICAL acá) para que los
+  // consumidores puedan usar el mismo chequeo HIGH || CRITICAL de siempre.
+  const riesgo = (A_m2 > 500 ? 'HIGH' : A_m2 > 200 ? 'MEDIUM' : 'LOW') as
+    'LOW'|'MEDIUM'|'HIGH'|'CRITICAL';
   return {
     LMTD:        +LMTD.toFixed(2),
     A_m2:        +A_m2.toFixed(2),
-    efectividad: +efectividad.toFixed(1),
+    dT1:         +dT1.toFixed(1),
+    dT2:         +dT2.toFixed(1),
+    efectividad,
+    notaEfectividad,
+    riesgo,
   };
 }
 
+// ── TÉRMICA — Dilatación de tuberías (ASME B31.3 Appendix C) ─────
+// Coeficientes de expansión térmica (10⁻⁶/°C) y módulo de elasticidad (GPa)
+export const MATERIALES_DILATACION: Record<string, { alpha_1e6: number; E_GPa: number }> = {
+  acero_carbono:  { alpha_1e6: 11.7,  E_GPa: 200 },
+  acero_inox_304: { alpha_1e6: 17.2,  E_GPa: 193 },
+  acero_inox_316: { alpha_1e6: 16.0,  E_GPa: 193 },
+  cobre:          { alpha_1e6: 17.0,  E_GPa: 110 },
+  aluminio:       { alpha_1e6: 23.6,  E_GPa: 69  },
+  hdpe:           { alpha_1e6: 150.0, E_GPa: 0.8 },
+};
+
+// Admisible de referencia (acero A36) — solo se aplica a acero al carbono
+const SIGMA_ADM_REF_MPA = 150;
+// Tensión admisible usada para dimensionar la lira en U
+const SIGMA_LIRA_PA = 200e6;
+
 // alpha_1e6 en µm/(m·°C), L_m en m, E_GPa en GPa (para sigma si restringido)
+// geometria (opcional): OD/t en mm — si se pasa, calcula la lira en U
+// sigmaAdmAplica: true solo si el material es acero al carbono (umbral HIGH 150 MPa)
 export function calcDilatacionLineal(
   L_m: number, T1_C: number, T2_C: number,
   alpha_1e6: number, restringido = false, E_GPa = 200,
+  geometria?: { OD_mm: number; t_mm: number },
+  sigmaAdmAplica = false,
 ) {
-  if (L_m <= 0 || alpha_1e6 <= 0) return null;
-  const dT    = Math.abs(T2_C - T1_C);
+  if (![L_m, T1_C, T2_C, alpha_1e6, E_GPa].every(Number.isFinite)) return null;
+  if (L_m <= 0 || alpha_1e6 <= 0 || E_GPa <= 0) return null;
+  if (geometria && (![geometria.OD_mm, geometria.t_mm].every(Number.isFinite) ||
+      geometria.OD_mm <= 0 || geometria.t_mm <= 0)) return null;
+
+  const dT    = T2_C - T1_C;   // con signo — se devuelve así para informar
   const alpha = alpha_1e6 * 1e-6;
-  const dL_mm = alpha * L_m * dT * 1000;
-  const sigma_MPa = restringido ? E_GPa * 1000 * alpha * dT : 0;
-  const risk =
-    sigma_MPa > 300 ? 'CRITICAL' : sigma_MPa > 200 ? 'HIGH' :
-    sigma_MPa > 100 ? 'MEDIUM'   : dL_mm > 50 ? 'MEDIUM' : 'LOW';
+  const dL_mm = alpha * L_m * Math.abs(dT) * 1000;
+
+  // Tensión térmica si está restringido: aproximación genérica σ=E·α·ΔT
+  // (fully restrained), no es la ecuación textual de ASME B31.3 302.3.5
+  // (SE con componentes de flexión/torsión) — verificar con análisis formal
+  const sigma_MPa = restringido ? E_GPa * 1000 * alpha * Math.abs(dT) : 0;
+
+  // Longitud lira en U — regla práctica de dimensionamiento preliminar
+  // (guided cantilever): L = √(3·E·D·ΔL / Sa). Verificar con análisis formal.
+  const L_lira_m = geometria
+    ? Math.sqrt(3 * E_GPa * 1e9 * (geometria.OD_mm / 1000) * (dL_mm / 1000) / SIGMA_LIRA_PA)
+    : 0;
+
+  // Riesgo: umbrales de tensión (200 / 150 solo acero al carbono / 100) +
+  // ΔL > 50 mm → MEDIUM aunque no esté restringido (dilatación libre grande
+  // requiere verificar flexibilidad del trazado).
+  const riesgo: 'LOW'|'MEDIUM'|'HIGH'|'CRITICAL' =
+    sigma_MPa > 200 ? 'CRITICAL' :
+    (sigmaAdmAplica && sigma_MPa > SIGMA_ADM_REF_MPA) ? 'HIGH' :
+    sigma_MPa > 100 ? 'MEDIUM' :
+    dL_mm > 50      ? 'MEDIUM' : 'LOW';
+  const advertenciaMaterial = !sigmaAdmAplica
+    ? 'Esfuerzo admisible mostrado es de referencia para acero A36 - para este material consultar tabla especifica antes de decisiones de diseno'
+    : null;
+
+  // Estado derivado del MISMO riesgo combinado (tensión + ΔL), para que
+  // "Estado" y "Riesgo" nunca se contradigan. HIGH/CRITICAL solo pueden
+  // venir de tensión con extremos restringidos → requiere lira/compensador.
+  const estado: 'APTO'|'MONITOREAR'|'REQUIERE LIRA' =
+    riesgo === 'CRITICAL' || riesgo === 'HIGH' ? 'REQUIERE LIRA' :
+    riesgo === 'MEDIUM' ? 'MONITOREAR' : 'APTO';
+  const estadoMotivo =
+    riesgo === 'CRITICAL' ? 'Tension termica critica (> 200 MPa)' :
+    riesgo === 'HIGH'     ? `Tension supera el admisible de referencia (${SIGMA_ADM_REF_MPA} MPa)` :
+    riesgo === 'MEDIUM'   ? (sigma_MPa > 100
+      ? 'Tension termica elevada (> 100 MPa)'
+      : 'Dilatacion libre > 50 mm — verificar flexibilidad del trazado') :
+    null;
+
   return {
-    dL_mm:     +dL_mm.toFixed(2),
+    dL_mm:     +dL_mm.toFixed(1),
     sigma_MPa: +sigma_MPa.toFixed(1),
-    risk,
+    L_lira_m:  +L_lira_m.toFixed(2),
+    dT:        +dT.toFixed(1),
+    alpha:     alpha_1e6,
+    riesgo,
+    estado,
+    estadoMotivo,
+    sigmaAdmAplica,
+    advertenciaMaterial,
+    ok: riesgo === 'LOW' || riesgo === 'MEDIUM',
   };
+}
+
+// Igual que calcDilatacionLineal pero busca α y E en MATERIALES_DILATACION.
+// Material desconocido → null (antes caía en silencio a acero al carbono).
+export function calcDilatacionMaterial(
+  L_m: number, T1_C: number, T2_C: number,
+  material: string, restringido: boolean,
+  OD_mm: number, t_mm: number,
+) {
+  const m = MATERIALES_DILATACION[material];
+  if (!m) return null;
+  return calcDilatacionLineal(
+    L_m, T1_C, T2_C, m.alpha_1e6, restringido, m.E_GPa,
+    { OD_mm, t_mm }, material === 'acero_carbono',
+  );
 }
 
 // ── CIVIL — ACI 318-19 ────────────────────────────────────────────

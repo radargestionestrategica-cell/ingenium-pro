@@ -1,126 +1,27 @@
 ﻿'use client';
 import { publicarResultado } from '@/components/ResultadoContexto';
 import BotonesExportar, { DatosExportar } from '@/components/BotonesExportar';
+import {
+  calcIntercambiador as calcIntercambiadorCore,
+  calcDilatacionMaterial as calcDilatacion,
+} from '@/lib/calculos';
 import { useState } from 'react';
 
-// Intercambiador de calor - Metodo LMTD
-// Referencia: ASME VIII Div.1 + Kern (1950) Process Heat Transfer
+// Intercambiador de calor (LMTD) y dilatacion termica de tuberias (ASME B31.3
+// Appendix C) — el calculo vive en @/lib/calculos (fuente unica, con tests):
+// validacion de sentido fisico con cambio de fase, Number.isFinite, tabla de
+// materiales (alpha y E), lira en U y umbrales de riesgo. calcDilatacion
+// devuelve los mismos campos que usan la UI y la exportacion PDF/Excel/DXF.
+// Aca solo se adapta "tipo" (string del <select>) a la union tipada de lib.
 function calcIntercambiador(
-  Q_kW: number, // Calor transferido (kW)
-  T_hot_in: number, // Temperatura entrada fluido caliente (C)
-  T_hot_out: number, // Temperatura salida fluido caliente (C)
-  T_cold_in: number, // Temperatura entrada fluido frio (C)
-  T_cold_out: number, // Temperatura salida fluido frio (C)
-  U_Wm2K: number, // Coeficiente global transferencia (W/m2.K)
-  tipo: string // 'contracorriente' o 'paralelo'
+  Q_kW: number, T_hot_in: number, T_hot_out: number,
+  T_cold_in: number, T_cold_out: number, U_Wm2K: number,
+  tipo: string
 ) {
-  if (Q_kW <= 0 || U_Wm2K <= 0) return null;
-  if (T_hot_in <= T_hot_out || T_cold_out <= T_cold_in) return null;
-
-  // LMTD segun tipo de flujo
-  let dT1: number, dT2: number;
-  if (tipo === 'contracorriente') {
-    dT1 = T_hot_in - T_cold_out;
-    dT2 = T_hot_out - T_cold_in;
-  } else {
-    dT1 = T_hot_in - T_cold_in;
-    dT2 = T_hot_out - T_cold_out;
-  }
-
-  if (dT1 <= 0 || dT2 <= 0) return null;
-
-  const LMTD = dT1 === dT2 ? dT1 : (dT1 - dT2) / Math.log(dT1 / dT2);
-
-  // Area requerida
-  const Q_W = Q_kW * 1000;
-  const A_m2 = Q_W / (U_Wm2K * LMTD);
-
-  // Eficiencia termica
-  const Q_max = Math.min(
-    (T_hot_in - T_cold_in),
-    (T_hot_in - T_cold_in)
+  return calcIntercambiadorCore(
+    Q_kW, T_hot_in, T_hot_out, T_cold_in, T_cold_out, U_Wm2K,
+    tipo === 'paralelo' ? 'paralelo' : 'contracorriente'
   );
-  const efectividad = (T_hot_in - T_hot_out) / (T_hot_in - T_cold_in);
-
-  // Heuristico interno por area de intercambio (m2) — no es una verificacion de presion de diseno ni corresponde a ASME VIII Div.1
-  const riesgo = A_m2 > 500 ? 'HIGH' : A_m2 > 200 ? 'MEDIUM' : 'LOW';
-
-  return {
-    LMTD: +LMTD.toFixed(2),
-    A_m2: +A_m2.toFixed(2),
-    dT1: +dT1.toFixed(1),
-    dT2: +dT2.toFixed(1),
-    efectividad: +(efectividad * 100).toFixed(1),
-    riesgo
-  };
-}
-
-// Dilatacion termica de tuberias - ASME B31.3
-// Referencia: ASME B31.3-2022 Appendix C
-function calcDilatacion(
-  L_m: number, // Longitud tuberia (m)
-  T1_C: number, // Temperatura instalacion (C)
-  T2_C: number, // Temperatura operacion (C)
-  material: string, // Material tuberia
-  restringido: boolean,// Extremos restringidos
-  OD_mm: number, // Diametro exterior (mm)
-  t_mm: number // Espesor pared (mm)
-) {
-  if (L_m <= 0) return null;
-
-  // Coeficientes expansion termica ASME B31.3 Appendix C (10^-6 /C)
-  const alphaDB: Record<string, number> = {
-    acero_carbono: 11.7,
-    acero_inox_304: 17.2,
-    acero_inox_316: 16.0,
-    cobre: 17.0,
-    aluminio: 23.6,
-    hdpe: 150.0,
-  };
-
-  // Modulo elasticidad (GPa)
-  const E_DB: Record<string, number> = {
-    acero_carbono: 200,
-    acero_inox_304: 193,
-    acero_inox_316: 193,
-    cobre: 110,
-    aluminio: 69,
-    hdpe: 0.8,
-  };
-
-  const alpha = alphaDB[material] || 11.7;
-  const E_GPa = E_DB[material] || 200;
-  const dT = T2_C - T1_C;
-  const dL_mm = alpha * 1e-6 * L_m * Math.abs(dT) * 1000;
-
-  // Tension termica si esta restringido: aproximacion generica sigma=E*alpha*dT (fully restrained), no es la ecuacion textual de ASME B31.3 302.3.5 (SE con componentes de flexion/torsion) — verificar con analisis formal
-  const sigma_MPa = restringido ? E_GPa * 1000 * alpha * 1e-6 * Math.abs(dT) : 0;
-
-  // Longitud lira en U (regla practica de dimensionamiento preliminar de loop de expansion, segun el marco de analisis de flexibilidad de ASME B31.3; verificar con analisis formal)
-  const D_m = OD_mm / 1000;
-  const L_lira_m = t_mm > 0 && OD_mm > 0
-    ? Math.sqrt(3 * E_GPa * 1e9 * D_m * (dL_mm / 1000) / (200e6))
-    : 0;
-
-  // Limite tension admisible acero A36 = 150 MPa — solo aplica si el material es acero_carbono
-  const sigmaAdmAplica = material === 'acero_carbono';
-  const sigma_adm = 150;
-  const riesgo = sigma_MPa > 200 ? 'CRITICAL' : (sigmaAdmAplica && sigma_MPa > sigma_adm) ? 'HIGH' : sigma_MPa > 100 ? 'MEDIUM' : 'LOW';
-  const advertenciaMaterial = !sigmaAdmAplica
-    ? 'Esfuerzo admisible mostrado es de referencia para acero A36 - para este material consultar tabla especifica antes de decisiones de diseno'
-    : null;
-
-  return {
-    dL_mm: +dL_mm.toFixed(1),
-    sigma_MPa: +sigma_MPa.toFixed(1),
-    L_lira_m: +L_lira_m.toFixed(2),
-    dT: +dT.toFixed(1),
-    alpha,
-    riesgo,
-    sigmaAdmAplica,
-    advertenciaMaterial,
-    ok: sigmaAdmAplica ? (sigma_MPa <= sigma_adm || !restringido) : true
-  };
 }
 
 const MATERIALES_TERM = [
@@ -190,7 +91,8 @@ export default function ModuloTermica() {
         'Area requerida A (m2)': r.A_m2,
         'dT extremo 1 (C)': r.dT1,
         'dT extremo 2 (C)': r.dT2,
-        'Efectividad (%)': r.efectividad,
+        'Efectividad (%)': r.efectividad ?? 'No aplica',
+        ...(r.notaEfectividad ? { 'Nota efectividad': r.notaEfectividad } : {}),
         'Estado': r.riesgo,
       },
       nivel:  r.riesgo,
@@ -237,7 +139,8 @@ export default function ModuloTermica() {
         'Alpha (x10-6/C)': r.alpha,
         'Tension termica (MPa)': r.sigma_MPa,
         'Longitud lira U (m)': r.L_lira_m,
-        'Estado': r.advertenciaMaterial ? 'VER ADVERTENCIA' : (r.ok ? 'APTO' : 'REQUIERE LIRA'),
+        'Estado': r.estado,
+        ...(r.estadoMotivo ? { 'Motivo estado': r.estadoMotivo } : {}),
         'Riesgo': r.riesgo,
         ...(r.advertenciaMaterial ? { 'Advertencia': r.advertenciaMaterial } : {}),
       },
@@ -385,7 +288,7 @@ export default function ModuloTermica() {
                 { label: 'Alpha material', value: resDil.alpha + ' x10-6/C' },
                 { label: 'Tension termica', value: resDil.sigma_MPa + ' MPa' },
                 { label: 'Longitud lira U', value: resDil.L_lira_m + ' m' },
-                { label: 'Estado', value: resDil.advertenciaMaterial ? 'VER ADVERTENCIA' : (resDil.ok ? 'APTO' : 'REQUIERE LIRA') },
+                { label: 'Estado', value: resDil.estado },
               ].map((r, i) => (
                 <div key={i} style={{ background: '#0f172a', borderRadius: 8, padding: 12, textAlign: 'center' as const }}>
                   <div style={{ color: '#64748b', fontSize: 11, marginBottom: 4 }}>{r.label}</div>
@@ -393,6 +296,11 @@ export default function ModuloTermica() {
                 </div>
               ))}
             </div>
+            {resDil.estadoMotivo && (
+              <div style={{ background: '#0f172a', border: `1px solid ${riskColor[resDil.riesgo]}`, borderRadius: 8, padding: 12, color: '#cbd5e1', fontSize: 13, marginBottom: 16 }}>
+                {resDil.estado}: {resDil.estadoMotivo}
+              </div>
+            )}
             {resDil.advertenciaMaterial && (
               <div style={{ background: '#450a0a', border: '1px solid #dc2626', borderRadius: 8, padding: 12, color: '#fca5a5', fontSize: 13, marginBottom: 16 }}>
                 ⚠️ {resDil.advertenciaMaterial}
@@ -419,7 +327,7 @@ export default function ModuloTermica() {
                 { label: 'Area requerida A', value: resInt.A_m2 + ' m2' },
                 { label: 'dT extremo 1', value: resInt.dT1 + ' C' },
                 { label: 'dT extremo 2', value: resInt.dT2 + ' C' },
-                { label: 'Efectividad', value: resInt.efectividad + '%' },
+                { label: 'Efectividad', value: resInt.efectividad === null ? 'No aplica' : resInt.efectividad + '%' },
                 { label: 'Tipo flujo', value: tipo },
               ].map((r, i) => (
                 <div key={i} style={{ background: '#0f172a', borderRadius: 8, padding: 12, textAlign: 'center' as const }}>
@@ -428,6 +336,11 @@ export default function ModuloTermica() {
                 </div>
               ))}
             </div>
+            {resInt.notaEfectividad && (
+              <div style={{ background: '#0f172a', border: '1px solid #475569', borderRadius: 8, padding: 12, color: '#cbd5e1', fontSize: 13, marginBottom: 16 }}>
+                ℹ️ {resInt.notaEfectividad}
+              </div>
+            )}
             <div style={{ background: '#0f172a', borderRadius: 8, padding: 14, fontSize: 12, color: '#94a3b8', fontFamily: 'monospace' }}>
               <div style={{ color: '#ef4444', marginBottom: 4, fontWeight: 700 }}>FORMULA LMTD:</div>
               Q = U x A x LMTD | A = Q / (U x LMTD)

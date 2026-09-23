@@ -4,6 +4,7 @@ import {
   calcBHP, calcFractureGradient, calcMudWeight,
   calcCapacidadPortante,
   calcIntercambiador, calcDilatacionLineal,
+  calcDilatacionMaterial, MATERIALES_DILATACION,
   calcColumnaHormigon,
   calcRMR, calcVentilacion,
   calcHeatInputSoldadura, calcCarbonoEquivalente,
@@ -512,6 +513,74 @@ describe('calcIntercambiador', () => {
   it('retorna null con Q=0', () => {
     expect(calcIntercambiador(0, 100, 60, 20, 80, 500)).toBeNull();
   });
+
+  it('devuelve dT1, dT2 y riesgo por área', () => {
+    const r = calcIntercambiador(500, 120, 60, 20, 80, 500, 'contracorriente')!;
+    expect(r.dT1).toBe(40);
+    expect(r.dT2).toBe(40);
+    expect(r.A_m2).toBe(25);
+    expect(r.riesgo).toBe('LOW');
+  });
+
+  it('riesgo por área: >200 m² MEDIUM, >500 m² HIGH', () => {
+    // LMTD = 40 → A = Q·1000 / (U·40)
+    expect(calcIntercambiador(3000, 120, 60, 20, 80, 300)!.riesgo).toBe('MEDIUM'); // 250 m²
+    expect(calcIntercambiador(9000, 120, 60, 20, 80, 300)!.riesgo).toBe('HIGH');   // 750 m²
+  });
+
+  it('ΔT1 ≈ ΔT2 (< 0.01) → LMTD = media aritmética', () => {
+    // dT1 = 120 − 80 = 40, dT2 = 60.005 − 20 = 40.005 → media 40.0025
+    const r = calcIntercambiador(500, 120, 60.005, 20, 80, 500, 'contracorriente')!;
+    expect(r.LMTD).toBeCloseTo(40.0025, 2);
+  });
+
+  it('rechaza sentido físico inverso (caliente se calienta / frío se enfría)', () => {
+    // Antes lib lo aceptaba y devolvía efectividad = −150 %
+    expect(calcIntercambiador(100, 60, 120, 20, 50, 500)).toBeNull();
+    expect(calcIntercambiador(100, 120, 60, 80, 20, 500)).toBeNull();
+  });
+
+  it('cambio de fase: condensador (Thi == Tho) aceptado', () => {
+    // Vapor condensando a 120 °C, agua 20 → 80 °C
+    // dT1 = 120 − 80 = 40, dT2 = 120 − 20 = 100 → LMTD = 60/ln(2.5) = 65.48
+    const r = calcIntercambiador(500, 120, 120, 20, 80, 500, 'contracorriente')!;
+    expect(r).not.toBeNull();
+    expect(r.LMTD).toBeCloseTo(60 / Math.log(2.5), 2);
+    // Efectividad del lado caliente daría 0 % sin sentido → null + nota
+    expect(r.efectividad).toBeNull();
+    expect(r.notaEfectividad).toMatch(/no aplica.*condensaci/i);
+  });
+
+  it('cambio de fase: evaporador (Tci == Tco) aceptado', () => {
+    // Fluido caliente 120 → 60 °C, refrigerante evaporando a 10 °C
+    // dT1 = 120 − 10 = 110, dT2 = 60 − 10 = 50 → LMTD = 60/ln(2.2) = 76.10
+    const r = calcIntercambiador(500, 120, 60, 10, 10, 500, 'contracorriente')!;
+    expect(r).not.toBeNull();
+    expect(r.LMTD).toBeCloseTo(60 / Math.log(2.2), 2);
+    // Efectividad del lado caliente sigue siendo significativa: (120−60)/(120−10)
+    expect(r.efectividad).toBeCloseTo(60 / 110 * 100, 1);
+    expect(r.notaEfectividad).toMatch(/evaporaci/i);
+  });
+
+  it('cambio de fase en ambos lados → efectividad no aplica', () => {
+    // Vapor condensando a 150 °C, agua hirviendo a 100 °C → LMTD = 50
+    const r = calcIntercambiador(500, 150, 150, 100, 100, 500, 'contracorriente')!;
+    expect(r.LMTD).toBe(50);
+    expect(r.efectividad).toBeNull();
+    expect(r.notaEfectividad).toMatch(/ambos fluidos/i);
+  });
+
+  it('sin cambio de fase → sin nota de efectividad', () => {
+    expect(calcIntercambiador(500, 120, 60, 20, 80, 500)!.notaEfectividad).toBeNull();
+  });
+
+  it('retorna null con entradas no finitas (NaN / Infinity)', () => {
+    expect(calcIntercambiador(NaN,      120, 60,  20, 80, 500)).toBeNull();
+    expect(calcIntercambiador(500,      NaN, 60,  20, 80, 500)).toBeNull();
+    expect(calcIntercambiador(500,      120, 60,  NaN, 80, 500)).toBeNull();
+    expect(calcIntercambiador(500,      120, 60,  20, 80, Infinity)).toBeNull();
+    expect(calcIntercambiador(Infinity, 120, 60,  20, 80, 500)).toBeNull();
+  });
 });
 
 describe('calcDilatacionLineal', () => {
@@ -522,11 +591,11 @@ describe('calcDilatacionLineal', () => {
     expect(r!.dL_mm).toBeCloseTo(11.7e-6 * 100 * 180 * 1000, 1);
   });
 
-  it('restringido genera tensión — CRITICAL si > 300 MPa', () => {
+  it('restringido genera tensión — CRITICAL si > 200 MPa', () => {
     // sigma = 200×1000 × 11.7e-6 × 180 = 421.2 MPa
     const r = calcDilatacionLineal(100, 20, 200, 11.7, true, 200);
     expect(r!.sigma_MPa).toBeCloseTo(421.2, 0);
-    expect(r!.risk).toBe('CRITICAL');
+    expect(r!.riesgo).toBe('CRITICAL');
   });
 
   it('sin restricción → sigma=0', () => {
@@ -542,6 +611,111 @@ describe('calcDilatacionLineal', () => {
 
   it('retorna null con L=0', () => {
     expect(calcDilatacionLineal(0, 20, 200, 11.7)).toBeNull();
+  });
+
+  it('ΔL > 50 mm sin restricción → MEDIUM (antes el componente daba LOW)', () => {
+    // Caso por defecto de la UI: 100 m, 20 → 80 °C, acero al carbono
+    // dL = 11.7e-6 × 100 × 60 × 1000 = 70.2 mm, sigma = 0
+    const r = calcDilatacionLineal(100, 20, 80, 11.7, false)!;
+    expect(r.dL_mm).toBe(70.2);
+    expect(r.sigma_MPa).toBe(0);
+    expect(r.riesgo).toBe('MEDIUM');
+  });
+
+  it('ΔL ≤ 50 mm sin restricción → LOW', () => {
+    // dL = 11.7e-6 × 50 × 60 × 1000 = 35.1 mm
+    expect(calcDilatacionLineal(50, 20, 80, 11.7, false)!.riesgo).toBe('LOW');
+  });
+
+  it('umbral HIGH 150 MPa solo aplica con sigmaAdmAplica (acero al carbono)', () => {
+    // sigma = 200×1000 × 11.7e-6 × 70 = 163.8 MPa
+    const conAdm = calcDilatacionLineal(10, 20, 90, 11.7, true, 200, undefined, true)!;
+    const sinAdm = calcDilatacionLineal(10, 20, 90, 11.7, true, 200, undefined, false)!;
+    expect(conAdm.sigma_MPa).toBeCloseTo(163.8, 1);
+    expect(conAdm.riesgo).toBe('HIGH');
+    expect(conAdm.ok).toBe(false);
+    expect(sinAdm.riesgo).toBe('MEDIUM');
+    expect(sinAdm.advertenciaMaterial).not.toBeNull();
+  });
+
+  it('estado y ok se derivan del mismo riesgo combinado — nunca se contradicen', () => {
+    const casos = [
+      calcDilatacionLineal(50,  20, 80,  11.7, false),                           // LOW
+      calcDilatacionLineal(100, 20, 80,  11.7, false),                           // MEDIUM por ΔL
+      calcDilatacionLineal(100, 20, 80,  11.7, true, 200, undefined, true),      // MEDIUM por σ=140.4
+      calcDilatacionLineal(10,  20, 90,  11.7, true, 200, undefined, true),      // HIGH σ=163.8
+      calcDilatacionLineal(10,  20, 200, 11.7, true, 200, undefined, true),      // CRITICAL
+      calcDilatacionLineal(10,  20, 200, 17.2, true, 193, undefined, false),     // CRITICAL no carbono
+    ].map(r => r!);
+    const esperado = { LOW: 'APTO', MEDIUM: 'MONITOREAR', HIGH: 'REQUIERE LIRA', CRITICAL: 'REQUIERE LIRA' };
+    expect(casos.map(r => r.riesgo)).toEqual(['LOW', 'MEDIUM', 'MEDIUM', 'HIGH', 'CRITICAL', 'CRITICAL']);
+    for (const r of casos) {
+      expect(r.estado).toBe(esperado[r.riesgo]);
+      expect(r.ok).toBe(r.riesgo === 'LOW' || r.riesgo === 'MEDIUM');
+    }
+  });
+
+  it('estadoMotivo explica el origen del riesgo', () => {
+    expect(calcDilatacionLineal(50,  20, 80, 11.7, false)!.estadoMotivo).toBeNull();
+    expect(calcDilatacionLineal(100, 20, 80, 11.7, false)!.estadoMotivo).toMatch(/Dilatacion libre > 50 mm/);
+    expect(calcDilatacionLineal(100, 20, 80, 11.7, true, 200, undefined, true)!.estadoMotivo).toMatch(/> 100 MPa/);
+  });
+
+  it('dT se devuelve con signo', () => {
+    expect(calcDilatacionLineal(50, 80, 20, 11.7)!.dT).toBe(-60);
+  });
+
+  it('retorna null con entradas no finitas (NaN / Infinity)', () => {
+    expect(calcDilatacionLineal(NaN, 20, 80, 11.7)).toBeNull();
+    expect(calcDilatacionLineal(100, NaN, 80, 11.7)).toBeNull();
+    expect(calcDilatacionLineal(100, 20, Infinity, 11.7)).toBeNull();
+    expect(calcDilatacionLineal(100, 20, 80, NaN)).toBeNull();
+    expect(calcDilatacionLineal(100, 20, 80, 11.7, true, NaN)).toBeNull();
+  });
+
+  it('retorna null con E <= 0 o geometría inválida', () => {
+    expect(calcDilatacionLineal(100, 20, 80, 11.7, true, 0)).toBeNull();
+    expect(calcDilatacionLineal(100, 20, 80, 11.7, true, -200)).toBeNull();
+    expect(calcDilatacionLineal(100, 20, 80, 11.7, false, 200, { OD_mm: NaN, t_mm: 8 })).toBeNull();
+    expect(calcDilatacionLineal(100, 20, 80, 11.7, false, 200, { OD_mm: 219.1, t_mm: -1 })).toBeNull();
+  });
+});
+
+describe('calcDilatacionMaterial', () => {
+  it('caso por defecto de la UI — acero al carbono, lira en U', () => {
+    // dL = 70.2 mm; lira = √(3 × 200e9 × 0.2191 × 0.0702 / 200e6) = 6.79 m
+    const r = calcDilatacionMaterial(100, 20, 80, 'acero_carbono', false, 219.1, 8.18)!;
+    expect(r.alpha).toBe(11.7);
+    expect(r.dL_mm).toBe(70.2);
+    expect(r.L_lira_m).toBeCloseTo(6.79, 2);
+    expect(r.sigmaAdmAplica).toBe(true);
+    expect(r.advertenciaMaterial).toBeNull();
+    expect(r.ok).toBe(true);
+  });
+
+  it('restringido — acero al carbono σ = 140.4 MPa → MEDIUM', () => {
+    const r = calcDilatacionMaterial(100, 20, 80, 'acero_carbono', true, 219.1, 8.18)!;
+    expect(r.sigma_MPa).toBeCloseTo(140.4, 1);
+    expect(r.riesgo).toBe('MEDIUM');
+  });
+
+  it('usa E de la tabla — HDPE (E = 0.8 GPa) no da tensión absurda', () => {
+    // sigma = 0.8×1000 × 150e-6 × 60 = 7.2 MPa (con E=200 daría 1800 MPa)
+    const r = calcDilatacionMaterial(100, 20, 80, 'hdpe', true, 110, 10)!;
+    expect(r.sigma_MPa).toBeCloseTo(7.2, 1);
+    expect(r.sigmaAdmAplica).toBe(false);
+  });
+
+  it('coincide con MATERIALES_DILATACION para cada material', () => {
+    for (const [id, m] of Object.entries(MATERIALES_DILATACION)) {
+      const r = calcDilatacionMaterial(10, 20, 80, id, true, 100, 5)!;
+      expect(r.alpha).toBe(m.alpha_1e6);
+      expect(r.sigma_MPa).toBeCloseTo(m.E_GPa * 1000 * m.alpha_1e6 * 1e-6 * 60, 1);
+    }
+  });
+
+  it('material desconocido → null', () => {
+    expect(calcDilatacionMaterial(100, 20, 80, 'titanio', false, 219.1, 8.18)).toBeNull();
   });
 });
 
