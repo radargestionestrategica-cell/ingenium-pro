@@ -298,9 +298,16 @@ export function calcColumnaHormigon(
 }
 
 // ── MINERÍA — RMR Bieniawski 1989 ────────────────────────────────
-type CondicionFisura = 'muy_buena'|'buena'|'moderada'|'pobre'|'muy_pobre';
+// P4 (condición de discontinuidades) es el parámetro de mayor peso del
+// sistema, máximo 30 de 100 puntos — fuente: Bieniawski (1989). La tabla
+// anterior de este archivo tenía un máximo de 15 (la mitad) con nombres de
+// categoría (moderada/pobre/muy_pobre) que además no coincidían con las
+// claves reales del <select> de components/ModuloMineria.tsx
+// (regular/mala/muy_mala) — nunca hubiera funcionado si algo la hubiese
+// importado con los valores que el formulario realmente envía.
+type CondicionFisura = 'muy_buena'|'buena'|'regular'|'mala'|'muy_mala';
 type AguaRoca        = 'seco'|'humedo'|'mojado'|'goteo'|'flujo';
-type OrientacionRMR  = 'muy_favorable'|'favorable'|'moderada'|'desfavorable'|'muy_desfavorable';
+type OrientacionRMR  = 'muy_favorable'|'favorable'|'regular'|'desfavorable'|'muy_desfavorable';
 
 function rmrP1(ucs: number) {
   return ucs > 250 ? 15 : ucs > 100 ? 12 : ucs > 50 ? 7 : ucs > 25 ? 4 : ucs > 5 ? 2 : 1;
@@ -312,13 +319,13 @@ function rmrP3(espaciado_mm: number) {
   return espaciado_mm > 2000 ? 20 : espaciado_mm > 600 ? 15 : espaciado_mm > 200 ? 10 : espaciado_mm > 60 ? 8 : 5;
 }
 const P4_MAP: Record<CondicionFisura, number> = {
-  muy_buena:15, buena:12, moderada:10, pobre:6, muy_pobre:0,
+  muy_buena:30, buena:25, regular:20, mala:10, muy_mala:0,
 };
 const P5_MAP: Record<AguaRoca, number> = {
   seco:15, humedo:10, mojado:7, goteo:4, flujo:0,
 };
 const ADJ_MAP: Record<OrientacionRMR, number> = {
-  muy_favorable:0, favorable:-2, moderada:-5, desfavorable:-10, muy_desfavorable:-12,
+  muy_favorable:0, favorable:-2, regular:-5, desfavorable:-10, muy_desfavorable:-12,
 };
 
 export function calcRMR(

@@ -586,23 +586,34 @@ describe('calcColumnaHormigon', () => {
 // MINERÍA — RMR / Ventilación
 // ════════════════════════════════════════════════════════════════
 describe('calcRMR', () => {
-  it('roca buena — clase II', () => {
-    // ucs=101→p1=12, rqd=80→p2=17, espaciado=500→p3=10 (200–600), buena→p4=12, humedo→p5=10, favorable→adj=-2
+  it('roca buena — clase II (P4 corregido: buena=25/30, no 12/15)', () => {
+    // ucs=101→p1=12, rqd=80→p2=17, espaciado=500→p3=10 (200–600), buena→p4=25
+    // (tabla Bieniawski real, antes esta función tenía buena=12 sobre 15),
+    // humedo→p5=10, favorable→adj=-2
     const r = calcRMR(101, 80, 500, 'buena', 'humedo', 'favorable');
     expect(r).not.toBeNull();
-    expect(r!.rmr).toBe(12 + 17 + 10 + 12 + 10 - 2);  // 59
-    expect(r!.clase).toBe('III');   // 41–60
-    expect(r!.riesgo).toBe('MEDIUM');
+    expect(r!.p4).toBe(25);
+    expect(r!.rmr).toBe(12 + 17 + 10 + 25 + 10 - 2);  // 72
+    expect(r!.clase).toBe('II');    // 61–80 (antes daba 'III' con el P4 viejo)
+    expect(r!.riesgo).toBe('LOW');  // antes daba 'MEDIUM'
+  });
+
+  it('P4 — las 5 categorías dan el puntaje real de Bieniawski (máximo 30, no 15)', () => {
+    expect(calcRMR(101, 80, 500, 'muy_buena', 'seco', 'muy_favorable')!.p4).toBe(30);
+    expect(calcRMR(101, 80, 500, 'buena',     'seco', 'muy_favorable')!.p4).toBe(25);
+    expect(calcRMR(101, 80, 500, 'regular',   'seco', 'muy_favorable')!.p4).toBe(20);
+    expect(calcRMR(101, 80, 500, 'mala',      'seco', 'muy_favorable')!.p4).toBe(10);
+    expect(calcRMR(101, 80, 500, 'muy_mala',  'seco', 'muy_favorable')!.p4).toBe(0);
   });
 
   it('roca muy mala — clase V, riesgo CRITICAL', () => {
-    const r = calcRMR(3, 15, 30, 'muy_pobre', 'flujo', 'muy_desfavorable');
+    const r = calcRMR(3, 15, 30, 'muy_mala', 'flujo', 'muy_desfavorable');
     expect(r!.clase).toBe('V');
     expect(r!.riesgo).toBe('CRITICAL');
   });
 
   it('suma de parámetros es correcta', () => {
-    const r = calcRMR(55, 60, 300, 'moderada', 'seco', 'moderada');
+    const r = calcRMR(55, 60, 300, 'regular', 'seco', 'regular');
     expect(r!.rmr).toBe(r!.p1 + r!.p2 + r!.p3 + r!.p4 + r!.p5 + r!.adj);
   });
 });
