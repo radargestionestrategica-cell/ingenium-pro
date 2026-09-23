@@ -1,7 +1,7 @@
 ﻿'use client';
 import { publicarResultado } from '@/components/ResultadoContexto';
 import BotonesExportar, { DatosExportar } from '@/components/BotonesExportar';
-import { calcRMR as calcRMRCore } from '@/lib/calculos';
+import { calcRMR as calcRMRCore, calcVentilacion, NORMAS_VENT } from '@/lib/calculos';
 import { useState } from 'react';
 
 // RMR - Rock Mass Rating (Bieniawski 1989)
@@ -32,57 +32,9 @@ function calcRMR(
   return { ...core, ...info };
 }
 
-// Ventilacion subterranea — factores de caudal minimo segun reglamento seleccionado
+// Ventilacion subterranea — calcVentilacion y NORMAS_VENT vienen de @/lib/calculos
+// (fuente única, con tests — norma configurable + Q_medido opcional).
 // CO: TLV-TWA 25 ppm (ACGIH) | REL 35 ppm (NIOSH) | IDLH 1200 ppm (NIOSH)
-const NORMAS_VENT: Record<string, { label: string; porPersona: number; porKW: number; cita: string }> = {
-  generico: { label: 'Genérica — práctica internacional', porPersona: 0.06, porKW: 0.06,  cita: '0.06 m³/s por persona + 0.06 m³/s por kW diesel' },
-  chile:    { label: 'Chile — DS 132 Art. 138',           porPersona: 0.05, porKW: 0.063, cita: '3 m³/min por persona + 2.83 m³/min por HP diesel' },
-  peru:     { label: 'Perú — DS 023-2017-EM Art. 252',    porPersona: 0.05, porKW: 0.067, cita: '3 m³/min por persona (≤1500 msnm) + 3 m³/min por HP diesel' },
-};
-
-function calcVentilacion(
-  trabajadores: number,
-  equipos_diesel_kW: number,
-  longitud_galeria: number,
-  seccion_m2: number,
-  gases_ppm: number, // CO medido en ppm
-  norma: string,
-  Q_medido?: number // caudal real medido en galeria (m3/s) — opcional
-) {
-  if (seccion_m2 <= 0 || longitud_galeria <= 0) return null;
-  const f = NORMAS_VENT[norma] ?? NORMAS_VENT.generico;
-
-  const Q_personas = trabajadores * f.porPersona;
-  const Q_diesel = equipos_diesel_kW * f.porKW;
-  const Q_requerido = Math.max(Q_personas + Q_diesel, 0.25);
-
-  // Con caudal medido se evalua el sistema real; sin el, velocidad y renovacion son las estimadas para el caudal requerido
-  const usaMedido = Q_medido !== undefined && Q_medido > 0;
-  const Q_eval = usaMedido ? Q_medido : Q_requerido;
-  const cumple_caudal = Q_eval >= Q_requerido;
-
-  const V_galeria = Q_eval / seccion_m2;
-  const volumen = longitud_galeria * seccion_m2;
-  const t_renovacion = volumen / Q_eval / 60; // minutos
-
-  // Evaluacion CO: TLV-TWA 25 ppm (ACGIH) | REL 35 ppm (NIOSH) | techo 200 ppm / IDLH 1200 ppm (NIOSH)
-  const co_ok = gases_ppm < 25;
-  const riesgo_co = gases_ppm > 200 ? 'CRITICAL' : gases_ppm > 35 ? 'HIGH' : gases_ppm > 25 ? 'MEDIUM' : 'LOW';
-
-  const riesgo = (!cumple_caudal || V_galeria < 0.25) ? 'CRITICAL' : V_galeria < 0.5 ? 'HIGH' : riesgo_co;
-
-  return {
-    Q_requerido: +Q_requerido.toFixed(2),
-    Q_personas: +Q_personas.toFixed(2),
-    Q_diesel: +Q_diesel.toFixed(2),
-    Q_eval: +Q_eval.toFixed(2),
-    usaMedido, cumple_caudal,
-    V_galeria: +V_galeria.toFixed(2),
-    t_renovacion: +t_renovacion.toFixed(1),
-    co_ok, riesgo_co, riesgo,
-    normaLabel: f.label, normaCita: f.cita
-  };
-}
 
 const CONDICIONES = [
   { id: 'muy_buena', label: 'Muy buena — superficies rugosas, cerradas, sin relleno' },

@@ -352,7 +352,7 @@ export function calcRMR(
 // Q_medido: caudal real medido en la galería (m³/s), opcional — si se pasa,
 // evalúa el sistema real contra el caudal requerido en vez de asumir que
 // el caudal teórico requerido es el que efectivamente circula
-const NORMAS_VENT: Record<string, { label: string; porPersona: number; porKW: number; cita: string }> = {
+export const NORMAS_VENT: Record<string, { label: string; porPersona: number; porKW: number; cita: string }> = {
   generico: { label: 'Genérica — práctica internacional', porPersona: 0.06, porKW: 0.06,  cita: '0.06 m³/s por persona + 0.06 m³/s por kW diesel' },
   chile:    { label: 'Chile — DS 132 Art. 138',           porPersona: 0.05, porKW: 0.063, cita: '3 m³/min por persona + 2.83 m³/min por HP diesel' },
   peru:     { label: 'Perú — DS 023-2017-EM Art. 252',    porPersona: 0.05, porKW: 0.067, cita: '3 m³/min por persona (≤1500 msnm) + 3 m³/min por HP diesel' },
