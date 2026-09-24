@@ -289,7 +289,7 @@ export async function generarExcel(datos: DatosExcel): Promise<Buffer> {
     ['SMYS del material (MPa)',        448,                                           '', 'MPa', 'API 5L X65 — Apéndice D B31.8'],
     ['Factor de diseño F',             0.72,                                         '', '—',   'B31.8 Tabla 841.1.6-1 Clase 1'],
     ['Factor junta E',                 1.00,                                         '', '—',   'B31.8 Tabla 841.1.7-1 Seamless'],
-    ['Factor temperatura T',           1.00,                                         '', '—',   'B31.8 Tabla 841.1.8-1 ≤120°C'],
+    ['Factor temperatura T',           1.00,                                         '', '—',   'B31.8 Tabla 841.1.8-1 — ≤250 °F (121,1 °C)'],
     ['Espesor mínimo t_min (mm)',      '', '=((B4*14.5038)*(B3/25.4))/(2*(B5*145.038)*B6*B7*B8)', 'mm', 'B31.8 §841.1.1: t=P·D/(2·S·F·E·T)'],
     ['Espesor nominal (mm)',           datos.t_nom_mm || 9.3,                        '', 'mm',  'Especificación de compra'],
     ['Corrosión allowance CA (mm)',    1.6,                                           '', 'mm',  'Típico servicio agua/crudo'],

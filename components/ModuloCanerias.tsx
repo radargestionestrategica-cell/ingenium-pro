@@ -1,6 +1,7 @@
 'use client';
 import { publicarResultado } from '@/components/ResultadoContexto';
 import BotonesExportar, { DatosExportar } from '@/components/BotonesExportar';
+import { factorTempB318 } from '@/lib/calculos';
 import { useState } from 'react';
 
 // ═══════════════════════════════════════════════════════════════
@@ -43,16 +44,10 @@ const FACT_E: Record<string, { E: number; desc: string }> = {
   'FBW':  { E: 0.60, desc: 'Furnace Butt Weld' },
 };
 
-// FACTOR T temperatura — B31.8 Tabla 841.1.8-1 — VERIFICADO
+// FACTOR T temperatura — B31.8 Tabla 841.1.8-1: factorTempB318 de @/lib/calculos
+// (fuente única, tabla en °F con interpolación; null por encima de 450 °F).
 // Solo aplica a B31.8 (gas). B31.4 (líquido) no usa T.
-const factorT = (tempC: number): number => {
-  const tempF = tempC * 9 / 5 + 32;
-  if (tempF <= 250) return 1.000;
-  if (tempF <= 300) return 0.967;
-  if (tempF <= 350) return 0.933;
-  if (tempF <= 400) return 0.900;
-  return 0.867;
-};
+const ERR_T_FUERA_TABLA = 'Temperatura fuera del alcance de la Tabla 841.1.8-1 de ASME B31.8 (máx. 450 °F = 232,2 °C).';
 
 // FLUIDOS para Joukowsky — propiedades reales verificadas
 const FLUIDOS: Record<string, { nombre: string; rho: number; K: number }> = {
@@ -211,7 +206,8 @@ export default function ModuloCanerias() {
     const S_psi = g.smys_psi;
     const F     = eCod === 'B318' ? FACT_F[eClase].F : 0.72;
     const E     = FACT_E[eJunta].E;
-    const T     = eCod === 'B318' ? factorT(TempC) : 1.0;
+    const T     = eCod === 'B318' ? factorTempB318(TempC) : 1.0;
+    if (T === null) { setErr(ERR_T_FUERA_TABLA); return; }
     const norma = eCod === 'B318' ? 'ASME B31.8-2020 §841.1.1' : 'ASME B31.4-2019 §403.2.1';
 
     const t_min_in  = (P_psi * D_in) / (2 * S_psi * F * E * T);
@@ -227,7 +223,7 @@ export default function ModuloCanerias() {
     const sigma_h_psi = (P_psi * D_in) / (2 * t_min_in);
     const sigma_h_mpa = Math.round(sigma_h_psi * 0.006895 * 10) / 10;
 
-    const r = { t_min_mm, t_dis_mm, sigma_h_mpa, F, E, T, S_mpa: g.smys_mpa, norma };
+    const r = { t_min_mm, t_dis_mm, sigma_h_mpa, F, E, T: +T.toFixed(3), S_mpa: g.smys_mpa, norma };
     setResEsp(r);
 
     const payload: DatosExportar = {
@@ -244,7 +240,7 @@ export default function ModuloCanerias() {
         'Junta longitudinal':           FACT_E[eJunta].desc,
         'Factor E':                     E,
         'Temperatura diseño (°C)':      eCod === 'B318' ? eTempC : 'N/A (B31.4)',
-        'Factor T':                     T,
+        'Factor T':                     r.T,
         'Tolerancia corrosión CA (mm)': eCA,
       },
       resultado: {
@@ -286,7 +282,8 @@ export default function ModuloCanerias() {
     const g     = GRADOS[hGrado];
     const F     = FACT_F[hClase].F;
     const E     = FACT_E[hJunta].E;
-    const T     = factorT(TempC);   // B31.8 §841.1.1 — factor temperatura
+    const T     = factorTempB318(TempC);   // B31.8 §841.1.1 — factor temperatura
+    if (T === null) { setErr(ERR_T_FUERA_TABLA); return; }
 
     const sigma_h_psi = (P_psi * D_in) / (2 * t_in);
     const sigma_h_mpa = Math.round(sigma_h_psi * 0.006895 * 10) / 10;
@@ -294,7 +291,7 @@ export default function ModuloCanerias() {
     const allow_mpa   = Math.round(allow_psi * 0.006895 * 10) / 10;
     const uso_pct     = Math.round((sigma_h_psi / allow_psi) * 1000) / 10;
 
-    const r = { sigma_h_mpa, allow_mpa, uso_pct, ok: sigma_h_psi <= allow_psi, T_factor: T };
+    const r = { sigma_h_mpa, allow_mpa, uso_pct, ok: sigma_h_psi <= allow_psi, T_factor: +T.toFixed(3) };
     setResHoop(r);
 
     const payload: DatosExportar = {
@@ -311,7 +308,7 @@ export default function ModuloCanerias() {
         'Junta longitudinal':          FACT_E[hJunta].desc,
         'Factor E':                    E,
         'Temperatura diseño (°C)':     hTempC,
-        'Factor T':                    T,
+        'Factor T':                    r.T_factor,
       },
       resultado: {
         'Hoop Stress σ_h (MPa)':          r.sigma_h_mpa,
@@ -591,7 +588,7 @@ export default function ModuloCanerias() {
             </div>
             <div><label style={lbl}>Temperatura de diseño (°C)</label>
               <input value={eTempC} onChange={e => setEtempC(e.target.value)} style={{ ...inp, opacity: eCod === 'B314' ? 0.4 : 1 }} type="number" step="1" disabled={eCod === 'B314'} />
-              <div style={{ fontSize: 10, color: '#334155', marginTop: 3 }}>{eCod === 'B314' ? 'B31.4: sin factor T (opera <120°C)' : 'B31.8: T aplica a >120°C (250°F)'}</div>
+              <div style={{ fontSize: 10, color: '#334155', marginTop: 3 }}>{eCod === 'B314' ? 'B31.4: sin factor T (opera <120°C)' : 'B31.8: T < 1 por encima de 250 °F (121,1 °C); máx. 450 °F (232,2 °C)'}</div>
             </div>
             <div><label style={lbl}>Tolerancia corrosión CA (mm)</label>
               <input value={eCA} onChange={e => setEca(e.target.value)} style={inp} type="number" min="0" step="0.1" />
@@ -652,7 +649,7 @@ export default function ModuloCanerias() {
             </div>
             <div><label style={lbl}>Temperatura de diseño (°C)</label>
               <input value={hTempC} onChange={e => setHtempC(e.target.value)} style={inp} type="number" step="1" />
-              <div style={{ fontSize: 10, color: '#334155', marginTop: 3 }}>B31.8: T aplica a &gt;120°C (250°F) — afecta admisible</div>
+              <div style={{ fontSize: 10, color: '#334155', marginTop: 3 }}>B31.8: T &lt; 1 por encima de 250 °F (121,1 °C); máx. 450 °F (232,2 °C) — afecta admisible</div>
             </div>
           </div>
 

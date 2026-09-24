@@ -129,7 +129,7 @@ export default function ModuloPetroleoGasPage() {
             <li><strong style={{ color: '#f1f5f9' }}>t</strong>: espesor de pared de la cañería (mm).</li>
             <li><strong style={{ color: '#f1f5f9' }}>F</strong>: factor de diseño según clase de ubicación — de 0.72 en zona rural (Clase 1) a 0.40 en zonas de alta densidad (Clase 4).</li>
             <li><strong style={{ color: '#f1f5f9' }}>E</strong>: factor de eficiencia de junta longitudinal — 1.00 para cañería sin costura o ERW posterior a 1970, 0.80 para ERW anterior a 1970 o soldada en espiral.</li>
-            <li><strong style={{ color: '#f1f5f9' }}>T</strong>: factor de reducción por temperatura de operación, según la Tabla 841.1.18-1 de ASME B31.8 (1.0 hasta 120 °C, decreciente por encima).</li>
+            <li><strong style={{ color: '#f1f5f9' }}>T</strong>: factor de reducción por temperatura de operación, según la Tabla 841.1.8-1 de ASME B31.8 (1.000 hasta 250 °F = 121,1 °C, interpolado hasta 0.867 a 450 °F = 232,2 °C; por encima la tabla no aplica).</li>
             <li><strong style={{ color: '#f1f5f9' }}>OD</strong>: diámetro exterior de la cañería (mm).</li>
           </ul>
         </section>
@@ -138,7 +138,7 @@ export default function ModuloPetroleoGasPage() {
         <section style={{ marginBottom: 36 }}>
           <h2 style={{ fontSize: 20, fontWeight: 800, marginBottom: 12, color: '#f1f5f9' }}>Normas aplicadas</h2>
           <p style={{ fontSize: 15, color: LIGHT, lineHeight: 1.8 }}>
-            ASME B31.8 Sec. 841.11 (fórmula de presión de diseño), Tabla 841.1.18-1 de ASME B31.8 (factor de
+            ASME B31.8 Sec. 841.11 (fórmula de presión de diseño), Tabla 841.1.8-1 de ASME B31.8 (factor de
             reducción por temperatura) y materiales según API 5L. Para relaciones t/OD superiores al 15%, se
             suma la ecuación de Lamé como verificación conservadora adicional.
           </p>

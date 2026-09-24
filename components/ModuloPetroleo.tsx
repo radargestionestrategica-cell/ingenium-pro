@@ -4,7 +4,7 @@ import BotonesExportar, { DatosExportar } from '@/components/BotonesExportar';
 // calcMAOP de @/lib/calculos (fuente única, con tests): Barlow / Lamé /
 // transición, factor T por temperatura, fórmula aplicada, Number.isFinite
 // y validación de F y E. Mismos campos que usan la UI y la exportación.
-import { calcMAOP } from '@/lib/calculos';
+import { calcMAOP, factorTempB318 } from '@/lib/calculos';
 import { useState } from 'react';
 
 const MATERIALES = [
@@ -70,6 +70,10 @@ export default function ModuloPetroleo() {
       setError('La presión de operación debe ser un número mayor a 0, o dejá el campo vacío.');
       return;
     }
+    if (factorTempB318(top) === null) {
+      setError('Temperatura fuera del alcance de la Tabla 841.1.8-1 de ASME B31.8 (máx. 450 °F = 232,2 °C).');
+      return;
+    }
     const pop_MPa = popInformada ? pop_bar / 10 : undefined;
     const r = calcMAOP(od, ti, MATERIALES[smysIdx].smys, CLASES[claseIdx].F, JUNTAS[juntaIdx].E, top, pop_MPa);
     if (!r) { setError('Datos fuera de rango. Verificá diámetro y espesor.'); return; }
@@ -98,7 +102,7 @@ export default function ModuloPetroleo() {
         'MAOP (psi)':              r.psi,
         'Relación t/OD (%)':       r.ratio,
         'Régimen de cálculo':      r.reg,
-        'Factor T (Tabla 841.1.18-1 ASME B31.8)': r.T_factor,
+        'Factor T (Tabla 841.1.8-1 ASME B31.8)': r.T_factor,
         ...(r.util_pct !== null ? {
           'Utilización P_op/MAOP (%)': r.util_pct,
           'Margen de seguridad (%)':   r.margen_pct,
@@ -135,7 +139,7 @@ export default function ModuloPetroleo() {
             </div>
           </div>
           <div style={{ background: '#1e293b', borderRadius: 8, padding: '10px 14px', fontSize: 12, color: '#64748b' }}>
-            Normativa: ASME B31.8 Sec. 841.11 | Fórmula de Barlow modificada + Lamé para pared gruesa (conservador, fuera de B31.8) | Factor T — Tabla 841.1.18-1 de ASME B31.8
+            Normativa: ASME B31.8 Sec. 841.11 | Fórmula de Barlow modificada + Lamé para pared gruesa (conservador, fuera de B31.8) | Factor T — Tabla 841.1.8-1 de ASME B31.8
           </div>
         </div>
 

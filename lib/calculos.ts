@@ -2,7 +2,39 @@
 // Son la misma matemática que usan los componentes Modulo*.tsx.
 // Exportadas aquí para poder testearlas de forma aislada.
 
-// ── MAOP — ASME B31.8 §841.1.1 (Steel Pipe Design Formula) · Tabla 841.1.18-1 ──
+// ── FACTOR T — ASME B31.8 Tabla 841.1.8-1 (Temperature Derating Factor) ──
+// Fuente única del factor T para todo el proyecto (MAOP y Cañerías).
+// La tabla se guarda en °F, tal como la publica la norma; la entrada en °C se
+// convierte a °F sin redondear cortes. Temperaturas intermedias: interpolación
+// lineal (la norma indica interpolar). Por encima de 450 °F (232,22 °C) la
+// tabla no cubre el caso → null (el llamador debe informar el error).
+const TABLA_T_B318_F: ReadonlyArray<readonly [number, number]> = [
+  [250, 1.000],
+  [300, 0.967],
+  [350, 0.933],
+  [400, 0.900],
+  [450, 0.867],
+];
+// Tolerancia para que 450 °F ingresado en °C (232,2222…) no se rechace por
+// el error de punto flotante de la conversión.
+const EPS_F = 1e-9;
+
+export function factorTempB318(T_C: number): number | null {
+  if (!Number.isFinite(T_C)) return null;
+  const T_F = T_C * 9 / 5 + 32;
+  const [F_min, T_max] = TABLA_T_B318_F[0];
+  const F_max = TABLA_T_B318_F[TABLA_T_B318_F.length - 1][0];
+  if (T_F <= F_min + EPS_F) return T_max;
+  if (T_F > F_max + EPS_F) return null;
+  for (let i = 1; i < TABLA_T_B318_F.length; i++) {
+    const [f1, t1] = TABLA_T_B318_F[i - 1];
+    const [f2, t2] = TABLA_T_B318_F[i];
+    if (T_F <= f2 + EPS_F) return t1 + (t2 - t1) * (Math.min(T_F, f2) - f1) / (f2 - f1);
+  }
+  return null;
+}
+
+// ── MAOP — ASME B31.8 §841.1.1 (Steel Pipe Design Formula) · Tabla 841.1.8-1 ──
 // Pared delgada (t/OD < 0.10): Barlow modificado
 // Pared gruesa (t/OD > 0.15): Lamé (tensión de aro en cilindro grueso)
 // Transición (0.10–0.15): interpolación lineal
@@ -24,13 +56,10 @@ export function calcMAOP(
   // F (factor de diseño) y E (factor de junta) son factores de reducción:
   // fuera de (0, 1] el resultado no tiene sentido (F<0 daba MAOP negativo).
   if (F <= 0 || F > 1 || E <= 0 || E > 1) return null;
-  // Tabla 841.1.18-1: factor de reducción por temperatura. Umbrales originales
-  // en °F (250/300/350/400/450°F) convertidos a °C con redondeo conservador.
-  const T_factor =
-    T_op <= 120 ? 1.0 :
-    T_op <= 150 ? 0.967 :
-    T_op <= 175 ? 0.933 :
-    T_op <= 200 ? 0.900 : 0.867;
+  // Factor T — Tabla 841.1.8-1 (fuente única: factorTempB318). Por encima de
+  // 450 °F (232,22 °C) la tabla no aplica → null.
+  const T_factor = factorTempB318(T_op);
+  if (T_factor === null) return null;
   const ratio = t / OD;
   const ro = OD / 2, ri = ro - t;
   const Pb = (2 * SMYS * t * F * E * T_factor) / OD;
@@ -50,13 +79,15 @@ export function calcMAOP(
   const risk: 'LOW'|'MEDIUM'|'HIGH'|'CRITICAL'|null =
     util === null ? null :
     util > 100 ? 'CRITICAL' : util > 90 ? 'HIGH' : util > 80 ? 'MEDIUM' : 'LOW';
-  // Fórmula que refleja el régimen real aplicado (se muestra en UI y demo)
+  // Fórmula que refleja el régimen real aplicado (se muestra en UI y demo).
+  // T interpolado se muestra con 3 decimales (el cálculo usa el valor completo).
+  const T_txt = +T_factor.toFixed(3);
   const formula =
     ratio > 0.15
-      ? `Pl = ${SMYS} × ${F} × ${E} × ${T_factor} × (${ro.toFixed(1)}² − ${ri.toFixed(1)}²) / (${ro.toFixed(1)}² + ${ri.toFixed(1)}²)`
+      ? `Pl = ${SMYS} × ${F} × ${E} × ${T_txt} × (${ro.toFixed(1)}² − ${ri.toFixed(1)}²) / (${ro.toFixed(1)}² + ${ri.toFixed(1)}²)`
       : ratio > 0.10
       ? `P = interpolación Barlow/Lamé (t/OD = ${(ratio * 100).toFixed(2)}%)`
-      : `Pb = (2 × ${SMYS} × ${t} × ${F} × ${E} × ${T_factor}) / ${OD}`;
+      : `Pb = (2 × ${SMYS} × ${t} × ${F} × ${E} × ${T_txt}) / ${OD}`;
   return {
     // Conversiones bar (×10) y psi (×145.04): criterio de plataforma, no de la norma.
     P:        +P.toFixed(3),

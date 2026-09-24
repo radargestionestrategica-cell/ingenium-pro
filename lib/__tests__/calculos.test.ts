@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
+  factorTempB318,
   calcMAOP, calcDarcyWeisbach, calcGolpeAriete, calcCv,
   calcBHP, calcFractureGradient, calcMudWeight,
   calcCapacidadPortante,
@@ -11,6 +12,63 @@ import {
   calcMotorTrifasico, calcTransformadorElect,
   calcEspesorParedCaneria, calcHoopStressBarlow, calcVidaRemanente,
 } from '../calculos';
+
+// ════════════════════════════════════════════════════════════════
+// FACTOR T — ASME B31.8 Tabla 841.1.8-1 (tabla en °F)
+// ════════════════════════════════════════════════════════════════
+describe('factorTempB318', () => {
+  const FaC = (F: number) => (F - 32) * 5 / 9;
+
+  it('los 5 puntos de la tabla, ingresados en °C exactos', () => {
+    expect(factorTempB318(FaC(250))).toBe(1.000);
+    expect(factorTempB318(FaC(300))).toBeCloseTo(0.967, 12);
+    expect(factorTempB318(FaC(350))).toBeCloseTo(0.933, 12);
+    expect(factorTempB318(FaC(400))).toBeCloseTo(0.900, 12);
+    expect(factorTempB318(FaC(450))).toBeCloseTo(0.867, 12);  // borde exacto: NO se rechaza
+  });
+
+  it('borde 121.11 °C (249,998 °F) → 1.000', () => {
+    expect(factorTempB318(121.11)).toBe(1.000);
+  });
+
+  it('borde 232.22 °C (449,996 °F) → 0.867', () => {
+    expect(factorTempB318(232.22)).toBeCloseTo(0.867, 5);
+  });
+
+  it('borde 232.3 °C (450,14 °F) → null (fuera de tabla)', () => {
+    expect(factorTempB318(232.3)).toBeNull();
+  });
+
+  it('el corte es 450 °F exactos, no 232 °C redondeados', () => {
+    // 232.1 °C = 449,78 °F → dentro de la tabla (un corte en 232 °C lo rechazaría)
+    expect(factorTempB318(232.1)).not.toBeNull();
+    expect(factorTempB318(232.1)!).toBeCloseTo(0.867 + 0.033 * (450 - 449.78) / 50, 5);
+  });
+
+  it('≤ 250 °F → 1.000 (incluye temperaturas bajas y negativas)', () => {
+    expect(factorTempB318(20)).toBe(1.000);
+    expect(factorTempB318(-40)).toBe(1.000);
+  });
+
+  it('interpola en temperaturas intermedias', () => {
+    // 275 °F (punto medio 250–300) → (1.000 + 0.967) / 2 = 0.9835
+    expect(factorTempB318(FaC(275))).toBeCloseTo(0.9835, 10);
+    // 425 °F (punto medio 400–450) → (0.900 + 0.867) / 2 = 0.8835
+    expect(factorTempB318(FaC(425))).toBeCloseTo(0.8835, 10);
+  });
+
+  it('150 °C (302 °F): antes 0.967 (no conservador), ahora interpolado 0.96564', () => {
+    // 0.967 − 0.034 × 2/50 = 0.96564
+    expect(factorTempB318(150)!).toBeCloseTo(0.96564, 5);
+    expect(factorTempB318(150)!).toBeLessThan(0.967);
+  });
+
+  it('retorna null con NaN / Infinity', () => {
+    expect(factorTempB318(NaN)).toBeNull();
+    expect(factorTempB318(Infinity)).toBeNull();
+    expect(factorTempB318(-Infinity)).toBeNull();
+  });
+});
 
 // ════════════════════════════════════════════════════════════════
 // MAOP — ASME B31.8 §A842.221
@@ -45,15 +103,29 @@ describe('calcMAOP', () => {
   });
 
   it('factor temperatura alta T_op=200°C reduce MAOP', () => {
+    // 200 °C = 392 °F → interpolado entre 350 °F (0.933) y 400 °F (0.900):
+    // 0.933 − 0.033 × 42/50 = 0.90528 (antes, escalón en °C: 0.900)
     const r20  = calcMAOP(323.85, 9.52, 359, 0.72, 1.0, 20);
     const r200 = calcMAOP(323.85, 9.52, 359, 0.72, 1.0, 200);
     expect(r200!.P).toBeLessThan(r20!.P);
-    expect(r200!.T_factor).toBe(0.9);
+    expect(r200!.T_factor).toBe(0.905);
   });
 
-  it('factor temperatura T_op=160°C = 0.933', () => {
+  it('factor temperatura T_op=160°C interpolado = 0.953', () => {
+    // 160 °C = 320 °F → 0.967 − 0.034 × 20/50 = 0.9534 (antes, escalón: 0.933)
     const r = calcMAOP(323.85, 9.52, 359, 0.72, 1.0, 160);
-    expect(r!.T_factor).toBe(0.933);
+    expect(r!.T_factor).toBe(0.953);
+  });
+
+  it('retorna null por encima de 450 °F (232,22 °C) — fuera de la Tabla 841.1.8-1', () => {
+    expect(calcMAOP(323.85, 9.52, 359, 0.72, 1.0, 250)).toBeNull();
+    expect(calcMAOP(323.85, 9.52, 359, 0.72, 1.0, 232.3)).toBeNull();
+    expect(calcMAOP(323.85, 9.52, 359, 0.72, 1.0, 232.2)).not.toBeNull();
+  });
+
+  it('formula muestra T interpolado con 3 decimales', () => {
+    expect(calcMAOP(323.85, 9.52, 359, 0.72, 1.0, 160)!.formula)
+      .toBe('Pb = (2 × 359 × 9.52 × 0.72 × 1 × 0.953) / 323.85');
   });
 
   it('F=1.0 (zona urbana) da mayor MAOP que F=0.72', () => {
