@@ -49,3 +49,7 @@ next-env.d.ts
 lib/auth.ts
 
 .env*
+
+# Claude Code — configuración y locks locales de cada máquina
+.claude/settings.local.json
+.claude/scheduled_tasks.lock
