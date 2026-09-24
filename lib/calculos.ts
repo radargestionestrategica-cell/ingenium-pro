@@ -10,7 +10,13 @@ export function calcMAOP(
   OD: number, t: number, SMYS: number,
   F = 0.72, E = 1.0, T_op = 20,
 ) {
+  // Number.isFinite rechaza NaN (campo vacío) y ±Infinity, que antes pasaban
+  // la guarda (NaN <= 0 es false) y devolvían MAOP = NaN.
+  if (![OD, t, SMYS, F, E, T_op].every(Number.isFinite)) return null;
   if (OD <= 0 || t <= 0 || SMYS <= 0 || t >= OD / 2) return null;
+  // F (factor de diseño) y E (factor de junta) son factores de reducción:
+  // fuera de (0, 1] el resultado no tiene sentido (F<0 daba MAOP negativo).
+  if (F <= 0 || F > 1 || E <= 0 || E > 1) return null;
   // Tabla 841.1.18-1: factor de reducción por temperatura. Umbrales originales
   // en °F (250/300/350/400/450°F) convertidos a °C con redondeo conservador.
   const T_factor =
@@ -27,12 +33,19 @@ export function calcMAOP(
     ratio > 0.10 ? Pb * (1 - (ratio - 0.10) / 0.05) + Pl * (ratio - 0.10) / 0.05 :
     Pb;
   const reg =
-    ratio > 0.15 ? 'PARED GRUESA — Lamé' :
+    ratio > 0.15 ? 'PARED GRUESA — Lamé (criterio conservador adicional, fuera de B31.8)' :
     ratio > 0.10 ? 'TRANSICIÓN' :
     'PARED DELGADA — Barlow';
   // Umbrales de riesgo 10/7/4 MPa: criterio de plataforma, no valores de ASME B31.8.
-  const risk =
+  const risk: 'LOW'|'MEDIUM'|'HIGH'|'CRITICAL' =
     P > 10 ? 'CRITICAL' : P > 7 ? 'HIGH' : P > 4 ? 'MEDIUM' : 'LOW';
+  // Fórmula que refleja el régimen real aplicado (se muestra en UI y demo)
+  const formula =
+    ratio > 0.15
+      ? `Pl = ${SMYS} × ${F} × ${E} × ${T_factor} × (${ro.toFixed(1)}² − ${ri.toFixed(1)}²) / (${ro.toFixed(1)}² + ${ri.toFixed(1)}²)`
+      : ratio > 0.10
+      ? `P = interpolación Barlow/Lamé (t/OD = ${(ratio * 100).toFixed(2)}%)`
+      : `Pb = (2 × ${SMYS} × ${t} × ${F} × ${E} × ${T_factor}) / ${OD}`;
   return {
     // Conversiones bar (×10) y psi (×145.04): criterio de plataforma, no de la norma.
     P:        +P.toFixed(3),
@@ -40,7 +53,7 @@ export function calcMAOP(
     psi:      +(P * 145.04).toFixed(0),
     ratio:    +(ratio * 100).toFixed(2),
     T_factor: +T_factor.toFixed(3),
-    reg, risk,
+    reg, risk, formula,
   };
 }
 

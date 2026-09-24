@@ -32,8 +32,9 @@ describe('calcMAOP', () => {
     // OD=100mm, t=18mm → ratio=0.18 > 0.15 → Lamé
     const r = calcMAOP(100, 18, 414, 0.72, 1.0, 20);
     expect(r).not.toBeNull();
-    expect(r!.reg).toBe('PARED GRUESA — Lamé');
+    expect(r!.reg).toBe('PARED GRUESA — Lamé (criterio conservador adicional, fuera de B31.8)');
     expect(r!.ratio).toBeCloseTo(18, 0);   // 18%
+    expect(r!.formula).toMatch(/^Pl = 414 × 0\.72 × 1 × 1 × \(50\.0² − 32\.0²\)/);
   });
 
   it('zona de transición — 0.10 < t/OD < 0.15', () => {
@@ -86,6 +87,39 @@ describe('calcMAOP', () => {
   it('conversión MPa → psi correcta (factor 145.04)', () => {
     const r = calcMAOP(323.85, 9.52, 359, 0.72, 1.0, 20);
     expect(r!.psi).toBe(+(r!.P * 145.04).toFixed(0));
+  });
+
+  it('formula refleja el régimen aplicado', () => {
+    expect(calcMAOP(323.85, 9.52, 359, 0.72, 1.0, 20)!.formula)
+      .toBe('Pb = (2 × 359 × 9.52 × 0.72 × 1 × 1) / 323.85');
+    expect(calcMAOP(100, 12, 359, 0.72, 1.0, 20)!.formula)
+      .toBe('P = interpolación Barlow/Lamé (t/OD = 12.00%)');
+  });
+
+  it('caso por defecto de ModuloPetroleo — X65, 323.9 × 9.5 mm', () => {
+    // Pb = 2 × 448 × 9.5 × 0.72 / 323.9 = 18.921 MPa
+    const r = calcMAOP(323.9, 9.5, 448, 0.72, 1.0, 20)!;
+    expect(r.P).toBeCloseTo(18.921, 3);
+    expect(r.reg).toBe('PARED DELGADA — Barlow');
+  });
+
+  it('retorna null con F o E fuera de (0, 1]', () => {
+    expect(calcMAOP(323.85, 9.52, 359, 0,    1.0)).toBeNull();
+    expect(calcMAOP(323.85, 9.52, 359, -0.5, 1.0)).toBeNull();
+    expect(calcMAOP(323.85, 9.52, 359, 1.2,  1.0)).toBeNull();
+    expect(calcMAOP(323.85, 9.52, 359, 0.72, 0)).toBeNull();
+    expect(calcMAOP(323.85, 9.52, 359, 0.72, 1.5)).toBeNull();
+    // Límite superior incluido
+    expect(calcMAOP(323.85, 9.52, 359, 1.0, 1.0)).not.toBeNull();
+  });
+
+  it('retorna null con entradas no finitas (NaN / Infinity)', () => {
+    expect(calcMAOP(NaN,    9.52, 359)).toBeNull();
+    expect(calcMAOP(323.85, NaN,  359)).toBeNull();
+    expect(calcMAOP(323.85, 9.52, Infinity)).toBeNull();
+    expect(calcMAOP(323.85, 9.52, 359, NaN)).toBeNull();
+    expect(calcMAOP(323.85, 9.52, 359, 0.72, 1.0, NaN)).toBeNull();
+    expect(calcMAOP(Infinity, 9.52, 359)).toBeNull();
   });
 });
 

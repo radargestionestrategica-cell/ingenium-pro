@@ -4,35 +4,7 @@
 // Se usa en la landing (app/page.tsx).
 
 import { useEffect, useState } from 'react';
-
-// Copiado tal cual de components/ModuloPetroleo.tsx — no modificar sin sincronizar las copias.
-function calcMAOP(OD: number, t: number, SMYS: number, F = 0.72, E = 1.0, T_op = 20) {
-  if (OD <= 0 || t <= 0 || SMYS <= 0 || t >= OD / 2) return null;
-  // Factor T — Tabla 841.1.18-1 de ASME B31.8 (valores: ≤120°C=1.0, ≤150°C=0.967, ≤175°C=0.933, ≤200°C=0.900, >200°C=0.867)
-  const T_factor = T_op <= 120 ? 1.0 : T_op <= 150 ? 0.967 : T_op <= 175 ? 0.933 : T_op <= 200 ? 0.900 : 0.867;
-  const ratio = t / OD;
-  const ro = OD / 2, ri = ro - t;
-  const Pb = (2 * SMYS * t * F * E * T_factor) / OD;
-  const Pl = SMYS * F * E * T_factor * (ro ** 2 - ri ** 2) / (ro ** 2 + ri ** 2);
-  const P  = ratio > 0.15 ? Pl : ratio > 0.10 ? Pb * (1 - (ratio - 0.10) / 0.05) + Pl * (ratio - 0.10) / 0.05 : Pb;
-  const reg = ratio > 0.15 ? 'PARED GRUESA — Lamé (criterio conservador adicional, fuera de B31.8)' : ratio > 0.10 ? 'TRANSICIÓN' : 'PARED DELGADA — Barlow';
-  const risk = P > 10 ? 'CRITICAL' : P > 7 ? 'HIGH' : P > 4 ? 'MEDIUM' : 'LOW';
-
-  // Fórmula que refleja el régimen real aplicado
-  const formula =
-    ratio > 0.15
-      ? `Pl = ${SMYS} × ${F} × ${E} × ${T_factor} × (${ro.toFixed(1)}² − ${ri.toFixed(1)}²) / (${ro.toFixed(1)}² + ${ri.toFixed(1)}²)`
-      : ratio > 0.10
-      ? `P = interpolación Barlow/Lamé (t/OD = ${(ratio * 100).toFixed(2)}%)`
-      : `Pb = (2 × ${SMYS} × ${t} × ${F} × ${E} × ${T_factor}) / ${OD}`;
-
-  return {
-    P: +P.toFixed(3), bar: +(P * 10).toFixed(2), psi: +(P * 145.04).toFixed(0),
-    ratio: +(ratio * 100).toFixed(2), reg, risk,
-    T_factor: +T_factor.toFixed(3),
-    formula,
-  };
-}
+import { calcMAOP } from '@/lib/calculos';
 
 const RISK_COLOR: Record<string, string> = {
   LOW: '#22c55e', MEDIUM: '#E8A020', HIGH: '#ef4444', CRITICAL: '#dc2626',
