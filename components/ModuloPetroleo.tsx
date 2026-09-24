@@ -34,6 +34,9 @@ const riskColor: Record<string, string> = {
 const riskLabel: Record<string, string> = {
   LOW: '🟢 SEGURO', MEDIUM: '🟡 MONITOREAR', HIGH: '🟠 REVISAR', CRITICAL: '🔴 DETENER',
 };
+// Sin presión de operación no hay demanda contra la cual comparar el MAOP
+const SIN_EVALUAR = '⚪ SIN EVALUAR — presión de operación no informada';
+const COLOR_SIN_EVALUAR = '#64748b';
 
 const inputStyle: React.CSSProperties = {
   width: '100%', background: '#0f172a', border: '1px solid #475569',
@@ -48,7 +51,9 @@ export default function ModuloPetroleo() {
   const [claseIdx, setClaseIdx] = useState(0);
   const [juntaIdx, setJuntaIdx] = useState(1);
   const [T_op,     setT_op]     = useState('20');
+  const [Pop_bar,  setPop_bar]  = useState('');   // opcional — sin dato el riesgo queda "sin evaluar"
   const [res,      setRes]      = useState<ReturnType<typeof calcMAOP>>(null);
+  const [resPop,   setResPop]   = useState<number | null>(null);  // P_op (bar) usada en el último cálculo
   const [datos,    setDatos]    = useState<DatosExportar | null>(null);
   const [error,    setError]    = useState('');
 
@@ -59,9 +64,17 @@ export default function ModuloPetroleo() {
       setError('Completá todos los campos correctamente.');
       return;
     }
-    const r = calcMAOP(od, ti, MATERIALES[smysIdx].smys, CLASES[claseIdx].F, JUNTAS[juntaIdx].E, top);
+    const popInformada = Pop_bar.trim() !== '';
+    const pop_bar = parseFloat(Pop_bar);
+    if (popInformada && (!Number.isFinite(pop_bar) || pop_bar <= 0)) {
+      setError('La presión de operación debe ser un número mayor a 0, o dejá el campo vacío.');
+      return;
+    }
+    const pop_MPa = popInformada ? pop_bar / 10 : undefined;
+    const r = calcMAOP(od, ti, MATERIALES[smysIdx].smys, CLASES[claseIdx].F, JUNTAS[juntaIdx].E, top, pop_MPa);
     if (!r) { setError('Datos fuera de rango. Verificá diámetro y espesor.'); return; }
     setRes(r);
+    setResPop(popInformada ? pop_bar : null);
 
     const payload: DatosExportar = {
       tipo:      'MAOP',
@@ -76,6 +89,8 @@ export default function ModuloPetroleo() {
         'Tipo de junta':              JUNTAS[juntaIdx].label,
         'Factor E':                   JUNTAS[juntaIdx].E,
         'Temperatura operación (°C)': T_op,
+        // Misma clave que lee el asistente IA (app/api/chat/route.ts) — solo si se informó
+        ...(popInformada ? { 'Presión de operación (bar)': pop_bar } : {}),
       },
       resultado: {
         'MAOP (MPa)':              r.P,
@@ -84,9 +99,13 @@ export default function ModuloPetroleo() {
         'Relación t/OD (%)':       r.ratio,
         'Régimen de cálculo':      r.reg,
         'Factor T (Tabla 841.1.18-1 ASME B31.8)': r.T_factor,
-        'Estado':                  riskLabel[r.risk],
+        ...(r.util_pct !== null ? {
+          'Utilización P_op/MAOP (%)': r.util_pct,
+          'Margen de seguridad (%)':   r.margen_pct,
+        } : {}),
+        'Estado': r.risk ? riskLabel[r.risk] : SIN_EVALUAR,
       },
-      nivel:  r.risk,
+      ...(r.risk ? { nivel: r.risk } : {}),
       alerta: r.risk === 'HIGH' || r.risk === 'CRITICAL',
       dxfParams: {
         OD:   parseFloat(OD),
@@ -94,7 +113,8 @@ export default function ModuloPetroleo() {
         L:    1000,
         SMYS: MATERIALES[smysIdx].smys,
         MAOP: r.P,
-        P_op: r.P * 0.9,
+        // Presión de operación real (MPa) — antes se inventaba como 0.9 × MAOP
+        ...(pop_MPa !== undefined ? { P_op: pop_MPa } : {}),
       },
     };
     setDatos(payload);
@@ -159,11 +179,19 @@ export default function ModuloPetroleo() {
             </div>
           </div>
 
-          <div style={{ marginBottom: 20 }}>
-            <label style={{ color: '#94a3b8', fontSize: 12, display: 'block', marginBottom: 6 }}>Temperatura de operación (°C)</label>
-            <input value={T_op} onChange={e => setT_op(e.target.value)}
-              style={{ ...inputStyle, width: '50%' }}
-              placeholder="Ej: 20" />
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 20 }}>
+            <div>
+              <label style={{ color: '#94a3b8', fontSize: 12, display: 'block', marginBottom: 6 }}>Temperatura de operación (°C)</label>
+              <input value={T_op} onChange={e => setT_op(e.target.value)}
+                style={inputStyle}
+                placeholder="Ej: 20" />
+            </div>
+            <div>
+              <label style={{ color: '#94a3b8', fontSize: 12, display: 'block', marginBottom: 6 }}>Presión de operación (bar) — opcional</label>
+              <input value={Pop_bar} onChange={e => setPop_bar(e.target.value)}
+                style={inputStyle}
+                placeholder="Ej: 150 — para evaluar riesgo" />
+            </div>
           </div>
 
           {error && (
@@ -179,11 +207,13 @@ export default function ModuloPetroleo() {
         </div>
 
         {/* RESULTADOS */}
-        {res && (
-          <div style={{ background: '#1e293b', border: `2px solid ${riskColor[res.risk]}`, borderRadius: 12, padding: 24 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+        {res && (() => {
+          const colorEstado = res.risk ? riskColor[res.risk] : COLOR_SIN_EVALUAR;
+          return (
+          <div style={{ background: '#1e293b', border: `2px solid ${colorEstado}`, borderRadius: 12, padding: 24 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, gap: 12 }}>
               <div style={{ color: '#f8fafc', fontWeight: 800, fontSize: 18 }}>Resultados MAOP</div>
-              <div style={{ background: riskColor[res.risk], color: '#000', borderRadius: 20, padding: '6px 16px', fontWeight: 800, fontSize: 13 }}>{riskLabel[res.risk]}</div>
+              <div style={{ background: colorEstado, color: '#000', borderRadius: 20, padding: '6px 16px', fontWeight: 800, fontSize: 13 }}>{res.risk ? riskLabel[res.risk] : '⚪ SIN EVALUAR'}</div>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 16 }}>
@@ -194,11 +224,30 @@ export default function ModuloPetroleo() {
               ].map((r, i) => (
                 <div key={i} style={{ background: '#0f172a', borderRadius: 8, padding: 14, textAlign: 'center' as const }}>
                   <div style={{ color: '#64748b', fontSize: 11, marginBottom: 4 }}>{r.label}</div>
-                  <div style={{ color: riskColor[res.risk], fontSize: 20, fontWeight: 800 }}>{r.value}</div>
+                  <div style={{ color: colorEstado, fontSize: 20, fontWeight: 800 }}>{r.value}</div>
                   <div style={{ color: '#475569', fontSize: 10 }}>{r.sub}</div>
                 </div>
               ))}
             </div>
+
+            {res.util_pct !== null ? (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 16 }}>
+                {[
+                  { label: 'Presión de operación', value: `${resPop} bar` },
+                  { label: 'Utilización P_op/MAOP', value: `${res.util_pct}%` },
+                  { label: 'Margen de seguridad', value: `${res.margen_pct}%` },
+                ].map((r, i) => (
+                  <div key={i} style={{ background: '#0f172a', borderRadius: 8, padding: 12, textAlign: 'center' as const }}>
+                    <div style={{ color: '#64748b', fontSize: 11, marginBottom: 4 }}>{r.label}</div>
+                    <div style={{ color: colorEstado, fontSize: 16, fontWeight: 800 }}>{r.value}</div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div style={{ background: '#0f172a', border: `1px solid ${COLOR_SIN_EVALUAR}`, borderRadius: 8, padding: 12, color: '#cbd5e1', fontSize: 13, marginBottom: 16 }}>
+                ℹ️ El MAOP es la capacidad del caño. Para evaluar el riesgo, ingresá la presión de operación: se compara P_op / MAOP (&gt;80 % monitorear, &gt;90 % revisar, &gt;100 % detener).
+              </div>
+            )}
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
               <div style={{ background: '#0f172a', borderRadius: 8, padding: 12 }}>
@@ -220,7 +269,8 @@ export default function ModuloPetroleo() {
               <div style={{ marginTop: 4, color: '#475569' }}>ASME B31.8 Sec. 841.11 — {new Date().toLocaleDateString('es-AR')}</div>
             </div>
           </div>
-        )}
+          );
+        })()}
 
         {/* BOTONES EXPORTAR */}
         {datos && <BotonesExportar visible={true} datos={datos} />}

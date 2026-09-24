@@ -79,9 +79,45 @@ describe('calcMAOP', () => {
     expect(calcMAOP(100, 60, 359)).toBeNull();
   });
 
-  it('riesgo CRITICAL cuando MAOP > 10 MPa', () => {
-    const r = calcMAOP(323.85, 9.52, 359, 0.72, 1.0, 20);
-    expect(r!.risk).toBe('CRITICAL');
+  it('sin presión de operación → riesgo sin evaluar (null), MAOP igual', () => {
+    // Antes: CRITICAL solo porque MAOP > 10 MPa (capacidad, no demanda)
+    const r = calcMAOP(323.85, 9.52, 359, 0.72, 1.0, 20)!;
+    expect(r.risk).toBeNull();
+    expect(r.util_pct).toBeNull();
+    expect(r.margen_pct).toBeNull();
+    expect(r.P).toBeCloseTo(15.197, 1);
+  });
+
+  it('riesgo por utilización P_op/MAOP — umbrales 80/90/100 %', () => {
+    // MAOP = 15.197 MPa
+    const riesgo = (P_op: number) => calcMAOP(323.85, 9.52, 359, 0.72, 1.0, 20, P_op)!.risk;
+    expect(riesgo(10.0)).toBe('LOW');       // 65.8 %
+    expect(riesgo(12.5)).toBe('MEDIUM');    // 82.3 %
+    expect(riesgo(14.0)).toBe('HIGH');      // 92.1 %
+    expect(riesgo(16.0)).toBe('CRITICAL');  // 105.3 % — opera por encima del MAOP
+  });
+
+  it('util_pct y margen_pct', () => {
+    // Caso por defecto del módulo con P_op = 150 bar = 15 MPa → 15 / 18.921 = 79.3 %
+    const r = calcMAOP(323.9, 9.5, 448, 0.72, 1.0, 20, 15)!;
+    expect(r.util_pct).toBeCloseTo(79.3, 1);
+    expect(r.margen_pct).toBeCloseTo(20.7, 1);
+    expect(r.risk).toBe('LOW');
+  });
+
+  it('ejemplo de la landing — 1.200 psi sobre MAOP 1.755 psi = 68.4 % → LOW', () => {
+    const psi = 0.00689476;
+    const r = calcMAOP(16 * 25.4, 0.375 * 25.4, 52000 * psi, 0.72, 1.0, 20, 1200 * psi)!;
+    expect(r.psi).toBe(1755);
+    expect(r.util_pct).toBeCloseTo(68.4, 1);
+    expect(r.risk).toBe('LOW');
+  });
+
+  it('retorna null con P_op informada pero inválida', () => {
+    expect(calcMAOP(323.85, 9.52, 359, 0.72, 1.0, 20, 0)).toBeNull();
+    expect(calcMAOP(323.85, 9.52, 359, 0.72, 1.0, 20, -5)).toBeNull();
+    expect(calcMAOP(323.85, 9.52, 359, 0.72, 1.0, 20, NaN)).toBeNull();
+    expect(calcMAOP(323.85, 9.52, 359, 0.72, 1.0, 20, Infinity)).toBeNull();
   });
 
   it('conversión MPa → psi correcta (factor 145.04)', () => {

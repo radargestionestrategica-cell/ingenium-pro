@@ -6,13 +6,20 @@
 // Pared delgada (t/OD < 0.10): Barlow modificado
 // Pared gruesa (t/OD > 0.15): Lamé (tensión de aro en cilindro grueso)
 // Transición (0.10–0.15): interpolación lineal
+// P_op_MPa (opcional): presión de operación. El riesgo se evalúa SOLO contra
+// ella (utilización = P_op / MAOP). Sin P_op el MAOP se calcula igual pero
+// risk = null ("sin evaluar") — el MAOP es la capacidad del caño, no una
+// demanda, y clasificarlo por su propio valor marcaba como CRITICAL a las
+// cañerías más resistentes.
 export function calcMAOP(
   OD: number, t: number, SMYS: number,
   F = 0.72, E = 1.0, T_op = 20,
+  P_op_MPa?: number,
 ) {
   // Number.isFinite rechaza NaN (campo vacío) y ±Infinity, que antes pasaban
   // la guarda (NaN <= 0 es false) y devolvían MAOP = NaN.
   if (![OD, t, SMYS, F, E, T_op].every(Number.isFinite)) return null;
+  if (P_op_MPa !== undefined && (!Number.isFinite(P_op_MPa) || P_op_MPa <= 0)) return null;
   if (OD <= 0 || t <= 0 || SMYS <= 0 || t >= OD / 2) return null;
   // F (factor de diseño) y E (factor de junta) son factores de reducción:
   // fuera de (0, 1] el resultado no tiene sentido (F<0 daba MAOP negativo).
@@ -36,9 +43,13 @@ export function calcMAOP(
     ratio > 0.15 ? 'PARED GRUESA — Lamé (criterio conservador adicional, fuera de B31.8)' :
     ratio > 0.10 ? 'TRANSICIÓN' :
     'PARED DELGADA — Barlow';
-  // Umbrales de riesgo 10/7/4 MPa: criterio de plataforma, no valores de ASME B31.8.
-  const risk: 'LOW'|'MEDIUM'|'HIGH'|'CRITICAL' =
-    P > 10 ? 'CRITICAL' : P > 7 ? 'HIGH' : P > 4 ? 'MEDIUM' : 'LOW';
+  // Riesgo por utilización P_op/MAOP. > 100 %: opera por encima del MAOP
+  // (B31.8 no lo permite). 80/90 %: criterio de plataforma, no valores de
+  // ASME B31.8 — los mismos que usa el asistente IA (app/api/chat/route.ts).
+  const util = P_op_MPa !== undefined ? (P_op_MPa / P) * 100 : null;
+  const risk: 'LOW'|'MEDIUM'|'HIGH'|'CRITICAL'|null =
+    util === null ? null :
+    util > 100 ? 'CRITICAL' : util > 90 ? 'HIGH' : util > 80 ? 'MEDIUM' : 'LOW';
   // Fórmula que refleja el régimen real aplicado (se muestra en UI y demo)
   const formula =
     ratio > 0.15
@@ -53,6 +64,8 @@ export function calcMAOP(
     psi:      +(P * 145.04).toFixed(0),
     ratio:    +(ratio * 100).toFixed(2),
     T_factor: +T_factor.toFixed(3),
+    util_pct:   util === null ? null : +util.toFixed(1),
+    margen_pct: util === null ? null : +(100 - util).toFixed(1),
     reg, risk, formula,
   };
 }
