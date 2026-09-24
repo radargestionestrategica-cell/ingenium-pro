@@ -12,6 +12,7 @@ import { generarExcel } from '@/lib/generarExcel';
 import { generarPDF } from '@/lib/generarPDF';
 import type { RegistroHistorial } from '@/lib/generarExcel';
 import { verificarTokenAPI, respuestaNoAutorizado } from '@/lib/api-auth';
+import { tituloModuloPDF } from '@/lib/tipos-calculo';
 
 type FormatoExportacion = 'excel' | 'pdf';
 
@@ -54,23 +55,6 @@ type CalcConRel = {
   } | null;
 };
 
-const MODULO_NOMBRES: Record<string, string> = {
-  MAOP: 'Petróleo y Gas — ASME B31.8',
-  PERFORACION: 'Perforación — API RP 13D',
-  HIDRAULICA: 'Hidráulica — Darcy-Weisbach / Hazen-Williams',
-  JOUKOWSKY: 'Golpe de Ariete — Joukowsky',
-  BISHOP: 'Estabilidad de Taludes — Bishop Simplificado',
-  DARCY: 'Hidráulica — Darcy-Weisbach',
-  THERMAL: 'Dilatación Térmica — ASME B31.3',
-  ELECTRICIDAD: 'Electricidad — NEC / IEC 60228 / IEC 60909',
-  SOLDADURA: 'Soldadura — AWS D1.1 / ASME IX',
-  MMO: 'Mantenimiento Mayor de Operaciones',
-  CANERIAS: 'Cañerías — ASME B31.3',
-  VALVULAS: 'Válvulas — API 600 / ISA 75',
-  ESTRUCTURAL: 'Estructural — CIRSOC 101 / AISC 360',
-  GEOTECNIA: 'Geotecnia — ASTM D1586 / Eurocode 7',
-};
-
 const INCLUDE = {
   user: {
     select: {
@@ -100,9 +84,14 @@ function normalizarFormato(valor: unknown): FormatoExportacion {
   return valor === 'pdf' ? 'pdf' : 'excel';
 }
 
+// Título del módulo en el PDF. Antes se buscaba moduloId en un mapa por
+// módulo, pero al guardar moduloId recibe el TIPO (p. ej.
+// 'VALVULAS_COEFICIENTE_CV'), así que solo MAOP coincidía y el resto de los
+// PDF salía con el nombre interno del tipo como título. Ahora se resuelve
+// tipo → módulo → título oficial (lib/modulos-intro.ts). La norma aplicada
+// va en la línea de normativa del PDF, no en el título.
 function obtenerNombreModulo(calc: CalcConRel): string {
-  const clave = calc.moduloId ?? calc.tipo;
-  return MODULO_NOMBRES[clave] ?? calc.tipo;
+  return tituloModuloPDF(calc.tipo, calc.moduloId);
 }
 
 function obtenerNumero(parametros: Record<string, unknown>, claves: string[]): number | undefined {

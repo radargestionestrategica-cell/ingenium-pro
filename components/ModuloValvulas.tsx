@@ -2,11 +2,15 @@
 import { useState } from 'react';
 import { publicarResultado } from '@/components/ResultadoContexto';
 import BotonesExportar, { DatosExportar } from '@/components/BotonesExportar';
+import {
+  calcCvLiquido, FL_ORIENTATIVO, NORMA_CV, P_ATM_BAR,
+  type ResultadoCvLiquido,
+} from '@/lib/calculos';
 
 // ═══════════════════════════════════════════════════════════════
 //  MÓDULO VÁLVULAS INDUSTRIALES — INGENIUM PRO v8.0
 //  NORMATIVAS 100% REALES VERIFICADAS:
-//  ASME B16.34-2017 · ASME B16.5-2017 · ISA 75.01.01
+//  ASME B16.34-2017 · ASME B16.5-2017 · ISA-75.01.01-2012 / IEC 60534-2-1
 //  NACE MR0175/ISO 15156 · API 6D · MSS SP-25
 // ═══════════════════════════════════════════════════════════════
 
@@ -280,12 +284,21 @@ export default function ModuloValvulas() {
   const [resBr, setResBr] = useState<null|{ fd: FlangeData | null; nps: string; clase: string; f2f_mm: number | null }>(null);
 
   // ── Estado: Cv ───────────────────────────────────────────────
+  // Fase: solo líquido está implementado; gas/vapor queda bloqueado
+  const [cvFase, setCvFase] = useState<'liquido'|'gas'>('liquido');
   const [cvQ, setCvQ] = useState('50');
   const [cvUnidQ, setCvUnidQ] = useState<'m3h'|'gpm'>('m3h');
-  const [cvDP, setCvDP] = useState('2');
-  const [cvUnidDP, setCvUnidDP] = useState<'bar'|'psi'>('bar');
+  // Presiones MANOMÉTRICAS (P1 − P2 = 2 bar por defecto, igual que el ΔP anterior)
+  const [cvP1, setCvP1] = useState('5');
+  const [cvP2, setCvP2] = useState('3');
+  const [cvUnidP, setCvUnidP] = useState<'bar'|'psi'>('bar');
   const [cvSG, setCvSG] = useState('0.85');
-  const [resCv, setResCv] = useState<null|{ Cv: number; Kv: number; desc: string }>(null);
+  // Estrangulamiento (opcionales): FL precargado por tipo, Pv/Pc absolutas
+  const [cvTipoVal, setCvTipoVal] = useState<'globo'|'bola'|'mariposa'|'otro'>('globo');
+  const [cvFL, setCvFL] = useState(String(FL_ORIENTATIVO.globo));
+  const [cvPv, setCvPv] = useState('');
+  const [cvPc, setCvPc] = useState('');
+  const [resCv, setResCv] = useState<null|(Extract<ResultadoCvLiquido, { ok: true }> & { desc: string })>(null);
 
   // ── Estado: Tipo válvula ──────────────────────────────────────
   const [tipApp, setTipApp] = useState('aislamiento');
@@ -603,54 +616,86 @@ export default function ModuloValvulas() {
     publicarResultado(payload);
   };
 
-  // ── CÁLCULO 4: COEFICIENTE Cv ──────────────────────────────────
-  // ISA-75.01.01/IEC 60534-2-1, ecuacion basica liquido no bloqueado sin
-  // accesorios (N1=1 para GPM/psi, Tabla 1). No incluye Fp (geometria de
-  // tuberia), Fk (gases) ni chequeo de flujo critico - valido para
-  // dimensionamiento preliminar.
-  // Para líquidos: Cv = Q(GPM) × √(SG / ΔP_psi)
-  // Kv = Cv / 1.1561 (conversión ISA verificada)
+  // ── CÁLCULO 4: COEFICIENTE Cv — LÍQUIDOS ──────────────────────
+  // calcCvLiquido de @/lib/calculos (fuente única, con tests):
+  // ISA-75.01.01-2012 / IEC 60534-2-1, líquido turbulento sin accesorios
+  // (Fp = 1), presiones manométricas → absolutas, verificación de flujo
+  // estrangulado si se informan FL, Pv y Pc. Gas/vapor NO implementado.
+  const cambiarFaseCv = (f: 'liquido'|'gas') => {
+    setCvFase(f);
+    // Al pasar a gas no puede quedar a la vista (ni exportable) un Cv de líquido
+    if (f === 'gas') { setResCv(null); setDatosCv(null); R(); }
+  };
+  const cambiarTipoValCv = (t: 'globo'|'bola'|'mariposa'|'otro') => {
+    setCvTipoVal(t);
+    if (t !== 'otro') setCvFL(String(FL_ORIENTATIVO[t]));
+  };
+  const opcional = (s: string) => (s.trim() === '' ? undefined : parseFloat(s));
+
   const calcCv = () => {
-    R(); setResCv(null);
-    const Q_raw = parseFloat(cvQ), DP_raw = parseFloat(cvDP), SG = parseFloat(cvSG);
-    if ([Q_raw, DP_raw, SG].some(n => isNaN(n) || n <= 0)) { setErr('Valores inválidos'); return; }
+    R(); setResCv(null); setDatosCv(null);
+    if (cvFase !== 'liquido') { setErr('Cálculo de gas/vapor no implementado aún.'); return; }
 
-    // Convertir a unidades ISA: GPM y psi
-    const Q_gpm = cvUnidQ === 'm3h' ? Q_raw * 4.40287 : Q_raw;
-    const DP_psi = cvUnidDP === 'bar' ? DP_raw * 14.5038 : DP_raw;
-
-    const Cv = Math.round(Q_gpm * Math.sqrt(SG / DP_psi) * 100) / 100;
-    const Kv = Math.round(Cv / 1.1561 * 100) / 100;
+    const r = calcCvLiquido({
+      Q: parseFloat(cvQ), unidadQ: cvUnidQ,
+      P1_man: parseFloat(cvP1), P2_man: parseFloat(cvP2), unidadP: cvUnidP,
+      SG: parseFloat(cvSG),
+      FL: opcional(cvFL), Pv_abs: opcional(cvPv), Pc_abs: opcional(cvPc),
+    });
+    if (!r.ok) { setErr(r.error); return; }
 
     let desc = '';
-    if (Cv < 1) desc = 'Cv muy bajo — válvula de control de precisión o aguja. Verificar cavitación.';
-    else if (Cv < 10) desc = 'Válvula de control pequeña. Globo o plug recomendado.';
-    else if (Cv < 100) desc = 'Rango estándar — válvula de control globo o ball de control.';
-    else if (Cv < 500) desc = 'Cv alto — válvula de control de gran caudal o mariposa.';
+    if (r.Cv < 1) desc = 'Cv muy bajo — válvula de control de precisión o aguja.';
+    else if (r.Cv < 10) desc = 'Válvula de control pequeña. Globo o plug recomendado.';
+    else if (r.Cv < 100) desc = 'Rango estándar — válvula de control globo o ball de control.';
+    else if (r.Cv < 500) desc = 'Cv alto — válvula de control de gran caudal o mariposa.';
     else desc = 'Cv muy alto — revisar si conviene segmentar en válvulas paralelas.';
 
-    setResCv({ Cv, Kv, desc });
+    setResCv({ ...r, desc });
+
+    const uP = cvUnidP === 'bar' ? 'barg' : 'psig';
+    const uPa = cvUnidP === 'bar' ? 'bar a' : 'psia';
+    const tipoValTxt = { globo: 'Globo', bola: 'Bola', mariposa: 'Mariposa', otro: 'Otro / manual' }[cvTipoVal];
+    const estadoTxt =
+      r.estrangulamiento === 'ESTRANGULADO'    ? 'FLUJO ESTRANGULADO — Cv calculado con ΔPmax' :
+      r.estrangulamiento === 'NO_ESTRANGULADO' ? 'Sin estrangulamiento (ΔP < ΔPmax)' :
+      `Estrangulamiento no verificado — faltan: ${r.faltanParaVerificar.join(', ')}`;
+
+    // Solo datos ingresados por el usuario y resultados calculados — sin valores inventados
+    const entradas: [string, string][] = [
+      ['Fase', 'Líquido'],
+      ['Caudal', `${cvQ} ${cvUnidQ === 'm3h' ? 'm³/h' : 'GPM'}`],
+      ['P1 entrada (manométrica)', `${cvP1} ${uP}`],
+      ['P2 salida (manométrica)', `${cvP2} ${uP}`],
+      ['Gravedad específica SG', cvSG],
+      ['Tipo de válvula (para FL)', tipoValTxt],
+      ...(cvFL.trim() ? [['FL (orientativo, verificar fabricante)', cvFL] as [string, string]] : []),
+      ...(cvPv.trim() ? [['Pv (absoluta)', `${cvPv} ${uPa}`] as [string, string]] : []),
+      ...(cvPc.trim() ? [['Pc (absoluta)', `${cvPc} ${uPa}`] as [string, string]] : []),
+    ];
+    const alerta = r.estrangulamiento === 'ESTRANGULADO' || r.flashing === true;
+
     const payloadCv: DatosExportar = {
       tipo: 'VALVULAS_COEFICIENTE_CV',
-      normativa: 'ISA 75.01.01',
-      parametros: {
-        'Caudal': `${cvQ} ${cvUnidQ}`,
-        'Delta P valvula': `${cvDP} ${cvUnidDP}`,
-        'Gravedad especifica SG': cvSG,
-      },
+      normativa: NORMA_CV,
+      parametros: Object.fromEntries(entradas),
       resultado: {
-        'Cv requerido (US)': Cv,
-        'Kv requerido (metrico)': Kv,
+        'Cv requerido (US)': Number(r.Cv_txt),
+        'Kv requerido (metrico)': Number(r.Kv_txt),
+        'Delta P real (bar)': +r.dP_bar.toFixed(3),
+        ...(r.dPmax_bar !== null ? {
+          'Delta P max estrangulamiento (bar)': +r.dPmax_bar.toFixed(3),
+          'FF': +r.FF!.toFixed(4),
+        } : {}),
+        'Estrangulamiento': estadoTxt,
+        ...(r.flashing ? { 'Flashing': 'P2 ≤ Pv — vaporización a la salida' } : {}),
         'Orientacion seleccion': desc,
       },
+      ...(alerta ? { nivel: 'HIGH' } : {}),
+      alerta,
+      // DXF propio del Cv: solo Cv, Kv y lo ingresado (sin DN, clase ni presiones inventadas)
       dxfParams: {
-        DN:    100,
-        tipo:  'gl',
-        nombre: `Control Cv=${Cv}`,
-        clase: '300',
-        P_max: DP_psi * 0.0689,
-        P_op:  DP_psi * 0.0551,
-        norma: 'ISA 75.01.01',
+        Cv_txt: r.Cv_txt, Kv_txt: r.Kv_txt, estado: estadoTxt, norma: NORMA_CV, entradas,
       },
     };
     setDatosCv(payloadCv);
@@ -680,7 +725,7 @@ export default function ModuloValvulas() {
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 20, fontWeight: 800 }}>Válvulas Industriales</div>
           <div style={{ fontSize: 12, color: '#64748b' }}>Clase B16.34 · Material NACE · Brida B16.5 + DXF · Coeficiente Cv · Selector tipo</div>
-          <div style={{ fontSize: 11, color: COLOR, marginTop: 4 }}>ASME B16.34-2017 · ASME B16.5-2017 · ISA 75.01.01 · NACE MR0175/ISO 15156 · API 6D</div>
+          <div style={{ fontSize: 11, color: COLOR, marginTop: 4 }}>ASME B16.34-2017 · ASME B16.5-2017 · {NORMA_CV} · NACE MR0175/ISO 15156 · API 6D</div>
         </div>
       </div>
 
@@ -1232,9 +1277,21 @@ export default function ModuloValvulas() {
       {/* ══ COEFICIENTE Cv ══ */}
       {sub === 'cv' && (
         <div>
-          <Tit t="Coeficiente de caudal Cv — ISA 75.01.01 (servicio líquido)" />
-          <Info t="Cv = Q(GPM) × √(SG / ΔP_psi) · Kv = Cv / 1.1561 · Selección para flujo turbulento no crítico (sin cavitación)" />
+          <Tit t={`Coeficiente de caudal Cv — ${NORMA_CV} (servicio líquido)`} />
+          <Info t="Kv = Q(m³/h) × √(SG / ΔP(bar)) · Cv = 1,156 × Kv · Flujo estrangulado: ΔPmax = FL² × (P1 − FF × Pv), FF = 0,96 − 0,28 × √(Pv/Pc)" />
 
+          <div style={{ marginBottom: 16 }}>
+            <label style={lbl}>Fase del fluido</label>
+            <select value={cvFase} onChange={e => cambiarFaseCv(e.target.value as 'liquido'|'gas')} style={inp}>
+              <option value="liquido" style={{ background: '#0a0f1e' }}>Líquido</option>
+              <option value="gas" style={{ background: '#0a0f1e' }}>Gas / vapor — no implementado</option>
+            </select>
+          </div>
+
+          {cvFase === 'gas' ? (
+            <Warn rojo t={`⛔ Cálculo de gas/vapor no implementado aún. Este cálculo solo dimensiona líquidos (${NORMA_CV}); para gas o vapor hacen falta el factor de expansión Y, xT, Fγ, M, T1 y Z. No se puede continuar en este modo.`} />
+          ) : (
+          <>
           <div style={g2}>
             <div><label style={lbl}>Caudal de operación</label>
               <div style={{ display: 'flex', gap: 8 }}>
@@ -1245,18 +1302,49 @@ export default function ModuloValvulas() {
                 </select>
               </div>
             </div>
-            <div><label style={lbl}>Caída de presión ΔP en válvula</label>
-              <div style={{ display: 'flex', gap: 8 }}>
-                <input value={cvDP} onChange={e => setCvDP(e.target.value)} style={{ ...inp, flex: 1 }} type="number" min="0.01" step="0.1" />
-                <select value={cvUnidDP} onChange={e => setCvUnidDP(e.target.value as 'bar'|'psi')} style={{ ...inp, width: 80, flex: 'none' }}>
-                  <option value="bar" style={{ background: '#0a0f1e' }}>bar</option>
-                  <option value="psi" style={{ background: '#0a0f1e' }}>psi</option>
-                </select>
-              </div>
-            </div>
             <div><label style={lbl}>Gravedad específica SG</label>
               <input value={cvSG} onChange={e => setCvSG(e.target.value)} style={inp} type="number" min="0.1" step="0.01" />
               <div style={{ fontSize: 10, color: '#334155', marginTop: 3 }}>Agua=1.00 · Crudo lig=0.82 · Crudo pes=0.92 · Diesel=0.85</div>
+            </div>
+          </div>
+
+          <div style={g3}>
+            <div><label style={lbl}>P1 entrada (manométrica)</label>
+              <input value={cvP1} onChange={e => setCvP1(e.target.value)} style={inp} type="number" step="0.1" />
+            </div>
+            <div><label style={lbl}>P2 salida (manométrica)</label>
+              <input value={cvP2} onChange={e => setCvP2(e.target.value)} style={inp} type="number" step="0.1" />
+            </div>
+            <div><label style={lbl}>Unidad de presión</label>
+              <select value={cvUnidP} onChange={e => setCvUnidP(e.target.value as 'bar'|'psi')} style={inp}>
+                <option value="bar" style={{ background: '#0a0f1e' }}>bar (barg / bar a)</option>
+                <option value="psi" style={{ background: '#0a0f1e' }}>psi (psig / psia)</option>
+              </select>
+            </div>
+          </div>
+          <div style={{ fontSize: 11, color: '#94a3b8', margin: '-8px 0 16px', padding: '6px 10px', background: 'rgba(13,148,136,0.05)', borderRadius: 8 }}>
+            ℹ️ P1 y P2 son <b>manométricas</b> ({cvUnidP === 'bar' ? 'barg' : 'psig'}). Para el cálculo se suma la presión atmosférica estándar ({cvUnidP === 'bar' ? `${P_ATM_BAR} bar` : '14,696 psi'}) y se trabaja con presiones absolutas. ΔP = P1 − P2.
+          </div>
+
+          <RLbl t="VERIFICACIÓN DE FLUJO ESTRANGULADO (opcional)" />
+          <div style={g2}>
+            <div><label style={lbl}>Tipo de válvula (precarga FL)</label>
+              <select value={cvTipoVal} onChange={e => cambiarTipoValCv(e.target.value as 'globo'|'bola'|'mariposa'|'otro')} style={inp}>
+                <option value="globo" style={{ background: '#0a0f1e' }}>Globo — FL ≈ {FL_ORIENTATIVO.globo}</option>
+                <option value="bola" style={{ background: '#0a0f1e' }}>Bola — FL ≈ {FL_ORIENTATIVO.bola}</option>
+                <option value="mariposa" style={{ background: '#0a0f1e' }}>Mariposa — FL ≈ {FL_ORIENTATIVO.mariposa}</option>
+                <option value="otro" style={{ background: '#0a0f1e' }}>Otro / valor manual</option>
+              </select>
+            </div>
+            <div><label style={lbl}>FL — factor de recuperación de presión</label>
+              <input value={cvFL} onChange={e => setCvFL(e.target.value)} style={inp} type="number" min="0.1" max="1" step="0.01" />
+              <div style={{ fontSize: 10, color: '#f59e0b', marginTop: 3 }}>⚠ Valor orientativo, verificar contra la hoja de datos del fabricante.</div>
+            </div>
+            <div><label style={lbl}>Pv — presión de vapor del líquido (absoluta)</label>
+              <input value={cvPv} onChange={e => setCvPv(e.target.value)} style={inp} type="number" min="0" step="0.01" placeholder={`Opcional — ${cvUnidP === 'bar' ? 'bar a' : 'psia'}`} />
+            </div>
+            <div><label style={lbl}>Pc — presión crítica termodinámica (absoluta)</label>
+              <input value={cvPc} onChange={e => setCvPc(e.target.value)} style={inp} type="number" min="0" step="0.1" placeholder={`Opcional — ${cvUnidP === 'bar' ? 'bar a' : 'psia'} (agua: 220,64 bar a)`} />
             </div>
           </div>
 
@@ -1264,17 +1352,35 @@ export default function ModuloValvulas() {
 
           {resCv && (
             <ResBox>
-              <RLbl t="RESULTADO — COEFICIENTE DE CAUDAL (ISA 75.01.01)" />
+              <RLbl t={`RESULTADO — COEFICIENTE DE CAUDAL (${NORMA_CV})`} />
               <div style={g3}>
-                <Card label="Cv requerido (US)" val={`${resCv.Cv}`} sub="Unidad US (GPM/√psi)" />
-                <Card label="Kv requerido (métrico)" val={`${resCv.Kv}`} sub="Unidad EU (m³/h/√bar)" />
-                <Card label="Conversión" val="Cv = Kv × 1.1561" sub="ISA 75.01.01 verificado" />
+                <Card label="Cv requerido (US)" val={resCv.Cv_txt} sub="Unidad US (GPM/√psi)" />
+                <Card label="Kv requerido (métrico)" val={resCv.Kv_txt} sub="Unidad EU (m³/h/√bar)" />
+                <Card label="Conversión" val="Cv = 1,156 × Kv" sub={NORMA_CV} />
               </div>
-              <div style={{ fontSize: 12, padding: '8px 12px', background: '#0a0f1e', borderRadius: 8 }}>
+              {resCv.estrangulamiento === 'ESTRANGULADO' && (
+                <Warn rojo t={`⛔ FLUJO ESTRANGULADO: ΔP = ${resCv.dP_bar.toFixed(3)} bar ≥ ΔPmax = ${resCv.dPmax_bar!.toFixed(3)} bar (FL = ${cvFL}, FF = ${resCv.FF!.toFixed(4)}). El Cv se calculó con ΔPmax: aumentar la caída de presión no aumenta el caudal. Riesgo de cavitación, ruido y daño — revisar la selección de la válvula.`} />
+              )}
+              {resCv.estrangulamiento === 'NO_ESTRANGULADO' && (
+                <div style={{ fontSize: 11, color: '#4ade80', padding: '8px 12px', background: 'rgba(74,222,128,0.06)', border: '1px solid rgba(74,222,128,0.25)', borderRadius: 8, marginBottom: 8 }}>
+                  ✓ Sin estrangulamiento: ΔP = {resCv.dP_bar.toFixed(3)} bar &lt; ΔPmax = {resCv.dPmax_bar!.toFixed(3)} bar (FF = {resCv.FF!.toFixed(4)}).
+                </div>
+              )}
+              {resCv.estrangulamiento === 'NO_VERIFICADO' && (
+                <div style={{ fontSize: 11, color: '#94a3b8', padding: '8px 12px', background: '#0a0f1e', border: '1px solid #475569', borderRadius: 8, marginBottom: 8 }}>
+                  ⚪ Estrangulamiento no verificado — faltan: {resCv.faltanParaVerificar.join(', ')}. Sin esos datos el Cv supone flujo no estrangulado.
+                </div>
+              )}
+              {resCv.flashing && (
+                <Warn rojo t="⛔ P2 absoluta ≤ Pv: el líquido se vaporiza a la salida (flashing). Revisar selección de válvula y materiales." />
+              )}
+              <div style={{ fontSize: 12, padding: '8px 12px', background: '#0a0f1e', borderRadius: 8, marginTop: 8 }}>
                 <span style={{ color: COLOR, fontWeight: 700 }}>Orientación: </span>{resCv.desc}
               </div>
-              <Warn t="⚠️ Este Cv es para flujo turbulento no crítico en líquidos. Para gas, vapor, flujo bifásico, cavitación o servicio crítico consultar ISA 75.01.01 completo con ingeniero de control." />
+              <Warn t={`⚠️ Cv para líquido en flujo turbulento, sin accesorios (Fp = 1). Para gas, vapor, flujo bifásico o servicio crítico consultar ${NORMA_CV} completo con ingeniero de control.`} />
             </ResBox>
+          )}
+          </>
           )}
         </div>
       )}

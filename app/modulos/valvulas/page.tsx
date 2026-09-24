@@ -3,7 +3,7 @@ import type { Metadata } from 'next'
 export const metadata: Metadata = {
   title: 'Calculadora Cv de válvulas online — INGENIUM PRO',
   description:
-    'Calculadora del coeficiente Cv y Kv de válvulas industriales según ISA 75.01.01, clase ASME B16.34 ' +
+    'Calculadora del coeficiente Cv y Kv de válvulas industriales (líquidos) según ISA-75.01.01-2012 / IEC 60534-2-1, clase ASME B16.34 ' +
     'y material NACE MR0175. Informe PDF sellado, Excel y DXF.',
   alternates: {
     canonical: 'https://ingeniumpro.store/modulos/valvulas',
@@ -16,7 +16,7 @@ const jsonLd = {
   '@type': 'SoftwareApplication',
   name: 'Calculadora Cv de válvulas online — INGENIUM PRO',
   description:
-    'Calculadora del coeficiente Cv y Kv de válvulas industriales según ISA 75.01.01, clase ASME B16.34 ' +
+    'Calculadora del coeficiente Cv y Kv de válvulas industriales (líquidos) según ISA-75.01.01-2012 / IEC 60534-2-1, clase ASME B16.34 ' +
     'y material NACE MR0175. Informe PDF sellado, Excel y DXF.',
   url: 'https://ingeniumpro.store/modulos/valvulas',
   applicationCategory: 'EngineeringApplication',
@@ -71,7 +71,7 @@ export default function ModuloValvulasPage() {
           </h1>
           <p style={{ fontSize: 16, color: LIGHT, lineHeight: 1.8 }}>
             Cálculo normativo de válvulas: obtené el coeficiente de flujo Cv y Kv para dimensionar una válvula
-            de control según ISA 75.01.01, con informe sellado y verificable, en un flujo de trabajo profesional.
+            de control en servicio líquido según ISA-75.01.01-2012 / IEC 60534-2-1, con informe sellado y verificable, en un flujo de trabajo profesional.
           </p>
         </div>
 
@@ -80,9 +80,11 @@ export default function ModuloValvulasPage() {
           <h2 style={{ fontSize: 20, fontWeight: 800, marginBottom: 12, color: '#f1f5f9' }}>Qué calcula</h2>
           <p style={{ fontSize: 15, color: LIGHT, lineHeight: 1.8, marginBottom: 12 }}>
             El módulo calcula el coeficiente de flujo Cv (y su equivalente métrico Kv) que debe tener una válvula
-            de control a partir del caudal de diseño, la caída de presión (ΔP) admisible en la válvula y la
-            gravedad específica del fluido, aceptando unidades en m³/h o GPM para caudal y en bar o psi para ΔP.
-            Según el Cv obtenido, orienta sobre el tipo de válvula de control recomendado.
+            de control en servicio líquido a partir del caudal de diseño, las presiones manométricas de entrada
+            y salida (P1, P2) y la gravedad específica del fluido, aceptando unidades en m³/h o GPM para caudal y
+            en bar o psi para presión. Si se informan FL, Pv y Pc, verifica si el flujo está estrangulado. Según
+            el Cv obtenido, orienta sobre el tipo de válvula de control recomendado. El cálculo para gas o vapor
+            todavía no está disponible.
           </p>
           <p style={{ fontSize: 15, color: LIGHT, lineHeight: 1.8 }}>
             El mismo módulo incluye además la selección de clase de presión requerida por ASME B16.34-2017,
@@ -95,17 +97,19 @@ export default function ModuloValvulasPage() {
         <section style={{ marginBottom: 36 }}>
           <h2 style={{ fontSize: 20, fontWeight: 800, marginBottom: 12, color: '#f1f5f9' }}>Fórmula de Cv aplicada</h2>
           <p style={{ fontSize: 15, color: LIGHT, lineHeight: 1.8, marginBottom: 16 }}>
-            El coeficiente de flujo se calcula con la ecuación de dimensionamiento de ISA 75.01.01 para líquidos:
+            El coeficiente de flujo se calcula con las ecuaciones de dimensionamiento de ISA-75.01.01-2012 / IEC 60534-2-1 para líquidos:
           </p>
           <div style={{ background: PANEL, border: `1px solid ${BORD}`, borderRadius: 8, padding: 18, fontFamily: 'monospace', fontSize: 14, color: GOLD, marginBottom: 16 }}>
-            Cv = Q(GPM) × √(SG / ΔP(psi))<br />
-            Kv = Cv / 1.1561
+            Kv = Q(m³/h) × √(SG / ΔP(bar))<br />
+            Cv = Kv / 0,865 ≈ 1,156 × Kv<br />
+            Estrangulado si ΔP ≥ ΔPmax = FL² × (P1 − FF × Pv), FF = 0,96 − 0,28 × √(Pv / Pc)
           </div>
           <ul style={{ fontSize: 14, color: LIGHT, lineHeight: 2, paddingLeft: 20 }}>
-            <li><strong style={{ color: '#f1f5f9' }}>Q</strong>: caudal de diseño, convertido a GPM (1 m³/h = 4.40287 GPM).</li>
-            <li><strong style={{ color: '#f1f5f9' }}>ΔP</strong>: caída de presión admisible en la válvula, convertida a psi (1 bar = 14.5038 psi).</li>
+            <li><strong style={{ color: '#f1f5f9' }}>Q</strong>: caudal de diseño (1 m³/h = 4.40287 GPM).</li>
+            <li><strong style={{ color: '#f1f5f9' }}>ΔP</strong>: P1 − P2. Las presiones se ingresan manométricas y se convierten a absolutas sumando 1,01325 bar.</li>
             <li><strong style={{ color: '#f1f5f9' }}>SG</strong>: gravedad específica del fluido respecto al agua.</li>
-            <li><strong style={{ color: '#f1f5f9' }}>Kv</strong>: equivalente métrico de Cv, usado en normas europeas (IEC 60534).</li>
+            <li><strong style={{ color: '#f1f5f9' }}>FL, Pv, Pc</strong>: factor de recuperación de presión, presión de vapor y presión crítica (opcionales). Si faltan, el estrangulamiento se informa como no verificado.</li>
+            <li><strong style={{ color: '#f1f5f9' }}>Kv</strong>: equivalente métrico de Cv, usado en IEC 60534.</li>
           </ul>
         </section>
 
@@ -113,7 +117,7 @@ export default function ModuloValvulasPage() {
         <section style={{ marginBottom: 36 }}>
           <h2 style={{ fontSize: 20, fontWeight: 800, marginBottom: 12, color: '#f1f5f9' }}>Normas aplicadas</h2>
           <p style={{ fontSize: 15, color: LIGHT, lineHeight: 1.8 }}>
-            ISA 75.01.01 (ecuaciones de dimensionamiento de válvulas de control) para el coeficiente Cv/Kv.
+            ISA-75.01.01-2012 / IEC 60534-2-1 (ecuaciones de dimensionamiento de válvulas de control, servicio líquido) para el coeficiente Cv/Kv y la verificación de flujo estrangulado.
             El módulo también aplica ASME B16.34-2017 (clase de presión, tablas P-T), ASME B16.5-2017
             (dimensiones de brida), NACE MR0175/ISO 15156 (selección de material en servicio ácido) y API 6D
             (diseño de válvulas de bola).
@@ -124,11 +128,11 @@ export default function ModuloValvulasPage() {
         <section style={{ marginBottom: 36 }}>
           <h2 style={{ fontSize: 20, fontWeight: 800, marginBottom: 12, color: '#f1f5f9' }}>Ejemplo numérico</h2>
           <p style={{ fontSize: 15, color: LIGHT, lineHeight: 1.8, marginBottom: 14 }}>
-            Caudal Q = 50 m³/h, caída de presión ΔP = 2 bar, gravedad específica SG = 0.85:
+            Caudal Q = 50 m³/h, P1 = 5 barg, P2 = 3 barg (ΔP = 2 bar), gravedad específica SG = 0.85:
           </p>
           <div style={{ background: PANEL, border: `1px solid ${BORD}`, borderRadius: 8, padding: 18, fontFamily: 'monospace', fontSize: 13, color: '#94a3b8', lineHeight: 1.9 }}>
-            Q = 50 m³/h → 220.14 GPM · ΔP = 2 bar → 29.01 psi<br />
-            Cv = 220.14 × √(0.85 / 29.01)<br />
+            Kv = 50 × √(0.85 / 2) = 32.60<br />
+            Cv = 32.60 / 0,865<br />
             <span style={{ color: GOLD }}>Cv ≈ 37.68 · Kv ≈ 32.60</span><br />
             Rango estándar — válvula de control globo o ball de control.
           </div>

@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import {
   factorTempB318,
-  calcMAOP, calcDarcyWeisbach, calcGolpeAriete, calcCv,
+  calcMAOP, calcDarcyWeisbach, calcGolpeAriete,
+  calcCvLiquido, formatearCoef, FL_ORIENTATIVO, NORMA_CV,
   calcBHP, calcFractureGradient, calcMudWeight,
   calcCapacidadPortante,
   calcIntercambiador, calcDilatacionLineal,
@@ -12,6 +13,8 @@ import {
   calcMotorTrifasico, calcTransformadorElect,
   calcEspesorParedCaneria, calcHoopStressBarlow, calcVidaRemanente,
 } from '../calculos';
+import { exportarDXFCoeficienteCv } from '../exportarDXF';
+import { tituloModuloPDF } from '../tipos-calculo';
 
 // ════════════════════════════════════════════════════════════════
 // FACTOR T — ASME B31.8 Tabla 841.1.8-1 (tabla en °F)
@@ -380,58 +383,229 @@ describe('calcGolpeAriete', () => {
 });
 
 // ════════════════════════════════════════════════════════════════
-// COEFICIENTE Cv — ISA 75.01.01
+// COEFICIENTE Cv — LÍQUIDOS · ISA-75.01.01-2012 / IEC 60534-2-1
+// calcCvLiquido es la función que usa components/ModuloValvulas.tsx
 // ════════════════════════════════════════════════════════════════
-describe('calcCv', () => {
+describe('calcCvLiquido', () => {
+  // Entrada base: 50 m³/h, P1 = 5 barg, P2 = 3 barg (ΔP = 2 bar), SG = 0.85
+  const base = { Q: 50, unidadQ: 'm3h' as const, P1_man: 5, P2_man: 3, unidadP: 'bar' as const, SG: 0.85 };
+  const ok = (r: ReturnType<typeof calcCvLiquido>) => {
+    if (!r.ok) throw new Error(`se esperaba ok, vino error: ${r.error}`);
+    return r;
+  };
 
-  it('Cv=10 para Q=10 m³/h, ΔP=1 bar, agua', () => {
-    // Q_gpm = 10 × 4.40287 = 44.029
-    // DP_psi = 1 × 14.5038 = 14.504
-    // Cv = 44.029 × sqrt(1/14.504) = 44.029 × 0.2626 = 11.56
-    const r = calcCv(10, 1, 1.0);
-    expect(r).not.toBeNull();
-    expect(r!.Cv).toBeCloseTo(11.56, 0);
+  it('caso por defecto del módulo — Kv = 50·√(0.85/2), Cv = Kv/0.865', () => {
+    const r = ok(calcCvLiquido(base));
+    const Kv = 50 * Math.sqrt(0.85 / 2);           // 32.596
+    expect(r.Kv).toBeCloseTo(Kv, 10);
+    expect(r.Cv).toBeCloseTo(Kv / 0.865, 10);      // 37.683
+    expect(r.Kv_txt).toBe('32.60');
+    expect(r.Cv_txt).toBe('37.68');                 // mismo valor que mostraba la versión anterior
+    expect(r.dP_bar).toBeCloseTo(2, 12);
   });
 
-  it('Kv = Cv / 1.1561 (conversión ISA verificada)', () => {
-    const r = calcCv(10, 1, 1.0);
-    expect(r!.Kv).toBeCloseTo(r!.Cv / 1.1561, 1);
+  it('Cv = 1,156 × Kv (N1 = 0,865 de IEC 60534-2-1)', () => {
+    const r = ok(calcCvLiquido(base));
+    expect(r.Cv / r.Kv).toBeCloseTo(1.156, 3);
   });
 
-  it('mayor ΔP → menor Cv para mismo caudal', () => {
-    const r1  = calcCv(10, 1, 1.0);
-    const r4  = calcCv(10, 4, 1.0);
-    expect(r4!.Cv).toBeLessThan(r1!.Cv);
+  it('presiones manométricas → absolutas sumando 1,01325 bar', () => {
+    const r = ok(calcCvLiquido(base));
+    expect(r.P1_abs_bar).toBeCloseTo(5 + 1.01325, 12);
+    expect(r.P2_abs_bar).toBeCloseTo(3 + 1.01325, 12);
   });
 
-  it('mayor caudal → mayor Cv para mismo ΔP', () => {
-    const r10 = calcCv(10, 1, 1.0);
-    const r20 = calcCv(20, 1, 1.0);
-    expect(r20!.Cv).toBeGreaterThan(r10!.Cv);
-    expect(r20!.Cv).toBeCloseTo(r10!.Cv * 2, 1); // relación lineal en Q
+  it('unidades GPM y psi — Cv = Q·√(SG/ΔP) con N1 = 1', () => {
+    // 100 GPM, ΔP = 25 psi, agua → Cv = 100 × √(1/25) = 20
+    const r = ok(calcCvLiquido({ Q: 100, unidadQ: 'gpm', P1_man: 50, P2_man: 25, unidadP: 'psi', SG: 1 }));
+    expect(r.Cv).toBeCloseTo(20, 2);
+    expect(r.Kv).toBeCloseTo(20 * 0.865, 1);
   });
 
-  it('SG > 1 (fluido más denso) → mayor Cv', () => {
-    const rAgua    = calcCv(10, 1, 1.0);
-    const rFluido  = calcCv(10, 1, 1.5);
-    expect(rFluido!.Cv).toBeGreaterThan(rAgua!.Cv);
+  it('GPM/psi y m³/h/bar dan el mismo Cv para el mismo caso físico', () => {
+    const rSI  = ok(calcCvLiquido(base));
+    const rImp = ok(calcCvLiquido({
+      Q: 50 * 4.40287, unidadQ: 'gpm', P1_man: 5 * 14.5038, P2_man: 3 * 14.5038, unidadP: 'psi', SG: 0.85,
+    }));
+    expect(rImp.Cv).toBeCloseTo(rSI.Cv, 6);
   });
 
-  it('retorna null con Q=0', () => {
-    expect(calcCv(0, 1, 1.0)).toBeNull();
+  it('Cv chico: 0,0037 no se muestra como 0 (3 cifras significativas)', () => {
+    // Q = 0.01 m³/h, ΔP = 10 bar, agua → Kv = 0.0031623, Cv = 0.0036558
+    const r = ok(calcCvLiquido({ Q: 0.01, unidadQ: 'm3h', P1_man: 10, P2_man: 0, unidadP: 'bar', SG: 1 }));
+    expect(r.Cv).toBeCloseTo(0.0036558, 7);
+    expect(r.Cv_txt).toBe('0.00366');
+    expect(r.Kv_txt).toBe('0.00316');
+    expect(Number(r.Cv_txt)).toBeGreaterThan(0);
   });
 
-  it('retorna null con ΔP=0', () => {
-    expect(calcCv(10, 0, 1.0)).toBeNull();
+  it('Kv se calcula del valor exacto, sin doble redondeo', () => {
+    const r = ok(calcCvLiquido(base));
+    // Antes: Kv = round2(round2(Cv) / 1.1561) = 32.59; exacto 32.596 → 32.60
+    expect(r.Kv_txt).toBe('32.60');
   });
 
-  it('retorna null con SG=0', () => {
-    expect(calcCv(10, 1, 0)).toBeNull();
+  it('formatearCoef: ≥ 1 con 2 decimales, < 1 con 3 cifras significativas', () => {
+    expect(formatearCoef(37.6834)).toBe('37.68');
+    expect(formatearCoef(1)).toBe('1.00');
+    expect(formatearCoef(0.5)).toBe('0.500');
+    expect(formatearCoef(0.0036558)).toBe('0.00366');
   });
 
-  it('retorna null con valores negativos', () => {
-    expect(calcCv(-5, 1, 1.0)).toBeNull();
-    expect(calcCv(10, -1, 1.0)).toBeNull();
+  it('proporcional a Q y a √SG, inverso a √ΔP', () => {
+    const r1 = ok(calcCvLiquido(base));
+    expect(ok(calcCvLiquido({ ...base, Q: 100 })).Cv).toBeCloseTo(r1.Cv * 2, 10);
+    expect(ok(calcCvLiquido({ ...base, SG: 0.85 * 4 })).Cv).toBeCloseTo(r1.Cv * 2, 10);
+    expect(ok(calcCvLiquido({ ...base, P1_man: 11 })).Cv).toBeCloseTo(r1.Cv / 2, 10); // ΔP = 8 bar
+  });
+
+  it('error con P2 por debajo del vacío absoluto (P2 abs ≤ 0)', () => {
+    expect(calcCvLiquido({ ...base, P2_man: -3 }).ok).toBe(false);   // −3 barg < −1,01325 barg
+  });
+
+  it('FF con Pv/Pc conocidos: Pv/Pc = 0,25 → FF = 0,96 − 0,28 × 0,5 = 0,82', () => {
+    const r = ok(calcCvLiquido({ ...base, FL: 0.9, Pv_abs: 50, Pc_abs: 200, P1_man: 100, P2_man: 98 }));
+    expect(r.FF).toBeCloseTo(0.82, 12);
+  });
+
+  it('con FL, Pv y Pc — SIN estrangulamiento (ΔP < ΔPmax)', () => {
+    // Agua ~90 °C: Pv = 0.7 bar a, Pc = 220.64 bar a; FL = 0.9; ΔP = 2 bar
+    const r = ok(calcCvLiquido({ ...base, SG: 1, FL: 0.9, Pv_abs: 0.7, Pc_abs: 220.64 }));
+    const FF = 0.96 - 0.28 * Math.sqrt(0.7 / 220.64);
+    const dPmax = 0.81 * ((5 + 1.01325) - FF * 0.7);   // 4.335 bar
+    expect(r.estrangulamiento).toBe('NO_ESTRANGULADO');
+    expect(r.FF).toBeCloseTo(FF, 12);
+    expect(r.dPmax_bar).toBeCloseTo(dPmax, 10);
+    expect(r.dP_dimension_bar).toBeCloseTo(2, 12);
+    expect(r.Kv).toBeCloseTo(50 * Math.sqrt(1 / 2), 10);
+    expect(r.flashing).toBe(false);
+  });
+
+  it('con FL, Pv y Pc — FLUJO ESTRANGULADO (ΔP ≥ ΔPmax): Cv con ΔPmax', () => {
+    // Mismo caso pero P2 = 0 barg → ΔP = 5 bar > ΔPmax = 4.335 bar
+    const r = ok(calcCvLiquido({ ...base, SG: 1, P2_man: 0, FL: 0.9, Pv_abs: 0.7, Pc_abs: 220.64 }));
+    const FF = 0.96 - 0.28 * Math.sqrt(0.7 / 220.64);
+    const dPmax = 0.81 * ((5 + 1.01325) - FF * 0.7);
+    expect(r.estrangulamiento).toBe('ESTRANGULADO');
+    expect(r.dP_bar).toBeCloseTo(5, 12);
+    expect(r.dP_dimension_bar).toBeCloseTo(dPmax, 10);
+    expect(r.Kv).toBeCloseTo(50 * Math.sqrt(1 / dPmax), 10);
+    // Con ΔP real el Cv hubiera salido más chico (subdimensionado)
+    expect(r.Kv).toBeGreaterThan(50 * Math.sqrt(1 / 5));
+  });
+
+  it('sin Pv/Pc → "no verificado" e informa qué falta', () => {
+    const r = ok(calcCvLiquido({ ...base, FL: 0.9 }));
+    expect(r.estrangulamiento).toBe('NO_VERIFICADO');
+    expect(r.faltanParaVerificar).toEqual(['Pv', 'Pc']);
+    expect(r.FF).toBeNull();
+    expect(r.dPmax_bar).toBeNull();
+    expect(r.flashing).toBeNull();
+  });
+
+  it('flashing: P2 absoluta ≤ Pv', () => {
+    // P2 = 0 barg → 1.01325 bar a; Pv = 2 bar a (P1 = 5 barg > Pv)
+    const r = ok(calcCvLiquido({ ...base, P2_man: 0, FL: 0.9, Pv_abs: 2, Pc_abs: 220.64 }));
+    expect(r.flashing).toBe(true);
+  });
+
+  it('error con P2 ≥ P1', () => {
+    expect(calcCvLiquido({ ...base, P1_man: 3, P2_man: 3 }).ok).toBe(false);
+    expect(calcCvLiquido({ ...base, P1_man: 3, P2_man: 5 }).ok).toBe(false);
+  });
+
+  it('error con caudal 0 o negativo, y SG ≤ 0', () => {
+    expect(calcCvLiquido({ ...base, Q: 0 }).ok).toBe(false);
+    expect(calcCvLiquido({ ...base, Q: -5 }).ok).toBe(false);
+    expect(calcCvLiquido({ ...base, SG: 0 }).ok).toBe(false);
+  });
+
+  it('error con NaN / Infinity en entradas obligatorias y opcionales', () => {
+    expect(calcCvLiquido({ ...base, Q: NaN }).ok).toBe(false);
+    expect(calcCvLiquido({ ...base, P1_man: Infinity }).ok).toBe(false);
+    expect(calcCvLiquido({ ...base, P2_man: NaN }).ok).toBe(false);
+    expect(calcCvLiquido({ ...base, SG: Infinity }).ok).toBe(false);
+    expect(calcCvLiquido({ ...base, FL: NaN }).ok).toBe(false);
+    expect(calcCvLiquido({ ...base, Pv_abs: Infinity }).ok).toBe(false);
+  });
+
+  it('error con FL fuera de (0, 1], Pv ≥ Pc o P1 ≤ Pv', () => {
+    expect(calcCvLiquido({ ...base, FL: 0 }).ok).toBe(false);
+    expect(calcCvLiquido({ ...base, FL: 1.2 }).ok).toBe(false);
+    expect(calcCvLiquido({ ...base, Pv_abs: 10, Pc_abs: 5 }).ok).toBe(false);
+    expect(calcCvLiquido({ ...base, Pv_abs: 7 }).ok).toBe(false);   // P1 = 6.01 bar a < Pv
+  });
+
+  it('FL orientativos por tipo de válvula', () => {
+    expect(FL_ORIENTATIVO).toEqual({ globo: 0.9, bola: 0.6, mariposa: 0.7 });
+  });
+
+  it('cita única de la norma', () => {
+    expect(NORMA_CV).toBe('ISA-75.01.01-2012 / IEC 60534-2-1');
+  });
+});
+
+describe('exportarDXFCoeficienteCv', () => {
+  const dxf = exportarDXFCoeficienteCv({
+    Cv_txt: '37.68', Kv_txt: '32.60', estado: 'Estrangulamiento no verificado — faltan: Pv, Pc',
+    norma: 'ISA-75.01.01-2012 / IEC 60534-2-1',
+    entradas: [['Caudal', '50 m³/h'], ['P1 entrada (manométrica)', '5 barg'], ['P2 salida (manométrica)', '3 barg']],
+  });
+
+  it('muestra Cv, Kv, estado y los datos ingresados', () => {
+    expect(dxf).toContain('Cv requerido = 37.68');
+    expect(dxf).toContain('Kv requerido = 32.60');
+    expect(dxf).toContain('Estrangulamiento no verificado');
+    expect(dxf).toContain('P1 entrada (manométrica): 5 barg');
+  });
+
+  it('no inventa DN, clase ni presiones de diseño', () => {
+    expect(dxf).not.toMatch(/DN \d/);
+    expect(dxf).not.toMatch(/Clase/);
+    expect(dxf).not.toMatch(/P max|Prueba hidrost|Factor uso/);
+  });
+});
+
+describe('tituloModuloPDF', () => {
+  it('resuelve el módulo desde el tipo (antes solo MAOP coincidía)', () => {
+    expect(tituloModuloPDF('VALVULAS_COEFICIENTE_CV', 'VALVULAS_COEFICIENTE_CV')).toBe('Válvulas Industriales');
+    expect(tituloModuloPDF('MAOP', 'MAOP')).toBe('Petróleo y Gas');
+    expect(tituloModuloPDF('CANERIAS_HOOP', 'CANERIAS_HOOP')).toBe('Cañerías e Integridad');
+    expect(tituloModuloPDF('ESTABILIDAD_PRESA_GRAVEDAD', null)).toBe('Represas y Presas');
+    expect(tituloModuloPDF('INSTRUMENTACION_LAZO_4_20MA', null)).toBe('Electrónica de Instrumentación');
+  });
+
+  it('todos los tipos usados en los módulos tienen título (no el nombre interno)', () => {
+    const tipos = [
+      'ARQUITECTURA_ILUMINACION', 'ARQUITECTURA_SISMO', 'ARQUITECTURA_VIENTO',
+      'CANERIAS_ARIETE', 'CANERIAS_CIERRE', 'CANERIAS_ESPESOR', 'CANERIAS_HOOP', 'CANERIAS_REMANENTE',
+      'CAPACIDAD_PORTANTE', 'CERAMICO_MMO', 'COLUMNA_HORMIGON_ACI', 'CONSUMO_ELECTRODOS', 'CONTRAPISO_MMO',
+      'DARCY_WEISBACH', 'DILATACION_TERMICA', 'DRENAJE_VIAL_HEC22',
+      'ELECTRICIDAD_AREA_PELIGROSA', 'ELECTRICIDAD_CABLE', 'ELECTRICIDAD_CAIDA_TENSION',
+      'ELECTRICIDAD_CORTOCIRCUITO', 'ELECTRICIDAD_FACTOR_POTENCIA', 'ELECTRICIDAD_ILUMINACION',
+      'ELECTRICIDAD_MOTOR', 'ELECTRICIDAD_TRANSFORMADOR', 'ELECTROMECANICA_FLOTA',
+      'ESTABILIDAD_PRESA_GRAVEDAD', 'ESTABILIDAD_TALUD', 'EXCAVACION_MMO', 'FILETE_SOLDADURA',
+      'FILTRACION_DARCY', 'GISTM_CONFORMIDAD', 'GOLPE_ARIETE', 'HEAT_INPUT', 'HIERRO_MMO', 'HORMIGON_MMO',
+      'INSTRUMENTACION_ENERGIA_SOLAR', 'INSTRUMENTACION_LAZO_4_20MA', 'INSTRUMENTACION_TERMOCUPLA_K',
+      'INSTRUMENTACION_EMI_CONDUCIDA', 'INTERCAMBIADOR_LMTD', 'LOSA_MMO', 'MAMPOSTERIA_MMO', 'MAOP',
+      'MORTERO_MMO', 'PAVIMENTO_AASHTO93', 'PERFORACION', 'PRECALENTAMIENTO', 'RENDIMIENTO_MMO',
+      'REVOQUE_MMO', 'RMR_BIENIAWSKI', 'SELECTOR_SOLDADURA', 'VALVULAS_BRIDA_B16_5',
+      'VALVULAS_CLASE_B16_34', 'VALVULAS_COEFICIENTE_CV', 'VALVULAS_MATERIAL_NACE',
+      'VALVULAS_DISENO_BOLA', 'VALVULAS_DISENO_MARIPOSA', 'VALVULAS_DISENO_RETENCION',
+      'VALVULAS_DISENO_TAPON', 'VALVULAS_DISENO_GLOBO',
+      'VENTILACION_SUBTERRANEA', 'VERTEDERO_FRANCIS', 'VIGA_ACERO_AISC', 'ZAPATA_MMO',
+    ];
+    for (const t of tipos) expect(tituloModuloPDF(t, t), t).not.toBe(t);
+  });
+
+  it('registros viejos con moduloId de módulo', () => {
+    expect(tituloModuloPDF('X', 'VALVULAS')).toBe('Válvulas Industriales');
+    expect(tituloModuloPDF('X', 'THERMAL')).toBe('Térmica');
+    expect(tituloModuloPDF('X', 'valvulas')).toBe('Válvulas Industriales');
+  });
+
+  it('tipo desconocido → comportamiento anterior (nombre interno)', () => {
+    expect(tituloModuloPDF('TIPO_INEXISTENTE', null)).toBe('TIPO_INEXISTENTE');
   });
 });
 

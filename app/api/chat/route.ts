@@ -544,7 +544,12 @@ function preCalcular(ctx: ContextoCalculo): ResultadosDerivados {
       if (nivel_riesgo === 'BAJO') nivel_riesgo = 'MEDIO';
     }
 
-    if (Cv > 0) notas.push(`Cv requerido: ${Cv} [ISA 75.01.01]`);
+    if (Cv > 0) notas.push(`Cv requerido: ${Cv} [ISA-75.01.01-2012 / IEC 60534-2-1]`);
+    const estrang = String(r['Estrangulamiento'] ?? '');
+    if (estrang) {
+      notas.push(`Estrangulamiento: ${estrang}`);
+      if (estrang.startsWith('FLUJO ESTRANGULADO') && nivel_riesgo === 'BAJO') nivel_riesgo = 'ALTO';
+    }
   }
 
   // ── GISTM — ICMM/UNEP/PRI Global Industry Standard on Tailings Management ──
@@ -837,9 +842,8 @@ API 623-2013: Válvulas globo de acero para servicio general — diseño, materi
 MSS SP-85-2002: Válvulas globo hierro fundido — requisitos de diseño y prueba de asiento.`,
 
   VALVULAS_COEFICIENTE_CV: `NORMATIVAS APLICABLES — VERIFICADAS:
-ISA 75.01.01-2012: Cv = Q·√(SG/ΔP) — Q en GPM, ΔP en psi, SG relativo al agua a 60°F.
-ISA 75.01.01-2012 §5: Kv = 0.865·Cv — conversión a unidades métricas (m3/h a 1 bar de ΔP).
-ISA 75.01.01-2012 §6: Cavitación — Cv de servicio > Cv·FL² para evitar daño al asiento.
+ISA-75.01.01-2012 / IEC 60534-2-1 — líquido no estrangulado: Kv = Q·√(SG/ΔP) con Q en m³/h y ΔP en bar (N1 = 1); Cv = Kv / 0,865 ≈ 1,156·Kv. Con Q en GPM y ΔP en psi: Cv = Q·√(SG/ΔP). SG relativo al agua a 15,6 °C (60 °F).
+ISA-75.01.01-2012 / IEC 60534-2-1 — flujo estrangulado en líquidos: FF = 0,96 − 0,28·√(Pv/Pc) y ΔPmax = FL²·(P1 − FF·Pv), con P1, Pv y Pc absolutas. Si ΔP ≥ ΔPmax el flujo está estrangulado: el caudal no aumenta aunque suba ΔP, se dimensiona con ΔPmax y hay riesgo de cavitación. Si P2 ≤ Pv hay vaporización a la salida (flashing). El criterio NO es comparar Cv de servicio con Cv·FL².
 API 6D-2021 §5.7: Pérdida de presión admisible a través de válvula en condición de diseño máximo.`,
 
   GISTM_CONFORMIDAD: `NORMATIVAS APLICABLES — VERIFICADAS:

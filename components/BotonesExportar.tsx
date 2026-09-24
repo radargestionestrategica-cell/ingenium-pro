@@ -250,7 +250,7 @@ export default function BotonesExportar({ datos, visible }: Props) {
         VALVULAS_DISENO_RETENCION:   mod.exportarDXFRetencion,
         VALVULAS_DISENO_TAPON:       mod.exportarDXFTapon,
         VALVULAS_DISENO_GLOBO:       mod.exportarDXFValvulas,
-        VALVULAS_COEFICIENTE_CV:     mod.exportarDXFValvulas,
+        VALVULAS_COEFICIENTE_CV:     mod.exportarDXFCoeficienteCv,
         // Civil
         VIGA_ACERO_AISC:             mod.exportarDXFCivil,
         COLUMNA_HORMIGON_ACI:        mod.exportarDXFCivil,

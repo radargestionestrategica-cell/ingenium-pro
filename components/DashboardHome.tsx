@@ -17,7 +17,7 @@ const ACCESOS = [
   { id:'represas',     label:'Represas',               icon:'🌊', color: CYAN,    norma:'USACE EM · ICOLD' },
   { id:'vialidad',     label:'Vialidad',               icon:'🛣️', color:'#64748b',norma:'AASHTO 93 · HEC-22' },
   { id:'mmo',          label:'MMO',                   icon:'🔧', color:'#a78bfa',norma:'CIRSOC 201 · ACI 318' },
-  { id:'valvulas',     label:'Válvulas Industriales',  icon:'⚙️', color: GREEN,   norma:'ASME B16.34 · ISA 75.01' },
+  { id:'valvulas',     label:'Válvulas Industriales',  icon:'⚙️', color: GREEN,   norma:'ASME B16.34 · ISA-75.01.01-2012 / IEC 60534-2-1' },
   { id:'civil',        label:'Civil',                 icon:'🏗️', color:'#94a3b8',norma:'AISC 360 · ACI 318-19' },
   { id:'arquitectura', label:'Arquitectura',           icon:'🏛️', color:'#e879f9',norma:'ASCE 7-22 · CIRSOC 103' },
   { id:'mineria',      label:'Minería',               icon:'⛏️', color:'#fb923c',norma:'Bieniawski 89 · MSHA' },

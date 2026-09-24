@@ -21,7 +21,7 @@ const SLIDES: SlideData[] = [
     id: 'pdf', color: '#FF4560', icon: '📄', label: 'PDF',
     titulo:    'PDF con QR verificable',
     subtitulo: 'Resultado con verificación criptográfica SHA-256. Escaneable 3 años después.',
-    badge:     'ASME B16.34 · ISA 75.01.01',
+    badge:     'ASME B16.34 · ISA-75.01.01-2012 / IEC 60534-2-1',
   },
   {
     id: 'excel', color: '#00E5A0', icon: '📊', label: 'Excel',
@@ -64,7 +64,7 @@ function MockupPDF() {
         <span style={{ color: '#94a3b8', fontSize: 8 }}>v8.1 · VERIFICADO</span>
       </div>
       <div style={{ fontWeight: 700, fontSize: 10, color: '#0f172a', marginBottom: 4 }}>Válvula Globo DN100 · Clase 300</div>
-      <div style={{ color: '#6366f1', fontSize: 8, marginBottom: 10 }}>ASME B16.34 · ISA 75.01.01</div>
+      <div style={{ color: '#6366f1', fontSize: 8, marginBottom: 10 }}>ASME B16.34 · ISA-75.01.01-2012 / IEC 60534-2-1</div>
       {filas.map(([k, v]) => (
         <div key={k} style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #e2e8f0', padding: '3px 0', fontSize: 9 }}>
           <span style={{ color: '#64748b' }}>{k}</span>

@@ -25,7 +25,7 @@ const CLUSTERS: { titulo: string; modulos: Modulo[] }[] = [
     modulos: [
       { slug: 'petroleo-gas', nombre: 'Petróleo & Gas — MAOP', norma: 'ASME B31.8 · API 5L' },
       { slug: 'canerias',     nombre: 'Cañerías & Integridad', norma: 'ASME B31.8/B31.4 · API 579' },
-      { slug: 'valvulas',     nombre: 'Válvulas Industriales', norma: 'ISA 75.01.01 · ASME B16.34' },
+      { slug: 'valvulas',     nombre: 'Válvulas Industriales', norma: 'ISA-75.01.01-2012 / IEC 60534-2-1 · ASME B16.34' },
       { slug: 'perforacion',  nombre: 'Perforación',           norma: 'API RP 13D' },
       { slug: 'termica',      nombre: 'Térmica',                norma: 'ASME VIII · TEMA' },
     ],

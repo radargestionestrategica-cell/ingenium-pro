@@ -30,7 +30,7 @@ const NORMAS = [
   'IEC 60228','IEC 60364','IEC 60909','IEC 60079','IEC 60076',
   'NACE MR0175','ISO 15156','AWS D1.1','AISC 360-16','ACI 318-19',
   'AASHTO 93','ASCE 7-22','CIRSOC 101','CIRSOC 201','CIRSOC 301',
-  'NEC 2023','TEMA','USACE EM','ICOLD','ISA 75.01',
+  'NEC 2023','TEMA','USACE EM','ICOLD','ISA-75.01.01-2012 / IEC 60534-2-1',
   'Bieniawski 89','DS 024-2016-EM','Bishop 1955','HEC-22','EN 12464',
 ];
 
@@ -44,7 +44,7 @@ const modulos = [
   { n:'07', nombre:'Represas & Presas',     desc:'Vertederos · filtraciones · carga hidráulica',                norma:'USACE EM 1110-2 · ICOLD Bulletin',  color: CYAN,    icon:'🌊', calcs:2  },
   { n:'08', nombre:'Vialidad',              desc:'Pavimento AASHTO · drenaje HEC-22 · método racional',        norma:'AASHTO 93 · HEC-22 FHWA',           color: GRAY,    icon:'🛣️', calcs:2  },
   { n:'09', nombre:'MMO',                   desc:'Hormigón · mampostería · revoque · losas · morteros',         norma:'CIRSOC 201 · ACI 318-19',           color:'#a78bfa',icon:'🔧', calcs:11 },
-  { n:'10', nombre:'Válvulas Industriales', desc:'Clase B16.34 · NACE · brida B16.5 + DXF · coef. Cv',        norma:'ASME B16.34 · ISA 75.01 · NACE',    color: GREEN,   icon:'⚙️', calcs:4  },
+  { n:'10', nombre:'Válvulas Industriales', desc:'Clase B16.34 · NACE · brida B16.5 + DXF · coef. Cv',        norma:'ASME B16.34 · ISA-75.01.01-2012 / IEC 60534-2-1 · NACE',    color: GREEN,   icon:'⚙️', calcs:4  },
   { n:'11', nombre:'Ingeniería Civil',      desc:'Vigas LRFD · columnas ACI · perfiles · verificación',        norma:'AISC 360-16 · ACI 318-19 · ASCE',   color: LIGHT,   icon:'🏗️', calcs:2  },
   { n:'12', nombre:'Arquitectura Técnica',  desc:'Cargas viento · sismo · iluminación natural',               norma:'ASCE 7-22 · CIRSOC 103 · NSR-10',   color:'#e879f9',icon:'🏛️', calcs:2  },
   { n:'13', nombre:'Minería',               desc:'RMR Bieniawski · UCS · ventilación subterránea',             norma:'Bieniawski 89 · NIOSH · MSHA',      color:'#fb923c',icon:'⛏️', calcs:2  },
@@ -414,7 +414,7 @@ export default function LandingPage() {
         <div className="ticker-track">
           {[...Array(2)].map((_, rep) => (
             <span key={rep} style={{ display:'flex', gap:0 }}>
-              {['ASME B31.8','API 5L','IEC 60909','NACE MR0175','AWS D1.1','AISC 360-16','ACI 318-19','AASHTO 93','API RP 500','USACE EM 1110','ICOLD','ISA 75.01','Bieniawski 89','HEC-22','IEC 60079'].map((n, i) => (
+              {['ASME B31.8','API 5L','IEC 60909','NACE MR0175','AWS D1.1','AISC 360-16','ACI 318-19','AASHTO 93','API RP 500','USACE EM 1110','ICOLD','ISA-75.01.01-2012 / IEC 60534-2-1','Bieniawski 89','HEC-22','IEC 60079'].map((n, i) => (
                 <span key={i} className="ticker-item">{n}<span className="ticker-sep"> · </span></span>
               ))}
             </span>
@@ -734,7 +734,7 @@ export default function LandingPage() {
               <div className="cruce-module" style={{ color:'#E8A020' }}>Módulo Válvulas</div>
               <div className="cruce-calc">Cierre de válvula de bloqueo</div>
               <div className="cruce-result" style={{ color:'#E8A020' }}>3 s</div>
-              <div className="cruce-norm">ASME B16.34 · ISA 75.01</div>
+              <div className="cruce-norm">ASME B16.34 · ISA-75.01.01-2012 / IEC 60534-2-1</div>
             </article>
 
             <div className="cruce-arrow" aria-hidden="true">→</div>

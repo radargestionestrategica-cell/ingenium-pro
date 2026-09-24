@@ -1232,6 +1232,48 @@ export interface ParamsTuberias {
 
     return [_cabecera(), ...ents, _pie()].join('\n');
   }
+
+  // ═══════════════════════════════════════════════════════════
+  //  VÁLVULAS — COEFICIENTE Cv (hoja de datos, sin geometría)
+  //  Solo Cv, Kv, estado de estrangulamiento y los datos que el usuario
+  //  ingresó. No dibuja válvula ni inventa DN, clase ni presiones: el
+  //  cálculo de Cv no determina ninguno de esos valores.
+  // ═══════════════════════════════════════════════════════════
+  export interface ParamsCoeficienteCv {
+    Cv_txt: string;
+    Kv_txt: string;
+    estado: string;                 // estrangulamiento / no verificado
+    norma: string;
+    entradas: [string, string][];   // [etiqueta, valor con unidad] tal como se ingresó
+    proyecto?: string;
+    ingeniero?: string;
+    fecha?: string;
+  }
+
+  export function exportarDXFCoeficienteCv(p: ParamsCoeficienteCv): string {
+    const ents: string[] = [];
+    const fecha = p.fecha || new Date().toLocaleDateString('es-AR');
+
+    ents.push(_texto(0, 150, 5, 'COEFICIENTE DE CAUDAL — SERVICIO LIQUIDO', 'TITULO', 7));
+    ents.push(_texto(0, 142, 3.5, p.norma, 'DATOS', 3));
+
+    ents.push(_texto(0, 128, 4, 'RESULTADO', 'DATOS', 2));
+    ents.push(_texto(0, 120, 4.5, `Cv requerido = ${p.Cv_txt}  (GPM/raiz psi)`, 'DATOS', 2));
+    ents.push(_texto(0, 112, 4.5, `Kv requerido = ${p.Kv_txt}  (m3/h/raiz bar)`, 'DATOS', 2));
+    ents.push(_texto(0, 104, 3.5, 'Cv = 1,156 x Kv', 'DATOS', 3));
+    ents.push(_texto(0, 96, 3.5, `Estrangulamiento: ${p.estado}`, 'DATOS', 3));
+
+    ents.push(_texto(0, 82, 4, 'DATOS INGRESADOS', 'DATOS', 2));
+    p.entradas.forEach(([etq, val], i) => {
+      ents.push(_texto(0, 74 - i * 6, 3.5, `${etq}: ${val}`, 'DATOS', 3));
+    });
+
+    const yTitulo = Math.min(-60, 74 - p.entradas.length * 6 - 14);
+    ents.push(_bloqueTitle('VALVULAS — COEFICIENTE Cv (LIQUIDO)', p.norma,
+      p.proyecto || '', p.ingeniero || '', fecha, 0, yTitulo, _usrData(p)));
+
+    return [_cabecera(), ...ents, _pie()].join('\n');
+  }
   
   // ═══════════════════════════════════════════════════════════
   //  MÓDULO 11 — HARDY-CROSS (REDES DE TUBERÍAS)

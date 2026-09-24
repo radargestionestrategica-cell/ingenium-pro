@@ -172,16 +172,109 @@ export function calcGolpeAriete(
   };
 }
 
-// ── COEFICIENTE Cv — ISA 75.01.01 ────────────────────────────────
-// Q en m³/h, ΔP en bar, SG adimensional (1.0 = agua)
-// Cv = Q(GPM) × √(SG / ΔP_psi) · Kv = Cv / 1.1561
-export function calcCv(Q_m3h: number, DP_bar: number, SG = 1.0) {
-  if (Q_m3h <= 0 || DP_bar <= 0 || SG <= 0) return null;
-  const Q_gpm  = Q_m3h  * 4.40287;
-  const DP_psi = DP_bar * 14.5038;
-  const Cv = Math.round(Q_gpm * Math.sqrt(SG / DP_psi) * 100) / 100;
-  const Kv = Math.round(Cv / 1.1561 * 100) / 100;
-  return { Cv, Kv };
+// ── COEFICIENTE Cv — LÍQUIDOS · ISA-75.01.01-2012 / IEC 60534-2-1 ──
+// Fuente única del Cv (la usa components/ModuloValvulas.tsx).
+// Alcance: líquido, flujo turbulento, sin accesorios (Fp = 1). NO cubre gas,
+// vapor ni bifásico — el módulo bloquea esa opción hasta que exista el cálculo.
+//
+//   Kv = Q[m³/h] · √(SG / ΔP[bar])          (N1 = 1)
+//   Cv = Kv / 0,865 ≈ 1,156 · Kv             (N1 = 0,865 para Cv con m³/h y bar)
+//
+// Flujo estrangulado (solo si se informan FL, Pv y Pc):
+//   FF    = 0,96 − 0,28 · √(Pv / Pc)
+//   ΔPmax = FL² · (P1 − FF · Pv)            (presiones ABSOLUTAS)
+//   Si ΔP ≥ ΔPmax → estrangulado y se dimensiona con ΔPmax.
+export const NORMA_CV = 'ISA-75.01.01-2012 / IEC 60534-2-1';
+export const P_ATM_BAR = 1.01325;
+const PSI_POR_BAR = 14.5038;
+const GPM_POR_M3H = 4.40287;
+const N1_CV_M3H_BAR = 0.865;
+
+// FL orientativos por tipo de válvula — valores típicos, NO de norma:
+// siempre verificar contra la hoja de datos del fabricante.
+export const FL_ORIENTATIVO: Record<'globo' | 'bola' | 'mariposa', number> = {
+  globo: 0.9, bola: 0.6, mariposa: 0.7,
+};
+
+// Coeficientes: ≥ 1 con 2 decimales; < 1 con 3 cifras significativas
+// (antes Cv = 0,0037 se mostraba como 0).
+export function formatearCoef(x: number): string {
+  return x >= 1 ? x.toFixed(2) : x.toPrecision(3);
+}
+
+export interface EntradaCvLiquido {
+  Q: number;        unidadQ: 'm3h' | 'gpm';
+  P1_man: number;   P2_man: number;   unidadP: 'bar' | 'psi';   // manométricas
+  SG: number;
+  FL?: number;      Pv_abs?: number;  Pc_abs?: number;          // opcionales; Pv/Pc absolutas en unidadP
+}
+
+export type EstadoEstrangulamiento = 'NO_VERIFICADO' | 'NO_ESTRANGULADO' | 'ESTRANGULADO';
+
+export type ResultadoCvLiquido =
+  | { ok: false; error: string }
+  | {
+      ok: true;
+      Kv: number; Cv: number;                 // valores exactos (sin redondear)
+      Kv_txt: string; Cv_txt: string;         // para mostrar
+      P1_abs_bar: number; P2_abs_bar: number;
+      dP_bar: number;                         // ΔP real P1 − P2
+      dP_dimension_bar: number;               // ΔP usada para el Cv (ΔP o ΔPmax)
+      estrangulamiento: EstadoEstrangulamiento;
+      faltanParaVerificar: string[];          // FL / Pv / Pc que faltan
+      FF: number | null; dPmax_bar: number | null;
+      flashing: boolean | null;               // P2 ≤ Pv (vaporización a la salida)
+    };
+
+export function calcCvLiquido(e: EntradaCvLiquido): ResultadoCvLiquido {
+  const { Q, unidadQ, P1_man, P2_man, unidadP, SG, FL, Pv_abs, Pc_abs } = e;
+  if (![Q, P1_man, P2_man, SG].every(Number.isFinite))
+    return { ok: false, error: 'Valores inválidos: caudal, presiones y SG deben ser números finitos.' };
+  for (const [nombre, v] of [['FL', FL], ['Pv', Pv_abs], ['Pc', Pc_abs]] as const)
+    if (v !== undefined && !Number.isFinite(v))
+      return { ok: false, error: `${nombre} debe ser un número finito, o dejar el campo vacío.` };
+  if (Q <= 0)  return { ok: false, error: 'El caudal debe ser mayor a 0.' };
+  if (SG <= 0) return { ok: false, error: 'La gravedad específica SG debe ser mayor a 0.' };
+
+  const aBar = (p: number) => (unidadP === 'psi' ? p / PSI_POR_BAR : p);
+  const Q_m3h      = unidadQ === 'gpm' ? Q / GPM_POR_M3H : Q;
+  const P1_abs_bar = aBar(P1_man) + P_ATM_BAR;
+  const P2_abs_bar = aBar(P2_man) + P_ATM_BAR;
+  if (P2_abs_bar <= 0) return { ok: false, error: 'P2 absoluta debe ser mayor a 0 (verificar el vacío ingresado).' };
+  if (P2_abs_bar >= P1_abs_bar) return { ok: false, error: 'P2 debe ser menor que P1 (la caída de presión debe ser positiva).' };
+  const dP_bar = P1_abs_bar - P2_abs_bar;
+
+  if (FL !== undefined && (FL <= 0 || FL > 1)) return { ok: false, error: 'FL debe estar entre 0 y 1.' };
+  const Pv = Pv_abs !== undefined ? aBar(Pv_abs) : undefined;
+  const Pc = Pc_abs !== undefined ? aBar(Pc_abs) : undefined;
+  if (Pv !== undefined && Pv <= 0) return { ok: false, error: 'Pv (absoluta) debe ser mayor a 0.' };
+  if (Pc !== undefined && Pc <= 0) return { ok: false, error: 'Pc (absoluta) debe ser mayor a 0.' };
+  if (Pv !== undefined && Pc !== undefined && Pv >= Pc) return { ok: false, error: 'Pv debe ser menor que Pc.' };
+  if (Pv !== undefined && P1_abs_bar <= Pv)
+    return { ok: false, error: 'P1 absoluta ≤ Pv: el fluido ya está vaporizado en la entrada — no es servicio líquido.' };
+
+  const faltanParaVerificar = [
+    FL === undefined ? 'FL' : '', Pv === undefined ? 'Pv' : '', Pc === undefined ? 'Pc' : '',
+  ].filter(Boolean);
+
+  let estrangulamiento: EstadoEstrangulamiento = 'NO_VERIFICADO';
+  let FF: number | null = null, dPmax_bar: number | null = null;
+  let dP_dimension_bar = dP_bar;
+  if (FL !== undefined && Pv !== undefined && Pc !== undefined) {
+    FF = 0.96 - 0.28 * Math.sqrt(Pv / Pc);
+    dPmax_bar = FL * FL * (P1_abs_bar - FF * Pv);
+    if (dP_bar >= dPmax_bar) { estrangulamiento = 'ESTRANGULADO'; dP_dimension_bar = dPmax_bar; }
+    else                       estrangulamiento = 'NO_ESTRANGULADO';
+  }
+
+  const Kv = Q_m3h * Math.sqrt(SG / dP_dimension_bar);
+  const Cv = Kv / N1_CV_M3H_BAR;
+  return {
+    ok: true, Kv, Cv, Kv_txt: formatearCoef(Kv), Cv_txt: formatearCoef(Cv),
+    P1_abs_bar, P2_abs_bar, dP_bar, dP_dimension_bar,
+    estrangulamiento, faltanParaVerificar, FF, dPmax_bar,
+    flashing: Pv !== undefined ? P2_abs_bar <= Pv : null,
+  };
 }
 
 // ── PERFORACIÓN — API RP 13D ──────────────────────────────────────
