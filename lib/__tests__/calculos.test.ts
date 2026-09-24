@@ -13,7 +13,7 @@ import {
   calcMotorTrifasico, calcTransformadorElect,
   calcEspesorParedCaneria, calcHoopStressBarlow, calcVidaRemanente,
 } from '../calculos';
-import { exportarDXFCoeficienteCv } from '../exportarDXF';
+import { exportarDXFCoeficienteCv, exportarDXFValvulas, exportarDXFSeleccionMaterial } from '../exportarDXF';
 import { tituloModuloPDF } from '../tipos-calculo';
 
 // ════════════════════════════════════════════════════════════════
@@ -563,6 +563,57 @@ describe('exportarDXFCoeficienteCv', () => {
     expect(dxf).not.toMatch(/DN \d/);
     expect(dxf).not.toMatch(/Clase/);
     expect(dxf).not.toMatch(/P max|Prueba hidrost|Factor uso/);
+  });
+});
+
+describe('exportarDXFValvulas — unidades y presiones', () => {
+  const base = { DN: 100, tipo: 'bt', nombre: 'Valvula Clase 300', clase: '300', norma: 'ASME B16.34' };
+
+  it('P_max y P_op en MPa se muestran con su equivalente en bar correcto', () => {
+    // Clase 300 CF8M a 100 °C: rating 42,2 bar = 4,22 MPa; P_op 30 bar = 3,0 MPa
+    const dxf = exportarDXFValvulas({ ...base, P_max: 4.22, P_op: 3.0, material: 'ASTM A351 CF8M (Grupo 2.2)' });
+    expect(dxf).toContain('P max clase = 4.22 MPa (42.2 bar)');
+    expect(dxf).toContain('P oper = 3.00 MPa (30.0 bar)');
+    expect(dxf).not.toContain('42.20 MPa');   // el error anterior: bar rotulado como MPa
+    expect(dxf).toContain('Material: ASTM A351 CF8M (Grupo 2.2)');
+    expect(dxf).not.toContain('(default)');
+  });
+
+  it('sin P_max ni P_op no imprime presiones ni estado', () => {
+    const dxf = exportarDXFValvulas({ ...base, material: 'ASTM A351 CF8M' });
+    expect(dxf).toContain('Presiones: no evaluadas en este calculo');
+    expect(dxf).not.toMatch(/P max clase|P oper|Factor uso|Prueba hidrost|ESTADO:/);
+  });
+
+  it('prueba hidrostática = 1,5 × rating a 38 °C, no al rating a la temperatura de operación', () => {
+    // CF8M Clase 300: rating a 100 °C = 4,22 MPa; a 38 °C = 4,96 MPa → 1,5 × 4,96 = 7,44 MPa
+    const dxf = exportarDXFValvulas({ ...base, P_max: 4.22, P_op: 3.0, P_rating38: 4.96 });
+    expect(dxf).toContain('Prueba hidrost = 7.44 MPa');
+    expect(dxf).not.toContain('6.33 MPa');   // 1,5 × 4,22: el cálculo anterior
+  });
+
+  it('sin P_rating38 no imprime prueba hidrostática', () => {
+    const dxf = exportarDXFValvulas({ ...base, P_max: 4.22, P_op: 3.0 });
+    expect(dxf).not.toContain('Prueba hidrost');
+  });
+});
+
+describe('exportarDXFSeleccionMaterial', () => {
+  const dxf = exportarDXFSeleccionMaterial({
+    material: 'Acero inoxidable', astm: 'ASTM A351 CF8M', norma: 'NACE MR0175/ISO 15156',
+    nace: true, maxTemp: 450, obs: 'Servicio ácido con H2S.',
+    entradas: [['Tipo de fluido', 'h2s_acido'], ['Temperatura (C)', '80'], ['H2S (ppm)', '500'], ['Cloruros (ppm)', '0']],
+  });
+
+  it('muestra el material recomendado y los datos ingresados', () => {
+    expect(dxf).toContain('Material recomendado: Acero inoxidable');
+    expect(dxf).toContain('Especificacion ASTM: ASTM A351 CF8M');
+    expect(dxf).toContain('H2S (ppm): 500');
+  });
+
+  it('no dibuja DN, clase, presiones ni el material por defecto', () => {
+    expect(dxf).not.toMatch(/DN \d|DN = |Clase ASME|Clase 300|P max|P oper|Prueba hidrost|\(default\)/);
+    expect(dxf).not.toContain('CIRCLE');   // sin geometría de válvula
   });
 });
 

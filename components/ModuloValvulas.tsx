@@ -31,16 +31,25 @@ const PT_WCB: Record<number, Record<string, number>> = {
   400: { '150': 5.1,  '300': 33.4, '600': 66.8,  '900': 100.3, '1500': 167.2, '2500': 278.6 },
   425: { '150': 4.1,  '300': 31.3, '600': 62.6,  '900': 93.9,  '1500': 156.5, '2500': 260.8 },
 };
-// CF8M (316SS) Group 2.3 — max 450°C. A temperatura ambiente igual que WCB.
+// CF8M (316SS) — ASME B16.34 Grupo 2.2, Tabla 2-2.2, clase estándar — max 450°C.
+// Antes esta tabla decía "Group 2.3", repetía a 38 °C los valores de WCB
+// (Grupo 1.1) y el resto de las filas no correspondía al Grupo 2.2.
+// ⚠ PENDIENTE DE CONFIRMAR contra la Tabla 2-2.2 de la edición vigente de
+// B16.34 antes de publicar (valores cargados de referencia, no del texto de la norma).
 const PT_CF8M: Record<number, Record<string, number>> = {
-  38:  { '150': 19.6, '300': 51.1, '600': 102.1, '900': 153.0, '1500': 255.5, '2500': 425.4 },
-  100: { '150': 16.1, '300': 41.9, '600': 83.8,  '900': 125.7, '1500': 209.5, '2500': 349.1 },
-  150: { '150': 14.9, '300': 38.8, '600': 77.5,  '900': 116.3, '1500': 193.8, '2500': 323.0 },
-  200: { '150': 13.4, '300': 34.9, '600': 69.7,  '900': 104.6, '1500': 174.3, '2500': 290.5 },
-  250: { '150': 12.4, '300': 32.3, '600': 64.5,  '900': 96.8,  '1500': 161.4, '2500': 268.9 },
-  300: { '150': 11.3, '300': 29.4, '600': 58.8,  '900': 88.2,  '1500': 147.0, '2500': 244.9 },
-  400: { '150': 8.4,  '300': 21.8, '600': 43.7,  '900': 65.5,  '1500': 109.2, '2500': 182.0 },
-  450: { '150': 6.5,  '300': 16.9, '600': 33.9,  '900': 50.8,  '1500': 84.7,  '2500': 141.2 },
+  38:  { '150': 19.0, '300': 49.6, '600': 99.3, '900': 148.9, '1500': 248.2, '2500': 413.7 },
+  50:  { '150': 18.4, '300': 48.1, '600': 96.2, '900': 144.3, '1500': 240.6, '2500': 400.9 },
+  100: { '150': 16.2, '300': 42.2, '600': 84.4, '900': 126.6, '1500': 211.0, '2500': 351.6 },
+  150: { '150': 14.8, '300': 38.5, '600': 77.0, '900': 115.5, '1500': 192.5, '2500': 320.8 },
+  200: { '150': 13.7, '300': 35.7, '600': 71.3, '900': 107.0, '1500': 178.3, '2500': 297.2 },
+  250: { '150': 12.1, '300': 33.4, '600': 66.8, '900': 100.1, '1500': 166.9, '2500': 278.1 },
+  300: { '150': 10.2, '300': 31.6, '600': 63.2, '900': 94.9,  '1500': 158.1, '2500': 263.5 },
+  325: { '150': 9.3,  '300': 30.9, '600': 61.8, '900': 92.7,  '1500': 154.4, '2500': 257.4 },
+  350: { '150': 8.4,  '300': 30.3, '600': 60.7, '900': 91.0,  '1500': 151.6, '2500': 252.7 },
+  375: { '150': 7.4,  '300': 29.9, '600': 59.8, '900': 89.7,  '1500': 149.5, '2500': 249.1 },
+  400: { '150': 6.5,  '300': 29.4, '600': 58.9, '900': 88.3,  '1500': 147.2, '2500': 245.3 },
+  425: { '150': 5.5,  '300': 29.1, '600': 58.3, '900': 87.4,  '1500': 145.7, '2500': 242.9 },
+  450: { '150': 4.6,  '300': 28.8, '600': 57.7, '900': 86.5,  '1500': 144.2, '2500': 240.4 },
 };
 
 // ─── ASME B16.5-2017 — DIMENSIONES REALES DE BRIDAS ─────────────
@@ -387,9 +396,14 @@ export default function ModuloValvulas() {
         tipo:  'bt',
         nombre: `Valvula Clase ${resultadoClase.claseReq}`,
         clase: resultadoClase.claseReq,
-        P_max: resultadoClase.Prating,
-        P_op:  parseFloat(clP),
+        // El DXF espera MPa; Prating y clP están en bar (antes se pasaban en
+        // bar y el DXF los rotulaba MPa → valores ×10)
+        P_max: resultadoClase.Prating / 10,
+        P_op:  P / 10,
+        // Base de la prueba hidrostática: rating de la clase a 38 °C (no a T)
+        P_rating38: (tabla[38][resultadoClase.claseReq] ?? 0) / 10,
         norma: 'ASME B16.34',
+        material: clMat === 'WCB' ? 'ASTM A216 WCB (Grupo 1.1)' : 'ASTM A351 CF8M (Grupo 2.2)',
       },
     };
     setDatosClase(payloadClase);
@@ -470,14 +484,17 @@ export default function ModuloValvulas() {
         'Temperatura maxima (C)': maxTemp,
         'Observaciones': obs,
       },
+      // DXF de hoja de datos (exportarDXFSeleccionMaterial): solo lo que esta
+      // pestaña calcula e ingresa. Antes pasaba DN 100, Clase 300, geometría de
+      // bola y presiones 50/40 fijos que la pestaña nunca pide ni calcula.
       dxfParams: {
-        DN:    100,
-        tipo:  'bt',
-        nombre: material,
-        clase: '300',
-        P_max: 50,
-        P_op:  40,
-        norma,
+        material, astm, norma, nace, maxTemp, obs,
+        entradas: [
+          ['Tipo de fluido', mFluido],
+          ['Temperatura (C)', mTemp],
+          ['H2S (ppm)', mH2S],
+          ['Cloruros (ppm)', mCl],
+        ],
       },
     };
     setDatosMaterial(payloadMat);
@@ -606,6 +623,7 @@ export default function ModuloValvulas() {
         clase:    disClase,
         P_max:    pMaxMPa,
         P_op:     pMaxMPa * 0.7,
+        P_rating38: pMaxMPa,   // pMaxMPa ya es el rating a 38 °C → base de la prueba hidrostática
         norma:    normativa,
         f2f_mm:   f2f_mm ?? undefined,
         material: `ASTM ${disMaterial}`,
@@ -776,7 +794,7 @@ export default function ModuloValvulas() {
               {/* Tabla comparativa todas las clases */}
               <div style={{ background: '#0a0f1e', borderRadius: 10, padding: 14, marginTop: 12 }}>
                 <div style={{ fontSize: 10, color: COLOR, fontWeight: 700, marginBottom: 8 }}>
-                  TABLA P-T — {clMat === 'WCB' ? 'A216 WCB / A105 (Group 1.1)' : 'A351 CF8M / F316 (Group 2.3)'} — A {clT}°C
+                  TABLA P-T — {clMat === 'WCB' ? 'A216 WCB / A105 (Group 1.1)' : 'A351 CF8M / F316 (Group 2.2)'} — A {clT}°C
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 4 }}>
                   {['150','300','600','900','1500','2500'].map(cl => {

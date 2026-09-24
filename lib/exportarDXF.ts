@@ -135,8 +135,9 @@ export interface ParamsTuberias {
     tipo: string;      // 'bt'|'bf'|'mp'|'cg'|'kn'|'gl'|'ch'|'wh'
     nombre: string;    // Nombre válvula
     clase: string;     // Clase ASME
-    P_max: number;     // Presión máxima (MPa)
-    P_op: number;      // Presión operación (MPa)
+    P_max?: number;    // Rating de clase a la temperatura del cálculo (MPa) — omitir si el cálculo no lo produce
+    P_op?: number;     // Presión de operación real (MPa) — omitir si no fue ingresada
+    P_rating38?: number; // Rating de clase a 38 °C (MPa) — base de la prueba hidrostática (1,5 ×)
     norma: string;     // API 6D / ASME B16.34 / etc
     f2f_mm?: number;   // Face-to-face ASME B16.10 (mm) — real de tabla
     material?: string; // Especificación material ASTM (ej. A216 WCB)
@@ -1205,22 +1206,36 @@ export interface ParamsTuberias {
     const tolBore = p.DN <= 100 ? 'H7' : 'H8';
     const tolRF   = p.DN <= 200 ? '+-0.3 mm (RF)' : '+-0.5 mm (RF)';
 
-    // Presiones limpias — parseFloat elimina basura flotante antes de formatear
-    const pMaxFmt = n2(p.P_max);
-    const pOpFmt  = n2(p.P_op);
-    const pHidFmt = n2(p.P_max * 1.5);
-    const pBarFmt = n1(p.P_max * 10);
-    const factorFmt = p.P_max > 0 ? n1((p.P_op / p.P_max) * 100) : '—';
+    // Presiones: P_max y P_op llegan en MPa (ver ParamsValvulas). Si el cálculo
+    // no produce presiones (p. ej. selección de material) no se imprime
+    // ninguna — antes se dibujaban valores fijos inventados.
+    const tienePmax = typeof p.P_max === 'number' && p.P_max > 0;
+    const tienePop  = tienePmax && typeof p.P_op === 'number' && p.P_op > 0;
+    // Prueba hidrostática de cuerpo: 1,5 × rating a 38 °C (no al rating a la
+    // temperatura de operación). Si no se informa P_rating38 no se imprime.
+    const tieneR38  = typeof p.P_rating38 === 'number' && p.P_rating38 > 0;
+    const partesFactorHidro = [
+      tienePop ? `Factor uso = ${n1((p.P_op! / p.P_max!) * 100)}%` : '',
+      tieneR38 ? `Prueba hidrost = ${n2(p.P_rating38! * 1.5)} MPa (1,5 x rating a 38 C = ${n2(p.P_rating38!)} MPa)` : '',
+    ].filter(Boolean);
+    const lineasPresion: string[] = !tienePmax
+      ? ['Presiones: no evaluadas en este calculo']
+      : [
+          `P max clase = ${n2(p.P_max!)} MPa (${n1(p.P_max! * 10)} bar)` +
+            (tienePop ? ` | P oper = ${n2(p.P_op!)} MPa (${n1(p.P_op! * 10)} bar)` : ''),
+          partesFactorHidro.join(' | '),
+        ].filter(Boolean);
+    const lineaEstado = !tienePop ? '' :
+      `ESTADO: ${p.P_op! <= p.P_max! * 0.8 ? 'MARGEN ADECUADO (>20%)' : p.P_op! <= p.P_max! ? 'MARGEN REDUCIDO (<20%)' : 'VERIFICAR CONDICIONES'}`;
 
     // Carátula de datos
     const datos: string[] = [
       `MODULO: VALVULAS INDUSTRIALES — ${p.norma}`,
       `Tipo: ${p.nombre} | DN = ${Math.round(p.DN)} mm | Clase ASME: ${p.clase}`,
       p.material ? `Material: ${p.material}` : `Material: A216 WCB / A105 (default)`,
-      `P max clase = ${pMaxFmt} MPa (${pBarFmt} bar) | P oper = ${pOpFmt} MPa`,
-      `Factor uso = ${factorFmt}% | Prueba hidrost = ${pHidFmt} MPa (ASME B16.34 Cl. 6.1)`,
+      ...lineasPresion,
       `F2F = ${f2fVal} mm (${f2fSrc}) | Tol F2F: ${tolF2F} | Tol bore: ${tolBore} | Cara: ${tolRF}`,
-      `ESTADO: ${p.P_max > 0 && p.P_op <= p.P_max * 0.8 ? 'MARGEN ADECUADO (>20%)' : p.P_max > 0 && p.P_op <= p.P_max ? 'MARGEN REDUCIDO (<20%)' : 'VERIFICAR CONDICIONES'}`,
+      lineaEstado,
       p.servicio ? `Servicio: ${p.servicio}` : '',
     ].filter(Boolean) as string[];
     datos.forEach((d, i) => {
@@ -1229,6 +1244,53 @@ export interface ParamsTuberias {
 
     ents.push(_bloqueTitle(`VALVULA ${p.nombre} / Clase ${p.clase} — ISA 5.1 / ASME B16.34`, p.norma,
       p.proyecto || '', p.ingeniero || '', fecha, 0, -60, _usrData(p)));
+
+    return [_cabecera(), ...ents, _pie()].join('\n');
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  //  VÁLVULAS — SELECCIÓN DE MATERIAL (hoja de datos, sin geometría)
+  //  La pestaña Material solo recomienda material según fluido, temperatura,
+  //  H2S y cloruros: no dibuja válvula ni muestra DN, clase ni presiones.
+  // ═══════════════════════════════════════════════════════════
+  export interface ParamsSeleccionMaterial {
+    material: string;
+    astm: string;
+    norma: string;
+    nace: boolean;
+    maxTemp: number;
+    obs: string;
+    entradas: [string, string][];   // [etiqueta, valor] tal como se ingresó
+    proyecto?: string;
+    ingeniero?: string;
+    fecha?: string;
+  }
+
+  export function exportarDXFSeleccionMaterial(p: ParamsSeleccionMaterial): string {
+    const ents: string[] = [];
+    const fecha = p.fecha || new Date().toLocaleDateString('es-AR');
+
+    ents.push(_texto(0, 150, 5, 'SELECCION DE MATERIAL — CUERPO DE VALVULA', 'TITULO', 7));
+    ents.push(_texto(0, 142, 3.5, p.norma, 'DATOS', 3));
+
+    ents.push(_texto(0, 128, 4, 'RESULTADO', 'DATOS', 2));
+    ents.push(_texto(0, 120, 4.5, `Material recomendado: ${p.material}`, 'DATOS', 2));
+    ents.push(_texto(0, 112, 3.5, `Especificacion ASTM: ${p.astm}`, 'DATOS', 3));
+    ents.push(_texto(0, 106, 3.5, `Servicio NACE MR0175 / ISO 15156: ${p.nace ? 'SI' : 'NO'}`, 'DATOS', 3));
+    ents.push(_texto(0, 100, 3.5, `Temperatura maxima del material: ${p.maxTemp} C`, 'DATOS', 3));
+    // Observaciones partidas en renglones de ~90 caracteres
+    const obsLineas = (p.obs.match(/.{1,90}(\s|$)/g) ?? [p.obs]).map(s => s.trim());
+    obsLineas.forEach((l, i) => ents.push(_texto(0, 94 - i * 6, 3, (i === 0 ? 'Obs: ' : '     ') + l, 'DATOS', 3)));
+
+    const yEntr = 94 - obsLineas.length * 6 - 8;
+    ents.push(_texto(0, yEntr, 4, 'DATOS INGRESADOS', 'DATOS', 2));
+    p.entradas.forEach(([etq, val], i) => {
+      ents.push(_texto(0, yEntr - 8 - i * 6, 3.5, `${etq}: ${val}`, 'DATOS', 3));
+    });
+
+    const yTitulo = Math.min(-60, yEntr - 8 - p.entradas.length * 6 - 14);
+    ents.push(_bloqueTitle('VALVULAS — SELECCION DE MATERIAL', p.norma,
+      p.proyecto || '', p.ingeniero || '', fecha, 0, yTitulo, _usrData(p)));
 
     return [_cabecera(), ...ents, _pie()].join('\n');
   }
