@@ -796,13 +796,14 @@ ASHRAE 90.1-2022 §9: Potencia instalada de iluminación máxima (LPD) por tipo 
   VALVULAS_CLASE_B16_34: `NORMATIVAS APLICABLES — VERIFICADAS:
 ASME B16.34-2017 Tabla 2: Ratings presión-temperatura por clase y material — Clase 150 a 4500.
 API 6D-2021 §5.3: Temperatura máxima de operación por material de cuerpo de válvula.
-ASME B16.34-2017 §7.3: Prueba hidrostática = 1.5× rating a temperatura ambiente durante 1 minuto.
+ASME B16.34 §7.1.1: Prueba hidrostática de carcasa = 1,5 × rating a 38 °C de la clase y material, redondeado al bar entero superior.
+ASME B16.34 §7.1.2: Duración mínima de la prueba según NPS — NPS ≤ 2: 15 s; 2½ a 6: 60 s; 8 a 12: 120 s; ≥ 14: 300 s.
 API 6D-2021 §10.1: Ensayos de fábrica — presión cuerpo, asiento y operación — certificado requerido.`,
 
   VALVULAS_MATERIAL_NACE: `NORMATIVAS APLICABLES — VERIFICADAS:
 NACE MR0175/ISO 15156-1:2020: Materiales para servicio H2S — dureza HRC ≤ 22 en zona afectada.
 NACE MR0175/ISO 15156-2:2020: Aceros carbono y baja aleación — máx. 250 HBW en cuerpo de válvula.
-ASME B16.34-2017 §6.1: Materiales cuerpo — ASTM A216 WCB (carbono), A351 CF8M (inox 316L).
+ASME B16.34-2017 §6.1: Materiales cuerpo — ASTM A216 WCB (carbono), A351 CF8M (equivalente fundido del 316). El equivalente fundido del 316L es CF3M.
 API 6D-2021 §5.3.2: MDMT temperatura mínima de diseño — impacto Charpy para servicio criogénico.`,
 
   VALVULAS_BRIDA_B16_5: `NORMATIVAS APLICABLES — VERIFICADAS:
@@ -821,7 +822,7 @@ ISO 17292:2015: Válvulas bola metal-metal para refinerías y petroquímica — 
 API 609-2016: Válvulas mariposa doble y triple excentricidad — diseño y pruebas de fábrica.
 ASME B16.10-2022: Face-to-face válvulas mariposa wafer y lug — Clase 150-300.
 MSS SP-67-2017: Válvulas mariposa — materiales y pruebas para servicio general industria.
-ASME B16.34-2017 §7: Prueba hidrostática mariposa = 1.5× CWP durante 2 minutos mínimo.`,
+ASME B16.34 §7.1.1 / §7.1.2: Válvulas mariposa bajo B16.34 — mismas reglas: prueba de carcasa = 1,5 × rating a 38 °C al bar entero superior; duración mínima según NPS (≤ 2: 15 s; 2½–6: 60 s; 8–12: 120 s; ≥ 14: 300 s).`,
 
   VALVULAS_DISENO_RETENCION: `NORMATIVAS APLICABLES — VERIFICADAS:
 ASME B16.10-2022: Face-to-face válvulas retención swing y lift — Clase 150 a 2500.

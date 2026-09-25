@@ -137,7 +137,9 @@ export interface ParamsTuberias {
     clase: string;     // Clase ASME
     P_max?: number;    // Rating de clase a la temperatura del cálculo (MPa) — omitir si el cálculo no lo produce
     P_op?: number;     // Presión de operación real (MPa) — omitir si no fue ingresada
-    P_rating38?: number; // Rating de clase a 38 °C (MPa) — base de la prueba hidrostática (1,5 ×)
+    P_prueba_bar?: number;      // Prueba hidrostática de carcasa B16.34 §7.1.1 (bar), ya calculada por lib/valvulasB1634
+    duracion_prueba_s?: number; // Duración mínima de la prueba B16.34 §7.1.2 (s)
+    nota_rating?: string;       // ej. "Rating tomado de 200 °C (fila verificada superior, criterio conservador)"
     norma: string;     // API 6D / ASME B16.34 / etc
     f2f_mm?: number;   // Face-to-face ASME B16.10 (mm) — real de tabla
     material?: string; // Especificación material ASTM (ej. A216 WCB)
@@ -359,7 +361,10 @@ export interface ParamsTuberias {
     // Fila 2: módulo + normativa
     lines.push(_texto(x0 + 5, y0 - 21, 4.5, titulo.substring(0, 40), 'TITULO', 2));
     // Fila 3: norma (izq) | ingeniero (der)
-    lines.push(_texto(x0 + 5,   y0 - 33, 3.5, 'NORMA: ' + norma.substring(0, 35), 'TITULO', 3));
+    // Citas normativas largas (ej. "ASME B16.34-2020, Tabla 2-2.2 (Standard Class)"):
+    // se reduce la altura de texto en vez de cortar la cita.
+    const normaLarga = norma.length > 35;
+    lines.push(_texto(x0 + 5,   y0 - 33, normaLarga ? 2.2 : 3.5, 'NORMA: ' + norma.substring(0, 60), 'TITULO', 3));
     lines.push(_texto(x0 + 145, y0 - 33, 3.5, 'ING: ' + ingFinal.substring(0, 28), 'TITULO', 7));
     // Fila 4: proyecto (izq) | fecha (der)
     lines.push(_texto(x0 + 5,   y0 - 45, 3,   'PROYECTO: ' + proyFinal.substring(0, 28), 'TITULO', 7));
@@ -1211,20 +1216,25 @@ export interface ParamsTuberias {
     // ninguna — antes se dibujaban valores fijos inventados.
     const tienePmax = typeof p.P_max === 'number' && p.P_max > 0;
     const tienePop  = tienePmax && typeof p.P_op === 'number' && p.P_op > 0;
-    // Prueba hidrostática de cuerpo: 1,5 × rating a 38 °C (no al rating a la
-    // temperatura de operación). Si no se informa P_rating38 no se imprime.
-    const tieneR38  = typeof p.P_rating38 === 'number' && p.P_rating38 > 0;
-    const partesFactorHidro = [
-      tienePop ? `Factor uso = ${n1((p.P_op! / p.P_max!) * 100)}%` : '',
-      tieneR38 ? `Prueba hidrost = ${n2(p.P_rating38! * 1.5)} MPa (1,5 x rating a 38 C = ${n2(p.P_rating38!)} MPa)` : '',
+    // Prueba hidrostática de carcasa: el valor llega ya calculado por
+    // calcPruebaHidrostaticaB1634 (1,5 × rating a 38 °C, al bar entero
+    // superior). El DXF no la recalcula. Sin dato no se imprime.
+    const tienePrueba = typeof p.P_prueba_bar === 'number' && p.P_prueba_bar > 0;
+    const tieneDur    = typeof p.duracion_prueba_s === 'number' && p.duracion_prueba_s > 0;
+    const lineasPresion: string[] = [
+      ...(!tienePmax
+        ? ['Presiones: no evaluadas en este calculo']
+        : [
+            `P max clase = ${n2(p.P_max!)} MPa (${n1(p.P_max! * 10)} bar)` +
+              (tienePop ? ` | P oper = ${n2(p.P_op!)} MPa (${n1(p.P_op! * 10)} bar)` : ''),
+            p.nota_rating ? `(${p.nota_rating})` : '',
+            tienePop ? `Factor uso = ${n1((p.P_op! / p.P_max!) * 100)}%` : '',
+          ]),
+      tienePrueba
+        ? `Prueba hidrost carcasa (B16.34 7.1.1) = ${p.P_prueba_bar} bar (${n2(p.P_prueba_bar! / 10)} MPa)` +
+          (tieneDur ? ` | Duracion min (7.1.2) = ${p.duracion_prueba_s} s` : '')
+        : '',
     ].filter(Boolean);
-    const lineasPresion: string[] = !tienePmax
-      ? ['Presiones: no evaluadas en este calculo']
-      : [
-          `P max clase = ${n2(p.P_max!)} MPa (${n1(p.P_max! * 10)} bar)` +
-            (tienePop ? ` | P oper = ${n2(p.P_op!)} MPa (${n1(p.P_op! * 10)} bar)` : ''),
-          partesFactorHidro.join(' | '),
-        ].filter(Boolean);
     const lineaEstado = !tienePop ? '' :
       `ESTADO: ${p.P_op! <= p.P_max! * 0.8 ? 'MARGEN ADECUADO (>20%)' : p.P_op! <= p.P_max! ? 'MARGEN REDUCIDO (<20%)' : 'VERIFICAR CONDICIONES'}`;
 

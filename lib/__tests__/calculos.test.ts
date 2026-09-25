@@ -15,6 +15,9 @@ import {
 } from '../calculos';
 import { exportarDXFCoeficienteCv, exportarDXFValvulas, exportarDXFSeleccionMaterial } from '../exportarDXF';
 import { tituloModuloPDF } from '../tipos-calculo';
+import {
+  ratingB1634, calcPruebaHidrostaticaB1634, duracionPruebaB1634, PT_CF8M,
+} from '../valvulasB1634';
 
 // ════════════════════════════════════════════════════════════════
 // FACTOR T — ASME B31.8 Tabla 841.1.8-1 (tabla en °F)
@@ -585,16 +588,31 @@ describe('exportarDXFValvulas — unidades y presiones', () => {
     expect(dxf).not.toMatch(/P max clase|P oper|Factor uso|Prueba hidrost|ESTADO:/);
   });
 
-  it('prueba hidrostática = 1,5 × rating a 38 °C, no al rating a la temperatura de operación', () => {
-    // CF8M Clase 300: rating a 100 °C = 4,22 MPa; a 38 °C = 4,96 MPa → 1,5 × 4,96 = 7,44 MPa
-    const dxf = exportarDXFValvulas({ ...base, P_max: 4.22, P_op: 3.0, P_rating38: 4.96 });
-    expect(dxf).toContain('Prueba hidrost = 7.44 MPa');
-    expect(dxf).not.toContain('6.33 MPa');   // 1,5 × 4,22: el cálculo anterior
+  it('prueba hidrostática: imprime el valor calculado por lib, en bar, con su duración', () => {
+    // CF8M Clase 300: rating a 38 °C = 49,6 bar → 1,5 × 49,6 = 74,4 → 75 bar (§7.1.1); NPS 4 → 60 s (§7.1.2)
+    const dxf = exportarDXFValvulas({ ...base, P_max: 4.22, P_op: 3.0, P_prueba_bar: 75, duracion_prueba_s: 60 });
+    expect(dxf).toContain('Prueba hidrost carcasa (B16.34 7.1.1) = 75 bar (7.50 MPa)');
+    expect(dxf).toContain('Duracion min (7.1.2) = 60 s');
+    expect(dxf).not.toMatch(/7\.44|6\.33/);   // valores sin redondeo / sobre rating a T de versiones anteriores
   });
 
-  it('sin P_rating38 no imprime prueba hidrostática', () => {
+  it('muestra la nota de fila superior y la cita completa en el recuadro de título', () => {
+    const cita = 'ASME B16.34-2020, Tabla 2-2.2 (Standard Class)';
+    const dxf = exportarDXFValvulas({ ...base, P_max: 3.57, P_op: 3.0, P_prueba_bar: 75, duracion_prueba_s: 60, norma: cita,
+      nota_rating: 'Rating tomado de 200 °C (fila verificada superior, criterio conservador)' });
+    expect(dxf).toContain('(Rating tomado de 200 °C (fila verificada superior, criterio conservador))');
+    expect(dxf).toContain('NORMA: ' + cita);   // antes se cortaba en "(Stan"
+  });
+
+  it('sin P_prueba_bar no imprime prueba hidrostática', () => {
     const dxf = exportarDXFValvulas({ ...base, P_max: 4.22, P_op: 3.0 });
     expect(dxf).not.toContain('Prueba hidrost');
+  });
+
+  it('sin P_op (Diseño-globo) no imprime P oper, factor de uso ni ESTADO', () => {
+    const dxf = exportarDXFValvulas({ ...base, tipo: 'gl', P_max: 4.96, P_prueba_bar: 75, duracion_prueba_s: 60 });
+    expect(dxf).toContain('P max clase = 4.96 MPa (49.6 bar)');
+    expect(dxf).not.toMatch(/P oper|Factor uso|ESTADO:/);
   });
 });
 
@@ -614,6 +632,113 @@ describe('exportarDXFSeleccionMaterial', () => {
   it('no dibuja DN, clase, presiones ni el material por defecto', () => {
     expect(dxf).not.toMatch(/DN \d|DN = |Clase ASME|Clase 300|P max|P oper|Prueba hidrost|\(default\)/);
     expect(dxf).not.toContain('CIRCLE');   // sin geometría de válvula
+  });
+});
+
+// ════════════════════════════════════════════════════════════════
+// ASME B16.34 — ratings, prueba hidrostática (§7.1.1) y duración (§7.1.2)
+// ════════════════════════════════════════════════════════════════
+describe('ratingB1634 — CF8M (18 valores verificados, B16.34-2020 Tabla 2-2.2)', () => {
+  const val = (T: number, cl: string) => {
+    const r = ratingB1634('CF8M', cl, T);
+    if (!r.ok) throw new Error(r.mensaje);
+    return r;
+  };
+
+  it('tabla con exactamente 18 valores: 38/100/200/300/400/450 °C × Clase 150/300/600', () => {
+    expect(Object.keys(PT_CF8M).map(Number)).toEqual([38, 100, 200, 300, 400, 450]);
+    for (const fila of Object.values(PT_CF8M)) expect(Object.keys(fila)).toEqual(['150', '300', '600']);
+  });
+
+  it('fila exacta: 38 °C Cl.300 = 49,6 · 450 °C Cl.600 = 57,7 (sin nota)', () => {
+    expect(val(38, '300').rating_bar).toBe(49.6);
+    const r = val(450, '600');
+    expect(r.rating_bar).toBe(57.7);
+    expect(r.nota).toBeNull();
+    expect(r.cita).toBe('ASME B16.34-2020, Tabla 2-2.2 (Standard Class)');
+  });
+
+  it('temperatura intermedia: fila verificada SUPERIOR — 150 °C Cl.300 → 35,7 (fila 200 °C)', () => {
+    const r = val(150, '300');
+    expect(r.rating_bar).toBe(35.7);
+    expect(r.T_fila).toBe(200);
+    expect(r.nota).toBe('Rating tomado de 200 °C (fila verificada superior, criterio conservador)');
+  });
+
+  it('por debajo de 38 °C usa la fila de 38 °C', () => {
+    expect(val(20, '150').rating_bar).toBe(19.0);
+  });
+
+  it('460 °C → fuera de rango de la tabla', () => {
+    const r = ratingB1634('CF8M', '300', 460);
+    expect(r.ok).toBe(false);
+    if (!r.ok) { expect(r.motivo).toBe('FUERA_DE_RANGO'); expect(r.mensaje).toBe('Fuera de rango de la tabla'); }
+  });
+
+  it('Clase 900 / 1500 / 2500 → no disponible (pendiente de verificación)', () => {
+    for (const cl of ['900', '1500', '2500']) {
+      const r = ratingB1634('CF8M', cl, 100);
+      expect(r.ok).toBe(false);
+      if (!r.ok) {
+        expect(r.motivo).toBe('CLASE_NO_DISPONIBLE');
+        expect(r.mensaje).toBe('No disponible — tabla pendiente de verificación contra la norma');
+      }
+    }
+  });
+});
+
+describe('ratingB1634 — WCB (B16.34-2017 Tabla 2-1.1, sin cambios de comportamiento)', () => {
+  it('fila exacta e interpolación lineal como antes', () => {
+    const r38 = ratingB1634('WCB', '300', 38);
+    expect(r38.ok && r38.rating_bar).toBe(51.1);
+    // 80 °C: 51,1 + (46,6 − 51,1) × 42/62 = 48,05 → 48,1 (misma fórmula que interpolarPT)
+    const r80 = ratingB1634('WCB', '300', 80);
+    expect(r80.ok && r80.rating_bar).toBe(48.1);
+    expect(r80.ok && r80.cita).toBe('ASME B16.34-2017, Tabla 2-1.1');
+  });
+
+  it('WCB por encima de 425 °C → fuera de rango', () => {
+    expect(ratingB1634('WCB', '300', 430).ok).toBe(false);
+  });
+});
+
+describe('calcPruebaHidrostaticaB1634 — §7.1.1', () => {
+  it('1,5 × rating a 38 °C, al bar entero superior', () => {
+    expect(calcPruebaHidrostaticaB1634(19.0)).toBe(29);    // 28,5
+    expect(calcPruebaHidrostaticaB1634(49.6)).toBe(75);    // 74,4
+    expect(calcPruebaHidrostaticaB1634(99.3)).toBe(149);   // 148,95
+  });
+
+  it('producto entero exacto no sube un bar por punto flotante', () => {
+    expect(calcPruebaHidrostaticaB1634(20)).toBe(30);
+    expect(calcPruebaHidrostaticaB1634(51.1)).toBe(77);    // 76,65 → 77
+  });
+
+  it('entrada inválida → null', () => {
+    expect(calcPruebaHidrostaticaB1634(0)).toBeNull();
+    expect(calcPruebaHidrostaticaB1634(-5)).toBeNull();
+    expect(calcPruebaHidrostaticaB1634(NaN)).toBeNull();
+  });
+});
+
+describe('duracionPruebaB1634 — §7.1.2', () => {
+  it('bordes: NPS 2 → 15 s · 2,5 → 60 · 6 → 60 · 8 → 120 · 12 → 120 · 14 → 300', () => {
+    expect(duracionPruebaB1634(2)).toBe(15);
+    expect(duracionPruebaB1634(2.5)).toBe(60);
+    expect(duracionPruebaB1634(6)).toBe(60);
+    expect(duracionPruebaB1634(8)).toBe(120);
+    expect(duracionPruebaB1634(12)).toBe(120);
+    expect(duracionPruebaB1634(14)).toBe(300);
+  });
+
+  it('NPS chicos y grandes', () => {
+    expect(duracionPruebaB1634(0.5)).toBe(15);
+    expect(duracionPruebaB1634(24)).toBe(300);
+  });
+
+  it('entrada inválida → null', () => {
+    expect(duracionPruebaB1634(0)).toBeNull();
+    expect(duracionPruebaB1634(NaN)).toBeNull();
   });
 });
 

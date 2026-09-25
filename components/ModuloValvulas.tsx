@@ -6,51 +6,22 @@ import {
   calcCvLiquido, FL_ORIENTATIVO, NORMA_CV, P_ATM_BAR,
   type ResultadoCvLiquido,
 } from '@/lib/calculos';
+import {
+  ratingB1634, calcPruebaHidrostaticaB1634, duracionPruebaB1634,
+  CLASES_B1634, NPS_NORMALIZADOS, T_MAX_TABLA,
+} from '@/lib/valvulasB1634';
 
 // ═══════════════════════════════════════════════════════════════
 //  MÓDULO VÁLVULAS INDUSTRIALES — INGENIUM PRO v8.0
 //  NORMATIVAS 100% REALES VERIFICADAS:
-//  ASME B16.34-2017 · ASME B16.5-2017 · ISA-75.01.01-2012 / IEC 60534-2-1
+//  ASME B16.34 · ASME B16.5-2017 · ISA-75.01.01-2012 / IEC 60534-2-1
 //  NACE MR0175/ISO 15156 · API 6D · MSS SP-25
 // ═══════════════════════════════════════════════════════════════
 
 const COLOR = '#0d9488'; // teal
 
-// ─── ASME B16.34-2017 P-T RATINGS — GROUP 1.1 (WCB/A105) ───────
-// Presión máxima en bar por clase y temperatura
-// Fuente: ASME B16.34-2017 Table 2-1.1 — verificada en 4 fuentes
-const PT_WCB: Record<number, Record<string, number>> = {
-  // Temperatura °C
-  38:  { '150': 19.6, '300': 51.1, '600': 102.1, '900': 153.0, '1500': 255.5, '2500': 425.4 },
-  100: { '150': 17.7, '300': 46.6, '600': 93.2,  '900': 139.8, '1500': 233.0, '2500': 388.4 },
-  150: { '150': 15.8, '300': 45.1, '600': 90.2,  '900': 135.3, '1500': 225.5, '2500': 375.8 },
-  200: { '150': 13.8, '300': 43.8, '600': 87.6,  '900': 131.4, '1500': 219.0, '2500': 365.1 },
-  250: { '150': 12.1, '300': 41.9, '600': 83.9,  '900': 125.8, '1500': 209.7, '2500': 349.5 },
-  300: { '150': 10.2, '300': 39.8, '600': 79.5,  '900': 119.3, '1500': 198.8, '2500': 331.4 },
-  350: { '150': 7.4,  '300': 37.5, '600': 74.9,  '900': 112.4, '1500': 187.3, '2500': 312.2 },
-  400: { '150': 5.1,  '300': 33.4, '600': 66.8,  '900': 100.3, '1500': 167.2, '2500': 278.6 },
-  425: { '150': 4.1,  '300': 31.3, '600': 62.6,  '900': 93.9,  '1500': 156.5, '2500': 260.8 },
-};
-// CF8M (316SS) — ASME B16.34 Grupo 2.2, Tabla 2-2.2, clase estándar — max 450°C.
-// Antes esta tabla decía "Group 2.3", repetía a 38 °C los valores de WCB
-// (Grupo 1.1) y el resto de las filas no correspondía al Grupo 2.2.
-// ⚠ PENDIENTE DE CONFIRMAR contra la Tabla 2-2.2 de la edición vigente de
-// B16.34 antes de publicar (valores cargados de referencia, no del texto de la norma).
-const PT_CF8M: Record<number, Record<string, number>> = {
-  38:  { '150': 19.0, '300': 49.6, '600': 99.3, '900': 148.9, '1500': 248.2, '2500': 413.7 },
-  50:  { '150': 18.4, '300': 48.1, '600': 96.2, '900': 144.3, '1500': 240.6, '2500': 400.9 },
-  100: { '150': 16.2, '300': 42.2, '600': 84.4, '900': 126.6, '1500': 211.0, '2500': 351.6 },
-  150: { '150': 14.8, '300': 38.5, '600': 77.0, '900': 115.5, '1500': 192.5, '2500': 320.8 },
-  200: { '150': 13.7, '300': 35.7, '600': 71.3, '900': 107.0, '1500': 178.3, '2500': 297.2 },
-  250: { '150': 12.1, '300': 33.4, '600': 66.8, '900': 100.1, '1500': 166.9, '2500': 278.1 },
-  300: { '150': 10.2, '300': 31.6, '600': 63.2, '900': 94.9,  '1500': 158.1, '2500': 263.5 },
-  325: { '150': 9.3,  '300': 30.9, '600': 61.8, '900': 92.7,  '1500': 154.4, '2500': 257.4 },
-  350: { '150': 8.4,  '300': 30.3, '600': 60.7, '900': 91.0,  '1500': 151.6, '2500': 252.7 },
-  375: { '150': 7.4,  '300': 29.9, '600': 59.8, '900': 89.7,  '1500': 149.5, '2500': 249.1 },
-  400: { '150': 6.5,  '300': 29.4, '600': 58.9, '900': 88.3,  '1500': 147.2, '2500': 245.3 },
-  425: { '150': 5.5,  '300': 29.1, '600': 58.3, '900': 87.4,  '1500': 145.7, '2500': 242.9 },
-  450: { '150': 4.6,  '300': 28.8, '600': 57.7, '900': 86.5,  '1500': 144.2, '2500': 240.4 },
-};
+// Tablas P-T (WCB Grupo 1.1 y CF8M Grupo 2.2), rating, prueba hidrostática
+// y duración: lib/valvulasB1634.ts (fuente única, con tests).
 
 // ─── ASME B16.5-2017 — DIMENSIONES REALES DE BRIDAS ─────────────
 // OD=diámetro exterior brida | BC=círculo de pernos | n=número pernos
@@ -248,19 +219,6 @@ function RLbl({ t, ok }: { t: string; ok?: boolean }) {
   return <div style={{ fontSize: 12, color, fontWeight: 700, marginBottom: 14 }}>{t}</div>;
 }
 
-// ── Interpolación lineal para tabla P-T ──────────────────────────
-function interpolarPT(tabla: Record<number, Record<string, number>>, tempC: number, clase: string): number {
-  const temps = Object.keys(tabla).map(Number).sort((a, b) => a - b);
-  const maxTemp = temps[temps.length - 1];
-  if (tempC >= maxTemp) return tabla[maxTemp][clase] || 0;
-  if (tempC <= temps[0]) return tabla[temps[0]][clase] || 0;
-  const t1 = temps.filter(t => t <= tempC).pop()!;
-  const t2 = temps.filter(t => t > tempC)[0];
-  const p1 = tabla[t1][clase] || 0;
-  const p2 = tabla[t2][clase] || 0;
-  return Math.round((p1 + (p2 - p1) * (tempC - t1) / (t2 - t1)) * 10) / 10;
-}
-
 // ────────────────────────────────────────────────────────────────
 export default function ModuloValvulas() {
   const [sub, setSub] = useState<Sub>('clase');
@@ -271,9 +229,13 @@ export default function ModuloValvulas() {
   const [clP, setClP] = useState('80');
   const [clT, setClT] = useState('80');
   const [clMat, setClMat] = useState<'WCB'|'CF8M'>('WCB');
+  const [clNPS, setClNPS] = useState('4');   // obligatorio: duración de prueba §7.1.2 y DXF
   const [resCl, setResCl] = useState<null|{
     claseReq: string; Prating: number; claseNext: string;
     advertencia: string; maxTempMat: number;
+    cita: string; notaFila: string | null;
+    pruebaBar: number | null; duracionS: number | null; nps: string; T: number;
+    ratingsTabla: { clase: string; txt: string }[];
   }>(null);
 
   // ── Estado: Material ──────────────────────────────────────────
@@ -337,72 +299,95 @@ export default function ModuloValvulas() {
     clase: string;
     tipo: TipoDisenio;
     subtipo?: string;
+    pruebaTxt: string;        // prueba hidrostática §7.1.1 o motivo de no disponible
+    duracionS: number | null; // duración mínima §7.1.2
+    citaPT: string | null;
   }>(null);
 
   // ── CÁLCULO 1: CLASE REQUERIDA (B16.34) ──────────────────────
   const calcClase = () => {
     R(); setResCl(null);
-    const P = parseFloat(clP), T = parseFloat(clT);
-    if (isNaN(P) || P <= 0 || isNaN(T) || T < -29) { setErr('Valores inválidos'); return; }
-    const tabla = clMat === 'WCB' ? PT_WCB : PT_CF8M;
-    const maxTempMat = clMat === 'WCB' ? 425 : 450;
-    if (T > maxTempMat) { setErr(`Temperatura excede límite del material: ${maxTempMat}°C. Seleccioná otro material.`); return; }
+    const P = parseFloat(clP), T = parseFloat(clT), nps = parseFloat(clNPS);
+    if (!Number.isFinite(P) || P <= 0 || !Number.isFinite(T) || T < -29) { setErr('Valores inválidos'); return; }
+    if (!Number.isFinite(nps) || nps <= 0) { setErr('Seleccioná el NPS de la válvula.'); return; }
+    const maxTempMat = T_MAX_TABLA[clMat];
+    if (T > maxTempMat) { setErr(`Fuera de rango de la tabla: máximo ${maxTempMat} °C para ${clMat}.`); return; }
 
-    const clases = ['150','300','600','900','1500','2500'];
-    let claseReq = '';
-    let claseNext = '';
-    let Prating = 0;
-
-    for (let i = 0; i < clases.length; i++) {
-      const pr = interpolarPT(tabla, T, clases[i]);
-      if (pr >= P) {
-        claseReq = clases[i];
-        Prating = pr;
-        claseNext = clases[i + 1] || '';
+    // Ratings de todas las clases (para elegir la mínima y mostrar la tabla)
+    const ratings = CLASES_B1634.map(cl => ({ clase: cl, r: ratingB1634(clMat, cl, T) }));
+    let claseReq = '', claseNext = '', Prating = 0, cita = '', notaFila: string | null = null;
+    for (let i = 0; i < ratings.length; i++) {
+      const { clase, r } = ratings[i];
+      if (!r.ok) {
+        if (r.motivo === 'CLASE_NO_DISPONIBLE') {
+          setErr(`Presión ${P} bar a ${T} °C excede las clases disponibles para ${clMat}. Class ${clase} y superiores: ${r.mensaje}.`);
+        } else {
+          setErr(r.mensaje);
+        }
+        return;
+      }
+      if (r.rating_bar >= P) {
+        claseReq = clase; Prating = r.rating_bar; cita = r.cita; notaFila = r.nota;
+        claseNext = CLASES_B1634[i + 1] || '';
         break;
       }
     }
-
     if (!claseReq) { setErr(`Presión ${P} bar a ${T}°C excede Class 2500. Requerís diseño especial o material de mayor resistencia.`); return; }
+
+    // Prueba hidrostática de carcasa (§7.1.1) y duración (§7.1.2)
+    const r38 = ratingB1634(clMat, claseReq, 38);
+    const pruebaBar = r38.ok ? calcPruebaHidrostaticaB1634(r38.rating_bar) : null;
+    const duracionS = duracionPruebaB1634(nps);
+    const ratingsTabla = ratings.map(({ clase, r }) => ({
+      clase, txt: r.ok ? `${r.rating_bar} bar` : (r.motivo === 'CLASE_NO_DISPONIBLE' ? 'N/D' : '—'),
+    }));
 
     let advertencia = '';
     if (clMat === 'WCB' && T > 300) advertencia = '⚠️ WCB >300°C: riesgo de grafitización. Considerar F11/WC6 (Cr-Mo). ASME B16.34 Nota [1].';
     else if (Prating < P * 1.1) advertencia = `⚠️ Margen ajustado (${Math.round((Prating / P - 1) * 100)}%). Considerar Class ${claseNext || 'mayor'} para mayor seguridad.`;
     else advertencia = `✅ Margen de presión: ${Math.round((Prating / P - 1) * 100)}% sobre la presión de operación.`;
 
-       const resultadoClase = { claseReq, Prating, claseNext, advertencia, maxTempMat };
+    const resultadoClase = {
+      claseReq, Prating, claseNext, advertencia, maxTempMat, cita, notaFila,
+      pruebaBar, duracionS, nps: clNPS, T, ratingsTabla,
+    };
 
     setResCl(resultadoClase);
 
     const margenPct = (Prating / P - 1) * 100;
     const payloadClase: DatosExportar = {
       tipo: 'VALVULAS_CLASE_B16_34',
-      normativa: 'ASME B16.34-2017',
+      normativa: cita,
       parametros: {
         'Presion operacion (bar)': clP,
         'Temperatura operacion (C)': clT,
         'Material cuerpo': clMat,
+        'NPS (pulg)': clNPS,
       },
       resultado: {
-        'Clase minima requerida': resultadoClase.claseReq,
-        'Presion rating (bar)': resultadoClase.Prating,
-        'Temp max material (C)': resultadoClase.maxTempMat,
-        'Advertencia': resultadoClase.advertencia,
+        'Clase minima requerida': claseReq,
+        'Presion rating (bar)': Prating,
+        ...(notaFila ? { 'Rating tomado de': notaFila } : {}),
+        'Fuente tabla P-T': cita,
+        'Temp max material (C)': maxTempMat,
+        'Prueba hidrostatica carcasa B16.34 §7.1.1 (bar)': pruebaBar ?? 'No disponible',
+        'Duracion minima prueba B16.34 §7.1.2 (s)': duracionS ?? 'No disponible',
+        'Advertencia': advertencia,
       },
       nivel:  margenPct >= 10 ? 'OK' : 'ALTO',
       alerta: margenPct < 10,
       dxfParams: {
-        DN:    100,
+        DN:    nps * 25.4,   // NPS ingresado (antes DN 100 fijo)
         tipo:  'bt',
-        nombre: `Valvula Clase ${resultadoClase.claseReq}`,
-        clase: resultadoClase.claseReq,
-        // El DXF espera MPa; Prating y clP están en bar (antes se pasaban en
-        // bar y el DXF los rotulaba MPa → valores ×10)
-        P_max: resultadoClase.Prating / 10,
+        nombre: `Valvula Clase ${claseReq}`,
+        clase: claseReq,
+        // El DXF espera MPa; Prating y clP están en bar
+        P_max: Prating / 10,
         P_op:  P / 10,
-        // Base de la prueba hidrostática: rating de la clase a 38 °C (no a T)
-        P_rating38: (tabla[38][resultadoClase.claseReq] ?? 0) / 10,
-        norma: 'ASME B16.34',
+        ...(pruebaBar !== null ? { P_prueba_bar: pruebaBar } : {}),
+        ...(duracionS !== null ? { duracion_prueba_s: duracionS } : {}),
+        ...(notaFila ? { nota_rating: notaFila } : {}),
+        norma: cita,
         material: clMat === 'WCB' ? 'ASTM A216 WCB (Grupo 1.1)' : 'ASTM A351 CF8M (Grupo 2.2)',
       },
     };
@@ -548,10 +533,6 @@ export default function ModuloValvulas() {
     else if (disTipo === 'retencion' && disSubtipo === 'Swing') f2f_mm = F2F_RETENCION[disClase]?.[disNPS] ?? null;
     else if (disTipo === 'tapon') f2f_mm = F2F_TAPON[disClase]?.[disNPS] ?? null;
     // globo, mariposa, retencion Lift/Tilting: f2f_mm = null
-    setResDis({
-      f2f_mm, fd, nps: disNPS, clase: disClase, tipo: disTipo,
-      subtipo: disTipo === 'retencion' ? disSubtipo : disTipo === 'tapon' ? disPatron : undefined,
-    });
 
     const tipoKey = disTipo === 'compuerta'  ? 'VALVULAS_BRIDA_B16_5'
                   : disTipo === 'bola'       ? 'VALVULAS_DISENO_BOLA'
@@ -559,24 +540,41 @@ export default function ModuloValvulas() {
                   : disTipo === 'retencion'  ? 'VALVULAS_DISENO_RETENCION'
                   : disTipo === 'tapon'      ? 'VALVULAS_DISENO_TAPON'
                   :                           'VALVULAS_DISENO_GLOBO';
-    const normativa = disTipo === 'bola'      ? 'ASME B16.34-2017 + ASME B16.10-2018 + API 6D'
-                    : disTipo === 'compuerta' ? 'ASME B16.34-2017 + ASME B16.10-2018 + API 600'
-                    : disTipo === 'mariposa'  ? 'API 609 / MSS SP-67 / ASME B16.34-2017'
+    const normativa = disTipo === 'bola'      ? 'ASME B16.34 + ASME B16.10-2018 + API 6D'
+                    : disTipo === 'compuerta' ? 'ASME B16.34 + ASME B16.10-2018 + API 600'
+                    : disTipo === 'mariposa'  ? 'API 609 / MSS SP-67 / ASME B16.34'
                     : disTipo === 'retencion' ? 'ASME B16.10-2022 + API STD 594'
                     : disTipo === 'tapon'     ? 'ASME B16.10-2022 + MSS SP-78'
-                    :                          'ASME B16.34-2017 + ASME B16.10-2018';
+                    :                          'ASME B16.34 + ASME B16.10-2018';
 
     // DN real en mm a partir de NPS en pulgadas (ASME B36.10M)
     const dnMm = Math.round(parseFloat(disNPS) * 25.4 * 10) / 10;
-    // P-T rating a 38°C (WCB Group 1.1) — bar → MPa
-    const pMaxBarByClase: Record<string, number> = { '150': 19.6, '300': 51.1, '600': 102.1, '900': 153.0 };
-    const pMaxMPa = (pMaxBarByClase[disClase] ?? 19.6) / 10;
+    // Rating a 38 °C según el material elegido (lib/valvulasB1634). Antes se
+    // usaba una copia de la fila de WCB para cualquier material.
+    // Solo WCB (Grupo 1.1) y CF8M (Grupo 2.2) tienen tabla P-T en el módulo.
+    const matB1634 = disMaterial === 'A216 WCB' ? 'WCB' as const
+                   : disMaterial === 'A351 CF8M' ? 'CF8M' as const : null;
+    const r38 = matB1634 ? ratingB1634(matB1634, disClase, 38) : null;
+    const rating38Bar = r38 && r38.ok ? r38.rating_bar : null;
+    const pruebaBar = rating38Bar !== null ? calcPruebaHidrostaticaB1634(rating38Bar) : null;
+    const duracionS = duracionPruebaB1634(parseFloat(disNPS));
+    const pruebaTxt =
+      pruebaBar !== null ? `${pruebaBar} bar` :
+      !matB1634          ? 'no disponible — sin tabla P-T para este material' :
+      r38 && !r38.ok     ? `no disponible — ${r38.mensaje}` : 'no disponible';
+    const citaPT = r38 && r38.ok ? r38.cita : null;
     const tipoCode = disTipo === 'compuerta' ? 'cg'
                    : disTipo === 'bola'      ? 'bt'
                    : disTipo === 'mariposa'  ? 'mp'
                    : disTipo === 'retencion' ? 'ch'
                    : disTipo === 'tapon'     ? 'cg'
                    : /* globo */               'gl';
+    setResDis({
+      f2f_mm, fd, nps: disNPS, clase: disClase, tipo: disTipo,
+      subtipo: disTipo === 'retencion' ? disSubtipo : disTipo === 'tapon' ? disPatron : undefined,
+      pruebaTxt, duracionS, citaPT,
+    });
+
     const nombreLabel = disTipo === 'compuerta' ? `Compuerta NPS ${disNPS}" Clase ${disClase}`
                       : disTipo === 'bola'      ? `Bola NPS ${disNPS}" Clase ${disClase}`
                       : disTipo === 'mariposa'  ? `Mariposa NPS ${disNPS}" Clase ${disClase}`
@@ -604,6 +602,10 @@ export default function ModuloValvulas() {
         'BC (mm)':   fd ? Math.round(fd.BC   * 25.4 * 10) / 10 : 0,
         'Bore (mm)': fd ? Math.round(fd.bore * 25.4 * 10) / 10 : 0,
         'Numero de pernos': fd ? fd.n : 0,
+        'Material cuerpo': `ASTM ${disMaterial}`,
+        'Prueba hidrostatica carcasa B16.34 §7.1.1 (bar)': pruebaBar ?? `No disponible (${pruebaTxt.replace(/^no disponible — /, '')})`,
+        ...(citaPT ? { 'Fuente tabla P-T': citaPT } : {}),
+        'Duracion minima prueba B16.34 §7.1.2 (s)': duracionS ?? 'No disponible',
       },
       // dxfParams: incluye claves en inglés (para exportarDXFValvulas / globo)
       // Y claves en español (para exportarDXFBola / Mariposa / Retencion / Tapon)
@@ -621,10 +623,12 @@ export default function ModuloValvulas() {
         tipo:     tipoCode,
         nombre:   nombreLabel,
         clase:    disClase,
-        P_max:    pMaxMPa,
-        P_op:     pMaxMPa * 0.7,
-        P_rating38: pMaxMPa,   // pMaxMPa ya es el rating a 38 °C → base de la prueba hidrostática
-        norma:    normativa,
+        // Rating a 38 °C del material elegido (MPa). Sin P_op: esta pestaña no
+        // pide presión de operación (antes se inventaba 0,7 × P_max y un ESTADO).
+        ...(rating38Bar !== null ? { P_max: rating38Bar / 10 } : {}),
+        ...(pruebaBar !== null ? { P_prueba_bar: pruebaBar } : {}),
+        ...(duracionS !== null ? { duracion_prueba_s: duracionS } : {}),
+        norma:    citaPT ? `${normativa} | ${citaPT}` : normativa,
         f2f_mm:   f2f_mm ?? undefined,
         material: `ASTM ${disMaterial}`,
         proyecto: disProyecto || undefined,
@@ -743,7 +747,7 @@ export default function ModuloValvulas() {
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 20, fontWeight: 800 }}>Válvulas Industriales</div>
           <div style={{ fontSize: 12, color: '#64748b' }}>Clase B16.34 · Material NACE · Brida B16.5 + DXF · Coeficiente Cv · Selector tipo</div>
-          <div style={{ fontSize: 11, color: COLOR, marginTop: 4 }}>ASME B16.34-2017 · ASME B16.5-2017 · {NORMA_CV} · NACE MR0175/ISO 15156 · API 6D</div>
+          <div style={{ fontSize: 11, color: COLOR, marginTop: 4 }}>ASME B16.34 · ASME B16.5-2017 · {NORMA_CV} · NACE MR0175/ISO 15156 · API 6D</div>
         </div>
       </div>
 
@@ -762,7 +766,7 @@ export default function ModuloValvulas() {
       {/* ══ CLASE B16.34 ══ */}
       {sub === 'clase' && (
         <div>
-          <Tit t="Clase de presión requerida — ASME B16.34-2017" />
+          <Tit t="Clase de presión requerida — ASME B16.34" />
           <Info t="La clase no es la presión máxima — es un índice que varía con temperatura y material. Siempre verificar en tabla P-T del estándar." />
 
           <div style={g3}>
@@ -775,8 +779,14 @@ export default function ModuloValvulas() {
             <div><label style={lbl}>Material del cuerpo</label>
               <select value={clMat} onChange={e => setClMat(e.target.value as 'WCB'|'CF8M')} style={inp}>
                 <option value="WCB" style={{ background: '#0a0f1e' }}>A216 WCB / A105 (acero carbono) — máx 425°C</option>
-                <option value="CF8M" style={{ background: '#0a0f1e' }}>A351 CF8M / F316 (inox 316) — máx 450°C</option>
+                <option value="CF8M" style={{ background: '#0a0f1e' }}>A351 CF8M / F316 (inox 316) — máx 450°C · Clase 150 a 600</option>
               </select>
+            </div>
+            <div><label style={lbl}>NPS de la válvula (pulg)</label>
+              <select value={clNPS} onChange={e => setClNPS(e.target.value)} style={inp}>
+                {NPS_NORMALIZADOS.map(n => <option key={n} value={n} style={{ background: '#0a0f1e' }}>NPS {n}"</option>)}
+              </select>
+              <div style={{ fontSize: 10, color: '#334155', marginTop: 3 }}>Define la duración mínima de la prueba (B16.34 §7.1.2) y el tamaño del plano DXF.</div>
             </div>
           </div>
 
@@ -784,32 +794,39 @@ export default function ModuloValvulas() {
 
           {resCl && (
             <ResBox>
-              <RLbl t={`CLASE MÍNIMA REQUERIDA: Class ${resCl.claseReq} — ASME B16.34-2017`} />
+              <RLbl t={`CLASE MÍNIMA REQUERIDA: Class ${resCl.claseReq} — ${resCl.cita}`} />
               <div style={g3}>
-                <Card label={`Presión rating Class ${resCl.claseReq} a ${clT}°C`} val={`${resCl.Prating} bar`} color="#4ade80" />
+                <Card label={`Presión rating Class ${resCl.claseReq} a ${resCl.T}°C`} val={`${resCl.Prating} bar`} color="#4ade80" />
                 <Card label="Presión de operación ingresada" val={`${clP} bar`} />
                 <Card label="Margen disponible" val={`${Math.round((resCl.Prating - parseFloat(clP)) * 10) / 10} bar`} color={parseFloat(clP) * 1.1 > resCl.Prating ? '#f59e0b' : '#4ade80'} />
+              </div>
+              {resCl.notaFila && <Warn t={`ℹ️ ${resCl.notaFila}.`} />}
+              <div style={g2}>
+                <Card label={`Prueba hidrostática de carcasa — B16.34 §7.1.1 (Class ${resCl.claseReq})`} val={resCl.pruebaBar !== null ? `${resCl.pruebaBar} bar` : 'No disponible'} sub="1,5 × rating a 38 °C, redondeado al bar entero superior" />
+                <Card label={`Duración mínima de la prueba — B16.34 §7.1.2 (NPS ${resCl.nps}")`} val={resCl.duracionS !== null ? `${resCl.duracionS} s` : 'No disponible'} sub="NPS ≤2: 15 s · 2½–6: 60 s · 8–12: 120 s · ≥14: 300 s" />
               </div>
 
               {/* Tabla comparativa todas las clases */}
               <div style={{ background: '#0a0f1e', borderRadius: 10, padding: 14, marginTop: 12 }}>
                 <div style={{ fontSize: 10, color: COLOR, fontWeight: 700, marginBottom: 8 }}>
-                  TABLA P-T — {clMat === 'WCB' ? 'A216 WCB / A105 (Group 1.1)' : 'A351 CF8M / F316 (Group 2.2)'} — A {clT}°C
+                  TABLA P-T — {resCl.cita} — A {resCl.T}°C
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 4 }}>
-                  {['150','300','600','900','1500','2500'].map(cl => {
-                    const tabla = clMat === 'WCB' ? PT_WCB : PT_CF8M;
-                    const pr = interpolarPT(tabla, parseFloat(clT), cl);
+                  {resCl.ratingsTabla.map(({ clase: cl, txt }) => {
                     const esReq = cl === resCl.claseReq;
+                    const pr = parseFloat(txt);
                     return (
                       <div key={cl} style={{ background: esReq ? 'rgba(13,148,136,0.2)' : '#030712', borderRadius: 8, padding: '8px 6px', textAlign: 'center', border: esReq ? '1px solid rgba(13,148,136,0.5)' : 'none' }}>
                         <div style={{ fontSize: 9, color: '#475569', marginBottom: 3 }}>Class {cl}</div>
-                        <div style={{ fontSize: 13, fontWeight: 700, color: esReq ? COLOR : '#64748b' }}>{pr} bar</div>
-                        <div style={{ fontSize: 8, color: '#334155' }}>{Math.round(pr * 14.504)} psi</div>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: esReq ? COLOR : '#64748b' }}>{txt}</div>
+                        <div style={{ fontSize: 8, color: '#334155' }}>{Number.isFinite(pr) ? `${Math.round(pr * 14.504)} psi` : ''}</div>
                       </div>
                     );
                   })}
                 </div>
+                {resCl.ratingsTabla.some(r => r.txt === 'N/D') && (
+                  <div style={{ fontSize: 10, color: '#64748b', marginTop: 6 }}>N/D: No disponible — tabla pendiente de verificación contra la norma.</div>
+                )}
               </div>
               <div style={{ fontSize: 12, padding: '8px 12px', background: '#0a0f1e', borderRadius: 8, marginTop: 8, color: '#f1f5f9' }}>
                 {resCl.advertencia}
@@ -1134,6 +1151,10 @@ export default function ModuloValvulas() {
             return (
               <ResBox>
                 <RLbl t={`${tipoLabel} — NPS ${nps}" Class ${clase} — ${normaLabel}`} />
+                <div style={g2}>
+                  <Card label={`Prueba hidrostática de carcasa — B16.34 §7.1.1 (Class ${clase})`} val={resDis.pruebaTxt} sub={resDis.citaPT ? `1,5 × rating a 38 °C, al bar entero superior · ${resDis.citaPT}` : 'Solo A216 WCB y A351 CF8M tienen tabla P-T en el módulo'} />
+                  <Card label={`Duración mínima de la prueba — B16.34 §7.1.2 (NPS ${nps}")`} val={resDis.duracionS !== null ? `${resDis.duracionS} s` : 'No disponible'} sub="NPS ≤2: 15 s · 2½–6: 60 s · 8–12: 120 s · ≥14: 300 s" />
+                </div>
 
                 {/* Diámetro disco para mariposa */}
                 {tipo === 'mariposa' && (

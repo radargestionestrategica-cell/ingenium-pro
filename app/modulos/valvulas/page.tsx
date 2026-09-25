@@ -87,7 +87,7 @@ export default function ModuloValvulasPage() {
             todavía no está disponible.
           </p>
           <p style={{ fontSize: 15, color: LIGHT, lineHeight: 1.8 }}>
-            El mismo módulo incluye además la selección de clase de presión requerida por ASME B16.34-2017,
+            El mismo módulo incluye además la selección de clase de presión requerida por ASME B16.34,
             selección de material según NACE MR0175/ISO 15156, dimensiones de brida por ASME B16.5-2017 y
             planos de diseño cara-a-cara (F2F) por tipo de válvula.
           </p>
@@ -118,7 +118,7 @@ export default function ModuloValvulasPage() {
           <h2 style={{ fontSize: 20, fontWeight: 800, marginBottom: 12, color: '#f1f5f9' }}>Normas aplicadas</h2>
           <p style={{ fontSize: 15, color: LIGHT, lineHeight: 1.8 }}>
             ISA-75.01.01-2012 / IEC 60534-2-1 (ecuaciones de dimensionamiento de válvulas de control, servicio líquido) para el coeficiente Cv/Kv y la verificación de flujo estrangulado.
-            El módulo también aplica ASME B16.34-2017 (clase de presión, tablas P-T), ASME B16.5-2017
+            El módulo también aplica ASME B16.34 (clase de presión, tablas P-T, prueba hidrostática de carcasa), ASME B16.5-2017
             (dimensiones de brida), NACE MR0175/ISO 15156 (selección de material en servicio ácido) y API 6D
             (diseño de válvulas de bola).
           </p>
