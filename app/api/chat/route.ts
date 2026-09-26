@@ -803,7 +803,7 @@ API 6D-2021 §10.1: Ensayos de fábrica — presión cuerpo, asiento y operació
   VALVULAS_MATERIAL_NACE: `NORMATIVAS APLICABLES — VERIFICADAS:
 NACE MR0175/ISO 15156-1:2020: Materiales para servicio H2S — dureza HRC ≤ 22 en zona afectada.
 NACE MR0175/ISO 15156-2:2020: Aceros carbono y baja aleación — máx. 250 HBW en cuerpo de válvula.
-ASME B16.34-2017 §6.1: Materiales cuerpo — ASTM A216 WCB (carbono), A351 CF8M (equivalente fundido del 316). El equivalente fundido del 316L es CF3M.
+Materiales cuerpo — ASTM A216 WCB (carbono), A351 CF8M (equivalente fundido del 316). El equivalente fundido del 316L es CF3M.
 API 6D-2021 §5.3.2: MDMT temperatura mínima de diseño — impacto Charpy para servicio criogénico.`,
 
   VALVULAS_BRIDA_B16_5: `NORMATIVAS APLICABLES — VERIFICADAS:
@@ -828,7 +828,7 @@ ASME B16.34 §7.1.1 / §7.1.2: Válvulas mariposa bajo B16.34 — mismas reglas:
 ASME B16.10-2022: Face-to-face válvulas retención swing y lift — Clase 150 a 2500.
 API STD 594-2017: Válvulas retención tipo disco — diseño, materiales y pruebas de fábrica.
 MSS SP-80-2019: Válvulas retención de bronce — requisitos y pruebas para agua y vapor.
-ASME B16.34-2017 §7.4: Prueba de asiento retención — fuga máxima permitida por clase.`,
+Criterios de aceptación de la prueba de cierre: según la norma del pedido; INGENIUM no los calcula.`,
 
   VALVULAS_DISENO_TAPON: `NORMATIVAS APLICABLES — VERIFICADAS:
 MSS SP-78-2019: Válvulas tapón lubricadas de hierro fundido — diseño y pruebas de fábrica.

@@ -13,7 +13,12 @@ import {
   calcMotorTrifasico, calcTransformadorElect,
   calcEspesorParedCaneria, calcHoopStressBarlow, calcVidaRemanente,
 } from '../calculos';
-import { exportarDXFCoeficienteCv, exportarDXFValvulas, exportarDXFSeleccionMaterial, exportarDXFClaseB1634 } from '../exportarDXF';
+import {
+  exportarDXFCoeficienteCv, exportarDXFValvulas, exportarDXFSeleccionMaterial, exportarDXFClaseB1634,
+  exportarDXFBridaB165, exportarDXFBola, exportarDXFMariposa, exportarDXFRetencion, exportarDXFTapon,
+  exportarDXFDilatacion, exportarDXFTaludes,
+} from '../exportarDXF';
+import { construirDisenoValvula, construirBridaB165, NPS_DISENO, CLASES_DISENO, type TipoDisenio } from '../valvulasDiseno';
 import { tituloModuloPDF } from '../tipos-calculo';
 import {
   ratingB1634, calcPruebaHidrostaticaB1634, duracionPruebaB1634, PT_CF8M, dnDesdeNPS,
@@ -600,7 +605,8 @@ describe('exportarDXFValvulas — unidades y presiones', () => {
     const cita = 'ASME B16.34-2020, Tabla 2-2.2 (Standard Class)';
     const dxf = exportarDXFValvulas({ ...base, P_max: 3.57, P_op: 3.0, P_prueba_bar: 75, duracion_prueba_s: 60, norma: cita,
       nota_rating: 'Rating tomado de 200 °C (fila verificada superior, criterio conservador)' });
-    expect(dxf).toContain('(Rating tomado de 200 °C (fila verificada superior, criterio conservador))');
+    expect(dxf).toContain('(Rating tomado de 200 %%dC (fila verificada superior, criterio conservador))');
+    expect(dxf).not.toContain('°');
     expect(dxf).toContain('NORMA: ' + cita);   // antes se cortaba en "(Stan"
   });
 
@@ -784,8 +790,10 @@ describe('exportarDXFClaseB1634 — hoja de datos sin geometría', () => {
     expect(dxf).toContain('Clase minima requerida: Class 300');
     expect(dxf).toContain('Material: ASTM A351 CF8M (Grupo 2.2)');
     expect(dxf).toContain('NPS 4"  /  DN 100');
-    expect(dxf).toContain('Rating aplicado a 150.0 C = 35.7 bar (3.57 MPa)');
-    expect(dxf).toContain('(Rating tomado de 200 °C (fila verificada superior, criterio conservador))');
+    expect(dxf).toContain('Rating aplicado a 150.0 %%dC = 35.7 bar (3.57 MPa)');
+    expect(dxf).toContain('(Rating tomado de 200 %%dC (fila verificada superior, criterio conservador))');
+    expect(dxf).toContain('Temperatura de operacion: 150.0 %%dC');
+    expect(dxf).not.toContain('°');
     expect(dxf).toContain('Prueba hidrostatica de carcasa (B16.34 7.1.1) = 75 bar (7.50 MPa)');
     expect(dxf).toContain('Duracion minima de la prueba (B16.34 7.1.2) = 60 s');
     expect(dxf).toContain('ASME B16.34-2020, Tabla 2-2.2 (Standard Class)');
@@ -802,6 +810,155 @@ describe('exportarDXFValvulas (Diseño-globo) — NPS con DN normalizado', () =>
     const dxf = exportarDXFValvulas({ DN: 100, nps: '4', tipo: 'gl', nombre: 'Globo NPS 4" Clase 300', clase: '300', norma: 'n' });
     expect(dxf).toContain('DN 100 mm (NPS 4")');
     expect(dxf).not.toContain('NPS 3.9');
+  });
+});
+
+// ════════════════════════════════════════════════════════════════
+// VÁLVULAS — DXF de Diseño (bloque 3): ninguna cifra inventada
+// ════════════════════════════════════════════════════════════════
+describe('DXF de Diseño — todos los tipos, clases y NPS ofrecidos', () => {
+  const DXF_DE: Record<TipoDisenio, (p: Record<string, unknown>) => string> = {
+    compuerta: exportarDXFBridaB165, globo: exportarDXFValvulas as unknown as (p: Record<string, unknown>) => string,
+    bola: exportarDXFBola, mariposa: exportarDXFMariposa, retencion: exportarDXFRetencion, tapon: exportarDXFTapon,
+  };
+  const generar = (tipo: TipoDisenio, clase: string, nps: string, extra: Partial<{ subtipo: string; patron: string; estilo: string }> = {}) => {
+    const r = construirDisenoValvula({
+      tipo, clase, nps, material: 'A216 WCB', estilo: extra.estilo ?? 'Wafer',
+      subtipo: extra.subtipo ?? 'Swing', patron: extra.patron ?? 'Regular', proyecto: 'Test',
+    });
+    if (!r.ok) throw new Error(`${tipo} ${clase} ${nps}: ${r.error}`);
+    return { r, dxf: DXF_DE[tipo](r.dxfParams) };
+  };
+
+  it('todas las combinaciones generan DXF sin "0.0 mm", H7, H8 ni "°" literal, y con la leyenda', () => {
+    let n = 0;
+    for (const tipo of Object.keys(NPS_DISENO) as TipoDisenio[]) {
+      const variantes = tipo === 'retencion' ? ['Swing', 'Lift', 'Tilting'].map(s => ({ subtipo: s }))
+                      : tipo === 'tapon'     ? ['Regular', 'Venturi', 'Short'].map(pt => ({ patron: pt }))
+                      : [{}];
+      for (const clase of CLASES_DISENO[tipo]) for (const nps of NPS_DISENO[tipo][clase]) for (const v of variantes) {
+        const { dxf } = generar(tipo, clase, nps, v);
+        const id = `${tipo} ${clase} NPS ${nps} ${JSON.stringify(v)}`;
+        expect(dxf.length, id).toBeGreaterThan(0);
+        expect(dxf, id).not.toMatch(/(^|[^\d.])0\.0 mm/);   // un 0.0 suelto (no el final de 200.0)
+        expect(dxf, id).not.toMatch(/\bH7\b|\bH8\b/);
+        expect(dxf, id).not.toContain('°');
+        expect(dxf, id).toContain('Plano esquematico - no a escala - verificar dimensiones con el fabricante');
+        n++;
+      }
+    }
+    expect(n).toBeGreaterThan(200);
+  });
+
+  it('pantalla / PDF / Excel (resultado y parámetros) sin "Bore" ni diámetro de disco, en todas las combinaciones', () => {
+    for (const tipo of Object.keys(NPS_DISENO) as TipoDisenio[]) {
+      for (const clase of CLASES_DISENO[tipo]) for (const nps of NPS_DISENO[tipo][clase]) {
+        const { r } = generar(tipo, clase, nps);
+        const exportado = JSON.stringify({ p: r.parametros, r: r.resultado });
+        expect(exportado, `${tipo} ${clase} ${nps}`).not.toMatch(/bore|disco/i);
+        // ninguna cifra en 0 en lugar de "no disponible"
+        for (const [k, v] of Object.entries(r.resultado)) expect(v, `${tipo} ${clase} ${nps} ${k}`).not.toBe(0);
+      }
+    }
+  });
+
+  it('pestaña Brida: exportación sin "Bore", con fuente B16.5 rotulada', () => {
+    const b = construirBridaB165('300', '4', 'X');
+    expect(b.payload).not.toBeNull();
+    const exportado = JSON.stringify(b.payload);
+    expect(exportado).not.toMatch(/bore/i);
+    expect(b.payload!.resultado['Fuente dimensiones de brida']).toBe('ASME B16.5 – fuente secundaria, pendiente de cotejo');
+    // y su DXF sigue generándose (compuerta) sin cota de bore
+    const dxf = exportarDXFBridaB165({ ...b.payload!.parametros, ...b.payload!.resultado });
+    expect(dxf).toContain('OD brida: 254.0 mm');
+    expect(dxf).not.toMatch(/bore/i);
+  });
+
+  it('pestaña Brida sin dato en tabla (NPS 1¼): sin exportación', () => {
+    expect(construirBridaB165('600', '1.25', 'X').payload).toBeNull();
+  });
+
+  it('retención y tapón clase 600 en NPS 22 a 36 vuelven a calcular', () => {
+    for (const nps of ['22', '26', '28', '30', '36']) expect(generar('retencion', '600', nps).r.dn).toBeGreaterThan(0);
+    for (const nps of ['22', '26', '30', '32', '34', '36']) expect(generar('tapon', '600', nps).r.dn).toBeGreaterThan(0);
+  });
+
+  it('compuerta: genera DXF con F2F de tabla y brida B16.5 rotulada como fuente secundaria', () => {
+    const { dxf } = generar('compuerta', '300', '4');
+    expect(dxf).toContain('Face-to-Face: 318 mm (ASME B16.10 Tabla 1, valvula compuerta)');
+    expect(dxf).toContain('OD brida: 254.0 mm - BC pernos: 200.0 mm - N pernos: 8 (ASME B16.5 - fuente secundaria, pendiente de cotejo)');
+    expect(dxf).not.toMatch(/Bore/i);
+  });
+
+  it('compuerta NPS 1¼ (sin brida en tabla): brida "no disponible"', () => {
+    const { dxf } = generar('compuerta', '600', '1.25');
+    expect(dxf).toContain('Brida (OD, BC, pernos): no disponible - requiere tabla verificada');
+  });
+
+  it('bola: brida desde tabla, sin "full bore" ni cota de bore', () => {
+    const { dxf } = generar('bola', '300', '4');
+    expect(dxf).toContain('OD brida: 254.0 mm');
+    expect(dxf).not.toMatch(/full bore|Bore/i);
+  });
+
+  it('globo clase 150: F2F no disponible (sin copia de clase 300 ni DN × 2,3)', () => {
+    const { r, dxf } = generar('globo', '150', '4');
+    expect(r.f2f_mm).toBeNull();
+    expect(dxf).toContain('F2F: no disponible - requiere tabla verificada');
+    expect(dxf).not.toMatch(/F2F = \d/);
+  });
+
+  it('globo clase 900 NPS 2½ (sin dato en tabla): no disponible, sin reemplazo por clase 300', () => {
+    const { r, dxf } = generar('globo', '900', '2.5');
+    expect(r.f2f_mm).toBeNull();
+    expect(dxf).not.toContain('203');
+  });
+
+  it('globo sin tolerancias H7/H8, ±1,5/±3,0 ni RF', () => {
+    const { dxf } = generar('globo', '300', '4');
+    expect(dxf).toContain('F2F = 229 mm (ASME B16.10)');
+    expect(dxf).not.toMatch(/Tol |H7|H8|\(RF\)/);
+  });
+
+  it('mariposa: sin cota de disco y F2F no disponible', () => {
+    const { dxf } = generar('mariposa', '300', '4');
+    expect(dxf).not.toMatch(/Disco =|Diametro disco|NPS x 25\.4/);
+    expect(dxf).toContain('Face-to-Face: no disponible - requiere tabla verificada');
+  });
+
+  it('retención clase 150 y Lift: hoja con "no disponible", no DXF vacío', () => {
+    for (const [clase, subtipo] of [['150', 'Swing'], ['300', 'Swing'], ['600', 'Lift'], ['600', 'Tilting']]) {
+      const { dxf } = generar('retencion', clase, '4', { subtipo });
+      expect(dxf).toContain(`no disponible - requiere tabla verificada (Class ${clase}, ${subtipo})`);
+    }
+  });
+
+  it('tapón: F2F no disponible en todos los patrones, ángulo como 90%%d', () => {
+    for (const patron of ['Regular', 'Venturi', 'Short']) {
+      const { r, dxf } = generar('tapon', '600', '4', { patron });
+      expect(r.f2f_mm).toBeNull();
+      expect(dxf).toContain('la tabla no distingue patron Regular/Venturi/Short');
+      expect(dxf).toContain('90%%d');
+      expect(dxf).not.toContain('deg');
+    }
+  });
+
+  it('pestaña Brida (sin dxfParams) sigue generando el DXF de compuerta', () => {
+    const dxf = exportarDXFBridaB165({ 'NPS (pulg)': '4', 'Clase de presion': '300', 'Proyecto': 'X',
+      'F2F ASME B16.10 (mm)': 318, 'OD (mm)': 254, 'BC (mm)': 200, 'Bore (mm)': 102.3, 'Numero de pernos': 8 });
+    expect(dxf).toContain('OD brida: 254.0 mm');
+    expect(dxf).not.toMatch(/Bore/i);
+  });
+});
+
+describe('DXF — grados como %%d en todos los módulos', () => {
+  it('temperatura con espacio "60 %%dC" y ángulos "30%%d"', () => {
+    const dil = exportarDXFDilatacion({ D: 219, t: 8, L: 100, dT: 60, alpha: 11.7, dL: 70.2, F_termico: 10 });
+    expect(dil).toContain('60 %%dC');
+    expect(dil).not.toContain('°');
+    const tal = exportarDXFTaludes({ H: 10, beta: 30, phi: 28, c: 10, gamma: 18, Fs: 1.5, R: 15 });
+    expect(tal).toContain('30%%d');
+    expect(tal).not.toContain('°');
   });
 });
 

@@ -10,6 +10,10 @@ import {
   ratingB1634, calcPruebaHidrostaticaB1634, duracionPruebaB1634, dnDesdeNPS,
   CLASES_B1634, NPS_NORMALIZADOS, T_MAX_TABLA,
 } from '@/lib/valvulasB1634';
+import {
+  B165, F2F_COMPUERTA as F2F_B1610, CLASES_DISENO, NPS_DISENO, construirDisenoValvula, construirBridaB165,
+  type FlangeData, type TipoDisenio,
+} from '@/lib/valvulasDiseno';
 
 // ═══════════════════════════════════════════════════════════════
 //  MÓDULO VÁLVULAS INDUSTRIALES — INGENIUM PRO v8.0
@@ -23,74 +27,8 @@ const COLOR = '#0d9488'; // teal
 // Tablas P-T (WCB Grupo 1.1 y CF8M Grupo 2.2), rating, prueba hidrostática
 // y duración: lib/valvulasB1634.ts (fuente única, con tests).
 
-// ─── ASME B16.5-2017 — DIMENSIONES REALES DE BRIDAS ─────────────
-// OD=diámetro exterior brida | BC=círculo de pernos | n=número pernos
-// db=diámetro pernos | bore=diámetro interior nominal
-// TODAS EN PULGADAS — fuente: ASME B16.5 Tables / Engineering Toolbox verificado
-type FlangeData = { OD: number; BC: number; n: number; db: number; bore: number };
-const B165: Record<string, Record<string, FlangeData>> = {
-  '150': {
-    '0.5':  { OD: 3.50,  BC: 2.375, n: 4,  db: 0.500, bore: 0.622  },
-    '0.75': { OD: 3.875, BC: 2.750, n: 4,  db: 0.500, bore: 0.824  },
-    '1':    { OD: 4.250, BC: 3.125, n: 4,  db: 0.500, bore: 1.049  },
-    '1.5':  { OD: 5.000, BC: 3.875, n: 4,  db: 0.500, bore: 1.610  },
-    '2':    { OD: 6.000, BC: 4.750, n: 4,  db: 0.625, bore: 2.067  },
-    '2.5':  { OD: 7.000, BC: 5.500, n: 4,  db: 0.625, bore: 2.469  },
-    '3':    { OD: 7.500, BC: 6.000, n: 4,  db: 0.625, bore: 3.068  },
-    '4':    { OD: 9.000, BC: 7.500, n: 8,  db: 0.625, bore: 4.026  },
-    '6':    { OD: 11.00, BC: 9.500, n: 8,  db: 0.750, bore: 6.065  },
-    '8':    { OD: 13.50, BC: 11.750,n: 8,  db: 0.750, bore: 7.981  },
-    '10':   { OD: 16.00, BC: 14.250,n: 12, db: 0.875, bore: 10.020 },
-    '12':   { OD: 19.00, BC: 17.000,n: 12, db: 0.875, bore: 11.938 },
-  },
-  '300': {
-    '0.5':  { OD: 3.750, BC: 2.625, n: 4,  db: 0.500, bore: 0.622  },
-    '0.75': { OD: 4.625, BC: 3.250, n: 4,  db: 0.625, bore: 0.824  },
-    '1':    { OD: 4.875, BC: 3.500, n: 4,  db: 0.625, bore: 1.049  },
-    '1.5':  { OD: 6.125, BC: 4.500, n: 4,  db: 0.750, bore: 1.610  },
-    '2':    { OD: 6.500, BC: 5.000, n: 8,  db: 0.625, bore: 2.067  },
-    '2.5':  { OD: 7.500, BC: 5.875, n: 8,  db: 0.750, bore: 2.469  },
-    '3':    { OD: 8.250, BC: 6.625, n: 8,  db: 0.750, bore: 3.068  },
-    '4':    { OD: 10.00, BC: 7.875, n: 8,  db: 0.875, bore: 4.026  },
-    '6':    { OD: 12.50, BC: 10.625,n: 12, db: 0.875, bore: 6.065  },
-    '8':    { OD: 15.00, BC: 13.000,n: 12, db: 1.000, bore: 7.981  },
-    '10':   { OD: 17.50, BC: 15.250,n: 16, db: 1.125, bore: 10.020 },
-    '12':   { OD: 20.50, BC: 17.750,n: 16, db: 1.250, bore: 11.938 },
-  },
-  '600': {
-    '0.5':  { OD: 3.750, BC: 2.625, n: 4,  db: 0.500, bore: 0.622  },
-    '0.75': { OD: 4.625, BC: 3.250, n: 4,  db: 0.625, bore: 0.824  },
-    '1':    { OD: 4.875, BC: 3.500, n: 4,  db: 0.625, bore: 1.049  },
-    '1.5':  { OD: 6.125, BC: 4.500, n: 4,  db: 0.750, bore: 1.610  },
-    '2':    { OD: 6.500, BC: 5.000, n: 8,  db: 0.625, bore: 2.067  },
-    '2.5':  { OD: 7.500, BC: 5.875, n: 8,  db: 0.750, bore: 2.469  },
-    '3':    { OD: 8.250, BC: 6.625, n: 8,  db: 0.750, bore: 3.068  },
-    '4':    { OD: 10.750,BC: 8.500, n: 8,  db: 0.875, bore: 4.026  },
-    '6':    { OD: 14.000,BC: 11.500,n: 12, db: 1.000, bore: 6.065  },
-    '8':    { OD: 16.500,BC: 13.750,n: 12, db: 1.125, bore: 7.981  },
-    '10':   { OD: 20.000,BC: 17.000,n: 16, db: 1.250, bore: 10.020 },
-    '12':   { OD: 22.000,BC: 19.250,n: 20, db: 1.250, bore: 11.938 },
-  },
-  '900': {
-    '2':    { OD: 8.500, BC: 6.500, n: 8,  db: 0.875, bore: 2.067  },
-    '2.5':  { OD: 9.625, BC: 7.500, n: 8,  db: 1.000, bore: 2.469  },
-    '3':    { OD: 9.500, BC: 7.500, n: 8,  db: 0.875, bore: 3.068  },
-    '4':    { OD: 11.500,BC: 9.250, n: 8,  db: 1.125, bore: 4.026  },
-    '6':    { OD: 15.000,BC: 12.500,n: 12, db: 1.125, bore: 6.065  },
-    '8':    { OD: 18.500,BC: 15.500,n: 12, db: 1.375, bore: 7.981  },
-    '10':   { OD: 21.500,BC: 18.500,n: 16, db: 1.375, bore: 10.020 },
-    '12':   { OD: 24.000,BC: 21.000,n: 20, db: 1.375, bore: 11.938 },
-  },
-};
-
-// Face-to-face ASME B16.10 Table 1 — Válvula compuerta (gate), bridada, raised face (mm)
-// Fuente: ASME B16.10-2017. SOLO para plano esquemático DXF — verificar con fabricante.
-const F2F_B1610: Record<string, Record<string, number>> = {
-  '150': { '0.5':108,'0.75':117,'1':130,'1.5':159,'2':178,'2.5':216,'3':229,'4':267,'6':356,'8':457,'10':533,'12':610 },
-  '300': { '0.5':140,'0.75':152,'1':165,'1.5':197,'2':216,'2.5':254,'3':279,'4':318,'6':419,'8':521,'10':622,'12':711 },
-  '600': { '0.5':165,'0.75':190,'1':216,'1.25':229,'1.5':241,'2':292,'2.5':330,'3':356,'4':432,'6':559,'8':660,'10':787,'12':838 },
-  '900': { '2':292,'2.5':330,'3':356,'4':406,'6':533,'8':660,'10':787,'12':914 },
-};
+// Tablas dimensionales (B165 bridas, F2F por tipo, NPS/clases de Diseño) y
+// armado del resultado de Diseño: lib/valvulasDiseno.ts (fuente única, con tests).
 
 // NPS disponibles por clase
 const NPS_POR_CLASE: Record<string, string[]> = {
@@ -102,74 +40,6 @@ const NPS_POR_CLASE: Record<string, string[]> = {
 
 // Clases disponibles
 const CLASES = ['150','300','600','900'];
-
-// ─── ASME B16.10 Long Pattern — Válvula BOLA (Ball) API 6D ─────────
-// Valores verificados: ASME B16.34-2017 + ASME B16.10-2018 + API 6D
-// SOLO para plano esquemático DXF — verificar con fabricante
-const F2F_BOLA: Record<string, Record<string, number>> = {
-  '150': { '0.5':108,'0.75':117,'1':127,'1.25':140,'1.5':165,'2':178,'2.5':190,'3':203,'4':229,'6':394,'8':457,'10':533,'12':610 },
-  '300': { '0.5':140,'0.75':152,'1':165,'1.25':178,'1.5':190,'2':216,'2.5':241,'3':282,'4':305,'6':403,'8':502,'10':568,'12':648 },
-  '600': { '0.5':165,'0.75':190,'1':216,'1.25':229,'1.5':241,'2':292,'2.5':330,'3':356,'4':432,'6':559,'8':660,'10':787,'12':838 },
-};
-
-// ─── Swing Check — ASME B16.10-2022 + API STD 594 ────────────────
-// Solo Swing Class 600 con datos verificados. Clases 150/300: Consultar fabricante.
-const F2F_RETENCION: Record<string, Record<string, number>> = {
-  '600': { '1.5':241,'2':292,'2.5':330,'3':356,'4':432,'5':508,'6':559,'8':660,'10':787,'12':838,'14':889,'16':991,'18':1092,'20':1194,'22':1295,'24':1397,'26':1448,'28':1600,'30':1651,'36':2083 },
-};
-
-// ─── Tapón Regular/Venturi — ASME B16.10-2022 + MSS SP-78 ────────
-// Class 600 y Class 900 (parcial). Clases 150/300: Consultar fabricante.
-const F2F_TAPON: Record<string, Record<string, number>> = {
-  '600': { '1':216,'1.25':229,'1.5':241,'2':292,'2.5':330,'3':356,'4':432,'6':559,'8':660,'10':787,'12':838,'14':889,'16':991,'18':1092,'20':1194,'22':1295,'24':1397,'26':1448,'30':1651,'32':1778,'34':1930,'36':2083 },
-  '900': { '8':794,'10':940,'12':1067 },
-};
-
-type TipoDisenio = 'compuerta' | 'globo' | 'bola' | 'mariposa' | 'retencion' | 'tapon';
-
-const CLASES_DISENO: Record<TipoDisenio, string[]> = {
-  compuerta: ['150','300','600','900'],
-  globo:     ['150','300','600','900'],
-  bola:      ['150','300','600'],
-  mariposa:  ['150','300'],
-  retencion: ['150','300','600'],
-  tapon:     ['150','300','600','900'],
-};
-
-const NPS_DISENO: Record<TipoDisenio, Record<string, string[]>> = {
-  compuerta: {
-    '150': ['0.5','0.75','1','1.5','2','2.5','3','4','6','8','10','12'],
-    '300': ['0.5','0.75','1','1.5','2','2.5','3','4','6','8','10','12'],
-    '600': ['0.5','0.75','1','1.25','1.5','2','2.5','3','4','6','8','10','12'],
-    '900': ['2','2.5','3','4','6','8','10','12'],
-  },
-  globo: {
-    '150': ['0.5','0.75','1','1.5','2','2.5','3','4','6','8','10','12'],
-    '300': ['0.5','0.75','1','1.5','2','2.5','3','4','6','8','10','12'],
-    '600': ['0.5','0.75','1','1.5','2','2.5','3','4','6','8','10','12'],
-    '900': ['2','2.5','3','4','6','8','10','12'],
-  },
-  bola: {
-    '150': ['0.5','0.75','1','1.25','1.5','2','2.5','3','4','6','8','10','12'],
-    '300': ['0.5','0.75','1','1.25','1.5','2','2.5','3','4','6','8','10','12'],
-    '600': ['0.5','0.75','1','1.25','1.5','2','2.5','3','4','6','8','10','12'],
-  },
-  mariposa: {
-    '150': ['2','2.5','3','4','6','8','10','12'],
-    '300': ['2','2.5','3','4','6','8','10','12'],
-  },
-  retencion: {
-    '150': ['1.5','2','2.5','3','4','6','8','10','12'],
-    '300': ['1.5','2','2.5','3','4','6','8','10','12'],
-    '600': ['1.5','2','2.5','3','4','5','6','8','10','12','14','16','18','20','22','24','26','28','30','36'],
-  },
-  tapon: {
-    '150': ['0.5','0.75','1','1.25','1.5','2','2.5','3','4','6','8','10','12'],
-    '300': ['0.5','0.75','1','1.25','1.5','2','2.5','3','4','6','8','10','12'],
-    '600': ['1','1.25','1.5','2','2.5','3','4','6','8','10','12','14','16','18','20','22','24','26','30','32','34','36'],
-    '900': ['8','10','12'],
-  },
-};
 
 // Tipos de válvula por aplicación — datos reales de industria
 const TIPOS_VALVULA = [
@@ -491,34 +361,11 @@ export default function ModuloValvulas() {
   // ── CÁLCULO 3: DIMENSIONES BRIDA B16.5 ───────────────────────
   const calcBrida = () => {
     R(); setResBr(null);
-    const fd = B165[brClase]?.[brNPS] ?? null;
-    if (!fd) {
-      // Dato no disponible en tabla — NUNCA calcular ni interpolar
-      setResBr({ fd: null, nps: brNPS, clase: brClase, f2f_mm: null });
-      return;
-    }
-    const f2f_mm = F2F_B1610[brClase]?.[brNPS] ?? null;
-    setResBr({ fd, nps: brNPS, clase: brClase, f2f_mm });
-    const payloadBr: DatosExportar = {
-      tipo: 'VALVULAS_BRIDA_B16_5',
-      normativa: 'ASME B16.5-2017',
-      parametros: {
-        'NPS (pulg)': brNPS,
-        'Clase de presion': brClase,
-        'Proyecto': brProyecto || 'Sin nombre',
-        'F2F ASME B16.10 (mm)': f2f_mm ?? 'Consultar fabricante',
-      },
-      resultado: {
-        'OD exterior (pulg)': fd.OD,
-        'BC circulo pernos (pulg)': fd.BC,
-        'Bore interior (pulg)': fd.bore,
-        'Numero de pernos': fd.n,
-        'Diametro perno (pulg)': fd.db,
-        'OD (mm)': Math.round(fd.OD * 25.4 * 10) / 10,
-        'BC (mm)': Math.round(fd.BC * 25.4 * 10) / 10,
-        'Bore (mm)': Math.round(fd.bore * 25.4 * 10) / 10,
-      },
-    };
+    // Armado en lib/valvulasDiseno.ts (sin bore: ID Sch 40 supuesto, sin fuente B16.5)
+    const r = construirBridaB165(brClase, brNPS, brProyecto);
+    setResBr({ fd: r.fd, nps: brNPS, clase: brClase, f2f_mm: r.f2f_mm });
+    if (!r.payload) return;   // dato no disponible en tabla — nunca calcular ni interpolar
+    const payloadBr: DatosExportar = r.payload;
     setDatosBrida(payloadBr);
     publicarResultado(payloadBr);
   };
@@ -528,115 +375,26 @@ export default function ModuloValvulas() {
   // ── CÁLCULO: DISEÑO DE VÁLVULA (F2F + B16.5) ─────────────────
   const calcDisenio = () => {
     R(); setResDis(null);
-    const fd = B165[disClase]?.[disNPS] ?? null;
-    let f2f_mm: number | null = null;
-    if (disTipo === 'compuerta') f2f_mm = F2F_B1610[disClase]?.[disNPS] ?? null;
-    else if (disTipo === 'bola') f2f_mm = F2F_BOLA[disClase]?.[disNPS] ?? null;
-    else if (disTipo === 'retencion' && disSubtipo === 'Swing') f2f_mm = F2F_RETENCION[disClase]?.[disNPS] ?? null;
-    else if (disTipo === 'tapon') f2f_mm = F2F_TAPON[disClase]?.[disNPS] ?? null;
-    // globo, mariposa, retencion Lift/Tilting: f2f_mm = null
+    // Armado único en lib/valvulasDiseno.ts: F2F por tipo, brida B16.5, DN,
+    // prueba hidrostática / duración y dxfParams (sin cifras inventadas).
+    const r = construirDisenoValvula({
+      tipo: disTipo, clase: disClase, nps: disNPS, material: disMaterial,
+      estilo: disEstilo, subtipo: disSubtipo, patron: disPatron, proyecto: disProyecto,
+    });
+    if (!r.ok) { setErr(r.error); return; }
 
-    const tipoKey = disTipo === 'compuerta'  ? 'VALVULAS_BRIDA_B16_5'
-                  : disTipo === 'bola'       ? 'VALVULAS_DISENO_BOLA'
-                  : disTipo === 'mariposa'   ? 'VALVULAS_DISENO_MARIPOSA'
-                  : disTipo === 'retencion'  ? 'VALVULAS_DISENO_RETENCION'
-                  : disTipo === 'tapon'      ? 'VALVULAS_DISENO_TAPON'
-                  :                           'VALVULAS_DISENO_GLOBO';
-    const normativa = disTipo === 'bola'      ? 'ASME B16.34 + ASME B16.10-2018 + API 6D'
-                    : disTipo === 'compuerta' ? 'ASME B16.34 + ASME B16.10-2018 + API 600'
-                    : disTipo === 'mariposa'  ? 'API 609 / MSS SP-67 / ASME B16.34'
-                    : disTipo === 'retencion' ? 'ASME B16.10-2022 + API STD 594'
-                    : disTipo === 'tapon'     ? 'ASME B16.10-2022 + MSS SP-78'
-                    :                          'ASME B16.34 + ASME B16.10-2018';
-
-    // DN normalizado (ASME B36.10 / ISO 6708) — tabla fija, no NPS × 25,4
-    const dnMm = dnDesdeNPS(disNPS);
-    if (dnMm === null) { setErr(`NPS ${disNPS}" fuera de la tabla de DN normalizados (ASME B36.10 / ISO 6708).`); return; }
-    // Rating a 38 °C según el material elegido (lib/valvulasB1634). Antes se
-    // usaba una copia de la fila de WCB para cualquier material.
-    // Solo WCB (Grupo 1.1) y CF8M (Grupo 2.2) tienen tabla P-T en el módulo.
-    const matB1634 = disMaterial === 'A216 WCB' ? 'WCB' as const
-                   : disMaterial === 'A351 CF8M' ? 'CF8M' as const : null;
-    const r38 = matB1634 ? ratingB1634(matB1634, disClase, 38) : null;
-    const rating38Bar = r38 && r38.ok ? r38.rating_bar : null;
-    const pruebaBar = rating38Bar !== null ? calcPruebaHidrostaticaB1634(rating38Bar) : null;
-    const duracionS = duracionPruebaB1634(parseFloat(disNPS));
-    const pruebaTxt =
-      pruebaBar !== null ? `${pruebaBar} bar` :
-      !matB1634          ? 'no disponible — sin tabla P-T para este material' :
-      r38 && !r38.ok     ? `no disponible — ${r38.mensaje}` : 'no disponible';
-    const citaPT = r38 && r38.ok ? r38.cita : null;
-    const tipoCode = disTipo === 'compuerta' ? 'cg'
-                   : disTipo === 'bola'      ? 'bt'
-                   : disTipo === 'mariposa'  ? 'mp'
-                   : disTipo === 'retencion' ? 'ch'
-                   : disTipo === 'tapon'     ? 'cg'
-                   : /* globo */               'gl';
     setResDis({
-      f2f_mm, fd, nps: disNPS, clase: disClase, tipo: disTipo,
+      f2f_mm: r.f2f_mm, fd: r.fd, nps: disNPS, clase: disClase, tipo: disTipo,
       subtipo: disTipo === 'retencion' ? disSubtipo : disTipo === 'tapon' ? disPatron : undefined,
-      pruebaTxt, duracionS, citaPT,
+      pruebaTxt: r.pruebaTxt, duracionS: r.duracionS, citaPT: r.citaPT,
     });
 
-    const nombreLabel = disTipo === 'compuerta' ? `Compuerta NPS ${disNPS}" Clase ${disClase}`
-                      : disTipo === 'bola'      ? `Bola NPS ${disNPS}" Clase ${disClase}`
-                      : disTipo === 'mariposa'  ? `Mariposa NPS ${disNPS}" Clase ${disClase}`
-                      : disTipo === 'retencion' ? `Retencion NPS ${disNPS}" Clase ${disClase}`
-                      : disTipo === 'tapon'     ? `Tapon NPS ${disNPS}" Clase ${disClase}`
-                      :                           `Globo NPS ${disNPS}" Clase ${disClase}`;
-
     const payload: DatosExportar = {
-      tipo: tipoKey,
-      normativa,
-      parametros: {
-        'NPS (pulg)': disNPS,
-        'Clase de presion': disClase,
-        'Tipo valvula': disTipo,
-        ...(disTipo === 'mariposa'  ? { 'Estilo': disEstilo } : {}),
-        ...(disTipo === 'retencion' ? { 'Subtipo': disSubtipo } : {}),
-        ...(disTipo === 'tapon'     ? { 'Patron': disPatron } : {}),
-        'Proyecto': disProyecto || 'Sin nombre',
-        'F2F ASME B16.10 (mm)': f2f_mm ?? 'Consultar fabricante',
-      },
-      resultado: {
-        'F2F ASME B16.10 resultado (mm)': f2f_mm ?? 'Consultar fabricante',
-        ...(disTipo === 'mariposa' ? { 'Diametro disco (mm)': Math.round(parseFloat(disNPS) * 25.4 * 10) / 10 } : {}),
-        'OD (mm)':   fd ? Math.round(fd.OD   * 25.4 * 10) / 10 : 0,
-        'BC (mm)':   fd ? Math.round(fd.BC   * 25.4 * 10) / 10 : 0,
-        'Bore (mm)': fd ? Math.round(fd.bore * 25.4 * 10) / 10 : 0,
-        'Numero de pernos': fd ? fd.n : 0,
-        'Material cuerpo': `ASTM ${disMaterial}`,
-        'Prueba hidrostatica carcasa B16.34 §7.1.1 (bar)': pruebaBar ?? `No disponible (${pruebaTxt.replace(/^no disponible — /, '')})`,
-        ...(citaPT ? { 'Fuente tabla P-T': citaPT } : {}),
-        'Duracion minima prueba B16.34 §7.1.2 (s)': duracionS ?? 'No disponible',
-      },
-      // dxfParams: incluye claves en inglés (para exportarDXFValvulas / globo)
-      // Y claves en español (para exportarDXFBola / Mariposa / Retencion / Tapon)
-      dxfParams: {
-        // Claves Spanish — leídas por exportarDXFBola, exportarDXFMariposa, etc.
-        'NPS (pulg)':        disNPS,
-        'Clase de presion':  disClase,
-        'Proyecto':          disProyecto || 'Sin nombre',
-        'F2F ASME B16.10 (mm)': f2f_mm ?? 'Consultar fabricante',
-        ...(disTipo === 'mariposa'  ? { 'Estilo': disEstilo }   : {}),
-        ...(disTipo === 'retencion' ? { 'Subtipo': disSubtipo } : {}),
-        ...(disTipo === 'tapon'     ? { 'Patron': disPatron }   : {}),
-        // Claves TypeScript interface — leídas por exportarDXFValvulas (globo)
-        DN:       dnMm,
-        nps:      disNPS,
-        tipo:     tipoCode,
-        nombre:   nombreLabel,
-        clase:    disClase,
-        // Rating a 38 °C del material elegido (MPa). Sin P_op: esta pestaña no
-        // pide presión de operación (antes se inventaba 0,7 × P_max y un ESTADO).
-        ...(rating38Bar !== null ? { P_max: rating38Bar / 10 } : {}),
-        ...(pruebaBar !== null ? { P_prueba_bar: pruebaBar } : {}),
-        ...(duracionS !== null ? { duracion_prueba_s: duracionS } : {}),
-        norma:    citaPT ? `${normativa} | ${citaPT}` : normativa,
-        f2f_mm:   f2f_mm ?? undefined,
-        material: `ASTM ${disMaterial}`,
-        proyecto: disProyecto || undefined,
-      },
+      tipo: r.tipo,
+      normativa: r.normativa,
+      parametros: r.parametros,
+      resultado: r.resultado,
+      dxfParams: r.dxfParams,
     };
     setDatosDis(payload);
     publicarResultado(payload);
@@ -936,7 +694,6 @@ export default function ModuloValvulas() {
             const fd = resBr.fd!;
             const OD_mm  = Math.round(fd.OD  * 25.4 * 10) / 10;
             const BC_mm  = Math.round(fd.BC  * 25.4 * 10) / 10;
-            const bore_mm= Math.round(fd.bore * 25.4 * 10) / 10;
             const db_mm  = Math.round(fd.db  * 25.4 * 10) / 10;
             const bh_mm  = Math.round((fd.db + 0.125) * 25.4 * 10) / 10;
             const f2f    = resBr.f2f_mm;
@@ -948,7 +705,6 @@ export default function ModuloValvulas() {
                   {[
                     { l: 'Diámetro exterior OD', v: `${OD_mm} mm`,  s: `${fd.OD}" pulgadas` },
                     { l: 'Círculo de pernos BC', v: `${BC_mm} mm`,  s: `${fd.BC}" pulgadas` },
-                    { l: 'Diámetro interior bore', v: `${bore_mm} mm`, s: `${fd.bore}" pulgadas` },
                     { l: 'N° de pernos', v: `${fd.n} pernos`, s: 'equiespaciados' },
                     { l: 'Diámetro perno', v: `${db_mm} mm`, s: `${fd.db}" (UNC)` },
                     { l: 'Agujero perno (db+1/8")', v: `${bh_mm} mm`, s: 'per ASME B16.5' },
@@ -981,7 +737,6 @@ export default function ModuloValvulas() {
                     const scale = 160 / (fd.OD * 25.4 / 2 + 20);
                     const R_od   = fd.OD  * 25.4 / 2 * scale;
                     const R_bc   = fd.BC  * 25.4 / 2 * scale;
-                    const R_bore = fd.bore * 25.4 / 2 * scale;
                     const r_bh   = (fd.db * 25.4 / 2 + 1.5875) * scale;
                     const cx = 180, cy = 180, svgSize = 360;
                     const boltPoints: { x: number; y: number }[] = [];
@@ -993,13 +748,11 @@ export default function ModuloValvulas() {
                       <svg width={svgSize} height={svgSize} style={{ background: '#0a0f1e', borderRadius: 12, border: '1px solid rgba(13,148,136,0.2)' }}>
                         <circle cx={cx} cy={cy} r={R_od}   fill="none" stroke={COLOR}    strokeWidth={2} />
                         <circle cx={cx} cy={cy} r={R_bc}   fill="none" stroke="#475569"  strokeWidth={1} strokeDasharray="4 3" />
-                        <circle cx={cx} cy={cy} r={R_bore} fill="none" stroke="#3b82f6"  strokeWidth={1.5} />
                         {boltPoints.map((p, i) => <circle key={i} cx={p.x} cy={p.y} r={r_bh} fill="none" stroke="#ef4444" strokeWidth={1.5} />)}
                         <line x1={cx - R_od - 8} y1={cy} x2={cx + R_od + 8} y2={cy} stroke="#1e293b" strokeWidth={1} />
                         <line x1={cx} y1={cy - R_od - 8} x2={cx} y2={cy + R_od + 8} stroke="#1e293b" strokeWidth={1} />
                         <text x={cx + 4} y={cy - R_od  + 12} fill={COLOR}    fontSize={8}>OD={OD_mm}mm</text>
                         <text x={cx + 4} y={cy - R_bc  + 12} fill="#475569"  fontSize={7}>BC={BC_mm}mm</text>
-                        <text x={cx + 4} y={cy - R_bore + 12} fill="#3b82f6" fontSize={7}>Bore={bore_mm}mm</text>
                         <text x={cx - R_od + 4} y={cy + R_od + 16} fill="#f1f5f9" fontSize={8}>NPS {resBr.nps}" Class {resBr.clase} — ASME B16.5</text>
                       </svg>
                     );
@@ -1141,7 +894,6 @@ export default function ModuloValvulas() {
                              :                       'ASME B16.34 + B16.10';
             const OD_mm   = fd ? Math.round(fd.OD   * 25.4 * 10) / 10 : null;
             const BC_mm   = fd ? Math.round(fd.BC   * 25.4 * 10) / 10 : null;
-            const bore_mm = fd ? Math.round(fd.bore * 25.4 * 10) / 10 : null;
             const db_mm   = fd ? Math.round(fd.db   * 25.4 * 10) / 10 : null;
             const bh_mm   = fd ? Math.round((fd.db + 0.125) * 25.4 * 10) / 10 : null;
             const capaLabel = tipo === 'bola'      ? 'ESFERA'
@@ -1150,7 +902,6 @@ export default function ModuloValvulas() {
                             : tipo === 'retencion' ? 'CLAPETA'
                             : tipo === 'tapon'     ? 'TAPON_CONICO'
                             :                       '—';
-            const disc_d_mm = tipo === 'mariposa' ? Math.round(parseFloat(nps) * 25.4 * 10) / 10 : null;
 
             return (
               <ResBox>
@@ -1160,16 +911,10 @@ export default function ModuloValvulas() {
                   <Card label={`Duración mínima de la prueba — B16.34 §7.1.2 (NPS ${nps}")`} val={resDis.duracionS !== null ? `${resDis.duracionS} s` : 'No disponible'} sub="NPS ≤2: 15 s · 2½–6: 60 s · 8–12: 120 s · ≥14: 300 s" />
                 </div>
 
-                {/* Diámetro disco para mariposa */}
+                {/* Mariposa: sin diámetro de disco (NPS × 25,4 no tiene fuente normativa) */}
                 {tipo === 'mariposa' && (
-                  <div style={{ background: '#0a0f1e', borderRadius: 10, padding: 16, marginBottom: 14 }}>
-                    <div style={{ fontSize: 9, color: '#475569', textTransform: 'uppercase' as const, marginBottom: 6, letterSpacing: 0.4 }}>Diámetro disco (NPS × 25.4)</div>
-                    <div style={{ fontSize: 22, fontWeight: 800, color: COLOR }}>{disc_d_mm} mm
-                      <span style={{ fontSize: 13, color: '#475569', fontWeight: 400, marginLeft: 12 }}>({nps}" = {disc_d_mm} mm)</span>
-                    </div>
-                    <div style={{ fontSize: 11, color: '#475569', marginTop: 6 }}>
-                      Estilo: <strong style={{ color: '#f1f5f9' }}>{disEstilo}</strong> · Apertura 1/4 vuelta · API 609 / MSS SP-67 · DXF disponible con capa EJE.
-                    </div>
+                  <div style={{ fontSize: 11, color: '#475569', marginBottom: 14 }}>
+                    Estilo: <strong style={{ color: '#f1f5f9' }}>{disEstilo}</strong> · Apertura 1/4 vuelta · API 609 / MSS SP-67 · Diámetro de disco: dato del fabricante.
                   </div>
                 )}
 
@@ -1190,7 +935,7 @@ export default function ModuloValvulas() {
                       </div>
                     )}
                     {!f2f_mm && tipo === 'globo' && <div style={{ fontSize: 11, color: '#475569', marginTop: 6 }}>F2F para Globo varía por modelo (short/long pattern). Consultar ASME B16.10 con el fabricante.</div>}
-                    {f2f_mm && tipo === 'bola' && <div style={{ fontSize: 11, color: '#475569', marginTop: 6 }}>Long Pattern · Full Bore · API 6D · DXF disponible con capa ESFERA.</div>}
+                    {f2f_mm && tipo === 'bola' && <div style={{ fontSize: 11, color: '#475569', marginTop: 6 }}>Long Pattern · API 6D · DXF disponible con capa ESFERA.</div>}
                     {f2f_mm && tipo === 'compuerta' && <div style={{ fontSize: 11, color: '#475569', marginTop: 6 }}>Raised face · DXF disponible con capa CUÑA (compuerta).</div>}
                   </div>
                 )}
@@ -1257,7 +1002,7 @@ export default function ModuloValvulas() {
                           Consultar fabricante — dato no disponible en tabla estándar
                         </div>
                         <div style={{ fontSize: 11, color: '#475569', marginTop: 4 }}>
-                          F2F para Class {clase} NPS {nps}" no disponible en tabla embebida. Solo Class 600 y Class 900 (NPS 8–12) verificadas.
+                          F2F no disponible – requiere tabla verificada: la tabla anterior no distinguía los patrones Regular / Venturi / Short.
                         </div>
                       </>
                     )}
@@ -1270,7 +1015,6 @@ export default function ModuloValvulas() {
                     {([
                       { l: 'OD exterior brida', v: `${OD_mm} mm`, s: `${fd.OD}" pulgadas` },
                       { l: 'Círculo de pernos BC', v: `${BC_mm} mm`, s: `${fd.BC}" pulgadas` },
-                      { l: 'Bore interior', v: `${bore_mm} mm`, s: `${fd.bore}" pulgadas` },
                       { l: 'N° de pernos', v: `${fd.n}`, s: 'equiespaciados' },
                       { l: 'Diámetro perno', v: `${db_mm} mm`, s: `${fd.db}"` },
                       { l: 'Agujero perno (db+1/8")', v: `${bh_mm} mm`, s: 'ASME B16.5' },
@@ -1294,20 +1038,20 @@ export default function ModuloValvulas() {
                 )}
 
                 {tipo === 'mariposa'
-                  ? <Info t="DXF disponible: 4 capas (CUERPO · EJE · BRIDA · ANOTACIONES). Disco circular diámetro = NPS en mm. Plano esquemático — validar con fabricante." />
+                  ? <Info t="DXF disponible: 4 capas (CUERPO · EJE · BRIDA · ANOTACIONES). Disco y cuerpo: solo forma, sin cota. Plano esquemático — validar con fabricante." />
                   : tipo === 'retencion'
                     ? (f2f_mm
                       ? <Info t={`DXF disponible: 4 capas (CUERPO · CLAPETA · BRIDA · ANOTACIONES). Subtipo: ${subtipo ?? 'Swing'}. Plano esquemático — validar con fabricante antes de mecanizar.`} />
-                      : <Warn t="⚠️ F2F no disponible en tabla embebida — DXF no generado. Consultar fabricante." />
+                      : <Warn t="⚠️ F2F no disponible – requiere tabla verificada. El DXF se genera como hoja de datos, sin cota de F2F." />
                     )
                   : tipo === 'tapon'
                     ? (f2f_mm
                       ? <Info t={`DXF disponible: 4 capas (CUERPO · TAPON_CONICO · BRIDA · ANOTACIONES). Patrón: ${subtipo ?? 'Regular'}. Plano esquemático — validar con fabricante antes de mecanizar.`} />
-                      : <Warn t="⚠️ F2F no disponible en tabla embebida — DXF no generado. Consultar fabricante." />
+                      : <Warn t="⚠️ F2F no disponible – requiere tabla verificada. El DXF se genera como hoja de datos, sin cota de F2F." />
                     )
                     : (f2f_mm
                       ? <Info t={`DXF disponible: 4 capas (CUERPO · ${capaLabel} · BRIDA · ANOTACIONES). Plano esquemático — validar con fabricante antes de mecanizar.`} />
-                      : <Warn t="⚠️ F2F no disponible en tabla embebida — DXF no generado. Consultar fabricante." />
+                      : <Warn t="⚠️ F2F no disponible – requiere tabla verificada. El DXF se genera como hoja de datos, sin cota de F2F." />
                     )
                 }
                 <Warn t="⚠️ Plano esquemático de referencia — requiere validación de fabricante antes de mecanizar. Normativa: ASME B16.34 · B16.10 · B16.5 · API 6D / API 609 / API 594 / MSS SP-78." />
