@@ -13,10 +13,10 @@ import {
   calcMotorTrifasico, calcTransformadorElect,
   calcEspesorParedCaneria, calcHoopStressBarlow, calcVidaRemanente,
 } from '../calculos';
-import { exportarDXFCoeficienteCv, exportarDXFValvulas, exportarDXFSeleccionMaterial } from '../exportarDXF';
+import { exportarDXFCoeficienteCv, exportarDXFValvulas, exportarDXFSeleccionMaterial, exportarDXFClaseB1634 } from '../exportarDXF';
 import { tituloModuloPDF } from '../tipos-calculo';
 import {
-  ratingB1634, calcPruebaHidrostaticaB1634, duracionPruebaB1634, PT_CF8M,
+  ratingB1634, calcPruebaHidrostaticaB1634, duracionPruebaB1634, PT_CF8M, dnDesdeNPS,
 } from '../valvulasB1634';
 
 // ════════════════════════════════════════════════════════════════
@@ -739,6 +739,69 @@ describe('duracionPruebaB1634 — §7.1.2', () => {
   it('entrada inválida → null', () => {
     expect(duracionPruebaB1634(0)).toBeNull();
     expect(duracionPruebaB1634(NaN)).toBeNull();
+  });
+});
+
+describe('dnDesdeNPS — ASME B36.10 / ISO 6708', () => {
+  it('NPS 4 → DN 100 · NPS 2½ → DN 65 · NPS 24 → DN 600', () => {
+    expect(dnDesdeNPS(4)).toBe(100);
+    expect(dnDesdeNPS('2.5')).toBe(65);
+    expect(dnDesdeNPS('24')).toBe(600);
+  });
+
+  it('tabla completa, sin NPS × 25,4', () => {
+    const esperado: [string, number][] = [
+      ['0.5', 15], ['0.75', 20], ['1', 25], ['1.25', 32], ['1.5', 40], ['2', 50], ['2.5', 65],
+      ['3', 80], ['4', 100], ['5', 125], ['6', 150], ['8', 200], ['10', 250], ['12', 300],
+      ['14', 350], ['16', 400], ['18', 450], ['20', 500], ['24', 600],
+    ];
+    for (const [nps, dn] of esperado) expect(dnDesdeNPS(nps), nps).toBe(dn);
+  });
+
+  it('NPS 22 a 36 (retención y tapón clase 600)', () => {
+    const esperado: [string, number][] = [
+      ['22', 550], ['26', 650], ['28', 700], ['30', 750], ['32', 800], ['34', 850], ['36', 900],
+    ];
+    for (const [nps, dn] of esperado) expect(dnDesdeNPS(nps), nps).toBe(dn);
+  });
+
+  it('NPS fuera de la tabla → null (error, no fórmula)', () => {
+    expect(dnDesdeNPS('7')).toBeNull();
+    expect(dnDesdeNPS('38')).toBeNull();
+    expect(dnDesdeNPS('abc')).toBeNull();
+  });
+});
+
+describe('exportarDXFClaseB1634 — hoja de datos sin geometría', () => {
+  const dxf = exportarDXFClaseB1634({
+    clase: '300', material: 'ASTM A351 CF8M', grupo: 'Grupo 2.2', nps: '4', dn: 100,
+    T_C: 150, P_op_bar: 30, rating_bar: 35.7,
+    nota_rating: 'Rating tomado de 200 °C (fila verificada superior, criterio conservador)',
+    prueba_bar: 75, duracion_s: 60, cita: 'ASME B16.34-2020, Tabla 2-2.2 (Standard Class)',
+  });
+
+  it('muestra clase, material, grupo, NPS/DN, rating con nota, prueba, duración y cita', () => {
+    expect(dxf).toContain('Clase minima requerida: Class 300');
+    expect(dxf).toContain('Material: ASTM A351 CF8M (Grupo 2.2)');
+    expect(dxf).toContain('NPS 4"  /  DN 100');
+    expect(dxf).toContain('Rating aplicado a 150.0 C = 35.7 bar (3.57 MPa)');
+    expect(dxf).toContain('(Rating tomado de 200 °C (fila verificada superior, criterio conservador))');
+    expect(dxf).toContain('Prueba hidrostatica de carcasa (B16.34 7.1.1) = 75 bar (7.50 MPa)');
+    expect(dxf).toContain('Duracion minima de la prueba (B16.34 7.1.2) = 60 s');
+    expect(dxf).toContain('ASME B16.34-2020, Tabla 2-2.2 (Standard Class)');
+  });
+
+  it('sin cuerpo dibujado, F2F ni tolerancias', () => {
+    expect(dxf).not.toMatch(/CIRCLE|ESFERA|F2F|Tol bore|H7|H8|ESTADO/);
+    expect(dxf.split(/\r?\n/).some(l => l.trim() === 'ARC')).toBe(false);
+  });
+});
+
+describe('exportarDXFValvulas (Diseño-globo) — NPS con DN normalizado', () => {
+  it('muestra el NPS elegido, no DN/25,4', () => {
+    const dxf = exportarDXFValvulas({ DN: 100, nps: '4', tipo: 'gl', nombre: 'Globo NPS 4" Clase 300', clase: '300', norma: 'n' });
+    expect(dxf).toContain('DN 100 mm (NPS 4")');
+    expect(dxf).not.toContain('NPS 3.9');
   });
 });
 

@@ -242,7 +242,7 @@ export default function BotonesExportar({ datos, visible }: Props) {
         MORTERO_MMO:                 mod.exportarDXFMMOReal,
         RENDIMIENTO_MMO:             mod.exportarDXFMMOReal,
         // Válvulas
-        VALVULAS_CLASE_B16_34:       mod.exportarDXFValvulas,
+        VALVULAS_CLASE_B16_34:       mod.exportarDXFClaseB1634,
         VALVULAS_MATERIAL_NACE:      mod.exportarDXFSeleccionMaterial,
         VALVULAS_BRIDA_B16_5:        mod.exportarDXFBridaB165,
         VALVULAS_DISENO_BOLA:        mod.exportarDXFBola,

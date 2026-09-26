@@ -794,7 +794,7 @@ IRAM 11601:2002 §4.2: Relación ventana/pared (RVP) recomendada 15-40% para ilu
 ASHRAE 90.1-2022 §9: Potencia instalada de iluminación máxima (LPD) por tipo y uso de local.`,
 
   VALVULAS_CLASE_B16_34: `NORMATIVAS APLICABLES — VERIFICADAS:
-ASME B16.34-2017 Tabla 2: Ratings presión-temperatura por clase y material — Clase 150 a 4500.
+ASME B16.34 Tabla 2: Ratings presión-temperatura por clase y material — Clase 150 a 4500.
 API 6D-2021 §5.3: Temperatura máxima de operación por material de cuerpo de válvula.
 ASME B16.34 §7.1.1: Prueba hidrostática de carcasa = 1,5 × rating a 38 °C de la clase y material, redondeado al bar entero superior.
 ASME B16.34 §7.1.2: Duración mínima de la prueba según NPS — NPS ≤ 2: 15 s; 2½ a 6: 60 s; 8 a 12: 120 s; ≥ 14: 300 s.
@@ -815,7 +815,7 @@ API 6D-2021 §6.1.1: Extremos con brida — requisitos geométricos y rugosidad 
   VALVULAS_DISENO_BOLA: `NORMATIVAS APLICABLES — VERIFICADAS:
 API 6D-2021 §5.1: Válvulas de bola para tuberías de transmisión — diseño, materiales y pruebas.
 ASME B16.10-2022: Face-to-face y end-to-end — dimensiones para intercambiabilidad Clase 150-2500.
-ASME B16.34-2017: Pressure-temperature ratings cuerpo — base de selección de clase de presión.
+ASME B16.34: Pressure-temperature ratings cuerpo — base de selección de clase de presión.
 ISO 17292:2015: Válvulas bola metal-metal para refinerías y petroquímica — requisitos de diseño.`,
 
   VALVULAS_DISENO_MARIPOSA: `NORMATIVAS APLICABLES — VERIFICADAS:
@@ -833,12 +833,12 @@ ASME B16.34-2017 §7.4: Prueba de asiento retención — fuga máxima permitida 
   VALVULAS_DISENO_TAPON: `NORMATIVAS APLICABLES — VERIFICADAS:
 MSS SP-78-2019: Válvulas tapón lubricadas de hierro fundido — diseño y pruebas de fábrica.
 ASME B16.10-2022: Face-to-face válvulas tapón — dimensiones de intercambiabilidad por clase.
-ASME B16.34-2017: Pressure-temperature ratings materiales cuerpo tapón — base de selección.
+ASME B16.34: Pressure-temperature ratings materiales cuerpo tapón — base de selección.
 API 6D-2021 §5.6: Válvulas tapón para tuberías de transmisión — requisitos adicionales de diseño.`,
 
   VALVULAS_DISENO_GLOBO: `NORMATIVAS APLICABLES — VERIFICADAS:
 ASME B16.10-2022: Face-to-face válvulas globo — Clase 150 a 4500, NPS 1/2 a 24 pulgadas.
-ASME B16.34-2017: Pressure-temperature ratings cuerpo globo — acero carbono e inoxidable.
+ASME B16.34: Pressure-temperature ratings cuerpo globo — acero carbono e inoxidable.
 API 623-2013: Válvulas globo de acero para servicio general — diseño, materiales y pruebas.
 MSS SP-85-2002: Válvulas globo hierro fundido — requisitos de diseño y prueba de asiento.`,
 

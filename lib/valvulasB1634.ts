@@ -100,6 +100,22 @@ export function duracionPruebaB1634(NPS: number): number | null {
   return 300;
 }
 
+// ─── DN normalizado a partir del NPS — ASME B36.10 / ISO 6708 ────
+// Tabla fija (no NPS × 25,4: el DN es una designación, no una medida).
+// NPS fuera de la tabla → null (el llamador informa el error).
+const DN_POR_NPS: Record<string, number> = {
+  '0.5': 15, '0.75': 20, '1': 25, '1.25': 32, '1.5': 40, '2': 50, '2.5': 65,
+  '3': 80, '4': 100, '5': 125, '6': 150, '8': 200, '10': 250, '12': 300,
+  '14': 350, '16': 400, '18': 450, '20': 500, '22': 550, '24': 600,
+  '26': 650, '28': 700, '30': 750, '32': 800, '34': 850, '36': 900,
+};
+
+export function dnDesdeNPS(nps: string | number): number | null {
+  const n = typeof nps === 'number' ? nps : parseFloat(nps);
+  if (!Number.isFinite(n)) return null;
+  return DN_POR_NPS[String(n)] ?? null;
+}
+
 // NPS normalizados para el selector de la pestaña Clase
 export const NPS_NORMALIZADOS = [
   '0.5', '0.75', '1', '1.25', '1.5', '2', '2.5', '3', '4', '6', '8', '10',

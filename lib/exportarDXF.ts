@@ -132,6 +132,7 @@ export interface ParamsTuberias {
   
   export interface ParamsValvulas {
     DN: number;        // Diámetro nominal (mm)
+    nps?: string;      // NPS (pulg) tal como lo eligió el usuario
     tipo: string;      // 'bt'|'bf'|'mp'|'cg'|'kn'|'gl'|'ch'|'wh'
     nombre: string;    // Nombre válvula
     clase: string;     // Clase ASME
@@ -1173,7 +1174,8 @@ export interface ParamsTuberias {
     }
 
     // Cota DN — diámetro nominal con NPS equivalente
-    const npsRef = (p.DN / 25.4).toFixed(1);
+    // NPS informado por el llamador (DN normalizado ≠ NPS × 25,4); si falta, se estima
+    const npsRef = p.nps ?? (p.DN / 25.4).toFixed(1);
     ents.push(_texto(cx - 10, cy - r - 12, 3.5, `DN ${Math.round(p.DN)} mm (NPS ${npsRef}")`, 'COTAS', 2));
 
     // ── FACE-TO-FACE — tabla ASME B16.10 real por tipo y clase ──
@@ -1301,6 +1303,64 @@ export interface ParamsTuberias {
     const yTitulo = Math.min(-60, yEntr - 8 - p.entradas.length * 6 - 14);
     ents.push(_bloqueTitle('VALVULAS — SELECCION DE MATERIAL', p.norma,
       p.proyecto || '', p.ingeniero || '', fecha, 0, yTitulo, _usrData(p)));
+
+    return [_cabecera(), ...ents, _pie()].join('\n');
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  //  VÁLVULAS — CLASE DE PRESIÓN B16.34 (hoja de datos, sin geometría)
+  //  La pestaña Clase no pregunta el tipo de válvula: no se dibuja cuerpo,
+  //  F2F ni tolerancias (antes: bola fija, F2F "ref" = DN × 2,0 y bore H7/H8).
+  // ═══════════════════════════════════════════════════════════
+  export interface ParamsClaseB1634 {
+    clase: string;
+    material: string;              // ej. "ASTM A351 CF8M"
+    grupo: string;                 // ej. "Grupo 2.2"
+    nps: string;
+    dn: number;                    // DN normalizado (ASME B36.10 / ISO 6708)
+    T_C: number;                   // temperatura de operación ingresada
+    P_op_bar: number;              // presión de operación ingresada
+    rating_bar: number;            // rating aplicado
+    nota_rating?: string;          // fila verificada superior (CF8M)
+    prueba_bar?: number;           // B16.34 §7.1.1
+    duracion_s?: number;           // B16.34 §7.1.2
+    cita: string;                  // tabla P-T usada, con su edición
+    proyecto?: string;
+    ingeniero?: string;
+    fecha?: string;
+  }
+
+  export function exportarDXFClaseB1634(p: ParamsClaseB1634): string {
+    const ents: string[] = [];
+    const fecha = p.fecha || new Date().toLocaleDateString('es-AR');
+    const n1 = (x: number) => parseFloat(x.toFixed(1)).toFixed(1);
+    const n2 = (x: number) => parseFloat(x.toFixed(2)).toFixed(2);
+
+    const lineas: [string, number, number][] = [   // [texto, altura, color]
+      ['CLASE DE PRESION — ASME B16.34', 5, 7],
+      [p.cita, 3.5, 3],
+      ['RESULTADO', 4, 2],
+      [`Clase minima requerida: Class ${p.clase}`, 4.5, 2],
+      [`Material: ${p.material} (${p.grupo})`, 3.5, 3],
+      [`NPS ${p.nps}"  /  DN ${p.dn}`, 3.5, 3],
+      [`Rating aplicado a ${n1(p.T_C)} C = ${n1(p.rating_bar)} bar (${n2(p.rating_bar / 10)} MPa)`, 3.5, 3],
+      ...(p.nota_rating ? [[`(${p.nota_rating})`, 3, 3] as [string, number, number]] : []),
+      ...(p.prueba_bar ? [[`Prueba hidrostatica de carcasa (B16.34 7.1.1) = ${p.prueba_bar} bar (${n2(p.prueba_bar / 10)} MPa)`, 3.5, 3] as [string, number, number]] : []),
+      ...(p.duracion_s ? [[`Duracion minima de la prueba (B16.34 7.1.2) = ${p.duracion_s} s`, 3.5, 3] as [string, number, number]] : []),
+      ['DATOS INGRESADOS', 4, 2],
+      [`Presion de operacion: ${n1(p.P_op_bar)} bar`, 3.5, 3],
+      [`Temperatura de operacion: ${n1(p.T_C)} C`, 3.5, 3],
+      [`Material: ${p.material}  ·  NPS ${p.nps}"`, 3.5, 3],
+    ];
+    let y = 150;
+    for (const [txt, h, c] of lineas) {
+      if (txt === 'RESULTADO' || txt === 'DATOS INGRESADOS') y -= 4;
+      ents.push(_texto(0, y, h, txt, txt === lineas[0][0] ? 'TITULO' : 'DATOS', c));
+      y -= h + 3;
+    }
+
+    ents.push(_bloqueTitle(`VALVULAS — CLASE ${p.clase} B16.34`, p.cita,
+      p.proyecto || '', p.ingeniero || '', fecha, 0, Math.min(-60, y - 14), _usrData(p)));
 
     return [_cabecera(), ...ents, _pie()].join('\n');
   }

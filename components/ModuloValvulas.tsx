@@ -7,7 +7,7 @@ import {
   type ResultadoCvLiquido,
 } from '@/lib/calculos';
 import {
-  ratingB1634, calcPruebaHidrostaticaB1634, duracionPruebaB1634,
+  ratingB1634, calcPruebaHidrostaticaB1634, duracionPruebaB1634, dnDesdeNPS,
   CLASES_B1634, NPS_NORMALIZADOS, T_MAX_TABLA,
 } from '@/lib/valvulasB1634';
 
@@ -310,6 +310,8 @@ export default function ModuloValvulas() {
     const P = parseFloat(clP), T = parseFloat(clT), nps = parseFloat(clNPS);
     if (!Number.isFinite(P) || P <= 0 || !Number.isFinite(T) || T < -29) { setErr('Valores inválidos'); return; }
     if (!Number.isFinite(nps) || nps <= 0) { setErr('Seleccioná el NPS de la válvula.'); return; }
+    const dn = dnDesdeNPS(clNPS);
+    if (dn === null) { setErr(`NPS ${clNPS}" fuera de la tabla de DN normalizados (ASME B36.10 / ISO 6708).`); return; }
     const maxTempMat = T_MAX_TABLA[clMat];
     if (T > maxTempMat) { setErr(`Fuera de rango de la tabla: máximo ${maxTempMat} °C para ${clMat}.`); return; }
 
@@ -363,6 +365,7 @@ export default function ModuloValvulas() {
         'Temperatura operacion (C)': clT,
         'Material cuerpo': clMat,
         'NPS (pulg)': clNPS,
+        'DN': dn,
       },
       resultado: {
         'Clase minima requerida': claseReq,
@@ -376,19 +379,18 @@ export default function ModuloValvulas() {
       },
       nivel:  margenPct >= 10 ? 'OK' : 'ALTO',
       alerta: margenPct < 10,
+      // Hoja de datos (exportarDXFClaseB1634): sin cuerpo dibujado, F2F ni
+      // tolerancias — la pestaña no pregunta el tipo de válvula.
       dxfParams: {
-        DN:    nps * 25.4,   // NPS ingresado (antes DN 100 fijo)
-        tipo:  'bt',
-        nombre: `Valvula Clase ${claseReq}`,
         clase: claseReq,
-        // El DXF espera MPa; Prating y clP están en bar
-        P_max: Prating / 10,
-        P_op:  P / 10,
-        ...(pruebaBar !== null ? { P_prueba_bar: pruebaBar } : {}),
-        ...(duracionS !== null ? { duracion_prueba_s: duracionS } : {}),
+        material: clMat === 'WCB' ? 'ASTM A216 WCB' : 'ASTM A351 CF8M',
+        grupo: clMat === 'WCB' ? 'Grupo 1.1' : 'Grupo 2.2',
+        nps: clNPS, dn,
+        T_C: T, P_op_bar: P, rating_bar: Prating,
         ...(notaFila ? { nota_rating: notaFila } : {}),
-        norma: cita,
-        material: clMat === 'WCB' ? 'ASTM A216 WCB (Grupo 1.1)' : 'ASTM A351 CF8M (Grupo 2.2)',
+        ...(pruebaBar !== null ? { prueba_bar: pruebaBar } : {}),
+        ...(duracionS !== null ? { duracion_s: duracionS } : {}),
+        cita,
       },
     };
     setDatosClase(payloadClase);
@@ -547,8 +549,9 @@ export default function ModuloValvulas() {
                     : disTipo === 'tapon'     ? 'ASME B16.10-2022 + MSS SP-78'
                     :                          'ASME B16.34 + ASME B16.10-2018';
 
-    // DN real en mm a partir de NPS en pulgadas (ASME B36.10M)
-    const dnMm = Math.round(parseFloat(disNPS) * 25.4 * 10) / 10;
+    // DN normalizado (ASME B36.10 / ISO 6708) — tabla fija, no NPS × 25,4
+    const dnMm = dnDesdeNPS(disNPS);
+    if (dnMm === null) { setErr(`NPS ${disNPS}" fuera de la tabla de DN normalizados (ASME B36.10 / ISO 6708).`); return; }
     // Rating a 38 °C según el material elegido (lib/valvulasB1634). Antes se
     // usaba una copia de la fila de WCB para cualquier material.
     // Solo WCB (Grupo 1.1) y CF8M (Grupo 2.2) tienen tabla P-T en el módulo.
@@ -620,6 +623,7 @@ export default function ModuloValvulas() {
         ...(disTipo === 'tapon'     ? { 'Patron': disPatron }   : {}),
         // Claves TypeScript interface — leídas por exportarDXFValvulas (globo)
         DN:       dnMm,
+        nps:      disNPS,
         tipo:     tipoCode,
         nombre:   nombreLabel,
         clase:    disClase,
