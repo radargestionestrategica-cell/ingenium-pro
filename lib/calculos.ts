@@ -760,18 +760,70 @@ export function calcEspesorParedCaneria(
   return { t_min_mm, t_dis_mm };
 }
 
-// sigma_h en MPa, allow en MPa
-export function calcHoopStressBarlow(
-  D_mm: number, t_mm: number, P_bar: number,
-  SMYS_MPa: number, F = 0.72, E = 1.0, T = 1.0,
-) {
-  if (D_mm <= 0 || t_mm <= 0 || P_bar <= 0 || SMYS_MPa <= 0) return null;
-  const P_MPa   = P_bar / 10;
-  const sigma_h = (P_MPa * D_mm) / (2 * t_mm);
-  const allow   = SMYS_MPa * F * E * T;
-  const ok      = sigma_h <= allow;
-  const ratio   = +(sigma_h / allow * 100).toFixed(1);
-  return { sigma_h: +sigma_h.toFixed(2), allow: +allow.toFixed(2), ok, ratio };
+// ── HOOP STRESS — Barlow · ASME B31.8 §841.1.1 ────────────────────
+// Fuente única del hoop stress (la usa components/ModuloCanerias.tsx).
+//   σ_h = P·D / (2·t)          admisible = SMYS · F · E · T
+// Cálculo nativo en psi / pulgadas (igual que la pestaña): la entrada llega en
+// mm y bar, se convierte una sola vez y solo el resultado se pasa a MPa.
+// T sale siempre de factorTempB318(T °C) — no se acepta un factor ya calculado.
+export const F_HOOP_RANGO = { min: 0.40, max: 0.80 } as const;   // B31.8 Tabla 841.1.6-1
+export const E_HOOP_RANGO = { min: 0.60, max: 1.00 } as const;   // B31.8 Tabla 841.1.7-1
+const PSI_POR_BAR_HOOP = 14.5038;
+const MPA_POR_PSI_HOOP = 0.006895;
+
+export interface EntradaHoop {
+  D_mm: number; t_mm: number; P_bar: number; TempC: number;
+  SMYS_psi: number; F: number; E: number;
+}
+
+export type ResultadoHoop =
+  | { ok: false; error: string }
+  | {
+      ok: true;
+      sigma_h_psi: number; allow_psi: number;        // sin redondear
+      sigma_h_mpa: number; allow_mpa: number;        // 0,1 MPa
+      uso_pct: number;                               // 0,1 %
+      cumple: boolean;                               // σ_h ≤ admisible
+      T_factor: number;                              // 3 decimales
+    };
+
+export function calcHoopStressBarlow(e: EntradaHoop): ResultadoHoop {
+  const { D_mm, t_mm, P_bar, TempC, SMYS_psi, F, E } = e;
+  if (![D_mm, t_mm, P_bar, TempC, SMYS_psi, F, E].every(Number.isFinite))
+    return { ok: false, error: 'Valores inválidos' };
+  // T °C no entra en el chequeo "> 0": 0 °C o bajo cero son temperaturas válidas.
+  if (D_mm <= 0 || t_mm <= 0 || P_bar <= 0 || SMYS_psi <= 0)
+    return { ok: false, error: 'Valores inválidos' };
+  if (t_mm >= D_mm / 2)
+    return { ok: false, error: 'Espesor ≥ radio exterior — verificar datos' };
+  if (F < F_HOOP_RANGO.min || F > F_HOOP_RANGO.max)
+    return { ok: false, error: `Factor F fuera de rango (${F_HOOP_RANGO.min}–${F_HOOP_RANGO.max}).` };
+  if (E < E_HOOP_RANGO.min || E > E_HOOP_RANGO.max)
+    return { ok: false, error: `Factor E fuera de rango (${E_HOOP_RANGO.min}–${E_HOOP_RANGO.max}).` };
+  const T = factorTempB318(TempC);
+  if (T === null)
+    return { ok: false, error: 'Temperatura fuera del alcance de la Tabla 841.1.8-1 de ASME B31.8 (máx. 450 °F = 232,2 °C).' };
+
+  const D_in  = D_mm / 25.4;
+  const t_in  = t_mm / 25.4;
+  const P_psi = P_bar * PSI_POR_BAR_HOOP;
+  const sigma_h_psi = (P_psi * D_in) / (2 * t_in);
+  const allow_psi   = SMYS_psi * F * E * T;
+  const uso         = (sigma_h_psi / allow_psi) * 100;
+  // Desborde numérico (ej. t = 1e-320, D = 1e308): resultado inválido explícito,
+  // nunca un Infinity/NaN hacia pantalla, PDF o Excel.
+  if (![sigma_h_psi, allow_psi, uso].every(Number.isFinite))
+    return { ok: false, error: 'Resultado no finito (desborde numérico) — verificar datos de entrada.' };
+
+  return {
+    ok: true,
+    sigma_h_psi, allow_psi,
+    sigma_h_mpa: Math.round(sigma_h_psi * MPA_POR_PSI_HOOP * 10) / 10,
+    allow_mpa:   Math.round(allow_psi * MPA_POR_PSI_HOOP * 10) / 10,
+    uso_pct:     Math.round(uso * 10) / 10,
+    cumple:      sigma_h_psi <= allow_psi,
+    T_factor:    +T.toFixed(3),
+  };
 }
 
 // t en mm, corr en mm/año

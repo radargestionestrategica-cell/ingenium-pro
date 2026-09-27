@@ -1785,27 +1785,116 @@ describe('calcEspesorParedCaneria', () => {
   });
 });
 
-describe('calcHoopStressBarlow', () => {
-  it('sigma_h = P×D/(2×t) y ok si <= allow', () => {
-    const r = calcHoopStressBarlow(273.1, 9.3, 80, 448, 0.72);
-    expect(r).not.toBeNull();
-    const P_MPa   = 80 / 10;
-    const sigma_h = P_MPa * 273.1 / (2 * 9.3);
-    const allow   = 448 * 0.72;
-    expect(r!.sigma_h).toBeCloseTo(sigma_h, 1);
-    expect(r!.allow).toBeCloseTo(allow, 1);
-    expect(r!.ok).toBe(sigma_h <= allow);
+describe('calcHoopStressBarlow — fuente única (psi / pulgadas nativo)', () => {
+  // X65 (65 000 psi), 273,1 × 9,3 mm, 80 bar, 20 °C, F 0,72, E 1,00
+  const base = { D_mm: 273.1, t_mm: 9.3, P_bar: 80, TempC: 20, SMYS_psi: 65000, F: 0.72, E: 1.0 };
+  const ok = (r: ReturnType<typeof calcHoopStressBarlow>) => {
+    if (!r.ok) throw new Error(`se esperaba ok, vino error: ${r.error}`);
+    return r;
+  };
+  // Réplica del cálculo local anterior de ModuloCanerias.tsx (para verificar
+  // que pantalla / PDF / Excel muestran exactamente los mismos números)
+  const anteriorLocal = (D: number, t: number, P: number, TempC: number, smys: number, F: number, E: number) => {
+    const T = factorTempB318(TempC)!;
+    const s = (P * 14.5038 * (D / 25.4)) / (2 * (t / 25.4));
+    const a = smys * F * E * T;
+    return {
+      sigma_h_mpa: Math.round(s * 0.006895 * 10) / 10, allow_mpa: Math.round(a * 0.006895 * 10) / 10,
+      uso_pct: Math.round((s / a) * 1000) / 10, ok: s <= a, T_factor: +T.toFixed(3),
+    };
+  };
+
+  it('caso base: 117,5 MPa / admisible 322,7 MPa / 36,4 %', () => {
+    const r = ok(calcHoopStressBarlow(base));
+    expect(r.sigma_h_mpa).toBe(117.5);
+    expect(r.allow_mpa).toBe(322.7);
+    expect(r.uso_pct).toBe(36.4);
+    expect(r.cumple).toBe(true);
+    expect(r.T_factor).toBe(1);
   });
 
-  it('tensión admisible proporcional a SMYS × F', () => {
-    const r1 = calcHoopStressBarlow(273.1, 9.3, 80, 448, 0.72);
-    const r2 = calcHoopStressBarlow(273.1, 9.3, 80, 448, 1.0);
-    expect(r2!.allow).toBeGreaterThan(r1!.allow);
-    expect(r2!.allow / r1!.allow).toBeCloseTo(1.0 / 0.72, 2);
+  it('mismos números que el cálculo local anterior (sin doble redondeo)', () => {
+    const casos: [number, number, number, number, number, number, number][] = [
+      [273.1, 9.3, 80, 20, 65000, 0.72, 1.0],
+      [323.9, 6.4, 120, 150, 52000, 0.60, 0.80],
+      [168.3, 7.1, 95, 200, 70000, 0.50, 0.60],
+      [610, 12.7, 70, 60, 35000, 0.80, 1.0],
+    ];
+    for (const [D, t, P, T, s, F, E] of casos) {
+      const r = ok(calcHoopStressBarlow({ D_mm: D, t_mm: t, P_bar: P, TempC: T, SMYS_psi: s, F, E }));
+      const a = anteriorLocal(D, t, P, T, s, F, E);
+      expect({ sigma_h_mpa: r.sigma_h_mpa, allow_mpa: r.allow_mpa, uso_pct: r.uso_pct, ok: r.cumple, T_factor: r.T_factor }).toEqual(a);
+    }
   });
 
-  it('retorna null con t=0', () => {
-    expect(calcHoopStressBarlow(273.1, 0, 80, 448)).toBeNull();
+  it('el factor T sale de factorTempB318(T °C): 150 °C reduce el admisible', () => {
+    const r = ok(calcHoopStressBarlow({ ...base, TempC: 150 }));
+    expect(r.allow_psi).toBeCloseTo(65000 * 0.72 * factorTempB318(150)!, 6);
+    expect(r.T_factor).toBe(+factorTempB318(150)!.toFixed(3));
+  });
+
+  it('0 °C y temperaturas bajo cero son válidas (T = 1,0)', () => {
+    expect(ok(calcHoopStressBarlow({ ...base, TempC: 0 })).T_factor).toBe(1);
+    expect(ok(calcHoopStressBarlow({ ...base, TempC: -10 })).T_factor).toBe(1);
+  });
+
+  it('temperatura fuera de la Tabla 841.1.8-1 → rechazada por factorTempB318', () => {
+    const r = calcHoopStressBarlow({ ...base, TempC: 240 });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.error).toContain('Tabla 841.1.8-1');
+  });
+
+  it('D, t, P o SMYS en cero o negativos → inválido', () => {
+    for (const k of ['D_mm', 't_mm', 'P_bar', 'SMYS_psi'] as const) {
+      expect(calcHoopStressBarlow({ ...base, [k]: 0 }).ok, `${k}=0`).toBe(false);
+      expect(calcHoopStressBarlow({ ...base, [k]: -1 }).ok, `${k}=-1`).toBe(false);
+    }
+  });
+
+  it('NaN / Infinity en cualquier entrada (incluida la temperatura) → inválido', () => {
+    for (const k of ['D_mm', 't_mm', 'P_bar', 'TempC', 'SMYS_psi', 'F', 'E'] as const) {
+      expect(calcHoopStressBarlow({ ...base, [k]: NaN }).ok, `${k}=NaN`).toBe(false);
+      expect(calcHoopStressBarlow({ ...base, [k]: Infinity }).ok, `${k}=Infinity`).toBe(false);
+    }
+  });
+
+  it('t ≥ D/2 → rechazado (antes lib lo daba por apto)', () => {
+    const r = calcHoopStressBarlow({ ...base, t_mm: 200 });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.error).toBe('Espesor ≥ radio exterior — verificar datos');
+    expect(calcHoopStressBarlow({ ...base, t_mm: 273.1 / 2 }).ok).toBe(false);
+  });
+
+  it('F fuera de 0,40–0,80 y E fuera de 0,60–1,00 → rechazados; bordes aceptados', () => {
+    for (const F of [0, 0.39, 0.81, 1]) expect(calcHoopStressBarlow({ ...base, F }).ok, `F=${F}`).toBe(false);
+    for (const E of [0, 0.59, 1.01, -1]) expect(calcHoopStressBarlow({ ...base, E }).ok, `E=${E}`).toBe(false);
+    for (const F of [0.40, 0.80]) expect(calcHoopStressBarlow({ ...base, F }).ok, `F=${F}`).toBe(true);
+    for (const E of [0.60, 1.00]) expect(calcHoopStressBarlow({ ...base, E }).ok, `E=${E}`).toBe(true);
+  });
+
+  it('desborde numérico → resultado inválido explícito, nunca Infinity', () => {
+    const casos = [
+      { ...base, t_mm: 1e-320 },   // espesor subnormal
+      { ...base, D_mm: 1e308 },    // diámetro enorme
+      { ...base, P_bar: 1e307 },   // presión enorme
+    ];
+    for (const c of casos) {
+      const r = calcHoopStressBarlow(c);
+      expect(r.ok).toBe(false);
+      if (!r.ok) expect(r.error).toContain('no finito');
+    }
+  });
+
+  it('todo resultado válido es finito', () => {
+    const r = ok(calcHoopStressBarlow(base));
+    for (const v of [r.sigma_h_psi, r.allow_psi, r.sigma_h_mpa, r.allow_mpa, r.uso_pct, r.T_factor])
+      expect(Number.isFinite(v)).toBe(true);
+  });
+
+  it('supera el admisible → cumple = false', () => {
+    const r = ok(calcHoopStressBarlow({ ...base, t_mm: 3 }));
+    expect(r.uso_pct).toBeGreaterThan(100);
+    expect(r.cumple).toBe(false);
   });
 });
 

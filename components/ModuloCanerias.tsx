@@ -1,7 +1,7 @@
 'use client';
 import { publicarResultado } from '@/components/ResultadoContexto';
 import BotonesExportar, { DatosExportar } from '@/components/BotonesExportar';
-import { factorTempB318 } from '@/lib/calculos';
+import { factorTempB318, calcHoopStressBarlow } from '@/lib/calculos';
 import { useState } from 'react';
 
 // ═══════════════════════════════════════════════════════════════
@@ -265,33 +265,21 @@ export default function ModuloCanerias() {
   };
 
   // ── CÁLCULO 2 — HOOP STRESS (Barlow) ─────────────────────
-  // σ_h = (P × D_ext) / (2 × t)
-  // Admisible: S × F × E × T — B31.8 §841.1.1 (T corregido)
+  // calcHoopStressBarlow de @/lib/calculos (fuente única, con tests):
+  // σ_h = (P × D_ext) / (2 × t) · admisible S × F × E × T (T desde factorTempB318),
+  // validación de entradas, rango de F y E, t < D/2 y resultado siempre finito.
   const calcHoop = () => {
     R(); setResHoop(null);
-    const D = parseFloat(hDmm), t = parseFloat(hTmm), P_bar = parseFloat(hPbar);
-    const TempC = parseFloat(hTempC);
-    // Number.isFinite también rechaza NaN y ±Infinity ("1e400", "Infinity"),
-    // que antes pasaban y daban hoop stress / % de uso = Infinity.
-    if ([D, t, P_bar, TempC].some(n => !Number.isFinite(n) || n <= 0)) { setErr('Valores inválidos'); return; }
-    if (t >= D / 2) { setErr('Espesor ≥ radio exterior — verificar datos'); return; }
+    const g = GRADOS[hGrado];
+    const F = FACT_F[hClase].F;
+    const E = FACT_E[hJunta].E;
+    const h = calcHoopStressBarlow({
+      D_mm: parseFloat(hDmm), t_mm: parseFloat(hTmm), P_bar: parseFloat(hPbar),
+      TempC: parseFloat(hTempC), SMYS_psi: g.smys_psi, F, E,
+    });
+    if (!h.ok) { setErr(h.error); return; }
 
-    const D_in  = D / 25.4;
-    const t_in  = t / 25.4;
-    const P_psi = P_bar * 14.5038;
-    const g     = GRADOS[hGrado];
-    const F     = FACT_F[hClase].F;
-    const E     = FACT_E[hJunta].E;
-    const T     = factorTempB318(TempC);   // B31.8 §841.1.1 — factor temperatura
-    if (T === null) { setErr(ERR_T_FUERA_TABLA); return; }
-
-    const sigma_h_psi = (P_psi * D_in) / (2 * t_in);
-    const sigma_h_mpa = Math.round(sigma_h_psi * 0.006895 * 10) / 10;
-    const allow_psi   = g.smys_psi * F * E * T;   // T incluido
-    const allow_mpa   = Math.round(allow_psi * 0.006895 * 10) / 10;
-    const uso_pct     = Math.round((sigma_h_psi / allow_psi) * 1000) / 10;
-
-    const r = { sigma_h_mpa, allow_mpa, uso_pct, ok: sigma_h_psi <= allow_psi, T_factor: +T.toFixed(3) };
+    const r = { sigma_h_mpa: h.sigma_h_mpa, allow_mpa: h.allow_mpa, uso_pct: h.uso_pct, ok: h.cumple, T_factor: h.T_factor };
     setResHoop(r);
 
     const payload: DatosExportar = {
